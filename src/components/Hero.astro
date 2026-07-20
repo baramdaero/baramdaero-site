@@ -1,0 +1,217 @@
+---
+// 바람대로 공식홈 히어로 프로토타입 — 단독 섹션
+// 미디어 이중 모드: A 영상 스크럽(/hero.mp4, 데스크톱) / B 이미지 줌(폴백·모바일 기본)
+---
+<section class="hero-scroll" id="hero">
+  <div class="hero-sticky">
+    <!-- [0] 미디어 레이어 -->
+    <div class="hero-media">
+      <video class="hero-video" preload="auto" muted playsinline aria-hidden="true"></video>
+      <img class="hero-image" src="/hero-placeholder.svg" alt="실내에서 창밖 폭우가 보이는 전경" />
+    </div>
+    <!-- [1] 톤 오버레이 -->
+    <div class="tone tone-dark" aria-hidden="true"></div>
+    <div class="tone tone-warm" aria-hidden="true"></div>
+    <!-- [2] 텍스트·CTA -->
+    <p class="hero-label">지금 바깥 — 폭우</p><!-- [확정 예정] 임시 라벨 -->
+    <div class="hero-copy copy-1">
+      <p>밖은 폭우, 폭염, 한파.</p><!-- [확정 예정] 임시 카피1 -->
+    </div>
+    <div class="hero-copy copy-2">
+      <p>하루의 90%, 우리는 실내에서 삽니다.</p><!-- [확정 예정] 임시 카피2(메인) -->
+      <a class="hero-cta" href="#contact">상담 문의</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero-scroll {
+    position: relative;
+    height: 400vh; /* 스크롤 진행률 0~1 구간 */
+  }
+  .hero-sticky {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* [0] 미디어 */
+  .hero-media,
+  .hero-media > * {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .hero-video {
+    object-fit: cover;
+    display: none;
+  }
+  .hero-image {
+    object-fit: cover;
+    transform-origin: 50% 40%; /* 창 개구부 방향으로 줌 */
+    will-change: transform;
+  }
+  .mode-video .hero-video { display: block; }
+  .mode-video .hero-image { display: none; }
+
+  /* [1] 톤 오버레이 */
+  .tone {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .tone-dark { background: #2a2d31; opacity: 0.45; }
+  .tone-warm { background: #f5f1ea; opacity: 0; }
+
+  /* [2] 텍스트·CTA */
+  .hero-label {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    color: #f5f1ea;
+    opacity: 0.9;
+  }
+  .hero-copy {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 0 24px;
+    opacity: 0;
+  }
+  .copy-1 p {
+    font-family: 'Noto Serif KR', serif;
+    font-weight: 600;
+    font-size: clamp(24px, 5vw, 44px);
+    color: #f5f1ea;
+  }
+  .copy-2 p {
+    font-weight: 700;
+    font-size: clamp(24px, 5vw, 48px);
+    line-height: 1.4;
+    color: #2a2d31;
+    word-break: keep-all;
+  }
+  .hero-cta {
+    margin-top: 32px;
+    display: inline-block;
+    padding: 14px 32px;
+    background: #1e4d3b;
+    color: #f5f1ea;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 16px;
+    border-radius: 4px;
+    opacity: 0;
+  }
+
+  /* prefers-reduced-motion: 정적 히어로 — 도착 상태 고정 */
+  @media (prefers-reduced-motion: reduce) {
+    .hero-scroll { height: 100vh; }
+    .hero-label, .copy-1 { display: none; }
+    .tone-dark { opacity: 0; }
+    .tone-warm { opacity: 0.45; }
+    .copy-2, .hero-cta { opacity: 1; }
+  }
+</style>
+
+<script>
+  import { gsap } from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  const section = document.querySelector('.hero-scroll');
+  const sticky = section.querySelector('.hero-sticky');
+  const video = section.querySelector('.hero-video');
+  const image = section.querySelector('.hero-image');
+  const toneDark = section.querySelector('.tone-dark');
+  const toneWarm = section.querySelector('.tone-warm');
+  const label = section.querySelector('.hero-label');
+  const copy1 = section.querySelector('.copy-1');
+  const copy2 = section.querySelector('.copy-2');
+  const cta = section.querySelector('.hero-cta');
+
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isMobile = matchMedia('(max-width: 767px)').matches;
+
+  if (!reducedMotion) {
+    let videoMode = false;
+    let progress = 0;
+    let rafPending = false;
+
+    // 영상 스크럽: scroll progress → currentTime, rAF 스로틀
+    const syncVideo = () => {
+      rafPending = false;
+      if (videoMode && video.duration) {
+        video.currentTime = progress * video.duration;
+      }
+    };
+    const requestVideoSync = () => {
+      if (!rafPending) {
+        rafPending = true;
+        requestAnimationFrame(syncVideo);
+      }
+    };
+
+    // 모드 A: 데스크톱에서만 /hero.mp4 시도 — 로드 실패 시 자동으로 B 유지
+    if (!isMobile) {
+      video.addEventListener('loadedmetadata', () => {
+        if (video.duration > 0) {
+          videoMode = true;
+          sticky.classList.add('mode-video');
+          requestVideoSync();
+        }
+      }, { once: true });
+      video.src = '/hero.mp4'; // 추후 실제 영상(밖→창 통과→실내)으로 교체
+      video.load();
+    }
+
+    // 스크롤 4단계 타임라인 — 전 트윈 scrub, duration = progress 구간 폭
+    const tl = gsap.timeline({
+      defaults: { ease: 'none' },
+      scrollTrigger: {
+        trigger: section,
+        start: 'top top',
+        end: 'bottom bottom',
+        scrub: true,
+        onUpdate: (self) => {
+          progress = self.progress;
+          requestVideoSync();
+        },
+      },
+    });
+
+    // 이미지 줌(모드 B): scale 1.0→2.2 + translateY, transform만 사용
+    // 0~0.25 완만 → 0.25~0.55 가속(접근) → 0.55~0.8 감속 후 0.8에서 정지
+    tl.to(image, { scale: 1.15, duration: 0.25 }, 0)
+      .to(image, { scale: 2.0, yPercent: -5, ease: 'power1.inOut', duration: 0.3 }, 0.25)
+      .to(image, { scale: 2.2, yPercent: -6, ease: 'power1.out', duration: 0.25 }, 0.55);
+
+    // 톤 오버레이: 어두운 그레이 유지 → 중화 → 웜 오프화이트 크로스페이드(0.55~0.8)
+    tl.to(toneDark, { opacity: 0.25, duration: 0.3 }, 0.25)
+      .to(toneDark, { opacity: 0, duration: 0.25 }, 0.55)
+      .to(toneWarm, { opacity: 0.45, duration: 0.25 }, 0.55);
+
+    // 라벨: 바깥 구간(0~0.25)만 고정 노출
+    tl.to(label, { opacity: 0, duration: 0.08 }, 0.22);
+
+    // 카피1 인(바깥) → 아웃(통과) / 카피2 인(통과)
+    tl.fromTo(copy1, { opacity: 0 }, { opacity: 1, duration: 0.13 }, 0.02)
+      .to(copy1, { opacity: 0, duration: 0.13 }, 0.55)
+      .fromTo(copy2, { opacity: 0 }, { opacity: 1, duration: 0.18 }, 0.62);
+
+    // 도착: CTA 등장 translateY 16px→0 (600ms 상당 구간)
+    tl.fromTo(cta, { opacity: 0, y: 16 }, { opacity: 1, y: 0, ease: 'power2.out', duration: 0.15 }, 0.8);
+
+    // 타임라인 총 길이를 1.0으로 고정 — position 값 = 스크롤 진행률이 되도록
+    tl.to(sticky, { duration: 0.2 }, 0.8);
+  }
+</script>
