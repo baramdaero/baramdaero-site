@@ -18,6 +18,11 @@ export const SITE_CONFIG = {
   // 챗봇 홈 화면 환영 문구
   WELCOME_MESSAGE: '안녕하세요, 바람대로입니다. 무엇을 도와드릴까요?',
 
+  // /care/ SEO 문구 — 지역+비용 키워드 구조 (검색·AI 인용 표적)
+  CARE_SEO_TITLE: '에어컨 청소 비용·분해세척 기준가',
+  CARE_SEO_DESCRIPTION:
+    '수도권 에어컨 분해세척 기준가와 표준 절차. 벽걸이·스탠드·시스템 기종별 비용을 확인하고 사진으로 확정 견적을 받으세요.',
+
   BRANDS_INSTALL: ['삼성', 'LG'],
 
   HERO_VIDEO: '/media/hero-loop.mp4',   // 사전 렌더 왕복 루프 (교체 시 이 경로만)
