@@ -1,0 +1,629 @@
+---
+// 문의 챗봇 — 4트리(세척/AS/설치/기타), 접수카드 복사 + 카카오 폴백.
+// 진입점 2개: 플로팅 버튼(전 페이지) + [data-chat-tree] 요소(홈 히어로 로우, /care/ CTA 등).
+// 연락처·채널 값은 config.js 플레이스홀더 — 빈 값 폴백은 스크립트가 처리 (CLAUDE.md 절대 규칙 2).
+---
+<div class="chat" data-chat-root>
+  <button type="button" class="chat__fab" data-chat-fab aria-haspopup="dialog" aria-expanded="false" aria-label="문의 챗봇 열기">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+      <path d="M4 8h11a2.6 2.6 0 1 0-2.6-2.6" />
+      <path d="M4 13h14.5a2.6 2.6 0 1 1-2.6 2.6" />
+      <path d="M4 18h7" />
+    </svg>
+    <span class="chat__fab-label">문의</span>
+  </button>
+
+  <section class="chat__panel" data-chat-panel role="dialog" aria-modal="false" aria-label="바람대로 문의 챗봇" hidden>
+    <header class="chat__head">
+      <p class="chat__head-title">바람대로 문의</p>
+      <div class="chat__head-actions">
+        <button type="button" class="chat__head-btn" data-chat-reset>처음으로</button>
+        <button type="button" class="chat__head-btn" data-chat-close aria-label="챗봇 닫기">닫기</button>
+      </div>
+    </header>
+    <div class="chat__log" data-chat-log aria-live="polite"></div>
+    <div class="chat__controls" data-chat-controls></div>
+  </section>
+
+  <div class="chat__toast" data-chat-toast role="status" hidden></div>
+</div>
+
+<script>
+  import { SITE_CONFIG } from '../config.js';
+
+  const root = document.querySelector('[data-chat-root]') as HTMLElement;
+  const fab = root.querySelector('[data-chat-fab]') as HTMLButtonElement;
+  const panel = root.querySelector('[data-chat-panel]') as HTMLElement;
+  const log = root.querySelector('[data-chat-log]') as HTMLElement;
+  const controls = root.querySelector('[data-chat-controls]') as HTMLElement;
+  const toastEl = root.querySelector('[data-chat-toast]') as HTMLElement;
+
+  const KAKAO = SITE_CONFIG.KAKAO_CHANNEL_URL;
+  const PHONE = SITE_CONFIG.PHONE;
+
+  type Data = Record<string, string>;
+  let data: Data = {};
+
+  /* ---------- 상태 머신 정의 ---------- */
+  type Option = { label: string; next?: string; set?: Data; say?: string; tel?: string; sub?: boolean };
+  type Node = {
+    text?: string | ((d: Data) => string);
+    options?: Option[];
+    input?: { placeholder: string; key: string; next: string };
+    card?: boolean;
+    etc?: boolean;
+    phoneFirst?: boolean;
+  };
+
+  const REGION_NOTICE =
+    '지방 서비스 확장 준비 중입니다. 현장 규모에 따라 출장 시공도 가능하니 접수 남겨주세요.';
+
+  const regionOptions = (next: string): Option[] => [
+    { label: '수도권', next, set: { 지역: '수도권' } },
+    { label: '그 외 지역', next, set: { 지역: '그 외 지역' }, say: REGION_NOTICE },
+  ];
+
+  const NODES: Record<string, Node> = {
+    menu: {
+      text: '무엇을 도와드릴까요?',
+      options: [
+        { label: '세척 견적', next: 'clean.start' },
+        { label: 'AS·점검', next: 'as.q1' },
+        { label: '설치 견적', next: 'install.space' },
+        { label: '기타 문의', next: 'etc' },
+      ],
+    },
+
+    /* 트리1 — 세척 */
+    'clean.start': {
+      text: '기종을 선택해 주세요.',
+      options: [
+        { label: '벽걸이', next: 'clean.units', set: { 분류: '세척', 기종: '벽걸이' } },
+        { label: '스탠드', next: 'clean.units', set: { 분류: '세척', 기종: '스탠드' } },
+        { label: '천장형', next: 'clean.units', set: { 분류: '세척', 기종: '천장형' } },
+        { label: '모름 · 사진으로 확인', next: 'clean.units', set: { 분류: '세척', 기종: '모름(사진 확인)' } },
+      ],
+    },
+    'clean.units': {
+      text: '몇 대인가요? 숫자로 입력해 주세요.',
+      input: { placeholder: '예: 2', key: '대수', next: 'clean.region' },
+    },
+    'clean.region': { text: '지역이 어디신가요?', options: regionOptions('clean.end') },
+    'clean.end': {
+      text: '전면·측면 사진을 보내주시면 확정 견적을 드립니다.',
+      card: true,
+    },
+
+    /* 트리2 — AS */
+    'as.q1': {
+      text: '바람대로에서 시공 또는 세척·관리를 받으셨나요?',
+      options: [
+        { label: '예', next: 'as.symptom', set: { 분류: 'AS' } },
+        { label: '아니오 · 모르겠음', next: 'as.nonclient' },
+      ],
+    },
+    'as.nonclient': {
+      text: 'AS는 바람대로 시공·관리 고객 대상으로 운영하고 있습니다. 제품 자체 이상은 제조사 서비스센터가 가장 빠릅니다.',
+      options: [
+        { label: '삼성 서비스센터 1588-3366', tel: '15883366' },
+        { label: 'LG 서비스센터 1544-7777', tel: '15447777' },
+        { label: '기타 브랜드', next: 'as.othermaker' },
+        { label: '세척 견적 받기 — 브랜드 관계없이 가능합니다', next: 'clean.start', sub: true },
+      ],
+    },
+    'as.othermaker': {
+      text: '제품 본체 라벨에 적힌 제조사 고객센터로 문의해 주세요. 세척·점검은 바람대로에서 브랜드 관계없이 가능합니다.',
+      options: [
+        { label: '세척 견적 받기', next: 'clean.start' },
+        { label: '처음으로', next: 'menu', sub: true },
+      ],
+    },
+    'as.symptom': {
+      text: '어떤 증상인가요?',
+      options: [
+        { label: '냄새', next: 'as.smell', set: { 증상: '냄새' } },
+        { label: '누수 (물이 샘)', next: 'as.leak', set: { 증상: '누수', 긴급: '긴급' } },
+        { label: '소음·진동', next: 'as.when', set: { 증상: '소음·진동' }, say: '작동 영상을 함께 보내주시면 확인이 빠릅니다.' },
+        { label: '에러코드·작동불량', next: 'as.when', set: { 증상: '에러코드·작동불량' } },
+        { label: '냉방 약함', next: 'as.when', set: { 증상: '냉방 약함' }, say: '실내기·실외기 사진을 함께 보내주시면 확인이 빠릅니다.' },
+      ],
+    },
+    'as.smell': {
+      text: '냄새는 고장이 아니라 내부 오염입니다. 분해 세척으로 해결됩니다. 세척 견적으로 이어드릴게요.',
+      options: [{ label: '세척 견적 받기', next: 'clean.start' }],
+    },
+    'as.leak': {
+      text: '누수는 긴급 상황입니다. 감전·합선 위험이 있으니 에어컨 전원을 꺼두세요. 빠른 처리가 필요하면 전화 주세요.',
+      phoneFirst: true,
+      options: regionOptions('as.card'),
+    },
+    'as.when': {
+      text: '시공·세척 받으신 지 얼마나 되셨나요?',
+      options: [
+        { label: '2년 이내', next: 'as.region', set: { 고객구분: '무상' }, say: '무상 점검 대상입니다.' },
+        { label: '2년 넘음', next: 'as.region', set: { 고객구분: '유상' }, say: '점검 후 견적을 안내드립니다(유상).' },
+        { label: '모름', next: 'as.region', set: { 고객구분: '확인 필요' } },
+      ],
+    },
+    'as.region': { text: '지역이 어디신가요?', options: regionOptions('as.card') },
+    'as.card': {
+      text: '접수 카드를 만들었습니다.',
+      card: true,
+    },
+
+    /* 트리3 — 설치 */
+    'install.space': {
+      text: '설치 공간이 어디인가요?',
+      options: [
+        { label: '아파트·주택', next: 'install.brand', set: { 분류: '설치', 공간: '아파트·주택' } },
+        { label: '상가·사무실', next: 'install.brand', set: { 분류: '설치', 공간: '상가·사무실' } },
+        {
+          label: '신축 입주 예정',
+          next: 'install.brand',
+          set: { 분류: '설치', 공간: '신축 입주 예정' },
+          say: '신축 입주 단지는 공동구매를 진행합니다. 접수 남겨주시면 단지 일정에 맞춰 안내드립니다.',
+        },
+      ],
+    },
+    'install.brand': {
+      text: '브랜드를 선택해 주세요.',
+      options: [
+        ...SITE_CONFIG.BRANDS_INSTALL.map((b: string) => ({ label: b, next: 'install.type', set: { 브랜드: b } })),
+        { label: '상담으로 결정', next: 'install.type', set: { 브랜드: '상담으로 결정' } },
+      ],
+    },
+    'install.type': {
+      text: '설치 유형을 선택해 주세요.',
+      options: [
+        { label: '신규 설치', next: 'install.units', set: { 유형: '신규 설치' } },
+        {
+          label: '이전 설치',
+          next: 'install.units',
+          set: { 유형: '이전 설치' },
+          say: '이전 설치는 현장 조건 확인이 필요해 전화 상담을 권장드립니다. 접수를 남겨주셔도 됩니다.',
+        },
+      ],
+    },
+    'install.units': {
+      text: '몇 대인가요? 숫자로 입력해 주세요.',
+      input: { placeholder: '예: 1', key: '대수', next: 'install.region' },
+    },
+    'install.region': { text: '지역이 어디신가요?', options: regionOptions('install.end') },
+    'install.end': {
+      text: '도면이나 설치 위치 사진이 있으면 함께 보내주세요.',
+      card: true,
+    },
+
+    /* 트리4 — 기타 */
+    etc: {
+      text: '원하시는 채널로 문의해 주세요.',
+      etc: true,
+    },
+  };
+
+  /* ---------- 렌더 ---------- */
+  function say(text: string, who: 'bot' | 'user' = 'bot') {
+    const el = document.createElement('p');
+    el.className = `chat__msg chat__msg--${who}`;
+    el.textContent = text;
+    log.appendChild(el);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function optionButton(label: string, sub = false): HTMLButtonElement {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = sub ? 'chat__opt chat__opt--sub' : 'chat__opt';
+    btn.textContent = label;
+    return btn;
+  }
+
+  function telButton(label: string, tel: string): HTMLAnchorElement {
+    const a = document.createElement('a');
+    a.className = 'chat__opt chat__opt--tel';
+    a.href = `tel:${tel}`;
+    a.textContent = label;
+    return a;
+  }
+
+  function goto(id: string) {
+    const node = NODES[id];
+    if (!node) return;
+    controls.innerHTML = '';
+
+    if (node.text) say(typeof node.text === 'function' ? node.text(data) : node.text);
+
+    if (node.phoneFirst && PHONE) {
+      controls.appendChild(telButton(`지금 전화하기 ${PHONE}`, PHONE.replace(/[^0-9]/g, '')));
+    }
+
+    if (node.input) {
+      const row = document.createElement('div');
+      row.className = 'chat__input-row';
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.min = '1';
+      input.inputMode = 'numeric';
+      input.placeholder = node.input.placeholder;
+      input.className = 'chat__input';
+      input.setAttribute('aria-label', '대수 입력');
+      const ok = optionButton('확인');
+      ok.classList.add('chat__opt--confirm');
+      const submit = () => {
+        const n = parseInt(input.value, 10);
+        if (!n || n < 1) { input.focus(); return; }
+        data[node.input!.key] = `${n}대`;
+        say(`${n}대`, 'user');
+        goto(node.input!.next);
+      };
+      ok.addEventListener('click', submit);
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+      row.append(input, ok);
+      controls.appendChild(row);
+      input.focus();
+    }
+
+    (node.options ?? []).forEach((opt) => {
+      if (opt.tel) {
+        controls.appendChild(telButton(opt.label, opt.tel));
+        return;
+      }
+      const btn = optionButton(opt.label, opt.sub);
+      btn.addEventListener('click', () => {
+        say(opt.label, 'user');
+        if (opt.set) Object.assign(data, opt.set);
+        if (opt.say) say(opt.say);
+        if (opt.next) goto(opt.next);
+      });
+      controls.appendChild(btn);
+    });
+
+    if (node.card) renderCard();
+    if (node.etc) renderEtc();
+  }
+
+  /* ---------- 접수카드 ---------- */
+  function buildCard(): string {
+    const lines = ['[바람대로 접수]'];
+    const push = (k: string, v?: string) => { if (v) lines.push(`${k}: ${v}`); };
+    push('분류', data.긴급 ? `${data.분류} (긴급)` : data.분류);
+    if (data.분류 === 'AS') push('고객구분', data.고객구분 ?? '확인 필요');
+    push('공간', data.공간);
+    if (data.분류 === '설치') push('브랜드·유형', [data.브랜드, data.유형].filter(Boolean).join(' · '));
+    push('기종', data.기종);
+    push('대수', data.대수);
+    push('지역', data.지역);
+    push('증상', data.증상);
+    return lines.join('\n');
+  }
+
+  async function copyText(text: string): Promise<boolean> {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      ta.remove();
+      return ok;
+    }
+  }
+
+  function renderCard() {
+    const text = buildCard();
+    const card = document.createElement('pre');
+    card.className = 'chat__card';
+    card.textContent = text;
+    log.appendChild(card);
+
+    // 자동 복사 → 토스트 (카카오채널은 메시지 프리필 불가 — 복사+안내 UX)
+    copyText(text).then((ok) => {
+      if (ok) toast('복사되었습니다. 카톡에 붙여넣어 주세요.');
+    });
+
+    if (KAKAO) {
+      const btn = optionButton('카톡으로 접수하기');
+      btn.classList.add('chat__opt--primary');
+      btn.addEventListener('click', async () => {
+        await copyText(text);
+        toast('복사되었습니다. 카톡에 붙여넣어 주세요.');
+        window.open(KAKAO, '_blank', 'noopener');
+      });
+      controls.appendChild(btn);
+    } else if (PHONE) {
+      // 카카오채널 미개설 → 전화 CTA 폴백
+      const a = telButton(`전화로 접수하기 ${PHONE}`, PHONE.replace(/[^0-9]/g, ''));
+      a.classList.add('chat__opt--primary');
+      controls.appendChild(a);
+    } else {
+      say('접수 채널 준비 중입니다. 카드 내용이 복사되어 있으니 채널 오픈 후 붙여넣어 주세요.');
+    }
+
+    const again = optionButton('카드 다시 복사', true);
+    again.addEventListener('click', async () => {
+      const ok = await copyText(text);
+      toast(ok ? '복사되었습니다. 카톡에 붙여넣어 주세요.' : '복사에 실패했습니다. 카드를 길게 눌러 복사해 주세요.');
+    });
+    controls.appendChild(again);
+
+    const home = optionButton('처음으로', true);
+    home.addEventListener('click', reset);
+    controls.appendChild(home);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  /* ---------- 기타 트리 ---------- */
+  function renderEtc() {
+    if (KAKAO) {
+      const btn = optionButton('카카오톡 채널');
+      btn.classList.add('chat__opt--primary');
+      btn.addEventListener('click', () => window.open(KAKAO, '_blank', 'noopener'));
+      controls.appendChild(btn);
+    }
+    if (PHONE) controls.appendChild(telButton(`전화 ${PHONE}`, PHONE.replace(/[^0-9]/g, '')));
+    if (!KAKAO && !PHONE) say('문의 채널 준비 중입니다. 세척·설치 견적은 아래 메뉴에서 바로 접수할 수 있습니다.');
+
+    // FAQ 링크 자리 (placeholder)
+    const faq = optionButton('자주 묻는 질문 (준비 중)', true);
+    faq.disabled = true;
+    controls.appendChild(faq);
+
+    const home = optionButton('처음으로', true);
+    home.addEventListener('click', reset);
+    controls.appendChild(home);
+  }
+
+  /* ---------- 토스트 ---------- */
+  let toastTimer: ReturnType<typeof setTimeout>;
+  function toast(msg: string) {
+    toastEl.textContent = msg;
+    toastEl.hidden = false;
+    toastEl.classList.add('is-on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toastEl.classList.remove('is-on');
+      setTimeout(() => { toastEl.hidden = true; }, 250);
+    }, 2600);
+  }
+
+  /* ---------- 패널 열기/닫기 ---------- */
+  let openState = false;
+  function open(startNode = 'menu') {
+    data = {};
+    log.innerHTML = '';
+    controls.innerHTML = '';
+    panel.hidden = false;
+    requestAnimationFrame(() => panel.classList.add('is-open'));
+    fab.setAttribute('aria-expanded', 'true');
+    openState = true;
+    goto(startNode);
+  }
+  function close() {
+    panel.classList.remove('is-open');
+    fab.setAttribute('aria-expanded', 'false');
+    openState = false;
+    setTimeout(() => { panel.hidden = true; }, 260);
+  }
+  function reset() {
+    data = {};
+    log.innerHTML = '';
+    controls.innerHTML = '';
+    goto('menu');
+  }
+
+  fab.addEventListener('click', () => (openState ? close() : open()));
+  root.querySelector('[data-chat-close]')?.addEventListener('click', close);
+  root.querySelector('[data-chat-reset]')?.addEventListener('click', reset);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && openState) close(); });
+
+  // 진입점 2: 히어로 로우·페이지 CTA — data-chat-tree="clean|as|install|etc"
+  const TREE_START: Record<string, string> = {
+    clean: 'clean.start',
+    as: 'as.q1',
+    install: 'install.space',
+    etc: 'etc',
+  };
+  document.addEventListener('click', (e) => {
+    const trigger = (e.target as HTMLElement).closest('[data-chat-tree]');
+    if (!trigger) return;
+    const tree = (trigger as HTMLElement).dataset.chatTree ?? 'menu';
+    open(TREE_START[tree] ?? 'menu');
+  });
+</script>
+
+<!-- is:global — 말풍선·옵션 버튼·카드가 JS로 동적 생성되어 스코프 속성이 붙지 않는다. chat__ 네임스페이스로 충돌 방지. -->
+<style is:global>
+  .chat__fab {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 20px;
+    min-height: 48px;
+    border-radius: 999px;
+    background: var(--copper);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(33, 30, 26, 0.12), 0 10px 26px rgba(33, 30, 26, 0.18);
+    transition: background-color var(--dur-color) ease, transform 160ms var(--ease-out);
+  }
+  .chat__fab:hover { background: var(--copper-deep); }
+  .chat__fab:active { transform: scale(0.96); }
+
+  .chat__panel {
+    position: fixed;
+    right: 20px;
+    bottom: 84px;
+    z-index: 60;
+    width: min(380px, calc(100vw - 40px));
+    max-height: min(600px, calc(100dvh - 120px));
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: 0 4px 10px rgba(33, 30, 26, 0.08), 0 24px 60px rgba(33, 30, 26, 0.22);
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+    transition: opacity var(--dur-ui) var(--ease-out), transform var(--dur-ui) var(--ease-out);
+  }
+  .chat__panel.is-open { opacity: 1; transform: translateY(0) scale(1); }
+
+  .chat__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .chat__head-title { font-family: var(--serif); font-weight: 600; font-size: 15px; }
+  .chat__head-actions { display: flex; gap: 4px; }
+  .chat__head-btn {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    padding: 8px 10px;
+    border-radius: 6px;
+    transition: color var(--dur-color) ease, background-color var(--dur-color) ease;
+  }
+  .chat__head-btn:hover { color: var(--ink); background: var(--bg-soft); }
+
+  .chat__log {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 120px;
+  }
+  .chat__msg {
+    max-width: 85%;
+    font-size: 14px;
+    line-height: 1.55;
+    padding: 10px 14px;
+    border-radius: 14px;
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+    @starting-style { opacity: 0; transform: translateY(6px); }
+  }
+  .chat__msg--bot {
+    align-self: flex-start;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-bottom-left-radius: 4px;
+  }
+  .chat__msg--user {
+    align-self: flex-end;
+    background: var(--ink);
+    color: var(--bg);
+    border-bottom-right-radius: 4px;
+  }
+
+  .chat__card {
+    align-self: stretch;
+    font-family: var(--sans);
+    font-size: 13.5px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    background: #fff;
+    border: 1px solid var(--ink-soft);
+    border-radius: 10px;
+    padding: 14px 16px;
+    user-select: all;
+    -webkit-user-select: all;
+  }
+
+  .chat__controls {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 16px 16px;
+    border-top: 1px solid var(--line);
+  }
+  .chat__opt {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 12px 14px;
+    min-height: 44px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    transition: border-color var(--dur-color) ease, background-color var(--dur-color) ease, transform 160ms var(--ease-out);
+  }
+  .chat__opt:active { transform: scale(0.98); }
+  @media (hover: hover) and (pointer: fine) {
+    .chat__opt:hover:not(:disabled) { border-color: var(--ink-soft); background: var(--bg); }
+  }
+  .chat__opt:disabled { color: var(--silver); cursor: default; }
+  .chat__opt--sub { font-size: 13px; color: var(--ink-soft); border-color: transparent; background: transparent; }
+  .chat__opt--primary,
+  .chat__opt--tel.chat__opt--primary {
+    background: var(--copper);
+    border-color: var(--copper);
+    color: #fff;
+    font-weight: 600;
+    text-align: center;
+  }
+  .chat__opt--primary:hover { background: var(--copper-deep) !important; border-color: var(--copper-deep) !important; }
+  .chat__opt--tel { text-align: center; }
+
+  .chat__input-row { display: flex; gap: 8px; }
+  .chat__input {
+    flex: 1;
+    font: inherit;
+    font-size: 14px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--ink);
+  }
+  .chat__input:focus { outline: 2px solid var(--copper); outline-offset: -1px; border-color: transparent; }
+  .chat__opt--confirm { width: auto; background: var(--ink); color: var(--bg); border-color: var(--ink); text-align: center; }
+
+  .chat__toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    z-index: 70;
+    transform: translateX(-50%) translateY(8px);
+    background: var(--ink);
+    color: var(--bg);
+    font-size: 13.5px;
+    padding: 11px 18px;
+    border-radius: 999px;
+    opacity: 0;
+    transition: opacity 220ms var(--ease-out), transform 220ms var(--ease-out);
+    pointer-events: none;
+    max-width: calc(100vw - 40px);
+  }
+  .chat__toast.is-on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 480px) {
+    /* iOS 자동 확대 방지 — 입력 폰트 16px 이상 */
+    .chat__input { font-size: 16px; }
+    .chat__panel {
+      right: 10px;
+      left: 10px;
+      width: auto;
+      bottom: 78px;
+      max-height: calc(100dvh - 100px);
+    }
+    .chat__fab { right: 14px; bottom: 14px; }
+  }
+</style>

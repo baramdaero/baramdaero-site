@@ -1,0 +1,106 @@
+---
+// 전역 헤더. overlay = 홈 히어로 위 투명 고정 / solid = 서브페이지 상단.
+import { SITE_CONFIG } from '../config.js';
+
+interface Props {
+  variant?: 'overlay' | 'solid';
+}
+const { variant = 'solid' } = Astro.props;
+
+const nav = [
+  { href: '/cases/', label: '시공사례' },
+  { href: '/care/', label: '세척·관리' },
+  { href: '/story/', label: '브랜드이야기' },
+];
+const path = Astro.url.pathname;
+---
+<header class:list={['bd-header', `bd-header--${variant}`]}>
+  <div class="bd-header__inner">
+    <a href="/" class="bd-header__brand" aria-label="바람대로 홈">바람대로</a>
+    <nav class="bd-header__nav" aria-label="주 메뉴">
+      {nav.map((item) => (
+        <a
+          href={item.href}
+          class="bd-header__link"
+          aria-current={path.startsWith(item.href) ? 'page' : undefined}
+        >{item.label}</a>
+      ))}
+    </nav>
+    <a href={SITE_CONFIG.SHOP_URL} class="bd-header__cta" rel="noopener">예약·구매</a>
+  </div>
+</header>
+
+<style>
+  .bd-header {
+    width: 100%;
+    z-index: 40;
+  }
+  .bd-header--overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    color: #fff;
+  }
+  .bd-header--solid {
+    position: sticky;
+    top: 0;
+    background: color-mix(in srgb, var(--bg) 92%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+    color: var(--ink);
+  }
+  .bd-header__inner {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: 0 24px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+  }
+  .bd-header__brand {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 19px;
+    letter-spacing: 0;
+    margin-right: auto;
+  }
+  .bd-header__nav {
+    display: flex;
+    gap: 22px;
+  }
+  .bd-header__link {
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0.85;
+    transition: opacity var(--dur-color) ease;
+    /* 44px 히트영역 확보 */
+    padding: 12px 2px;
+  }
+  .bd-header__link:hover,
+  .bd-header__link[aria-current='page'] { opacity: 1; }
+  .bd-header__cta {
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 18px;
+    border-radius: 6px;
+    background: var(--copper);
+    color: #fff;
+    transition: background-color var(--dur-color) ease, transform 160ms var(--ease-out);
+  }
+  .bd-header__cta:hover { background: var(--copper-deep); }
+  .bd-header__cta:active { transform: scale(0.96); }
+
+  .bd-header__link,
+  .bd-header__cta,
+  .bd-header__brand { white-space: nowrap; }
+
+  @media (max-width: 640px) {
+    .bd-header__inner { gap: 10px; padding: 0 12px; height: 56px; }
+    .bd-header__brand { font-size: 16px; }
+    .bd-header__nav { gap: 10px; }
+    .bd-header__link { font-size: 12px; padding: 12px 0; }
+    .bd-header__cta { padding: 8px 11px; font-size: 12px; }
+  }
+</style>

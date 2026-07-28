@@ -1,0 +1,84 @@
+---
+// 세척·유지관리 — 정보 콘텐츠 페이지
+import Base from '../../layouts/Base.astro';
+
+const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? '';
+const breadcrumb = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: '홈', item: `${siteUrl}/` },
+    { '@type': 'ListItem', position: 2, name: '세척·관리', item: `${siteUrl}/care/` },
+  ],
+};
+---
+<Base title="세척·관리" description="에어컨 분해 세척의 범위와 관리가 필요한 신호를 정리했습니다." jsonLd={breadcrumb}>
+  <section class="bd-section care">
+    <div class="bd-container">
+      <p class="bd-microlabel">Care</p>
+      <h1 class="bd-section-title">세척·유지관리</h1>
+
+      <div class="care__grid">
+        <section class="care__block">
+          <h2>이런 신호가 있으면 내부 오염입니다</h2>
+          <p>냉방을 켰을 때 시큼한 냄새가 나는 경우, 대부분 고장이 아니라 열교환기와 송풍팬에 쌓인 오염이 원인입니다.</p>
+          <ul>
+            <li>냉방 시 곰팡이·쉰내가 난다</li>
+            <li>바람 세기가 예전보다 약해졌다</li>
+            <li>송풍구 날개에 검은 점(곰팡이)이 보인다</li>
+            <li>바람과 함께 물방울이 튄다</li>
+          </ul>
+        </section>
+
+        <section class="care__block">
+          <h2>분해 세척이 하는 일</h2>
+          <p>필터 청소로는 송풍팬 안쪽 오염이 남습니다. 분해 세척은 커버와 송풍팬을 분리해 오염 부위를 직접 세척하는 작업입니다.</p>
+          <ul>
+            <li>분해 — 전원 차단 후 커버·송풍팬 분리</li>
+            <li>세척 — 열교환기·송풍팬·배수 라인 세척</li>
+            <li>건조·조립 — 부품 건조 후 재조립</li>
+            <li>시운전 — 작동·배수 확인 후 종료</li>
+          </ul>
+          <p>작업 전·후 상태는 사진으로 남겨 드립니다.</p>
+        </section>
+
+        <section class="care__block">
+          <h2>견적은 사진으로 확정합니다</h2>
+          <p>기종(벽걸이·스탠드·천장형)과 대수에 따라 작업 범위가 다릅니다. 전면·측면 사진을 보내주시면 확정 견적을 드립니다.</p>
+          <p>세척·점검은 브랜드 관계없이 가능합니다.</p>
+          <button type="button" class="bd-cta" data-chat-tree="clean">세척 견적 받기</button>
+        </section>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .care .bd-container { max-width: 760px; }
+  .care__grid { display: grid; gap: 48px; }
+  .care__block h2 {
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+  .care__block p { font-size: 15.5px; margin-bottom: 12px; color: var(--ink); }
+  .care__block ul {
+    margin: 0 0 12px 2px;
+    list-style: none;
+  }
+  .care__block li {
+    font-size: 15px;
+    padding: 9px 0 9px 16px;
+    border-bottom: 1px solid var(--line);
+    position: relative;
+  }
+  .care__block li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 6px;
+    height: 1px;
+    background: var(--silver);
+  }
+  .care__block .bd-cta { margin-top: 6px; }
+</style>

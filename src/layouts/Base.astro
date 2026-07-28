@@ -1,0 +1,93 @@
+---
+// 전 페이지 공통 레이아웃. 홈은 헤더를 투명(overlay) 변형으로 사용.
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import Chatbot from '../components/Chatbot.astro';
+import { SITE_CONFIG } from '../config.js';
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** 페이지 추가 JSON-LD (Article, BreadcrumbList 등) — 전역 HVACBusiness에 더해 렌더 */
+  jsonLd?: object | object[];
+  /** 홈 전용: 헤더를 영상 위 투명 오버레이로 */
+  headerVariant?: 'overlay' | 'solid';
+  ogImage?: string;
+}
+const {
+  title,
+  description = SITE_CONFIG.DESCRIPTION,
+  jsonLd,
+  headerVariant = 'solid',
+  ogImage = SITE_CONFIG.HERO_POSTER,
+} = Astro.props;
+
+const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? 'https://baramdaero.com';
+const pageTitle = title ? `${title} — ${SITE_CONFIG.SITE_NAME}` : `${SITE_CONFIG.SITE_NAME} — ${SITE_CONFIG.SLOGAN}`;
+const canonical = new URL(Astro.url.pathname, siteUrl).href;
+
+// 전역 JSON-LD — HVACBusiness (schema.org)
+const businessJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'HVACBusiness',
+  name: SITE_CONFIG.SITE_NAME,
+  slogan: SITE_CONFIG.SLOGAN,
+  url: siteUrl,
+  image: `${siteUrl}${SITE_CONFIG.HERO_POSTER}`,
+  areaServed: { '@type': 'AdministrativeArea', name: '수도권' },
+  knowsAbout: ['에어컨 설치', '에어컨 세척', '에어컨 유지관리', '에어컨 AS'],
+  makesOffer: [
+    { '@type': 'Offer', itemOffered: { '@type': 'Service', name: '에어컨 설치', areaServed: '수도권' } },
+    { '@type': 'Offer', itemOffered: { '@type': 'Service', name: '에어컨 세척·유지관리', areaServed: '수도권' } },
+    { '@type': 'Offer', itemOffered: { '@type': 'Service', name: '에어컨 점검·AS', areaServed: '수도권' } },
+  ],
+};
+
+const extraJsonLd = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
+---
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    {SITE_CONFIG.NAVER_SITE_VERIFICATION && (
+      <meta name="naver-site-verification" content={SITE_CONFIG.NAVER_SITE_VERIFICATION} />
+    )}
+    {SITE_CONFIG.GOOGLE_SITE_VERIFICATION && (
+      <meta name="google-site-verification" content={SITE_CONFIG.GOOGLE_SITE_VERIFICATION} />
+    )}
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE_CONFIG.SITE_NAME} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={new URL(ogImage, siteUrl).href} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&display=swap" />
+
+    <script type="application/ld+json" set:html={JSON.stringify(businessJsonLd)} />
+    {extraJsonLd.map((ld) => (
+      <script type="application/ld+json" set:html={JSON.stringify(ld)} />
+    ))}
+  </head>
+  <body>
+    <SiteHeader variant={headerVariant} />
+    <main>
+      <slot />
+    </main>
+    <SiteFooter />
+    <Chatbot />
+  </body>
+</html>

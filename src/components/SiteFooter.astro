@@ -1,0 +1,54 @@
+---
+import { SITE_CONFIG } from '../config.js';
+const year = new Date().getFullYear();
+---
+<footer class="bd-footer">
+  <div class="bd-container bd-footer__inner">
+    <div class="bd-footer__brand">
+      <p class="bd-footer__name">바람대로</p>
+      <p class="bd-footer__slogan">{SITE_CONFIG.SLOGAN}</p>
+    </div>
+    <nav class="bd-footer__nav" aria-label="푸터 메뉴">
+      <a href="/cases/">시공사례</a>
+      <a href="/care/">세척·관리</a>
+      <a href="/story/">브랜드이야기</a>
+      <a href="/blog/">블로그</a>
+      <a href={SITE_CONFIG.SHOP_URL} rel="noopener">예약·구매</a>
+    </nav>
+    <hr class="bd-hairline" />
+    <p class="bd-footer__legal">
+      <!-- 사업자 정보 확정 후 기입: 상호·대표·사업자등록번호·주소·연락처 -->
+      © {year} 바람대로
+    </p>
+  </div>
+</footer>
+
+<style>
+  .bd-footer {
+    border-top: 1px solid var(--line);
+    padding: 56px 0 40px;
+    margin-top: 96px;
+  }
+  .bd-footer__inner { display: grid; gap: 24px; }
+  .bd-footer__name {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 18px;
+  }
+  .bd-footer__slogan {
+    font-family: var(--serif);
+    color: var(--ink-soft);
+    font-size: 14px;
+    margin-top: 4px;
+  }
+  .bd-footer__nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+  .bd-footer__nav a { padding: 8px 0; transition: color var(--dur-color) ease; }
+  .bd-footer__nav a:hover { color: var(--ink); }
+  .bd-footer__legal { font-size: 12px; color: var(--ink-soft); }
+</style>
