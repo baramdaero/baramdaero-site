@@ -10,6 +10,12 @@ export const SITE_CONFIG = {
   PHONE: '',             // 대표번호 확정 후 기입 (예: 0507-0000-0000)
   SHOP_URL: 'https://shop.baramdaero.com',
 
+  // 채널톡 플러그인 키 — 개설 후 기입. 동일 키가 쇼핑몰(아임웹, 별도 관리)에도 설치될 예정.
+  // 이 레포는 본진 연동만 담당하며 쇼핑몰 측 설치는 코드 범위 외.
+  CHANNELTALK_PLUGIN_KEY: '7d2356f8-db95-48e7-b7a4-3108f4f4446a',
+  // 챗봇 헤더 상태줄 문구
+  RESPONSE_NOTE: '보통 영업시간 내 1시간 안에 연락드립니다',
+
   BRANDS_INSTALL: ['삼성', 'LG'],
 
   HERO_VIDEO: '/media/hero-loop.mp4',   // 사전 렌더 왕복 루프 (교체 시 이 경로만)

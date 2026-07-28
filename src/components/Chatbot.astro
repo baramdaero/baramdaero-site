@@ -1,28 +1,66 @@
 ---
-// 문의 챗봇 — 4트리(세척/AS/설치/기타), 접수카드 복사 + 카카오 폴백.
-// 진입점 2개: 플로팅 버튼(전 페이지) + [data-chat-tree] 요소(홈 히어로 로우, /care/ CTA 등).
+// 문의 챗봇 — 메신저 대화형 UI. 4트리(세척/AS/설치/기타) 로직·분기·문구·접수카드 스펙은 v1 그대로 유지,
+// 표현 계층(말풍선·칩·입력바)과 종점 동작(채널톡 상담 연결 + 폴백)만 교체.
+// 진입점 2개: 플로팅 런처(전 페이지) + [data-chat-tree] 요소(홈 히어로 로우, /care/ CTA 등).
 // 연락처·채널 값은 config.js 플레이스홀더 — 빈 값 폴백은 스크립트가 처리 (CLAUDE.md 절대 규칙 2).
+import { SITE_CONFIG } from '../config.js';
 ---
 <div class="chat" data-chat-root>
-  <button type="button" class="chat__fab" data-chat-fab aria-haspopup="dialog" aria-expanded="false" aria-label="문의 챗봇 열기">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-      <path d="M4 8h11a2.6 2.6 0 1 0-2.6-2.6" />
-      <path d="M4 13h14.5a2.6 2.6 0 1 1-2.6 2.6" />
-      <path d="M4 18h7" />
+  <button
+    type="button"
+    class="chat__fab"
+    data-chat-fab
+    aria-haspopup="dialog"
+    aria-expanded="false"
+    aria-label="문의 챗봇 열기"
+  >
+    <svg class="chat__fab-icon chat__fab-icon--bubble" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M21 12a8.5 8.5 0 0 1-8.5 8.5c-1.3 0-2.6-.3-3.7-.8L4 21l1.4-4.5A8.5 8.5 0 1 1 21 12Z" />
     </svg>
-    <span class="chat__fab-label">문의</span>
+    <svg class="chat__fab-icon chat__fab-icon--close" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
   </button>
 
-  <section class="chat__panel" data-chat-panel role="dialog" aria-modal="false" aria-label="바람대로 문의 챗봇" hidden>
+  <section class="chat__panel" data-chat-panel role="dialog" aria-modal="true" aria-label="바람대로 문의 챗봇" hidden>
     <header class="chat__head">
-      <p class="chat__head-title">바람대로 문의</p>
-      <div class="chat__head-actions">
-        <button type="button" class="chat__head-btn" data-chat-reset>처음으로</button>
-        <button type="button" class="chat__head-btn" data-chat-close aria-label="챗봇 닫기">닫기</button>
+      <div class="chat__head-info">
+        <p class="chat__head-title">바람대로</p>
+        <p class="chat__head-note">{SITE_CONFIG.RESPONSE_NOTE}</p>
       </div>
+      <button type="button" class="chat__head-close" data-chat-close aria-label="챗봇 닫기">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      </button>
     </header>
+
     <div class="chat__log" data-chat-log aria-live="polite"></div>
-    <div class="chat__controls" data-chat-controls></div>
+
+    <div class="chat__composer">
+      <div class="chat__nav">
+        <button type="button" class="chat__nav-btn" data-chat-back disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5" /><path d="m11 18-6-6 6-6" /></svg>
+          이전
+        </button>
+        <button type="button" class="chat__nav-btn" data-chat-reset>처음으로</button>
+      </div>
+      <form class="chat__inputbar" data-chat-form>
+        <input
+          class="chat__input"
+          data-chat-input
+          type="number"
+          min="1"
+          inputmode="numeric"
+          placeholder="선택지를 눌러 주세요"
+          aria-label="메시지 입력"
+          disabled
+        />
+        <button type="submit" class="chat__send" data-chat-send disabled aria-label="보내기">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5" /><path d="m5 12 7-7 7 7" /></svg>
+        </button>
+      </form>
+    </div>
   </section>
 
   <div class="chat__toast" data-chat-toast role="status" hidden></div>
@@ -30,21 +68,27 @@
 
 <script>
   import { SITE_CONFIG } from '../config.js';
+  import { channelEnabled, ensureChannel, openConsult } from '../lib/channel.ts';
 
   const root = document.querySelector('[data-chat-root]') as HTMLElement;
   const fab = root.querySelector('[data-chat-fab]') as HTMLButtonElement;
   const panel = root.querySelector('[data-chat-panel]') as HTMLElement;
   const log = root.querySelector('[data-chat-log]') as HTMLElement;
-  const controls = root.querySelector('[data-chat-controls]') as HTMLElement;
+  const backBtn = root.querySelector('[data-chat-back]') as HTMLButtonElement;
+  const resetBtn = root.querySelector('[data-chat-reset]') as HTMLButtonElement;
+  const form = root.querySelector('[data-chat-form]') as HTMLFormElement;
+  const input = root.querySelector('[data-chat-input]') as HTMLInputElement;
+  const sendBtn = root.querySelector('[data-chat-send]') as HTMLButtonElement;
   const toastEl = root.querySelector('[data-chat-toast]') as HTMLElement;
 
   const KAKAO = SITE_CONFIG.KAKAO_CHANNEL_URL;
   const PHONE = SITE_CONFIG.PHONE;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
   type Data = Record<string, string>;
   let data: Data = {};
 
-  /* ---------- 상태 머신 정의 ---------- */
+  /* ---------- 상태 머신 정의 (v1 그대로 — 로직·분기·문구 변경 금지) ---------- */
   type Option = { label: string; next?: string; set?: Data; say?: string; tel?: string; sub?: boolean };
   type Node = {
     text?: string | ((d: Data) => string);
@@ -201,88 +245,189 @@
     },
   };
 
-  /* ---------- 렌더 ---------- */
-  function say(text: string, who: 'bot' | 'user' = 'bot') {
+  /* ---------- 렌더 프리미티브 ---------- */
+  const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  const scrollDown = () => { log.scrollTop = log.scrollHeight; };
+
+  let renderToken = 0;
+
+  function bubble(text: string, who: 'bot' | 'user' = 'bot'): HTMLElement {
     const el = document.createElement('p');
     el.className = `chat__msg chat__msg--${who}`;
     el.textContent = text;
     log.appendChild(el);
-    log.scrollTop = log.scrollHeight;
+    scrollDown();
+    return el;
   }
 
-  function optionButton(label: string, sub = false): HTMLButtonElement {
+  /** 봇 말풍선 앞 타이핑 인디케이터 200ms — reduced-motion 시 생략 */
+  async function typing(token: number) {
+    if (reducedMotion.matches) return;
+    // 개발 전용 검증 훅 — 헤드리스 팬은 백그라운드 타이머 스로틀링으로 200ms가 수 초로 늘어난다.
+    // 프로드 빌드에서는 이 분기가 제거된다.
+    if (import.meta.env.DEV && sessionStorage.getItem('BD_FAST')) return;
+    const el = document.createElement('div');
+    el.className = 'chat__msg chat__msg--bot chat__typing';
+    el.setAttribute('aria-hidden', 'true');
+    el.innerHTML = '<span></span><span></span><span></span>';
+    log.appendChild(el);
+    scrollDown();
+    await delay(200);
+    el.remove();
+    if (token !== renderToken) throw new Error('stale');
+  }
+
+  function chip(label: string, kind: 'default' | 'sub' | 'tel' | 'primary' = 'default'): HTMLButtonElement {
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = sub ? 'chat__opt chat__opt--sub' : 'chat__opt';
+    btn.className = `chat__chip chat__chip--${kind}`;
     btn.textContent = label;
     return btn;
   }
 
-  function telButton(label: string, tel: string): HTMLAnchorElement {
+  function telChip(label: string, tel: string, primary = false): HTMLAnchorElement {
     const a = document.createElement('a');
-    a.className = 'chat__opt chat__opt--tel';
+    a.className = primary ? 'chat__chip chat__chip--primary' : 'chat__chip chat__chip--tel';
     a.href = `tel:${tel}`;
     a.textContent = label;
     return a;
   }
 
-  function goto(id: string) {
-    const node = NODES[id];
-    if (!node) return;
-    controls.innerHTML = '';
-
-    if (node.text) say(typeof node.text === 'function' ? node.text(data) : node.text);
-
-    if (node.phoneFirst && PHONE) {
-      controls.appendChild(telButton(`지금 전화하기 ${PHONE}`, PHONE.replace(/[^0-9]/g, '')));
-    }
-
-    if (node.input) {
-      const row = document.createElement('div');
-      row.className = 'chat__input-row';
-      const input = document.createElement('input');
-      input.type = 'number';
-      input.min = '1';
-      input.inputMode = 'numeric';
-      input.placeholder = node.input.placeholder;
-      input.className = 'chat__input';
-      input.setAttribute('aria-label', '대수 입력');
-      const ok = optionButton('확인');
-      ok.classList.add('chat__opt--confirm');
-      const submit = () => {
-        const n = parseInt(input.value, 10);
-        if (!n || n < 1) { input.focus(); return; }
-        data[node.input!.key] = `${n}대`;
-        say(`${n}대`, 'user');
-        goto(node.input!.next);
-      };
-      ok.addEventListener('click', submit);
-      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
-      row.append(input, ok);
-      controls.appendChild(row);
-      input.focus();
-    }
-
-    (node.options ?? []).forEach((opt) => {
-      if (opt.tel) {
-        controls.appendChild(telButton(opt.label, opt.tel));
-        return;
-      }
-      const btn = optionButton(opt.label, opt.sub);
-      btn.addEventListener('click', () => {
-        say(opt.label, 'user');
-        if (opt.set) Object.assign(data, opt.set);
-        if (opt.say) say(opt.say);
-        if (opt.next) goto(opt.next);
-      });
-      controls.appendChild(btn);
+  /** 칩 그룹 — 선택 시 그룹 전체 비활성 보존, 선택 칩 표시. 좌우/상하 키보드 탐색 지원 */
+  function chipGroup(): HTMLElement {
+    const wrap = document.createElement('div');
+    wrap.className = 'chat__chips';
+    wrap.setAttribute('role', 'group');
+    wrap.addEventListener('keydown', (e) => {
+      if (!['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+      const chips = [...wrap.querySelectorAll<HTMLElement>('.chat__chip:not(:disabled)')];
+      const idx = chips.indexOf(document.activeElement as HTMLElement);
+      if (idx === -1) return;
+      e.preventDefault();
+      const dir = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : -1;
+      chips[(idx + dir + chips.length) % chips.length]?.focus();
     });
-
-    if (node.card) renderCard();
-    if (node.etc) renderEtc();
+    log.appendChild(wrap);
+    return wrap;
   }
 
-  /* ---------- 접수카드 ---------- */
+  function settleGroup(wrap: HTMLElement, chosen?: HTMLElement) {
+    wrap.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+    wrap.classList.add('is-settled');
+    chosen?.classList.add('is-chosen');
+  }
+
+  /* ---------- 입력바 ---------- */
+  let inputHandler: ((value: number) => void) | null = null;
+
+  function armInput(placeholder: string, onSubmit: (n: number) => void) {
+    inputHandler = onSubmit;
+    input.disabled = false;
+    sendBtn.disabled = false;
+    input.placeholder = placeholder;
+    input.value = '';
+    input.focus();
+  }
+
+  function disarmInput() {
+    inputHandler = null;
+    input.disabled = true;
+    sendBtn.disabled = true;
+    input.placeholder = '선택지를 눌러 주세요';
+    input.value = '';
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!inputHandler) return;
+    const n = parseInt(input.value, 10);
+    if (!n || n < 1) { input.focus(); return; }
+    const handler = inputHandler;
+    disarmInput();
+    handler(n);
+  });
+
+  /* ---------- 히스토리 (← 이전) ---------- */
+  type Checkpoint = { nodeId: string; logLen: number; data: Data };
+  let stack: Checkpoint[] = [];
+
+  function updateNav() {
+    backBtn.disabled = stack.length <= 1;
+  }
+
+  function goBack() {
+    if (stack.length <= 1) return;
+    renderToken += 1;
+    stack.pop(); // 현재 스텝 버림
+    const prev = stack.pop()!; // 이전 스텝 — goto가 다시 push
+    while (log.children.length > prev.logLen) log.lastElementChild?.remove();
+    data = { ...prev.data };
+    disarmInput();
+    void goto(prev.nodeId);
+  }
+
+  /* ---------- 노드 렌더 ---------- */
+  async function goto(id: string) {
+    const node = NODES[id];
+    if (!node) return;
+    const token = ++renderToken;
+    stack.push({ nodeId: id, logLen: log.children.length, data: { ...data } });
+    updateNav();
+    disarmInput();
+
+    try {
+      if (node.text) {
+        await typing(token);
+        bubble(typeof node.text === 'function' ? node.text(data) : node.text);
+      }
+      if (token !== renderToken) return;
+
+      if (node.options || node.phoneFirst) {
+        const group = chipGroup();
+        if (node.phoneFirst && PHONE) {
+          group.appendChild(telChip(`지금 전화하기 ${PHONE}`, PHONE.replace(/[^0-9]/g, ''), true));
+        }
+        (node.options ?? []).forEach((opt) => {
+          if (opt.tel) {
+            group.appendChild(telChip(opt.label, opt.tel));
+            return;
+          }
+          const btn = chip(opt.label, opt.sub ? 'sub' : 'default');
+          btn.addEventListener('click', async () => {
+            const t = ++renderToken;
+            settleGroup(group, btn);
+            bubble(opt.label, 'user');
+            if (opt.set) Object.assign(data, opt.set);
+            try {
+              if (opt.say) {
+                await typing(t);
+                bubble(opt.say);
+              }
+            } catch { return; }
+            if (opt.next) void goto(opt.next);
+          });
+          group.appendChild(btn);
+        });
+        scrollDown();
+      }
+
+      if (node.input) {
+        const spec = node.input;
+        armInput(spec.placeholder, (n) => {
+          data[spec.key] = `${n}대`;
+          bubble(`${n}대`, 'user');
+          void goto(spec.next);
+        });
+      }
+
+      if (node.card) renderCard();
+      if (node.etc) renderEtc();
+    } catch {
+      /* stale render — 무시 */
+    }
+  }
+
+  /* ---------- 접수카드 (텍스트 생성 스펙 v1 그대로) ---------- */
   function buildCard(): string {
     const lines = ['[바람대로 접수]'];
     const push = (k: string, v?: string) => { if (v) lines.push(`${k}: ${v}`); };
@@ -314,68 +459,139 @@
     }
   }
 
-  function renderCard() {
-    const text = buildCard();
-    const card = document.createElement('pre');
-    card.className = 'chat__card';
-    card.textContent = text;
-    log.appendChild(card);
+  function ctaButton(label: string, kind: 'primary' | 'ghost' | 'sub' = 'primary'): HTMLButtonElement {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `chat__cta chat__cta--${kind}`;
+    btn.textContent = label;
+    return btn;
+  }
 
-    // 자동 복사 → 토스트 (카카오채널은 메시지 프리필 불가 — 복사+안내 UX)
+  function ctaTel(label: string, kind: 'primary' | 'ghost' = 'ghost'): HTMLAnchorElement {
+    const a = document.createElement('a');
+    a.className = `chat__cta chat__cta--${kind}`;
+    a.href = `tel:${PHONE.replace(/[^0-9]/g, '')}`;
+    a.textContent = label;
+    return a;
+  }
+
+  /** 채널톡 없음·실패 시 기존 폴백 동작 그대로: 자동복사 + 토스트 + 카카오/전화/복사 안내 */
+  function renderFallbackCtas(text: string, wrap: HTMLElement) {
     copyText(text).then((ok) => {
       if (ok) toast('복사되었습니다. 카톡에 붙여넣어 주세요.');
     });
-
     if (KAKAO) {
-      const btn = optionButton('카톡으로 접수하기');
-      btn.classList.add('chat__opt--primary');
+      const btn = ctaButton('카톡으로 접수하기', 'primary');
       btn.addEventListener('click', async () => {
         await copyText(text);
         toast('복사되었습니다. 카톡에 붙여넣어 주세요.');
         window.open(KAKAO, '_blank', 'noopener');
       });
-      controls.appendChild(btn);
+      wrap.appendChild(btn);
     } else if (PHONE) {
-      // 카카오채널 미개설 → 전화 CTA 폴백
-      const a = telButton(`전화로 접수하기 ${PHONE}`, PHONE.replace(/[^0-9]/g, ''));
-      a.classList.add('chat__opt--primary');
-      controls.appendChild(a);
+      wrap.appendChild(ctaTel(`전화로 접수하기 ${PHONE}`, 'primary'));
     } else {
-      say('접수 채널 준비 중입니다. 카드 내용이 복사되어 있으니 채널 오픈 후 붙여넣어 주세요.');
+      bubble('접수 채널 준비 중입니다. 카드 내용이 복사되어 있으니 채널 오픈 후 붙여넣어 주세요.');
     }
-
-    const again = optionButton('카드 다시 복사', true);
+    const again = ctaButton('카드 다시 복사', 'sub');
     again.addEventListener('click', async () => {
       const ok = await copyText(text);
       toast(ok ? '복사되었습니다. 카톡에 붙여넣어 주세요.' : '복사에 실패했습니다. 카드를 길게 눌러 복사해 주세요.');
     });
-    controls.appendChild(again);
+    wrap.appendChild(again);
+  }
 
-    const home = optionButton('처음으로', true);
+  function renderCard() {
+    const text = buildCard();
+    const card = document.createElement('div');
+    card.className = 'chat__card';
+    const label = document.createElement('p');
+    label.className = 'chat__card-label';
+    label.textContent = '접수 카드';
+    const pre = document.createElement('pre');
+    pre.textContent = text;
+    card.append(label, pre);
+    log.appendChild(card);
+
+    const wrap = document.createElement('div');
+    wrap.className = 'chat__ctas';
+    log.appendChild(wrap);
+
+    const isUrgent = !!data.긴급;
+
+    if (channelEnabled()) {
+      // 상담 연결: 접수카드를 첫 메시지로 프리필 → 고객이 전송만 하면 상담 시작
+      // 누수 긴급은 전화가 주 CTA — 단, 전화 미기입이면 상담 연결을 주 CTA로 승격
+      const consult = ctaButton('상담 연결', isUrgent && PHONE ? 'ghost' : 'primary');
+      consult.addEventListener('click', async () => {
+        consult.disabled = true;
+        const ok = (await ensureChannel()) && openConsult(text);
+        consult.disabled = false;
+        if (ok) {
+          close();
+        } else {
+          toast('상담 연결에 실패했습니다. 카드가 복사되었으니 전화 또는 채널 오픈 후 이용해 주세요.');
+          consult.remove();
+          renderFallbackCtas(text, wrap);
+          scrollDown();
+        }
+      });
+      // 누수 긴급 경로는 전화가 주 CTA (기존 우선순위 유지)
+      if (isUrgent && PHONE) {
+        wrap.appendChild(ctaTel(`전화하기 ${PHONE}`, 'primary'));
+        wrap.appendChild(consult);
+      } else {
+        wrap.appendChild(consult);
+        if (PHONE) wrap.appendChild(ctaTel(`전화하기 ${PHONE}`, 'ghost'));
+      }
+    } else {
+      renderFallbackCtas(text, wrap);
+    }
+
+    const home = ctaButton('처음으로', 'sub');
     home.addEventListener('click', reset);
-    controls.appendChild(home);
-    log.scrollTop = log.scrollHeight;
+    wrap.appendChild(home);
+    scrollDown();
   }
 
   /* ---------- 기타 트리 ---------- */
   function renderEtc() {
-    if (KAKAO) {
-      const btn = optionButton('카카오톡 채널');
-      btn.classList.add('chat__opt--primary');
-      btn.addEventListener('click', () => window.open(KAKAO, '_blank', 'noopener'));
-      controls.appendChild(btn);
+    const wrap = document.createElement('div');
+    wrap.className = 'chat__ctas';
+    log.appendChild(wrap);
+
+    if (channelEnabled()) {
+      const consult = ctaButton('상담 연결', 'primary');
+      consult.addEventListener('click', async () => {
+        consult.disabled = true;
+        const ok = (await ensureChannel()) && openConsult();
+        consult.disabled = false;
+        if (ok) close();
+        else toast('상담 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+      });
+      wrap.appendChild(consult);
+      if (PHONE) wrap.appendChild(ctaTel(`전화 ${PHONE}`, 'ghost'));
+    } else {
+      if (KAKAO) {
+        const btn = ctaButton('카카오톡 채널', 'primary');
+        btn.addEventListener('click', () => window.open(KAKAO, '_blank', 'noopener'));
+        wrap.appendChild(btn);
+      }
+      if (PHONE) wrap.appendChild(ctaTel(`전화 ${PHONE}`, 'ghost'));
+      if (!KAKAO && !PHONE) {
+        bubble('문의 채널 준비 중입니다. 세척·설치 견적은 아래 메뉴에서 바로 접수할 수 있습니다.');
+      }
     }
-    if (PHONE) controls.appendChild(telButton(`전화 ${PHONE}`, PHONE.replace(/[^0-9]/g, '')));
-    if (!KAKAO && !PHONE) say('문의 채널 준비 중입니다. 세척·설치 견적은 아래 메뉴에서 바로 접수할 수 있습니다.');
 
     // FAQ 링크 자리 (placeholder)
-    const faq = optionButton('자주 묻는 질문 (준비 중)', true);
+    const faq = ctaButton('자주 묻는 질문 (준비 중)', 'sub');
     faq.disabled = true;
-    controls.appendChild(faq);
+    wrap.appendChild(faq);
 
-    const home = optionButton('처음으로', true);
+    const home = ctaButton('처음으로', 'sub');
     home.addEventListener('click', reset);
-    controls.appendChild(home);
+    wrap.appendChild(home);
+    scrollDown();
   }
 
   /* ---------- 토스트 ---------- */
@@ -391,34 +607,68 @@
     }, 2600);
   }
 
-  /* ---------- 패널 열기/닫기 ---------- */
+  /* ---------- 패널 열기/닫기 · 포커스 트랩 ---------- */
   let openState = false;
-  function open(startNode = 'menu') {
-    data = {};
-    log.innerHTML = '';
-    controls.innerHTML = '';
-    panel.hidden = false;
-    requestAnimationFrame(() => panel.classList.add('is-open'));
-    fab.setAttribute('aria-expanded', 'true');
-    openState = true;
-    goto(startNode);
+  let lastFocus: HTMLElement | null = null;
+
+  function focusables(): HTMLElement[] {
+    return [...panel.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled)')]
+      .filter((el) => el.offsetParent !== null);
   }
+
+  panel.addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab') return;
+    const els = focusables();
+    if (!els.length) return;
+    const first = els[0];
+    const last = els[els.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
+
+  function open(startNode = 'menu') {
+    lastFocus = document.activeElement as HTMLElement;
+    data = {};
+    stack = [];
+    renderToken += 1;
+    log.innerHTML = '';
+    disarmInput();
+    panel.hidden = false;
+    // rAF 대신 동기 리플로우 — 백그라운드 탭(rAF 정지)에서도 열림 상태가 즉시 적용된다
+    void panel.offsetHeight;
+    panel.classList.add('is-open');
+    root.classList.add('is-open');
+    fab.setAttribute('aria-expanded', 'true');
+    fab.setAttribute('aria-label', '문의 챗봇 닫기');
+    openState = true;
+    void ensureChannel(); // lazy boot — 카드 도달 전에 준비되도록 미리 시작 (키 없으면 즉시 no-op)
+    void goto(startNode);
+    (root.querySelector('[data-chat-close]') as HTMLElement)?.focus();
+  }
+
   function close() {
     panel.classList.remove('is-open');
+    root.classList.remove('is-open');
     fab.setAttribute('aria-expanded', 'false');
+    fab.setAttribute('aria-label', '문의 챗봇 열기');
     openState = false;
-    setTimeout(() => { panel.hidden = true; }, 260);
+    setTimeout(() => { panel.hidden = true; }, 220);
+    lastFocus?.focus();
   }
+
   function reset() {
     data = {};
+    stack = [];
+    renderToken += 1;
     log.innerHTML = '';
-    controls.innerHTML = '';
-    goto('menu');
+    disarmInput();
+    void goto('menu');
   }
 
   fab.addEventListener('click', () => (openState ? close() : open()));
   root.querySelector('[data-chat-close]')?.addEventListener('click', close);
-  root.querySelector('[data-chat-reset]')?.addEventListener('click', reset);
+  backBtn.addEventListener('click', goBack);
+  resetBtn.addEventListener('click', reset);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && openState) close(); });
 
   // 진입점 2: 히어로 로우·페이지 CTA — data-chat-tree="clean|as|install|etc"
@@ -436,68 +686,83 @@
   });
 </script>
 
-<!-- is:global — 말풍선·옵션 버튼·카드가 JS로 동적 생성되어 스코프 속성이 붙지 않는다. chat__ 네임스페이스로 충돌 방지. -->
+<!-- is:global — 말풍선·칩·카드가 JS로 동적 생성되어 스코프 속성이 붙지 않는다. chat__ 네임스페이스로 충돌 방지. -->
 <style is:global>
+  /* ---------- 런처 ---------- */
   .chat__fab {
     position: fixed;
     right: 20px;
     bottom: 20px;
     z-index: 60;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 14px 20px;
-    min-height: 48px;
-    border-radius: 999px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
     background: var(--copper);
     color: #fff;
-    font-size: 14px;
-    font-weight: 600;
+    display: grid;
+    place-items: center;
     box-shadow: 0 2px 6px rgba(33, 30, 26, 0.12), 0 10px 26px rgba(33, 30, 26, 0.18);
-    transition: background-color var(--dur-color) ease, transform 160ms var(--ease-out);
+    transition: background-color var(--dur-color) ease, transform 200ms var(--ease-out);
   }
-  .chat__fab:hover { background: var(--copper-deep); }
   .chat__fab:active { transform: scale(0.96); }
+  @media (hover: hover) and (pointer: fine) {
+    .chat__fab:hover { background: var(--copper-deep); transform: scale(1.05); }
+    .chat__fab:hover:active { transform: scale(0.96); }
+  }
+  /* 아이콘 크로스페이드 — 열림 시 말풍선 → X */
+  .chat__fab-icon {
+    grid-area: 1 / 1;
+    transition: opacity 200ms cubic-bezier(0.2, 0, 0, 1), transform 200ms cubic-bezier(0.2, 0, 0, 1);
+  }
+  .chat__fab-icon--close { opacity: 0; transform: scale(0.25) rotate(-45deg); }
+  .chat.is-open .chat__fab-icon--bubble { opacity: 0; transform: scale(0.25); }
+  .chat.is-open .chat__fab-icon--close { opacity: 1; transform: scale(1) rotate(0deg); }
 
+  /* ---------- 패널 ---------- */
   .chat__panel {
     position: fixed;
     right: 20px;
-    bottom: 84px;
+    bottom: 88px;
     z-index: 60;
-    width: min(380px, calc(100vw - 40px));
-    max-height: min(600px, calc(100dvh - 120px));
+    width: 380px;
+    height: min(640px, calc(100dvh - 120px));
     display: flex;
     flex-direction: column;
-    background: rgba(255, 255, 255, 0.96);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    background: #fff;
     border: 1px solid var(--line);
     border-radius: 16px;
     box-shadow: 0 4px 10px rgba(33, 30, 26, 0.08), 0 24px 60px rgba(33, 30, 26, 0.22);
+    overflow: hidden;
     opacity: 0;
-    transform: translateY(12px) scale(0.98);
-    transition: opacity var(--dur-ui) var(--ease-out), transform var(--dur-ui) var(--ease-out);
+    transform: translateY(8px);
+    transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
   }
-  .chat__panel.is-open { opacity: 1; transform: translateY(0) scale(1); }
+  .chat__panel.is-open { opacity: 1; transform: translateY(0); }
 
+  /* ---------- 헤더 ---------- */
   .chat__head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 14px 16px 12px;
-    border-bottom: 1px solid var(--line);
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line); /* 1px 실버 헤어라인 */
+    flex-shrink: 0;
   }
-  .chat__head-title { font-family: var(--serif); font-weight: 600; font-size: 15px; }
-  .chat__head-actions { display: flex; gap: 4px; }
-  .chat__head-btn {
-    font-size: 12.5px;
+  .chat__head-title { font-family: var(--serif); font-weight: 600; font-size: 16px; }
+  .chat__head-note { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+  .chat__head-close {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
     color: var(--ink-soft);
-    padding: 8px 10px;
-    border-radius: 6px;
     transition: color var(--dur-color) ease, background-color var(--dur-color) ease;
   }
-  .chat__head-btn:hover { color: var(--ink); background: var(--bg-soft); }
+  .chat__head-close:hover { color: var(--ink); background: var(--bg-soft); }
 
+  /* ---------- 대화 영역 ---------- */
   .chat__log {
     flex: 1;
     overflow-y: auto;
@@ -505,14 +770,13 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    min-height: 120px;
   }
   .chat__msg {
     max-width: 85%;
     font-size: 14px;
     line-height: 1.55;
     padding: 10px 14px;
-    border-radius: 14px;
+    border-radius: 12px;
     opacity: 1;
     transform: translateY(0);
     transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
@@ -520,82 +784,190 @@
   }
   .chat__msg--bot {
     align-self: flex-start;
-    background: var(--bg);
-    border: 1px solid var(--line);
+    background: #f4f3f3;
     border-bottom-left-radius: 4px;
   }
   .chat__msg--user {
     align-self: flex-end;
-    background: var(--ink);
-    color: var(--bg);
+    background: var(--copper);
+    color: #fff;
     border-bottom-right-radius: 4px;
   }
 
-  .chat__card {
-    align-self: stretch;
-    font-family: var(--sans);
-    font-size: 13.5px;
-    line-height: 1.7;
-    white-space: pre-wrap;
-    background: #fff;
-    border: 1px solid var(--ink-soft);
-    border-radius: 10px;
-    padding: 14px 16px;
-    user-select: all;
-    -webkit-user-select: all;
+  /* 타이핑 인디케이터 */
+  .chat__typing { display: inline-flex; gap: 4px; align-items: center; min-height: 20px; }
+  .chat__typing span {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--ink-soft);
+    animation: chat-typing 900ms ease-in-out infinite;
+  }
+  .chat__typing span:nth-child(2) { animation-delay: 150ms; }
+  .chat__typing span:nth-child(3) { animation-delay: 300ms; }
+  @keyframes chat-typing {
+    0%, 60%, 100% { opacity: 0.35; transform: translateY(0); }
+    30% { opacity: 1; transform: translateY(-2px); }
   }
 
-  .chat__controls {
+  /* ---------- 선택지 칩 ---------- */
+  .chat__chips {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: 6px;
-    padding: 12px 16px 16px;
-    border-top: 1px solid var(--line);
+    padding: 2px 0 4px;
   }
-  .chat__opt {
-    display: block;
-    width: 100%;
-    text-align: left;
-    font-size: 14px;
+  .chat__chip {
+    font-size: 13.5px;
     font-weight: 500;
-    padding: 12px 14px;
-    min-height: 44px;
+    padding: 10px 14px;
+    min-height: 40px;
     border: 1px solid var(--line);
-    border-radius: 8px;
+    border-radius: 999px;
     background: #fff;
-    transition: border-color var(--dur-color) ease, background-color var(--dur-color) ease, transform 160ms var(--ease-out);
+    color: var(--ink);
+    text-align: left;
+    transition: border-color var(--dur-color) ease, color var(--dur-color) ease, transform 160ms var(--ease-out), opacity var(--dur-color) ease;
   }
-  .chat__opt:active { transform: scale(0.98); }
+  .chat__chip:active:not(:disabled) { transform: scale(0.96); }
   @media (hover: hover) and (pointer: fine) {
-    .chat__opt:hover:not(:disabled) { border-color: var(--ink-soft); background: var(--bg); }
+    .chat__chip:hover:not(:disabled) { border-color: var(--copper); color: var(--copper-deep); }
   }
-  .chat__opt:disabled { color: var(--silver); cursor: default; }
-  .chat__opt--sub { font-size: 13px; color: var(--ink-soft); border-color: transparent; background: transparent; }
-  .chat__opt--primary,
-  .chat__opt--tel.chat__opt--primary {
+  @media (pointer: coarse) {
+    .chat__chip { min-height: 44px; padding: 11px 16px; }
+  }
+  .chat__chip--sub { border-color: transparent; color: var(--ink-soft); font-size: 13px; }
+  .chat__chip--tel { text-decoration: none; display: inline-flex; align-items: center; }
+  .chat__chip--primary {
     background: var(--copper);
     border-color: var(--copper);
     color: #fff;
     font-weight: 600;
-    text-align: center;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
   }
-  .chat__opt--primary:hover { background: var(--copper-deep) !important; border-color: var(--copper-deep) !important; }
-  .chat__opt--tel { text-align: center; }
+  @media (hover: hover) and (pointer: fine) {
+    .chat__chip--primary:hover:not(:disabled) { background: var(--copper-deep); border-color: var(--copper-deep); color: #fff; }
+  }
+  /* 비활성 보존 — 선택 후에도 문맥으로 남긴다 */
+  .chat__chips.is-settled .chat__chip { opacity: 0.5; cursor: default; }
+  .chat__chips.is-settled .chat__chip.is-chosen { opacity: 1; border-color: var(--copper); color: var(--copper-deep); }
 
-  .chat__input-row { display: flex; gap: 8px; }
+  /* ---------- 접수카드 ---------- */
+  .chat__card {
+    align-self: stretch;
+    background: #fff;
+    border: 1px solid var(--silver);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .chat__card-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--silver);
+    margin-bottom: 8px;
+  }
+  .chat__card pre {
+    font-family: var(--sans);
+    font-size: 13.5px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    user-select: all;
+    -webkit-user-select: all;
+  }
+
+  /* ---------- 종점 CTA ---------- */
+  .chat__ctas {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-self: stretch;
+    padding: 2px 0 4px;
+  }
+  .chat__cta {
+    display: block;
+    width: 100%;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px 14px;
+    min-height: 44px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background-color var(--dur-color) ease, border-color var(--dur-color) ease, color var(--dur-color) ease, transform 160ms var(--ease-out);
+  }
+  .chat__cta:active:not(:disabled) { transform: scale(0.98); }
+  .chat__cta--primary { background: var(--copper); color: #fff; border: 1px solid var(--copper); }
+  .chat__cta--primary:hover:not(:disabled) { background: var(--copper-deep); border-color: var(--copper-deep); }
+  .chat__cta--ghost { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+  @media (hover: hover) and (pointer: fine) {
+    .chat__cta--ghost:hover { border-color: var(--ink-soft); }
+  }
+  .chat__cta--sub { background: none; border: 0; color: var(--ink-soft); font-weight: 500; font-size: 13px; }
+  .chat__cta--sub:hover:not(:disabled) { color: var(--ink); }
+  .chat__cta:disabled { opacity: 0.55; cursor: default; }
+
+  /* ---------- 하단 컴포저 ---------- */
+  .chat__composer {
+    flex-shrink: 0;
+    border-top: 1px solid var(--line);
+    padding: 8px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+  .chat__nav {
+    display: flex;
+    gap: 4px;
+    padding-bottom: 6px;
+  }
+  .chat__nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    padding: 6px 10px;
+    min-height: 32px;
+    border-radius: 6px;
+    transition: color var(--dur-color) ease, background-color var(--dur-color) ease;
+  }
+  .chat__nav-btn:hover:not(:disabled) { color: var(--ink); background: var(--bg-soft); }
+  .chat__nav-btn:disabled { opacity: 0.4; cursor: default; }
+  .chat__inputbar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
   .chat__input {
     flex: 1;
     font: inherit;
     font-size: 14px;
-    padding: 12px 14px;
+    padding: 11px 14px;
     border: 1px solid var(--line);
-    border-radius: 8px;
+    border-radius: 999px;
     background: #fff;
     color: var(--ink);
+    min-width: 0;
   }
+  .chat__input:disabled { background: var(--bg); color: var(--ink-soft); }
   .chat__input:focus { outline: 2px solid var(--copper); outline-offset: -1px; border-color: transparent; }
-  .chat__opt--confirm { width: auto; background: var(--ink); color: var(--bg); border-color: var(--ink); text-align: center; }
+  .chat__send {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--copper);
+    color: #fff;
+    transition: background-color var(--dur-color) ease, opacity var(--dur-color) ease, transform 160ms var(--ease-out);
+  }
+  .chat__send:hover:not(:disabled) { background: var(--copper-deep); }
+  .chat__send:active:not(:disabled) { transform: scale(0.96); }
+  .chat__send:disabled { opacity: 0.4; cursor: default; }
 
+  /* ---------- 토스트 ---------- */
   .chat__toast {
     position: fixed;
     left: 50%;
@@ -614,16 +986,31 @@
   }
   .chat__toast.is-on { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-  @media (max-width: 480px) {
+  /* ---------- 모바일: 풀스크린 시트 ---------- */
+  /* 터치 히트영역 44px+ (mifb) */
+  @media (pointer: coarse) {
+    .chat__send { width: 46px; height: 46px; }
+    .chat__nav-btn { min-height: 44px; padding: 10px 12px; }
+    .chat__head-close { width: 44px; height: 44px; }
+  }
+
+  @media (max-width: 640px) {
+    .chat__panel {
+      inset: 0;
+      width: 100%;
+      height: 100dvh;
+      border-radius: 0;
+      border: 0;
+      bottom: 0;
+      transform: translateY(100%);
+      transition: transform 260ms var(--ease-out), opacity 260ms var(--ease-out);
+    }
+    .chat__panel.is-open { transform: translateY(0); }
+    .chat__head { padding-top: calc(14px + env(safe-area-inset-top, 0px)); }
     /* iOS 자동 확대 방지 — 입력 폰트 16px 이상 */
     .chat__input { font-size: 16px; }
-    .chat__panel {
-      right: 10px;
-      left: 10px;
-      width: auto;
-      bottom: 78px;
-      max-height: calc(100dvh - 100px);
-    }
-    .chat__fab { right: 14px; bottom: 14px; }
+    /* 풀스크린 시트가 런처를 덮는다 — 닫기는 헤더 X */
+    .chat.is-open .chat__fab { opacity: 0; pointer-events: none; }
+    .chat__fab { transition: background-color var(--dur-color) ease, transform 200ms var(--ease-out), opacity 200ms ease; }
   }
 </style>
