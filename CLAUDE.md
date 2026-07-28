@@ -8,6 +8,7 @@
 - 예약·구매는 외부 링크: shop.baramdaero.com (config 값)
 
 ## 절대 규칙
+0. **공개 레포 — 커밋 메시지·주석에 내부 정보(가격 전략·거래처·협의 내용) 기재 금지**
 1. **배포 워크플로(.github/workflows/)·DNS 관련 변경은 파일 출력 후 수동 승인.** 임의로 main 반영·Pages 설정 변경하지 않는다
 2. **src/config.js의 연락처·채널 값(KAKAO_CHANNEL_URL, PHONE)은 임의 기입 금지** — 실값 확정 전까지 플레이스홀더("") 유지. 코드가 빈 값 폴백을 처리한다
 3. **DESIGN.md 위반 스타일 금지.** 모든 UI 작업 전에 DESIGN.md를 먼저 읽고, 커밋 전 셀프 체크한다

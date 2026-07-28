@@ -1,0 +1,122 @@
+---
+// 가이드 상세 — 질문형 제목 h1, Article + FAQPage JSON-LD, relatedCases 사례 카드
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import CaseCard from '../../components/CaseCard.astro';
+
+export async function getStaticPaths() {
+  const guides = await getCollection('guides', ({ data }) => (import.meta.env.PROD ? !data.draft : true));
+  return guides.map((entry) => ({ params: { id: entry.id }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { title, question, draft, relatedCases, updated } = entry.data;
+
+// FAQPage 답 요약 — 본문 첫 문단 (마크다운 표기 제거)
+const answerSummary = (entry.body ?? '')
+  .split(/\n\s*\n/)
+  .map((p) => p.trim())
+  .find((p) => p && !p.startsWith('#'))
+  ?.replace(/\*\*|__|\[|\]\([^)]*\)/g, '')
+  .slice(0, 300) ?? '';
+
+const allCases = await getCollection('cases');
+const related = relatedCases
+  .map((id) => allCases.find((c) => c.id === id))
+  .filter((c) => c !== undefined);
+
+const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? '';
+const jsonLd: object[] = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: title,
+    author: { '@type': 'Organization', name: '바람대로' },
+    ...(updated ? { dateModified: updated.toISOString() } : {}),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: '홈', item: `${siteUrl}/` },
+      { '@type': 'ListItem', position: 2, name: '가이드', item: `${siteUrl}/guides/` },
+      { '@type': 'ListItem', position: 3, name: title, item: `${siteUrl}/guides/${entry.id}/` },
+    ],
+  },
+];
+if (answerSummary) {
+  jsonLd.push({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: question || title,
+        acceptedAnswer: { '@type': 'Answer', text: answerSummary },
+      },
+    ],
+  });
+}
+
+const updatedLabel = updated?.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+---
+<Base title={title} description={answerSummary || question || title} jsonLd={jsonLd}>
+  <article class="bd-section guide">
+    <div class="bd-container">
+      <p class="bd-microlabel">Guide</p>
+      <h1 class="guide__title">{title}</h1>
+      {draft && <p class="guide__draft">초안 — 현장 데이터 확인 후 발행 예정</p>}
+      {updatedLabel && <p class="guide__updated">업데이트: {updatedLabel}</p>}
+
+      <div class="guide__body">
+        <Content />
+      </div>
+
+      {related.length > 0 && (
+        <section class="guide__cases">
+          <p class="bd-microlabel">Related Cases</p>
+          <h2 class="guide__cases-title">관련 시공사례</h2>
+          <div class="guide__cases-grid">
+            {related.map((c) => <CaseCard entry={c} />)}
+          </div>
+        </section>
+      )}
+
+      <p class="guide__back"><a class="bd-btn-ghost" href="/guides/">가이드 목록</a></p>
+    </div>
+  </article>
+</Base>
+
+<style>
+  .guide .bd-container { max-width: 680px; }
+  .guide__title { font-size: clamp(24px, 3.4vw, 34px); margin: 10px 0 14px; }
+  .guide__draft {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--copper);
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    padding: 4px 12px;
+    margin-bottom: 10px;
+  }
+  .guide__updated { font-size: 13px; color: var(--ink-soft); margin-bottom: 8px; }
+  .guide__body { font-size: 16px; margin-top: 16px; }
+  .guide__body :global(p) { margin-bottom: 16px; }
+  .guide__body :global(ul) { margin: 0 0 16px 20px; }
+  .guide__body :global(h2) { font-size: 20px; margin: 30px 0 12px; }
+  .guide__body :global(blockquote) {
+    border-left: 2px solid var(--copper);
+    padding: 6px 0 6px 16px;
+    color: var(--ink-soft);
+    margin-bottom: 18px;
+  }
+  .guide__cases { margin-top: 44px; }
+  .guide__cases-title { font-size: 20px; margin: 8px 0 18px; }
+  .guide__cases-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .guide__back { margin-top: 40px; }
+  @media (max-width: 600px) {
+    .guide__cases-grid { grid-template-columns: 1fr; }
+  }
+</style>
