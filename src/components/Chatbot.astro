@@ -4,8 +4,14 @@
 // 진입점 2개: 플로팅 런처(전 페이지) + [data-chat-tree] 요소(홈 히어로 로우, /care/ CTA 등).
 // 연락처·채널 값은 config.js 플레이스홀더 — 빈 값 폴백은 스크립트가 처리 (CLAUDE.md 절대 규칙 2).
 import { SITE_CONFIG } from '../config.js';
+import { loadFaq } from '../lib/faq.ts';
+
+// FAQ — 빌드 타임에 faq.json을 한글 검증·정제해 클라이언트로 주입 (아래 application/json 스크립트)
+const faqItems = loadFaq();
+const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
 ---
 <div class="chat" data-chat-root>
+  <script type="application/json" data-chat-faq set:html={faqJson} />
   <button
     type="button"
     class="chat__fab"
@@ -88,6 +94,10 @@ import { SITE_CONFIG } from '../config.js';
   type Data = Record<string, string>;
   let data: Data = {};
 
+  // faq.json 정제본 (빌드 타임 주입) — 홈 화면 pinned 노출 + 트리4 전체 목록
+  type FaqItem = { q: string; a: string; pinned: boolean; next: { label: string; tree: string } | null };
+  const FAQ: FaqItem[] = JSON.parse(root.querySelector('[data-chat-faq]')?.textContent || '[]');
+
   /* ---------- 상태 머신 정의 (v1 그대로 — 로직·분기·문구 변경 금지) ---------- */
   type Option = { label: string; next?: string; set?: Data; say?: string; tel?: string; sub?: boolean };
   type Node = {
@@ -96,6 +106,7 @@ import { SITE_CONFIG } from '../config.js';
     input?: { placeholder: string; key: string; next: string };
     card?: boolean;
     etc?: boolean;
+    home?: boolean;
     phoneFirst?: boolean;
   };
 
@@ -108,14 +119,10 @@ import { SITE_CONFIG } from '../config.js';
   ];
 
   const NODES: Record<string, Node> = {
-    menu: {
-      text: '무엇을 도와드릴까요?',
-      options: [
-        { label: '세척 견적', next: 'clean.start' },
-        { label: 'AS·점검', next: 'as.q1' },
-        { label: '설치 견적', next: 'install.space' },
-        { label: '기타 문의', next: 'etc' },
-      ],
+    // 챗봇 홈 화면 — 런처 진입 첫 화면 (히어로 로우 등 트리 직진입은 이 화면을 건너뛴다)
+    home: {
+      text: SITE_CONFIG.WELCOME_MESSAGE,
+      home: true,
     },
 
     /* 트리1 — 세척 */
@@ -159,7 +166,7 @@ import { SITE_CONFIG } from '../config.js';
       text: '제품 본체 라벨에 적힌 제조사 고객센터로 문의해 주세요. 세척·점검은 바람대로에서 브랜드 관계없이 가능합니다.',
       options: [
         { label: '세척 견적 받기', next: 'clean.start' },
-        { label: '처음으로', next: 'menu', sub: true },
+        { label: '처음으로', next: 'home', sub: true },
       ],
     },
     'as.symptom': {
@@ -422,9 +429,82 @@ import { SITE_CONFIG } from '../config.js';
 
       if (node.card) renderCard();
       if (node.etc) renderEtc();
+      if (node.home) renderHome();
     } catch {
       /* stale render — 무시 */
     }
+  }
+
+  /* ---------- 홈 화면 (메뉴 4칩 + pinned FAQ) ---------- */
+  const HOME_MENU: Array<{ label: string; next: string }> = [
+    { label: '설치 견적', next: 'install.space' },
+    { label: '세척 견적', next: 'clean.start' },
+    { label: 'AS 접수', next: 'as.q1' },
+    { label: '기타 문의', next: 'etc' },
+  ];
+
+  function renderHome() {
+    const group = chipGroup();
+    HOME_MENU.forEach((m) => {
+      const btn = chip(m.label);
+      btn.addEventListener('click', () => {
+        settleGroup(group, btn);
+        bubble(m.label, 'user');
+        void goto(m.next);
+      });
+      group.appendChild(btn);
+    });
+    renderFaqChips(FAQ.filter((f) => f.pinned), '자주 묻는 질문');
+    scrollDown();
+  }
+
+  /* ---------- FAQ 즉답 ---------- */
+  function renderFaqChips(items: FaqItem[], label?: string) {
+    if (!items.length) return;
+    if (label) {
+      const p = document.createElement('p');
+      p.className = 'chat__faq-label';
+      p.textContent = label;
+      log.appendChild(p);
+    }
+    const group = chipGroup();
+    items.forEach((f) => {
+      const btn = chip(f.q);
+      btn.addEventListener('click', () => {
+        settleGroup(group, btn);
+        void runFaq(f);
+      });
+      group.appendChild(btn);
+    });
+  }
+
+  async function runFaq(f: FaqItem) {
+    const t = ++renderToken;
+    bubble(f.q, 'user');
+    try {
+      await typing(t);
+    } catch { return; }
+    bubble(f.a);
+    // 막다른 답변 금지 — next 유도 칩 또는 홈 메뉴가 반드시 따른다
+    if (f.next && TREE_START[f.next.tree]) {
+      const group = chipGroup();
+      const btn = chip(f.next.label, 'primary');
+      btn.addEventListener('click', () => {
+        settleGroup(group, btn);
+        bubble(f.next!.label, 'user');
+        void goto(TREE_START[f.next!.tree]);
+      });
+      group.appendChild(btn);
+      const homeBtn = chip('홈 메뉴', 'sub');
+      homeBtn.addEventListener('click', () => {
+        settleGroup(group, homeBtn);
+        renderHome();
+      });
+      group.appendChild(homeBtn);
+    } else {
+      renderHome();
+    }
+    scrollDown();
   }
 
   /* ---------- 접수카드 (텍스트 생성 스펙 v1 그대로) ---------- */
@@ -554,8 +634,10 @@ import { SITE_CONFIG } from '../config.js';
     scrollDown();
   }
 
-  /* ---------- 기타 트리 ---------- */
+  /* ---------- 기타 트리 — FAQ 전체 목록 + 상담 연결 + 전화 ---------- */
   function renderEtc() {
+    renderFaqChips(FAQ, FAQ.length ? '자주 묻는 질문' : undefined);
+
     const wrap = document.createElement('div');
     wrap.className = 'chat__ctas';
     log.appendChild(wrap);
@@ -582,11 +664,6 @@ import { SITE_CONFIG } from '../config.js';
         bubble('문의 채널 준비 중입니다. 세척·설치 견적은 아래 메뉴에서 바로 접수할 수 있습니다.');
       }
     }
-
-    // FAQ 링크 자리 (placeholder)
-    const faq = ctaButton('자주 묻는 질문 (준비 중)', 'sub');
-    faq.disabled = true;
-    wrap.appendChild(faq);
 
     const home = ctaButton('처음으로', 'sub');
     home.addEventListener('click', reset);
@@ -626,7 +703,7 @@ import { SITE_CONFIG } from '../config.js';
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   });
 
-  function open(startNode = 'menu') {
+  function open(startNode = 'home') {
     lastFocus = document.activeElement as HTMLElement;
     data = {};
     stack = [];
@@ -656,13 +733,14 @@ import { SITE_CONFIG } from '../config.js';
     lastFocus?.focus();
   }
 
+  // 처음으로 = 챗봇 홈 화면 (트리 직진입으로 연 경우에도 홈으로)
   function reset() {
     data = {};
     stack = [];
     renderToken += 1;
     log.innerHTML = '';
     disarmInput();
-    void goto('menu');
+    void goto('home');
   }
 
   fab.addEventListener('click', () => (openState ? close() : open()));
@@ -808,6 +886,16 @@ import { SITE_CONFIG } from '../config.js';
   @keyframes chat-typing {
     0%, 60%, 100% { opacity: 0.35; transform: translateY(0); }
     30% { opacity: 1; transform: translateY(-2px); }
+  }
+
+  /* FAQ 구분 라벨 — 실버 마이크로라벨 */
+  .chat__faq-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--silver);
+    margin-top: 6px;
   }
 
   /* ---------- 선택지 칩 ---------- */

@@ -15,6 +15,8 @@ export const SITE_CONFIG = {
   CHANNELTALK_PLUGIN_KEY: '7d2356f8-db95-48e7-b7a4-3108f4f4446a',
   // 챗봇 헤더 상태줄 문구
   RESPONSE_NOTE: '보통 영업시간 내 1시간 안에 연락드립니다',
+  // 챗봇 홈 화면 환영 문구
+  WELCOME_MESSAGE: '안녕하세요, 바람대로입니다. 무엇을 도와드릴까요?',
 
   BRANDS_INSTALL: ['삼성', 'LG'],
 
