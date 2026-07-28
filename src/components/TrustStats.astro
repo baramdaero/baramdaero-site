@@ -1,0 +1,76 @@
+---
+// 신뢰 숫자 스트립 — 히어로 바로 아래. 뷰포트 진입 시 카운트업, reduced-motion 즉시 표시.
+// 콘텐츠는 trust.json에서만 온다 (문구 하드코딩 금지).
+import type { TrustStat } from '../lib/trust.ts';
+
+interface Props { stats: TrustStat[] }
+const { stats } = Astro.props;
+---
+{stats.length > 0 && (
+  <section class="trust-stats" aria-label="주요 실적">
+    <div class="bd-container trust-stats__grid">
+      {stats.map((s) => (
+        <div class="trust-stats__item">
+          <p class="bd-microlabel">{s.label}</p>
+          <p class="trust-stats__value">
+            <span data-countup={s.value}>{s.value.toLocaleString('ko-KR')}</span>{s.suffix}
+          </p>
+        </div>
+      ))}
+    </div>
+  </section>
+)}
+
+<script>
+  // 카운트업 — IntersectionObserver 1회, transform/opacity 외 속성 애니메이션 없음(텍스트 교체).
+  // reduced-motion·미지원 환경은 최종값 그대로 (마크업 기본값이 최종값이라 JS 실패에도 안전).
+  const els = document.querySelectorAll<HTMLElement>('[data-countup]');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (els.length && !reduce && 'IntersectionObserver' in window) {
+    const run = (el: HTMLElement) => {
+      const target = Number(el.dataset.countup);
+      if (!isFinite(target)) return;
+      const dur = 900;
+      const t0 = performance.now();
+      const ease = (t: number) => 1 - Math.pow(1 - t, 3);
+      const tick = (now: number) => {
+        const p = Math.min(1, (now - t0) / dur);
+        el.textContent = Math.round(target * ease(p)).toLocaleString('ko-KR');
+        if (p < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    };
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        io.unobserve(entry.target);
+        run(entry.target as HTMLElement);
+      });
+    }, { threshold: 0.4 });
+    els.forEach((el) => io.observe(el));
+  }
+</script>
+
+<style>
+  .trust-stats {
+    border-bottom: 1px solid var(--line);
+    padding: 40px 0;
+  }
+  .trust-stats__grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+  }
+  .trust-stats__item { text-align: center; }
+  .trust-stats__value {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(26px, 3.4vw, 38px);
+    font-variant-numeric: tabular-nums;
+    margin-top: 6px;
+    line-height: 1.2;
+  }
+  @media (max-width: 640px) {
+    .trust-stats__grid { grid-template-columns: repeat(2, 1fr); gap: 20px 12px; }
+  }
+</style>
