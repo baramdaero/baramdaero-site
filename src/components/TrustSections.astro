@@ -1,0 +1,236 @@
+---
+// 홈 신뢰 섹션 묶음 — 인증·자격 / AS 약속 / 원칙 4개조 / 유튜브 슬롯.
+// 콘텐츠는 전부 trust.json에서 온다 (문구 하드코딩 금지). 빈 섹션은 미렌더.
+import type { TrustData } from '../lib/trust.ts';
+
+interface Props { trust: TrustData }
+const { trust } = Astro.props;
+const { credentials, as_promises, principles, videoId } = trust;
+---
+{credentials.length > 0 && (
+  <section class="bd-section trust-cred">
+    <div class="bd-container">
+      <p class="bd-microlabel">Credentials</p>
+      <h2 class="bd-section-title">인증·자격</h2>
+      <div class="trust-cred__grid">
+        {credentials.map((c) =>
+          c.image ? (
+            <figure class="trust-cred__card">
+              <img src={c.image} alt={c.title} loading="lazy" />
+              <figcaption>
+                <p class="trust-cred__title">{c.title}</p>
+                {c.note && <p class="trust-cred__note">{c.note}</p>}
+              </figcaption>
+            </figure>
+          ) : (
+            <div class="trust-cred__badge">
+              <p class="trust-cred__title">{c.title}</p>
+              {c.note && <p class="trust-cred__note">{c.note}</p>}
+            </div>
+          ),
+        )}
+      </div>
+    </div>
+  </section>
+)}
+
+{as_promises.length > 0 && (
+  <section class="bd-section trust-as">
+    <div class="bd-container">
+      <p class="bd-microlabel">AS Promise</p>
+      <h2 class="bd-section-title">AS 약속</h2>
+      <div class="trust-as__grid">
+        {as_promises.map((p) => (
+          <div class="trust-as__card">
+            <p class="trust-as__number">{p.number}</p>
+            <p class="trust-as__label">{p.label}</p>
+          </div>
+        ))}
+      </div>
+      <p class="trust-as__cta">
+        <button type="button" class="bd-cta" data-chat-tree="as">지금 바로 접수하기</button>
+      </p>
+    </div>
+  </section>
+)}
+
+{principles.length > 0 && (
+  <section class="bd-section trust-principles">
+    <div class="bd-container">
+      <p class="bd-microlabel">Principles</p>
+      <h2 class="bd-section-title">바람대로의 원칙</h2>
+      <ol class="trust-principles__list">
+        {principles.map((p) => (
+          <li class="trust-principles__item">
+            <span class="trust-principles__no">{String(p.no).padStart(2, '0')}</span>
+            <div>
+              <h3 class="trust-principles__title">{p.title}</h3>
+              <p class="trust-principles__body">{p.body}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+)}
+
+{videoId && (
+  <section class="bd-section trust-video">
+    <div class="bd-container">
+      <p class="bd-microlabel">Video</p>
+      <h2 class="bd-section-title">현장 영상</h2>
+      <!-- 클릭 전에는 썸네일만 — iframe은 클릭 시 로드 (성능 보호) -->
+      <button
+        type="button"
+        class="trust-video__facade"
+        data-video-id={videoId}
+        aria-label="영상 재생"
+      >
+        <img
+          src={`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`}
+          alt=""
+          loading="lazy"
+        />
+        <span class="trust-video__play" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M8 5.5v13l11-6.5z" />
+          </svg>
+        </span>
+      </button>
+    </div>
+  </section>
+)}
+
+<script>
+  // 유튜브 지연 로드 — 클릭 시에만 iframe 삽입
+  document.querySelectorAll<HTMLButtonElement>('.trust-video__facade').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.videoId;
+      if (!id) return;
+      const frame = document.createElement('iframe');
+      frame.className = 'trust-video__frame';
+      frame.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0`;
+      frame.title = '현장 영상';
+      frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+      frame.allowFullscreen = true;
+      btn.replaceWith(frame);
+    }, { once: true });
+  });
+</script>
+
+<style is:global>
+  /* 인증·자격 */
+  .trust-cred__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .trust-cred__card,
+  .trust-cred__badge {
+    border: 1px solid var(--silver);
+    border-radius: var(--radius);
+    background: #fff;
+    overflow: hidden;
+  }
+  .trust-cred__card img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+  }
+  .trust-cred__card figcaption { padding: 14px 16px; }
+  .trust-cred__badge { padding: 18px 16px; }
+  .trust-cred__title { font-weight: 600; font-size: 15px; }
+  .trust-cred__note { font-size: 13px; color: var(--ink-soft); margin-top: 4px; }
+
+  /* AS 약속 */
+  .trust-as__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .trust-as__card {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: #fff;
+    padding: 26px 18px;
+    text-align: center;
+  }
+  .trust-as__number {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(24px, 3vw, 32px);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+  .trust-as__label { font-size: 14px; color: var(--ink-soft); margin-top: 8px; }
+  .trust-as__cta { margin-top: 28px; }
+
+  /* 원칙 4개조 — 좌측 정렬 리스트형 */
+  .trust-principles .bd-container { max-width: 760px; }
+  .trust-principles__list { list-style: none; display: grid; }
+  .trust-principles__item {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 14px;
+    padding: 22px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .trust-principles__item:last-child { border-bottom: 0; }
+  .trust-principles__no {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    color: var(--silver);
+    padding-top: 6px;
+  }
+  .trust-principles__title { font-size: 18px; margin-bottom: 6px; }
+  .trust-principles__body { font-size: 15px; color: var(--ink-soft); }
+
+  /* 유튜브 슬롯 — 16:9, 클릭 시 로드 */
+  .trust-video__facade,
+  .trust-video__frame {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 0;
+    border-radius: var(--radius);
+    overflow: hidden;
+    position: relative;
+    padding: 0;
+    background: var(--bg-soft);
+  }
+  .trust-video__facade { cursor: pointer; }
+  .trust-video__facade img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    outline: 1px solid oklch(0 0 0 / 0.08);
+    outline-offset: -1px;
+  }
+  .trust-video__play {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--ink);
+    display: grid;
+    place-items: center;
+    transition: transform 200ms var(--ease-out), background-color var(--dur-color) ease;
+  }
+  .trust-video__play svg { margin-left: 3px; } /* 재생 삼각형 광학 정렬 */
+  @media (hover: hover) and (pointer: fine) {
+    .trust-video__facade:hover .trust-video__play { transform: scale(1.05); background: #fff; }
+  }
+  .trust-video__facade:active .trust-video__play { transform: scale(0.96); }
+
+  @media (max-width: 800px) {
+    .trust-cred__grid { grid-template-columns: repeat(2, 1fr); }
+    .trust-as__grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 480px) {
+    .trust-cred__grid { grid-template-columns: 1fr; }
+  }
+</style>

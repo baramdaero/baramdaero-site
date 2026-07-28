@@ -1,0 +1,36 @@
+# 바람대로 사이트 — GitHub Pages 배포
+# ⚠️ 이 파일 변경은 수동 승인 대상 (CLAUDE.md 절대 규칙 1).
+#    main 반영·Pages 활성화(Settings → Pages → Source: GitHub Actions)·DNS 연결은 박민혁 승인 후.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: withastro/action@v3
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

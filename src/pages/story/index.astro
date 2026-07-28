@@ -1,0 +1,50 @@
+---
+// 브랜드이야기
+import Base from '../../layouts/Base.astro';
+
+const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? '';
+const breadcrumb = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: '홈', item: `${siteUrl}/` },
+    { '@type': 'ListItem', position: 2, name: '브랜드이야기', item: `${siteUrl}/story/` },
+  ],
+};
+---
+<Base title="브랜드이야기" description="바람대로라는 이름과 일하는 방식에 대해." jsonLd={breadcrumb}>
+  <section class="bd-section story">
+    <div class="bd-container">
+      <p class="bd-microlabel">Story</p>
+      <h1 class="story__headline">당신의 바람대로.</h1>
+
+      <div class="story__body">
+        <p>바람대로의 바람은 두 가지입니다. 에어컨이 만드는 바람, 그리고 고객이 바라는 바람. 시원했으면 하는 바람, 냄새가 없었으면 하는 바람, 신경 쓸 일이 없었으면 하는 바람.</p>
+        <p>그 바람대로 되게 하는 것이 우리의 일입니다.</p>
+
+        <hr class="bd-hairline story__rule" />
+
+        <h2>일하는 방식</h2>
+        <p>말보다 기록을 남깁니다. 작업 전·후 사진을 남기고, 실측하지 않은 수치는 말하지 않습니다.</p>
+        <p>설치와 세척, 점검을 한 팀이 맡습니다. 설치한 사람이 관리까지 아는 것이 가장 빠른 AS라고 생각합니다.</p>
+
+        <h2>지역</h2>
+        <p>수도권을 중심으로 시공합니다. 그 외 지역은 현장 규모에 따라 출장 시공을 협의합니다.</p>
+
+        <p class="story__cta"><a class="bd-btn-ghost" href="/cases/">시공사례 보기</a></p>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .story .bd-container { max-width: 680px; }
+  .story__headline {
+    font-size: clamp(30px, 4.6vw, 46px);
+    margin: 14px 0 40px;
+  }
+  .story__body p { font-size: 16px; margin-bottom: 16px; }
+  .story__rule { margin: 36px 0; }
+  .story__body h2 { font-size: 20px; margin: 32px 0 12px; }
+  .story__cta { margin-top: 44px; }
+</style>

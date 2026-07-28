@@ -1,0 +1,118 @@
+---
+// 시공사례 상세
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('cases');
+  return entries.map((entry) => ({ params: { id: entry.id }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { region, space, brand, type, units, date, cover, sample } = entry.data;
+const title = `${region} ${space} ${brand} ${type} ${units}대`;
+const dateLabel = date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+
+const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? '';
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: title,
+    datePublished: date.toISOString(),
+    author: { '@type': 'Organization', name: '바람대로' },
+    ...(cover ? { image: `${siteUrl}${cover}` } : {}),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: '홈', item: `${siteUrl}/` },
+      { '@type': 'ListItem', position: 2, name: '시공사례', item: `${siteUrl}/cases/` },
+      { '@type': 'ListItem', position: 3, name: title, item: `${siteUrl}/cases/${entry.id}/` },
+    ],
+  },
+];
+
+const specs = [
+  ['지역', region],
+  ['공간', space],
+  ['브랜드', brand],
+  ['작업', type],
+  ['대수', `${units}대`],
+  ['작업일', dateLabel],
+];
+---
+<Base title={title} description={`${title} 시공 기록.`} jsonLd={jsonLd} ogImage={cover}>
+  <article class="bd-section case-detail">
+    <div class="bd-container">
+      <p class="bd-microlabel">{type} · {region}</p>
+      <h1 class="case-detail__title">{title}</h1>
+      {sample && <p class="case-detail__sample">샘플 콘텐츠 — 실제 사례로 교체 예정</p>}
+
+      {cover && <img class="case-detail__cover" src={cover} alt={`${title} 현장`} />}
+
+      <dl class="case-detail__specs">
+        {specs.map(([k, v]) => (
+          <div class="case-detail__spec">
+            <dt>{k}</dt>
+            <dd>{v}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <div class="case-detail__body">
+        <Content />
+      </div>
+
+      <p class="case-detail__back"><a class="bd-btn-ghost" href="/cases/">목록으로</a></p>
+    </div>
+  </article>
+</Base>
+
+<style>
+  .case-detail .bd-container { max-width: 760px; }
+  .case-detail__title { font-size: clamp(24px, 3.4vw, 34px); margin: 10px 0 14px; }
+  .case-detail__sample {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--copper);
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    padding: 4px 12px;
+    margin-bottom: 8px;
+  }
+  .case-detail__cover {
+    width: 100%;
+    border-radius: var(--radius);
+    margin: 20px 0;
+    outline: 1px solid oklch(0 0 0 / 0.08);
+    outline-offset: -1px;
+  }
+  .case-detail__specs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px 20px;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    padding: 20px 0;
+    margin: 24px 0 32px;
+  }
+  .case-detail__spec dt { font-size: 12px; color: var(--ink-soft); margin-bottom: 2px; }
+  .case-detail__spec dd { font-size: 15px; font-weight: 600; }
+  .case-detail__body { font-size: 15.5px; color: var(--ink); }
+  .case-detail__body :global(p) { margin-bottom: 14px; }
+  .case-detail__body :global(ul) { margin: 0 0 14px 20px; }
+  .case-detail__body :global(blockquote) {
+    border-left: 2px solid var(--copper);
+    padding: 6px 0 6px 16px;
+    color: var(--ink-soft);
+    margin-bottom: 18px;
+  }
+  .case-detail__back { margin-top: 40px; }
+  @media (max-width: 600px) {
+    .case-detail__specs { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>

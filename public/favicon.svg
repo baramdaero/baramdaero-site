@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- 바람 결 3선 — 카퍼 단색 -->
+  <rect width="32" height="32" rx="7" fill="#F4EFE7"/>
+  <g stroke="#A8623C" stroke-width="2.4" stroke-linecap="round" fill="none">
+    <path d="M6 11h14a3.4 3.4 0 1 0-3.4-3.4"/>
+    <path d="M6 17h19a3.4 3.4 0 1 1-3.4 3.4"/>
+    <path d="M6 23h10"/>
+  </g>
+</svg>

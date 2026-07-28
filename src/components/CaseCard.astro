@@ -1,0 +1,54 @@
+---
+// 시공사례 카드 — 목록·홈 최신 3건 공용
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  entry: CollectionEntry<'cases'>;
+}
+const { entry } = Astro.props;
+const { region, space, brand, type, units, date, cover } = entry.data;
+const dateLabel = date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long' });
+---
+<a
+  class="bd-case-card"
+  href={`/cases/${entry.id}/`}
+  data-region={region}
+  data-type={type}
+>
+  <div class="bd-case-card__media">
+    {cover
+      ? <img src={cover} alt={`${region} ${space} ${type} 현장`} loading="lazy" />
+      : <div class="bd-case-card__placeholder" aria-hidden="true"></div>}
+  </div>
+  <div class="bd-case-card__body">
+    <p class="bd-microlabel bd-case-card__meta">{type} · {region}</p>
+    <h3 class="bd-case-card__title">{space} {brand} {units}대</h3>
+    <p class="bd-case-card__date">{dateLabel}</p>
+  </div>
+</a>
+
+<style>
+  .bd-case-card {
+    display: block;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: #fff;
+    transition: border-color var(--dur-color) ease, transform 160ms var(--ease-out);
+  }
+  .bd-case-card:active { transform: scale(0.98); }
+  @media (hover: hover) and (pointer: fine) {
+    .bd-case-card:hover { border-color: var(--ink-soft); }
+  }
+  .bd-case-card__media { aspect-ratio: 4 / 3; background: var(--bg-soft); }
+  .bd-case-card__media img { width: 100%; height: 100%; object-fit: cover; outline: 1px solid oklch(0 0 0 / 0.08); outline-offset: -1px; }
+  .bd-case-card__placeholder { width: 100%; height: 100%; background: var(--bg-soft); }
+  .bd-case-card__body { padding: 18px 20px 20px; }
+  /* 실제 정보(작업·지역)를 담는 메타 — 장식 라벨과 달리 대비 확보 (실버는 장식 전용 유지) */
+  .bd-case-card__meta { color: var(--ink-soft); }
+  .bd-case-card__title {
+    font-size: 17px;
+    margin: 8px 0 6px;
+  }
+  .bd-case-card__date { font-size: 13px; color: var(--ink-soft); }
+</style>

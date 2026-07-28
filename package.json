@@ -1,7 +1,7 @@
 {
-  "name": "baramdaero-hero",
+  "name": "baramdaero-site",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "dev": "astro dev",
@@ -9,7 +9,8 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "astro": "^5.10.0",
-    "gsap": "^3.13.0"
+    "@astrojs/sitemap": "^3.7.3",
+    "@channel.io/channel-web-sdk-loader": "^2.0.2",
+    "astro": "^5.10.0"
   }
 }
