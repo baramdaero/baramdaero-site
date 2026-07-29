@@ -4,7 +4,8 @@
 export const SITE_CONFIG = {
   SITE_NAME: '바람대로',
   SLOGAN: '당신의 바람대로.',
-  DESCRIPTION: '에어컨 설치·세척·유지관리. 수도권 시공, 바람대로.',
+  HOME_TITLE: '바람대로 — 시스템에어컨 설치·세척·관리',
+  DESCRIPTION: '시스템에어컨 설치·분해세척·유지관리. 수도권 전 지역, 사진 한 장으로 확정 견적.',
 
   KAKAO_CHANNEL_URL: '', // 카카오채널 개설 후 기입 (예: https://pf.kakao.com/_xxxxx)
   PHONE: '',             // 대표번호 확정 후 기입 (예: 0507-0000-0000)
