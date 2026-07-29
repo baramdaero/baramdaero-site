@@ -24,7 +24,7 @@ const {
 } = Astro.props;
 
 const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? 'https://baramdaero.com';
-const pageTitle = title ? `${title} — ${SITE_CONFIG.SITE_NAME}` : `${SITE_CONFIG.SITE_NAME} — ${SITE_CONFIG.SLOGAN}`;
+const pageTitle = title ? `${title} — ${SITE_CONFIG.SITE_NAME}` : SITE_CONFIG.HOME_TITLE;
 const canonical = new URL(Astro.url.pathname, siteUrl).href;
 
 // 전역 JSON-LD — HVACBusiness (schema.org)
