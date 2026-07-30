@@ -7,7 +7,9 @@ import CaseCard from '../../components/CaseCard.astro';
 import PageHero from '../../components/v2/PageHero.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
 
+// sample: true 사례는 형식 참고용 템플릿 — 프로덕션 미노출 (md frontmatter에서 플래그를 지우면 자동 노출)
 const entries = (await getCollection('cases'))
+  .filter((e) => !e.data.sample)
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
 const regions = [...new Set(entries.map((e) => e.data.region))];
@@ -31,25 +33,35 @@ const breadcrumb = {
 
   <section class="bd-section">
     <div class="bd-container">
-      <div class="case-filters br-reveal" data-case-filters>
-        <div class="case-filters__group" role="group" aria-label="지역 필터">
-          <button type="button" class="case-filters__btn is-active" data-filter-region="">전체 지역</button>
-          {regions.map((r) => (
-            <button type="button" class="case-filters__btn" data-filter-region={r}>{r}</button>
-          ))}
-        </div>
-        <div class="case-filters__group" role="group" aria-label="작업 유형 필터">
-          <button type="button" class="case-filters__btn is-active" data-filter-type="">전체 작업</button>
-          {types.map((t) => (
-            <button type="button" class="case-filters__btn" data-filter-type={t}>{t}</button>
-          ))}
-        </div>
-      </div>
+      {entries.length > 0 ? (
+        <Fragment>
+          <div class="case-filters br-reveal" data-case-filters>
+            <div class="case-filters__group" role="group" aria-label="지역 필터">
+              <button type="button" class="case-filters__btn is-active" data-filter-region="">전체 지역</button>
+              {regions.map((r) => (
+                <button type="button" class="case-filters__btn" data-filter-region={r}>{r}</button>
+              ))}
+            </div>
+            <div class="case-filters__group" role="group" aria-label="작업 유형 필터">
+              <button type="button" class="case-filters__btn is-active" data-filter-type="">전체 작업</button>
+              {types.map((t) => (
+                <button type="button" class="case-filters__btn" data-filter-type={t}>{t}</button>
+              ))}
+            </div>
+          </div>
 
-      <div class="case-grid" data-case-grid>
-        {entries.map((entry) => <CaseCard entry={entry} />)}
-      </div>
-      <p class="case-empty" data-case-empty hidden>조건에 맞는 사례가 아직 없습니다.</p>
+          <div class="case-grid" data-case-grid>
+            {entries.map((entry) => <CaseCard entry={entry} />)}
+          </div>
+          <p class="case-empty" data-case-empty hidden>조건에 맞는 사례가 아직 없습니다.</p>
+        </Fragment>
+      ) : (
+        <div class="case-pending br-reveal">
+          <p class="case-pending__title">시공 기록을 준비 중입니다.</p>
+          <p class="case-pending__body">작업 전·후 사진과 현장 기록이 정리되는 대로 올립니다.<br />지금 필요한 상담은 챗봇으로 바로 접수하실 수 있습니다.</p>
+          <button type="button" class="bd-cta case-pending__cta" data-chat-tree="menu">상담 접수하기</button>
+        </div>
+      )}
     </div>
   </section>
 
@@ -130,6 +142,18 @@ const breadcrumb = {
     gap: 20px;
   }
   .case-empty { color: var(--br-text-sub); padding: 40px 0; }
+
+  /* 실사례 0건 폴백 — 빈 그리드 대신 안내 + 챗봇 접수 */
+  .case-pending {
+    border: 1px solid var(--br-line);
+    border-radius: 16px;
+    background: var(--br-bg-alt);
+    padding: 48px 24px;
+    text-align: center;
+  }
+  .case-pending__title { font-size: 20px; font-weight: 800; color: var(--br-canopy); }
+  .case-pending__body { margin-top: 12px; font-size: 15px; line-height: 1.7; color: var(--br-text-sub); }
+  .case-pending__cta { margin-top: 28px; }
   @media (max-width: 900px) {
     .case-grid { grid-template-columns: repeat(2, 1fr); }
   }

@@ -109,35 +109,44 @@ if (careFaq.length) {
     </section>
   )}
 
-  {prices.length > 0 && (
-    <section class="bd-section care-prices">
-      <div class="bd-container">
-        <span class="br-eyebrow br-reveal">기준가</span>
-        <h2 class="br-h br-reveal">견적서에 없는 돈은<br />현장에서도 없습니다</h2>
-        <div class="care-prices__wrap br-reveal">
-          <table class="care-prices__table">
-            <thead>
-              <tr><th scope="col">기종</th><th scope="col">기준가</th><th scope="col">비고</th></tr>
-            </thead>
-            <tbody>
-              {prices.map((p) => (
-                <tr>
-                  <th scope="row">{p.type}</th>
-                  <td class="care-prices__value">{p.base.toLocaleString('ko-KR')}<span class="care-prices__unit">{p.unit}</span></td>
-                  <td class="care-prices__note">{p.note}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+  <section class="bd-section care-prices">
+    <div class="bd-container">
+      <span class="br-eyebrow br-reveal">기준가</span>
+      <h2 class="br-h br-reveal">견적서에 없는 돈은<br />현장에서도 없습니다</h2>
+      {prices.length > 0 ? (
+        <Fragment>
+          <div class="care-prices__wrap br-reveal">
+            <table class="care-prices__table">
+              <thead>
+                <tr><th scope="col">기종</th><th scope="col">기준가</th><th scope="col">비고</th></tr>
+              </thead>
+              <tbody>
+                {prices.map((p) => (
+                  <tr>
+                    <th scope="row">{p.type}</th>
+                    <td class="care-prices__value">{p.base.toLocaleString('ko-KR')}<span class="care-prices__unit">{p.unit}</span></td>
+                    <td class="care-prices__note">{p.note}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {conditions.length > 0 && (
+            <ul class="care-prices__conditions br-reveal">
+              {conditions.map((c) => <li>{c}</li>)}
+            </ul>
+          )}
+        </Fragment>
+      ) : (
+        /* 확정가 미입력(전부 sample) — 근거 없는 숫자를 띄우는 대신 상담으로 연결 */
+        <div class="care-prices__pending br-reveal">
+          <p class="care-prices__pending-title">기준가는 챗봇 상담으로 안내합니다.</p>
+          <p class="care-prices__pending-body">기종과 대수, 사진 몇 장이면 확정 견적을 드립니다.<br />방문해서 금액이 올라가는 일은 없습니다.</p>
+          <button type="button" class="bd-cta care-prices__pending-cta" data-chat-tree="clean">세척 견적 받기</button>
         </div>
-        {conditions.length > 0 && (
-          <ul class="care-prices__conditions br-reveal">
-            {conditions.map((c) => <li>{c}</li>)}
-          </ul>
-        )}
-      </div>
-    </section>
-  )}
+      )}
+    </div>
+  </section>
 
   {process.length > 0 && (
     <section class="bd-section care-process">
@@ -280,6 +289,19 @@ if (careFaq.length) {
     padding-left: 14px;
     position: relative;
   }
+  /* 확정가 미입력 폴백 */
+  .care-prices__pending {
+    margin-top: 48px;
+    background: #fff;
+    border: 1px solid var(--br-line);
+    border-radius: 16px;
+    padding: 40px 24px;
+    text-align: center;
+  }
+  .care-prices__pending-title { font-size: 20px; font-weight: 800; color: var(--br-canopy); }
+  .care-prices__pending-body { margin-top: 12px; font-size: 15px; line-height: 1.7; color: var(--br-text-sub); }
+  .care-prices__pending-cta { margin-top: 28px; }
+
   .care-prices__conditions li::before {
     content: '';
     position: absolute;

@@ -9,7 +9,10 @@ export const SITE_CONFIG = {
 
   KAKAO_CHANNEL_URL: '', // 카카오채널 개설 후 기입 (예: https://pf.kakao.com/_xxxxx)
   PHONE: '',             // 대표번호 확정 후 기입 (예: 0507-0000-0000)
-  SHOP_URL: 'https://shop.baramdaero.com',
+  // 쇼핑몰 주소 — 상점이 실제로 열린 뒤 기입한다. 빈 값이면 내비·푸터의 "예약·구매"가 렌더되지 않는다.
+  // 2026-07-30: shop.baramdaero.com이 DNS 미등록(NXDOMAIN) 상태로 확인돼 빈 값으로 되돌림.
+  // 링크가 살아 있으면 방문자가 브라우저 오류 페이지로 빠진다.
+  SHOP_URL: '',
 
   // 채널톡 플러그인 키 — 개설 후 기입. 동일 키가 쇼핑몰(아임웹, 별도 관리)에도 설치될 예정.
   // 이 레포는 본진 연동만 담당하며 쇼핑몰 측 설치는 코드 범위 외.

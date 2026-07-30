@@ -2,6 +2,8 @@
 // 정책 (관리자가 GitHub 웹 UI에서 JSON만 수정해 운영하는 전제):
 //   - JSON 문법 오류 → 한글 에러 메시지로 빌드 실패 (원인 파악 가능해야 함)
 //   - 값 누락·타입 오류 → 해당 항목/섹션만 경고 후 스킵 (빌드는 계속)
+//   - "sample": true → 프로덕션 미노출. 로더에서 걸러내므로 컴포넌트는 실값만 받는다
+//     (샘플이 화면에 새는 경로를 이 한 곳으로 좁힌다 — 플래그를 지우면 자동 노출)
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -28,6 +30,9 @@ const warn = (msg: string) => console.warn(`[trust.json 경고] ${msg}`);
 function isNonEmptyString(v: unknown): v is string {
   return typeof v === 'string' && v.trim() !== '';
 }
+
+/** "sample": true = 형식 참고용 템플릿 → 렌더하지 않는다 */
+const isSample = (item: any): boolean => item?.sample === true;
 
 /** 배열 섹션 공통 방어 파싱 — 배열이 아니면 경고 후 빈 배열, 항목별 검증 실패는 항목만 제외 */
 function pickArray<T>(raw: unknown, name: string, validate: (item: any, idx: number) => T | null): T[] {
@@ -81,6 +86,7 @@ export function loadTrust(): TrustData {
   }
 
   const stats = pickArray<TrustStat>(raw.stats, 'stats', (it, i) => {
+    if (isSample(it)) return null;
     if (!isNonEmptyString(it?.label) || typeof it?.value !== 'number' || !isFinite(it.value)) {
       if (it?.label || it?.value) warn(`stats[${i}] — label(문자)과 value(숫자)가 모두 필요합니다. 항목을 건너뜁니다.`);
       return null;
@@ -89,6 +95,7 @@ export function loadTrust(): TrustData {
   });
 
   const credentials = pickArray<TrustCredential>(raw.credentials, 'credentials', (it, i) => {
+    if (isSample(it)) return null;
     if (!isNonEmptyString(it?.title)) {
       if (it?.image || it?.note) warn(`credentials[${i}] — title이 비어 있어 건너뜁니다.`);
       return null;
@@ -101,6 +108,7 @@ export function loadTrust(): TrustData {
   });
 
   const as_promises = pickArray<TrustPromise>(raw.as_promises, 'as_promises', (it, i) => {
+    if (isSample(it)) return null;
     if (!isNonEmptyString(it?.number) || !isNonEmptyString(it?.label)) {
       if (it?.number || it?.label) warn(`as_promises[${i}] — number와 label이 모두 필요합니다. 항목을 건너뜁니다.`);
       return null;
@@ -109,6 +117,7 @@ export function loadTrust(): TrustData {
   });
 
   const principles = pickArray<TrustPrinciple>(raw.principles, 'principles', (it, i) => {
+    if (isSample(it)) return null;
     if (typeof it?.no !== 'number' || !isNonEmptyString(it?.title) || !isNonEmptyString(it?.body)) {
       if (it?.title || it?.body) warn(`principles[${i}] — no(숫자)·title·body가 모두 필요합니다. 항목을 건너뜁니다.`);
       return null;

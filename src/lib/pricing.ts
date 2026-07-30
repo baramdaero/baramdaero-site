@@ -29,6 +29,8 @@ const EMPTY: PricingData = {
 
 const warn = (msg: string) => console.warn(`[pricing.json 경고] ${msg}`);
 const isNonEmptyString = (v: unknown): v is string => typeof v === 'string' && v.trim() !== '';
+/** "sample": true = 형식 참고용 템플릿 → 렌더하지 않는다 (플래그를 지우면 자동 노출) */
+const isSample = (item: any): boolean => item?.sample === true;
 
 function pickArray<T>(raw: unknown, name: string, validate: (item: any, idx: number) => T | null): T[] {
   if (raw === undefined || raw === null) return [];
@@ -72,6 +74,7 @@ export function loadPricing(): PricingData {
   }
 
   const prices = pickArray<PriceRow>(raw.prices, 'prices', (it, i) => {
+    if (isSample(it)) return null;
     if (!isNonEmptyString(it?.type) || typeof it?.base !== 'number' || !isFinite(it.base) || it.base <= 0 || !isNonEmptyString(it?.unit)) {
       if (it?.type || it?.base) warn(`prices[${i}] — type(문자)·base(양수)·unit(문자)이 모두 필요합니다. 항목을 건너뜁니다.`);
       return null;
