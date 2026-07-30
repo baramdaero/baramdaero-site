@@ -1,0 +1,77 @@
+---
+// S8 진행 절차 (bg-alt) — 4스텝 타임라인. 데스크톱 가로 4열, 모바일 세로. 스텝별 stagger 리빌.
+const STEPS = [
+  { no: '01', title: '문의', body: '챗봇으로 증상과 일정을 접수합니다. 사진 몇 장이면 충분합니다.' },
+  { no: '02', title: '실측', body: '사진으로 먼저 확인하고 금액을 말씀드립니다. 현장에서 금액이 올라가는 일은 없습니다.' },
+  { no: '03', title: '시공', body: '약속한 범위만, 약속한 날에 시공합니다.' },
+  { no: '04', title: '검수', body: '작동 확인과 현장 정리까지 마친 뒤 인수인계합니다. 전후 사진을 남깁니다.' },
+];
+---
+<section class="bd-section v2-process">
+  <div class="bd-container">
+    <span class="br-eyebrow br-reveal">진행 절차</span>
+    <h2 class="br-h br-reveal">문의부터 검수까지,<br />네 단계면 끝납니다</h2>
+    <ol class="v2-process__steps">
+      {STEPS.map((s) => (
+        <li class="v2-process__step br-reveal">
+          <span class="v2-process__no">{s.no}</span>
+          <h3 class="v2-process__title">{s.title}</h3>
+          <p class="v2-process__body">{s.body}</p>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .v2-process { background: var(--br-bg-alt); }
+  .v2-process__steps {
+    margin-top: 48px;
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .v2-process__step { position: relative; padding-left: 56px; }
+  .v2-process__step::before {
+    content: '';
+    position: absolute;
+    left: 19px;
+    top: 44px;
+    bottom: -28px;
+    width: 2px;
+    background: var(--br-line);
+  }
+  .v2-process__step:last-child::before { display: none; }
+  .v2-process__no {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--br-lime);
+    color: var(--br-canopy);
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 999px;
+    font-variant-numeric: tabular-nums;
+  }
+  .v2-process__title { font-size: 20px; color: var(--br-canopy); padding-top: 6px; }
+  .v2-process__body { margin-top: 8px; font-size: 15px; line-height: 1.7; color: var(--br-text-sub); }
+  @media (min-width: 768px) {
+    .v2-process__steps { grid-template-columns: repeat(4, 1fr); gap: 32px; }
+    .v2-process__step { padding-left: 0; padding-top: 60px; }
+    .v2-process__step::before {
+      left: 52px;
+      right: -32px;
+      top: 19px;
+      bottom: auto;
+      width: auto;
+      height: 2px;
+    }
+    .v2-process__title { padding-top: 0; }
+  }
+</style>

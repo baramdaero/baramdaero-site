@@ -1,0 +1,44 @@
+---
+// S7 신뢰 지표 — trust.json stats가 유일한 소스 (하드코딩 금지). 카운트업은 motion.ts 공용.
+import type { TrustStat } from '../../lib/trust.ts';
+
+interface Props { stats: TrustStat[] }
+const { stats } = Astro.props;
+---
+{stats.length > 0 && (
+  <section class="bd-section v2-stats" aria-label="주요 실적">
+    <div class="bd-container v2-stats__grid">
+      {stats.map((s) => (
+        <div class="v2-stats__item br-reveal">
+          <p class="v2-stats__value">
+            <span data-countup={s.value}>{s.value.toLocaleString('ko-KR')}</span><span class="v2-stats__suffix">{s.suffix}</span>
+          </p>
+          <p class="v2-stats__label">{s.label}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+)}
+
+<style>
+  .v2-stats { background: var(--br-bg); }
+  .v2-stats__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 40px 20px;
+    text-align: center;
+  }
+  .v2-stats__value {
+    font-size: clamp(44px, 7vw, 72px);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--br-canopy);
+    font-variant-numeric: tabular-nums;
+  }
+  .v2-stats__suffix { font-size: 0.55em; font-weight: 700; margin-left: 4px; }
+  .v2-stats__label { margin-top: 10px; font-size: 15px; color: var(--br-text-sub); }
+  @media (min-width: 768px) {
+    .v2-stats__grid { grid-template-columns: repeat(var(--stat-cols, 4), 1fr); }
+  }
+</style>

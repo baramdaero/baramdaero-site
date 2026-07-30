@@ -1,27 +1,39 @@
-/* 바람대로 디자인 토큰 + 베이스 — DESIGN.md가 원본. 위반 스타일 커밋 금지. */
+/* 바람대로 디자인 토큰 + 베이스 v2 (redesign-v2) — DESIGN.md가 원본. 위반 스타일 커밋 금지.
+   그린 토큰 체계(canopy/lime). 구 웜우드 토큰은 하단 레거시 별칭으로만 존재한다. */
 :root {
-  /* 색 — DESIGN.md §2 */
-  --bg: #f4efe7; /* 웜 우드 뉴트럴. 대안: #FFFFFF (실물 비교 후 확정) */
-  --bg-soft: #ece6db;
-  --ink: #211e1a; /* 웜 블랙 */
-  --ink-soft: #6b6459;
-  --copper: #a8623c; /* CTA 전용 — 비-CTA 면적 사용 금지 */
-  --copper-deep: #8f5231;
-  --silver: #b8bcc0; /* 1px 라인·아이콘·마이크로라벨 전용 — 면적 사용 금지 */
-  --line: rgba(184, 188, 192, 0.55);
+  /* 색 v2 — DESIGN.md §2. 대비는 그린 계열 명도 차로만, 제3색 금지 */
+  --br-canopy: #2d3e2c;      /* 주색: 헤드라인, CTA, 딥섹션·푸터 배경 */
+  --br-canopy-deep: #1f2b1e;
+  --br-lime: #e4fd97;        /* 액센트: 눈썹 칩, 딥섹션 위 강조, hover */
+  --br-bg: #ffffff;
+  --br-bg-alt: #f6f9ee;
+  --br-line: #e2e8dc;
+  --br-text: #1e241d;
+  --br-text-sub: #5c665a;
 
-  /* 타이포 — DESIGN.md §1 */
-  --serif: 'Noto Serif KR', 'Apple SD Gothic Neo', serif;
+  /* 타이포 — Pretendard 단일 (세리프 폐기) */
   --sans: 'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', sans-serif;
 
   /* 모션 — DESIGN.md §4 */
-  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --dur-color: 200ms;
   --dur-ui: 240ms;
+  --dur-reveal: 600ms;
 
-  --maxw: 1080px;
-  --radius: 10px;
+  --maxw: 1120px;
+  --radius: 12px;
+
+  /* ---- 레거시 별칭 (v1 컴포넌트·챗봇 호환용 — 신규 코드에서 사용 금지) ---- */
+  --bg: var(--br-bg);
+  --bg-soft: var(--br-bg-alt);
+  --ink: var(--br-text);
+  --ink-soft: var(--br-text-sub);
+  --copper: var(--br-canopy);          /* 구 CTA색 → canopy */
+  --copper-deep: var(--br-canopy-deep);
+  --silver: var(--br-text-sub);        /* 구 마이크로라벨색 → text-sub */
+  --line: var(--br-line);
+  --serif: var(--sans);                /* 세리프 전부 제거 — sans로 폴백 */
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -35,8 +47,8 @@ html {
 body {
   font-family: var(--sans);
   font-variant-numeric: tabular-nums;
-  background: var(--bg);
-  color: var(--ink);
+  background: var(--br-bg);
+  color: var(--br-text);
   line-height: 1.7;
   letter-spacing: -0.005em;
   word-break: keep-all;
@@ -47,10 +59,9 @@ img, video { max-width: 100%; height: auto; display: block; }
 a { color: inherit; text-decoration: none; transition: color var(--dur-color) ease; }
 
 h1, h2, h3 {
-  font-family: var(--serif);
-  font-weight: 600;
-  line-height: 1.25;
-  letter-spacing: -0.01em;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
   text-wrap: balance;
 }
 
@@ -65,55 +76,103 @@ button {
 }
 
 /* 공통 유틸 */
-.bd-container { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+.bd-container { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
 
-.bd-section { padding: 88px 0; }
+/* 섹션 수직 리듬 — 모바일 72px / 데스크톱 120px */
+.bd-section { padding: 72px 0; }
+@media (min-width: 768px) { .bd-section { padding: 120px 0; } }
 
+/* 눈썹 라벨 — lime 칩 + canopy 텍스트 */
+.br-eyebrow {
+  display: inline-block;
+  background: var(--br-lime);
+  color: var(--br-canopy);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 6px 14px;
+  border-radius: 999px;
+}
+
+/* 섹션 헤드라인 — 과감한 스케일, 의도적 줄바꿈 전제 */
+.br-h {
+  margin-top: 20px;
+  font-size: clamp(32px, 6vw, 64px);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--br-canopy);
+}
+.br-h em { font-style: normal; color: var(--br-lime); } /* 딥 배경 전용 강조 */
+
+.br-body {
+  margin-top: 20px;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--br-text-sub);
+}
+@media (min-width: 768px) { .br-body { font-size: 17px; } }
+
+/* 구 마이크로라벨 (v1 페이지 호환) — 색만 신 체계 */
 .bd-microlabel {
   font-family: var(--sans);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.2em;
-  color: var(--silver);
+  color: var(--br-text-sub);
   text-transform: uppercase;
 }
 
 .bd-section-title {
   font-size: clamp(24px, 3.2vw, 34px);
   margin: 10px 0 36px;
+  color: var(--br-canopy);
 }
 
-/* CTA — 카퍼 전용 */
+/* CTA — canopy 채움 + 흰 글자, hover = lime 채움 + canopy 글자 (DESIGN.md §2) */
 .bd-cta {
   display: inline-block;
-  padding: 14px 30px;
-  background: var(--copper);
+  padding: 15px 32px;
+  background: var(--br-canopy);
   color: #fff;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 15px;
-  border-radius: 6px;
-  transition: background-color var(--dur-color) ease, transform 160ms var(--ease-out);
+  border-radius: 10px;
+  transition: background-color var(--dur-color) ease, color var(--dur-color) ease, transform 160ms var(--ease-out);
 }
-.bd-cta:hover { background: var(--copper-deep); }
+.bd-cta:hover { background: var(--br-lime); color: var(--br-canopy); }
 .bd-cta:active { transform: scale(0.96); }
+
+/* CTA 딥 배경 변형 — lime 채움 + canopy 글자, hover 흰 채움 */
+.bd-cta--deep { background: var(--br-lime); color: var(--br-canopy); }
+.bd-cta--deep:hover { background: var(--br-bg); color: var(--br-canopy); }
 
 /* 보조 버튼 — 라인 */
 .bd-btn-ghost {
   display: inline-block;
-  padding: 13px 28px;
-  border: 1px solid var(--ink);
-  color: var(--ink);
+  padding: 14px 28px;
+  border: 1px solid var(--br-canopy);
+  color: var(--br-canopy);
   font-weight: 600;
   font-size: 15px;
-  border-radius: 6px;
+  border-radius: 10px;
   transition: background-color var(--dur-color) ease, color var(--dur-color) ease, transform 160ms var(--ease-out);
 }
 .bd-btn-ghost:active { transform: scale(0.96); }
 @media (hover: hover) and (pointer: fine) {
-  .bd-btn-ghost:hover { background: var(--ink); color: var(--bg); }
+  .bd-btn-ghost:hover { background: var(--br-canopy); color: #fff; }
 }
 
-.bd-hairline { border: 0; border-top: 1px solid var(--line); }
+.bd-hairline { border: 0; border-top: 1px solid var(--br-line); }
+
+/* ---- 스크롤 리빌 (공용) ----
+   숨김은 html.br-js 하위에서만 — JS 미동작 시 전 콘텐츠 그대로 노출 (no-JS 안전장치).
+   stagger 딜레이는 motion.ts가 형제 순서로 부여. */
+.br-reveal {
+  transition: opacity var(--dur-reveal) var(--ease-out), transform var(--dur-reveal) var(--ease-out);
+}
+html.br-js .br-reveal { opacity: 0; transform: translateY(24px); }
+html.br-js .br-reveal.br-in { opacity: 1; transform: translateY(0); }
 
 /* 접근성 */
 .visually-hidden {
@@ -126,10 +185,12 @@ button {
   border: 0;
 }
 
-:focus-visible { outline: 2px solid var(--copper); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--br-canopy); outline-offset: 2px; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+  .br-reveal { transition: none; }
+  html.br-js .br-reveal { opacity: 1; transform: none; }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;

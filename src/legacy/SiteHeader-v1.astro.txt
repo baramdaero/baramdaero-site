@@ -40,15 +40,6 @@ const path = Astro.url.pathname;
     top: 0;
     left: 0;
     color: #fff;
-    transition: background-color var(--dur-color) ease, color var(--dur-color) ease;
-  }
-  /* 히어로를 지나면 흰 바탕 위 백색 텍스트가 사라지는 문제 — 스크롤 시 솔리드 전환 */
-  .bd-header--overlay.is-scrolled {
-    background: color-mix(in srgb, var(--br-bg) 92%, transparent);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--br-line);
-    color: var(--br-text);
   }
   .bd-header--solid {
     position: sticky;
@@ -69,9 +60,10 @@ const path = Astro.url.pathname;
     gap: 28px;
   }
   .bd-header__brand {
-    font-weight: 800;
+    font-family: var(--serif);
+    font-weight: 600;
     font-size: 19px;
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
     margin-right: auto;
   }
   .bd-header__nav {
@@ -112,19 +104,3 @@ const path = Astro.url.pathname;
     .bd-header__cta { padding: 8px 11px; font-size: 12px; }
   }
 </style>
-
-<script>
-  // 오버레이 헤더 — 히어로 구간을 벗어나면 솔리드 전환 (rAF 스로틀)
-  const overlay = document.querySelector('.bd-header--overlay');
-  if (overlay) {
-    let ticking = false;
-    const update = () => {
-      overlay.classList.toggle('is-scrolled', window.scrollY > window.innerHeight * 0.6);
-      ticking = false;
-    };
-    window.addEventListener('scroll', () => {
-      if (!ticking) { ticking = true; requestAnimationFrame(update); }
-    }, { passive: true });
-    update();
-  }
-</script>

@@ -1,0 +1,30 @@
+---
+// 서브페이지 짧은 히어로 (canopy-deep, min-height 40vh) — /care/ /cases/ 공용.
+interface Props { eyebrow: string }
+const { eyebrow } = Astro.props;
+---
+<section class="v2-phero">
+  <div class="bd-container v2-phero__inner">
+    <span class="br-eyebrow br-reveal">{eyebrow}</span>
+    <h1 class="br-h v2-phero__title br-reveal"><slot /></h1>
+    <p class="v2-phero__sub br-reveal"><slot name="sub" /></p>
+    <div class="v2-phero__extra br-reveal"><slot name="extra" /></div>
+  </div>
+</section>
+
+<style>
+  .v2-phero {
+    background: var(--br-canopy-deep);
+    min-height: 40vh;
+    display: flex;
+    align-items: center;
+    padding: 120px 0 72px; /* sticky 헤더 없음(overlay 아님) — 상단 여백 확보 */
+    color: #fff;
+  }
+  .v2-phero__inner { width: 100%; }
+  .v2-phero__title { color: #fff; }
+  .v2-phero__sub { margin-top: 18px; font-size: 16px; line-height: 1.7; color: rgba(255, 255, 255, 0.82); max-width: 560px; }
+  .v2-phero__sub:empty, .v2-phero__extra:empty { display: none; }
+  .v2-phero__extra { margin-top: 28px; }
+  @media (min-width: 768px) { .v2-phero__sub { font-size: 17px; } }
+</style>

@@ -1,0 +1,102 @@
+---
+// S1 히어로 — 풀블리드 92vh, 기존 hero-loop.mp4 + canopy 오버레이, CTA는 챗봇 호출.
+// 대안 헤드라인 (미사용분 보존):
+//   a) "에어컨, 이제 게으르게 관리하세요."
+//   b) "숨 쉬는 공기까지가 시공입니다."
+//   c) "당신은 켜기만 하세요. 나머지는 바람대로."
+import { SITE_CONFIG } from '../../config.js';
+---
+<section class="v2-hero">
+  {SITE_CONFIG.HERO_VIDEO ? (
+    <video
+      class="v2-hero__media"
+      autoplay
+      muted
+      loop
+      playsinline
+      preload="auto"
+      poster={SITE_CONFIG.HERO_POSTER}
+      aria-hidden="true"
+    >
+      <source src={SITE_CONFIG.HERO_VIDEO} type="video/mp4" />
+    </video>
+  ) : (
+    <img class="v2-hero__media" src={SITE_CONFIG.HERO_POSTER} alt="" aria-hidden="true" />
+  )}
+  <div class="v2-hero__ovl" aria-hidden="true"></div>
+
+  <div class="bd-container v2-hero__inner">
+    <h1 class="v2-hero__title br-reveal">에어컨 생각,<br />오늘이 마지막입니다.</h1>
+    <p class="v2-hero__sub br-reveal">당신의 바람은, 당신의 바람대로 불어옵니다.</p>
+    <div class="v2-hero__cta br-reveal">
+      <button type="button" class="bd-cta bd-cta--deep" data-chat-tree="menu">견적 문의</button>
+    </div>
+  </div>
+
+  <div class="v2-hero__hint" aria-hidden="true">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+</section>
+
+<script>
+  // prefers-reduced-motion — 히어로 영상 루프 정지, 포스터 프레임 유지
+  const video = document.querySelector<HTMLVideoElement>('.v2-hero__media');
+  if (video?.tagName === 'VIDEO' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    video.removeAttribute('autoplay');
+    video.pause();
+  }
+</script>
+
+<style>
+  .v2-hero {
+    position: relative;
+    min-height: 92vh;
+    min-height: 92svh;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    color: #fff;
+  }
+  .v2-hero__media {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -2;
+  }
+  /* canopy 오버레이 — 가독성 스크림 (DESIGN.md §6 예외) */
+  .v2-hero__ovl {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: rgba(45, 62, 44, 0.6);
+  }
+  .v2-hero__inner { width: 100%; padding-top: 96px; padding-bottom: 96px; }
+  .v2-hero__title {
+    font-size: clamp(36px, 7.4vw, 72px);
+    color: #fff;
+  }
+  .v2-hero__sub {
+    margin-top: 20px;
+    font-size: 17px;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.88);
+  }
+  .v2-hero__cta { margin-top: 36px; }
+  .v2-hero__hint {
+    position: absolute;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%);
+    opacity: 0.85;
+    animation: v2-hero-bob 1.8s ease-in-out infinite;
+  }
+  @keyframes v2-hero-bob {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(8px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .v2-hero__hint { animation: none; }
+  }
+</style>

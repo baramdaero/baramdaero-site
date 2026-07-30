@@ -1,0 +1,73 @@
+---
+// S3~S5 서비스 지그재그 — 좌텍스트/우비주얼, flip 시 반전.
+// link(페이지 이동) 또는 chatTree(챗봇 트리 호출) 중 하나로 CTA를 배선한다.
+interface Props {
+  id: string;
+  eyebrow: string;
+  /** 이미지 경로 — 비면 placeholder 면 */
+  image?: string;
+  imageAlt?: string;
+  linkLabel: string;
+  link?: string;
+  chatTree?: string;
+  flip?: boolean;
+}
+const { id, eyebrow, image = '', imageAlt = '', linkLabel, link, chatTree, flip = false } = Astro.props;
+---
+<section class="bd-section v2-svc" id={id}>
+  <div class:list={['bd-container', 'v2-svc__grid', { 'v2-svc__grid--flip': flip }]}>
+    <div class="v2-svc__txt">
+      <span class="br-eyebrow br-reveal">{eyebrow}</span>
+      <h2 class="br-h br-reveal"><slot name="headline" /></h2>
+      <p class="br-body br-reveal"><slot name="body" /></p>
+      <p class="v2-svc__more br-reveal">
+        {link ? (
+          <a class="v2-svc__link" href={link}>{linkLabel} <span aria-hidden="true">→</span></a>
+        ) : (
+          <button type="button" class="v2-svc__link" data-chat-tree={chatTree}>{linkLabel} <span aria-hidden="true">→</span></button>
+        )}
+      </p>
+    </div>
+    <div class="v2-svc__vis br-reveal">
+      {image ? (
+        <img src={image} alt={imageAlt} loading="lazy" />
+      ) : (
+        <div class="v2-svc__empty" aria-hidden="true"></div>
+      )}
+    </div>
+  </div>
+</section>
+
+<style>
+  .v2-svc { background: var(--br-bg); }
+  .v2-svc__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 40px;
+    align-items: center;
+  }
+  .v2-svc__more { margin-top: 24px; }
+  .v2-svc__link {
+    display: inline-block;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--br-canopy);
+    border-bottom: 2px solid var(--br-canopy);
+    padding-bottom: 2px;
+    transition: color var(--dur-color) ease, border-color var(--dur-color) ease;
+  }
+  .v2-svc__link:hover { color: var(--br-canopy-deep); border-color: var(--br-lime); }
+  .v2-svc__vis img,
+  .v2-svc__empty {
+    aspect-ratio: 4 / 3;
+    width: 100%;
+    object-fit: cover;
+    border-radius: 16px;
+  }
+  .v2-svc__empty { background: var(--br-bg-alt); border: 1px solid var(--br-line); }
+  @media (min-width: 768px) {
+    .v2-svc__grid { grid-template-columns: 1fr 1fr; gap: 64px; }
+    .v2-svc__grid--flip .v2-svc__txt { order: 2; }
+    .v2-svc__grid--flip .v2-svc__vis { order: 1; }
+  }
+</style>

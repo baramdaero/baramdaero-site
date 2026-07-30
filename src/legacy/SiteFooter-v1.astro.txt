@@ -1,5 +1,4 @@
 ---
-// 푸터 v2 — canopy-deep. 구 버전은 src/legacy/SiteFooter-v1.astro.txt 보존.
 import { SITE_CONFIG } from '../config.js';
 const year = new Date().getFullYear();
 ---
@@ -16,7 +15,7 @@ const year = new Date().getFullYear();
       <a href="/blog/">블로그</a>
       <a href={SITE_CONFIG.SHOP_URL} rel="noopener">예약·구매</a>
     </nav>
-    <hr class="bd-footer__hairline" />
+    <hr class="bd-hairline" />
     <p class="bd-footer__legal">
       <!-- 사업자 정보 확정 후 기입: 상호·대표·사업자등록번호·주소·연락처 -->
       © {year} 바람대로
@@ -26,22 +25,30 @@ const year = new Date().getFullYear();
 
 <style>
   .bd-footer {
-    background: var(--br-canopy-deep);
-    color: rgba(255, 255, 255, 0.75);
+    border-top: 1px solid var(--line);
     padding: 56px 0 40px;
-    margin-top: 0;
+    margin-top: 96px;
   }
   .bd-footer__inner { display: grid; gap: 24px; }
-  .bd-footer__name { font-weight: 800; font-size: 20px; color: #fff; }
-  .bd-footer__slogan { color: var(--br-lime); font-size: 14px; font-weight: 600; margin-top: 4px; }
+  .bd-footer__name {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 18px;
+  }
+  .bd-footer__slogan {
+    font-family: var(--serif);
+    color: var(--ink-soft);
+    font-size: 14px;
+    margin-top: 4px;
+  }
   .bd-footer__nav {
     display: flex;
     flex-wrap: wrap;
     gap: 18px;
     font-size: 14px;
+    color: var(--ink-soft);
   }
   .bd-footer__nav a { padding: 8px 0; transition: color var(--dur-color) ease; }
-  .bd-footer__nav a:hover { color: var(--br-lime); }
-  .bd-footer__hairline { border: 0; border-top: 1px solid rgba(255, 255, 255, 0.15); }
-  .bd-footer__legal { font-size: 12px; color: rgba(255, 255, 255, 0.5); }
+  .bd-footer__nav a:hover { color: var(--ink); }
+  .bd-footer__legal { font-size: 12px; color: var(--ink-soft); }
 </style>
