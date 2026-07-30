@@ -55,6 +55,8 @@ export function loadFaq(): FaqItem[] {
 
   const out: FaqItem[] = [];
   items.forEach((it: any, i: number) => {
+    // "sample": true = 형식 참고용 템플릿 → 챗봇·페이지에 노출하지 않는다 (플래그를 지우면 자동 노출)
+    if (it?.sample === true) return;
     if (!isNonEmptyString(it?.q) || !isNonEmptyString(it?.a)) {
       if (it?.q || it?.a) warn(`items[${i}] — q(질문)와 a(답변)가 모두 필요합니다. 항목을 건너뜁니다.`);
       return;

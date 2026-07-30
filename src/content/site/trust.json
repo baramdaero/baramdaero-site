@@ -7,18 +7,19 @@
     "as_promises": "AS 약속 카드 3개. number=큰 글자(예: 당일, 24시간, 1년), label=설명(예: 접수 당일 연락).",
     "principles": "원칙 4개조. no=번호(숫자), title=제목, body=본문 1~2문장.",
     "video_embed": "유튜브 영상 주소를 그대로 붙여넣으세요(예: https://www.youtube.com/watch?v=XXXX 또는 https://youtu.be/XXXX). 비워두면 영상 섹션이 나오지 않습니다.",
-    "샘플 표시": "아래 값은 전부 [샘플 — 교체 예정] 더미입니다. 실측·실제 값으로 교체한 뒤 '(샘플)' 표기를 지워 주세요."
+    "샘플 표시": "아래 값은 전부 [샘플 — 교체 예정] 더미입니다. 실측·실제 값으로 교체한 뒤 '(샘플)' 표기를 지워 주세요.",
+    "sample 플래그 ⚠️": "\"sample\": true 인 항목은 사이트에 나오지 않습니다 (형식 참고용 템플릿). 실값을 넣은 뒤 그 줄의 \"sample\": true 부분을 지우면 그 순간 사이트에 노출됩니다. stats는 유효 항목이 2개 미만이면 섹션 자체가 나오지 않습니다."
   },
   "stats": [
-    { "label": "설치 실적 (샘플)", "value": 1200, "suffix": "대" },
-    { "label": "세척 실적 (샘플)", "value": 3400, "suffix": "대" },
-    { "label": "현장 경력 (샘플)", "value": 12, "suffix": "년" },
-    { "label": "재의뢰율 (샘플)", "value": 60, "suffix": "%" }
+    { "label": "설치 실적 (샘플)", "value": 1200, "suffix": "대", "sample": true },
+    { "label": "세척 실적 (샘플)", "value": 3400, "suffix": "대", "sample": true },
+    { "label": "현장 경력 (샘플)", "value": 12, "suffix": "년", "sample": true },
+    { "label": "재의뢰율 (샘플)", "value": 60, "suffix": "%", "sample": true }
   ],
   "credentials": [
-    { "title": "공조냉동기계기능사 (샘플)", "image": "", "note": "[샘플 — 교체 예정] 실제 자격·인증으로 교체" },
-    { "title": "가스기능사 (샘플)", "image": "", "note": "[샘플 — 교체 예정]" },
-    { "title": "책임보험 가입 (샘플)", "image": "", "note": "[샘플 — 교체 예정]" }
+    { "title": "공조냉동기계기능사 (샘플)", "image": "", "note": "[샘플 — 교체 예정] 실제 자격·인증으로 교체", "sample": true },
+    { "title": "가스기능사 (샘플)", "image": "", "note": "[샘플 — 교체 예정]", "sample": true },
+    { "title": "책임보험 가입 (샘플)", "image": "", "note": "[샘플 — 교체 예정]", "sample": true }
   ],
   "as_promises": [
     { "number": "당일", "label": "접수한 날 연락합니다" },

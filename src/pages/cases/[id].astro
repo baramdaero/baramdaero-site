@@ -4,7 +4,9 @@ import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 
 export async function getStaticPaths() {
-  const entries = await getCollection('cases');
+  // sample: true는 페이지 자체를 만들지 않는다 — 목록에서 빼도 URL이 살아 있으면
+  // sitemap·검색으로 노출되므로 여기서 막아야 완전히 차단된다
+  const entries = (await getCollection('cases')).filter((e) => !e.data.sample);
   return entries.map((entry) => ({ params: { id: entry.id }, props: { entry } }));
 }
 

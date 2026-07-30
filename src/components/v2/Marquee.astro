@@ -7,6 +7,11 @@ import type { CollectionEntry } from 'astro:content';
 interface Props { entries: CollectionEntry<'cases'>[] }
 const { entries } = Astro.props;
 
+// 샘플 사례 제외 — 무한 루프라 한 건이 화면에 여러 번 박혀 노출이 증폭된다
+const real = entries.filter((e) => !e.data.sample);
+// 실사례가 적으면 같은 카드가 눈에 띄게 반복돼 오히려 빈약해 보인다 → 3건 미만이면 섹션째 숨김
+const MIN_CASES = 3;
+
 const MIN_CARDS = 6;
 function fill(list: CollectionEntry<'cases'>[]) {
   if (!list.length) return [];
@@ -14,13 +19,13 @@ function fill(list: CollectionEntry<'cases'>[]) {
   while (out.length < MIN_CARDS) out.push(list[out.length % list.length]);
   return out;
 }
-const row1 = fill(entries);
-const row2 = fill([...entries].reverse());
+const row1 = fill(real);
+const row2 = fill([...real].reverse());
 
 const label = (e: CollectionEntry<'cases'>) =>
-  `${e.data.region} · ${e.data.space} ${e.data.type} ${e.data.units}대${e.data.sample ? ' (샘플)' : ''}`;
+  `${e.data.region} · ${e.data.space} ${e.data.type} ${e.data.units}대`;
 ---
-{entries.length > 0 && (
+{real.length >= MIN_CASES && (
   <section class="bd-section v2-mq">
     <div class="bd-container v2-mq__head">
       <span class="br-eyebrow br-reveal">시공 기록</span>

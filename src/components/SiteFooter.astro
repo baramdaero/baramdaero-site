@@ -14,7 +14,8 @@ const year = new Date().getFullYear();
       <a href="/care/">세척·관리</a>
       <a href="/story/">브랜드이야기</a>
       <a href="/blog/">블로그</a>
-      <a href={SITE_CONFIG.SHOP_URL} rel="noopener">예약·구매</a>
+      {/* SHOP_URL이 비면 미렌더 — 죽은 링크 차단 (헤더와 동일 규칙) */}
+      {SITE_CONFIG.SHOP_URL && <a href={SITE_CONFIG.SHOP_URL} rel="noopener">예약·구매</a>}
     </nav>
     <hr class="bd-footer__hairline" />
     <p class="bd-footer__legal">

@@ -26,7 +26,10 @@ const path = Astro.url.pathname;
         >{item.label}</a>
       ))}
     </nav>
-    <a href={SITE_CONFIG.SHOP_URL} class="bd-header__cta" rel="noopener">예약·구매</a>
+    {/* SHOP_URL이 비면 미렌더 — 죽은 링크로 트래픽을 흘리지 않는다 (PHONE과 동일 패턴) */}
+    {SITE_CONFIG.SHOP_URL && (
+      <a href={SITE_CONFIG.SHOP_URL} class="bd-header__cta" rel="noopener">예약·구매</a>
+    )}
   </div>
 </header>
 

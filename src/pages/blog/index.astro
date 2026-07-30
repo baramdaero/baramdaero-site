@@ -3,7 +3,9 @@
 import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 
+// sample: true 글은 형식 참고용 템플릿 — 프로덕션 미노출 (md에서 플래그를 지우면 자동 노출)
 const posts = (await getCollection('blog'))
+  .filter((p) => !p.data.sample)
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
 const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? '';
@@ -21,23 +23,28 @@ const breadcrumb = {
     <div class="bd-container">
       <p class="bd-microlabel">Blog</p>
       <h1 class="bd-section-title">블로그</h1>
-      <ul class="blog__list">
-        {posts.map((post) => (
-          <li>
-            <a class="blog__item" href={`/blog/${post.id}/`}>
-              <span class="blog__date">{post.data.date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-              <span class="blog__title">{post.data.title}</span>
-              <span class="blog__desc">{post.data.description}</span>
-            </a>
-          </li>
-        ))}
-      </ul>
+      {posts.length > 0 ? (
+        <ul class="blog__list">
+          {posts.map((post) => (
+            <li>
+              <a class="blog__item" href={`/blog/${post.id}/`}>
+                <span class="blog__date">{post.data.date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                <span class="blog__title">{post.data.title}</span>
+                <span class="blog__desc">{post.data.description}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p class="blog__pending">글을 준비 중입니다.</p>
+      )}
     </div>
   </section>
 </Base>
 
 <style>
   .blog .bd-container { max-width: 760px; }
+  .blog__pending { color: var(--br-text-sub); padding: 32px 0; }
   .blog__list { list-style: none; }
   .blog__item {
     display: grid;

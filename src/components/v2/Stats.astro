@@ -1,11 +1,14 @@
 ---
 // S7 신뢰 지표 — trust.json stats가 유일한 소스 (하드코딩 금지). 카운트업은 motion.ts 공용.
+// 샘플 항목은 로더(trust.ts)에서 이미 걸러져 들어온다.
+// 지표 1개짜리 스트립은 설득력이 없고 빈약해 보이므로 2개 미만이면 섹션째 숨긴다.
 import type { TrustStat } from '../../lib/trust.ts';
 
 interface Props { stats: TrustStat[] }
 const { stats } = Astro.props;
+const MIN_STATS = 2;
 ---
-{stats.length > 0 && (
+{stats.length >= MIN_STATS && (
   <section class="bd-section v2-stats" aria-label="주요 실적">
     <div class="bd-container v2-stats__grid">
       {stats.map((s) => (
