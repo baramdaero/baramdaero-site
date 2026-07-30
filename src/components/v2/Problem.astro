@@ -1,0 +1,56 @@
+---
+// S2 문제 제기 (bg-alt) — 오염 비포 사진 자리 2장.
+// [사진업로드] public/media/에 오염 열교환기·송풍팬 비포 사진(4:3, 1200×900↑) 업로드 후
+//              아래 PHOTOS의 src 기입 — src가 비면 placeholder 면이 나온다.
+const PHOTOS = [
+  { src: '', caption: '세척 전 열교환기' },
+  { src: '', caption: '세척 전 송풍팬' },
+];
+---
+<section class="bd-section v2-problem">
+  <div class="bd-container">
+    <span class="br-eyebrow br-reveal">왜 세척인가</span>
+    <h2 class="br-h br-reveal">보이지 않는 곳에서<br />공기는 오염되고 있습니다</h2>
+    <p class="br-body br-reveal">필터 뒤 열교환기와 송풍팬에는 곰팡이와 먼지가 쌓입니다.<br />필터 청소만으로는 닿지 않는 영역입니다.</p>
+    <div class="v2-problem__grid">
+      {PHOTOS.map((p) => (
+        <figure class="v2-problem__ph br-reveal">
+          {p.src ? (
+            <img src={p.src} alt={p.caption} loading="lazy" />
+          ) : (
+            <div class="v2-problem__empty" aria-hidden="true"></div>
+          )}
+          <figcaption>{p.caption}</figcaption>
+        </figure>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .v2-problem { background: var(--br-bg-alt); }
+  .v2-problem__grid {
+    margin-top: 40px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .v2-problem__ph img,
+  .v2-problem__empty {
+    aspect-ratio: 4 / 3;
+    width: 100%;
+    object-fit: cover;
+    border-radius: var(--radius);
+  }
+  .v2-problem__empty {
+    background: var(--br-line);
+  }
+  .v2-problem__ph figcaption {
+    margin-top: 10px;
+    font-size: 14px;
+    color: var(--br-text-sub);
+  }
+  @media (min-width: 768px) {
+    .v2-problem__grid { grid-template-columns: 1fr 1fr; gap: 24px; }
+  }
+</style>

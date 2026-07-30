@@ -1,0 +1,40 @@
+---
+// S10 CTA 밴드 (canopy 풀폭) — CTA는 챗봇 호출 단일 (문의 폼 신설 금지).
+// PHONE이 비어 있으면 전화 보조 CTA는 렌더하지 않는다 (임의 기입 금지).
+import { SITE_CONFIG } from '../../config.js';
+
+interface Props {
+  chatTree?: string;
+  buttonLabel?: string;
+}
+const { chatTree = 'menu', buttonLabel = '견적 문의' } = Astro.props;
+---
+<section class="bd-section v2-cta">
+  <div class="bd-container">
+    <h2 class="br-h v2-cta__title br-reveal"><slot /></h2>
+    <p class="v2-cta__sub br-reveal"><slot name="sub" /></p>
+    <div class="v2-cta__row br-reveal">
+      <button type="button" class="bd-cta bd-cta--deep v2-cta__btn" data-chat-tree={chatTree}>{buttonLabel}</button>
+      {SITE_CONFIG.PHONE && (
+        <a class="v2-cta__phone" href={`tel:${SITE_CONFIG.PHONE}`}>{SITE_CONFIG.PHONE}</a>
+      )}
+    </div>
+  </div>
+</section>
+
+<style>
+  .v2-cta { background: var(--br-canopy); text-align: center; }
+  .v2-cta__title { color: #fff; margin-top: 0; }
+  .v2-cta__sub { margin-top: 18px; font-size: 16px; line-height: 1.7; color: rgba(255, 255, 255, 0.82); }
+  .v2-cta__row {
+    margin-top: 36px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+    align-items: center;
+  }
+  .v2-cta__btn { font-size: 18px; padding: 18px 48px; border-radius: 12px; }
+  .v2-cta__phone { font-weight: 700; color: var(--br-lime); }
+  @media (min-width: 768px) { .v2-cta__sub { font-size: 17px; } }
+</style>

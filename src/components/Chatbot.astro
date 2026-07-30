@@ -55,11 +55,11 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
         <input
           class="chat__input"
           data-chat-input
-          type="number"
-          min="1"
+          type="text"
           inputmode="numeric"
           placeholder="선택지를 눌러 주세요"
           aria-label="메시지 입력"
+          autocomplete="off"
           disabled
         />
         <button type="submit" class="chat__send" data-chat-send disabled aria-label="보내기">
@@ -103,19 +103,130 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
   type Node = {
     text?: string | ((d: Data) => string);
     options?: Option[];
-    input?: { placeholder: string; key: string; next: string };
+    input?: {
+      placeholder: string | ((d: Data) => string);
+      key: string;
+      next: string;
+      /** number = 숫자만 (대수), text = 자유 입력 (아파트명·층수). 기본 number */
+      type?: 'number' | 'text';
+      /** number 값 뒤에 붙일 단위 — 저장·말풍선 공통 */
+      suffix?: string;
+      /** text 최대 길이 */
+      max?: number;
+    };
     card?: boolean;
     etc?: boolean;
     home?: boolean;
     phoneFirst?: boolean;
   };
 
-  const REGION_NOTICE =
-    '수도권 전 지역에서 시공합니다. 지방은 현장 규모에 따라 출장 시공이 가능합니다.';
+  /* ═══════════════════════════════════════════════════════════════════
+     문구 템플릿 (COPY) — 챗봇이 하는 말은 전부 여기 있다.
+     아래 NODES는 순서·분기만 담당하므로, 말투를 고칠 때 NODES는 건드리지 않는다.
+
+     ▸ L(...) 의 인자 한 칸 = 화면의 한 줄. 줄바꿈 위치를 그대로 통제한다.
+         L('도면이나 설치 위치 사진이 있으면', '함께 보내주세요.')
+           →  도면이나 설치 위치 사진이 있으면
+              함께 보내주세요.
+     ▸ 한 줄로 끝나는 문구는 L 없이 그냥 문자열로 둔다.
+     ▸ 한 줄 상한은 한글 25자다 (360px·데스크톱 패널 모두 말풍선 279px로 동일 — 실측).
+       넘기면 자동 줄바꿈이 끼어들어 의도한 줄 나눔이 깨진다. 여유를 두고 22자 안쪽 권장.
+       숫자·영문이 섞이면 폭이 줄어 26자도 들어갈 때가 있으나, 자수로 세지 말고 아래로 검사할 것.
+     ▸ 끊는 자리는 어절·의미 단위. 조사만 다음 줄로 넘기지 않는다.
+         (X) '신축·입주 예정 단지는 공동구매를' / '진행합니다.'
+         (O) '신축·입주 예정 단지는' / '공동구매를 진행합니다.'
+     ▸ 줄 앞뒤 공백은 그대로 화면에 나온다(pre-wrap). 공백으로 정렬하지 말 것.
+     ▸ 고친 뒤 검사법 — 챗봇을 열고 브라우저 콘솔에 붙여넣으면 넘친 줄만 뽑아준다:
+         (() => { const l=document.querySelector('[data-chat-log]'),p=document.createElement('p');
+           p.className='chat__msg chat__msg--bot'; l.appendChild(p);
+           const c=getComputedStyle(p), lh=parseFloat(c.lineHeight),
+             pd=parseFloat(c.paddingTop)+parseFloat(c.paddingBottom);
+           const bad=[...document.querySelectorAll('[data-chat-log] .chat__msg--bot')]
+             .flatMap(b=>b.textContent.split('\n')).filter(t=>{ p.textContent=t;
+               return Math.round((p.getBoundingClientRect().height-pd)/lh)>1; });
+           p.remove(); return bad; })()
+       → 빈 배열이면 통과. 화면에 이미 나온 말풍선만 검사하므로 트리를 걸어가며 확인한다.
+     ═══════════════════════════════════════════════════════════════════ */
+  const L = (...lines: string[]) => lines.join('\n');
+
+  const COPY = {
+    /* --- 공통 --- */
+    region_notice: L('수도권 전 지역에서 시공합니다.', '지방은 현장 규모에 따라', '출장 시공이 가능합니다.'),
+    ask_region: '지역이 어디신가요?',
+    ask_units: L('몇 대인가요?', '숫자로 입력해 주세요.'),
+
+    /* --- 트리1 세척 --- */
+    clean_start: '기종을 선택해 주세요.',
+    clean_end: L('전면·측면 사진을 보내주시면', '확정 견적을 드립니다.'),
+
+    /* --- 트리2 AS --- */
+    as_q1: L('바람대로에서 시공 또는', '세척·관리를 받으셨나요?'),
+    as_nonclient: L(
+      'AS는 바람대로 시공·관리 고객 대상으로',
+      '운영하고 있습니다.',
+      '제품 자체 이상은',
+      '제조사 서비스센터가 가장 빠릅니다.',
+      '혹시 저희에게 받으신 것 같은데',
+      '기억이 안 나신다면,',
+      '연락처로 확인해 드립니다.',
+    ),
+    as_othermaker: L(
+      '제품 본체 라벨에 적힌',
+      '제조사 고객센터로 문의해 주세요.',
+      '세척·점검은 바람대로에서',
+      '브랜드 관계없이 가능합니다.',
+    ),
+    as_symptom: '어떤 증상인가요?',
+    as_say_noise: L('작동 영상을 함께 보내주시면', '확인이 빠릅니다.'),
+    as_say_weak: L('실내기·실외기 사진을 함께 보내주시면', '확인이 빠릅니다.'),
+    as_smell: L(
+      '냄새는 고장이 아니라 내부 오염입니다.',
+      '분해 세척으로 해결됩니다.',
+      '세척 견적으로 이어드릴게요.',
+    ),
+    as_leak: L(
+      '누수는 긴급 상황입니다.',
+      '감전·합선 위험이 있으니',
+      '에어컨 전원을 꺼두세요.',
+      '빠른 처리가 필요하면 전화 주세요.',
+    ),
+    as_when: L('시공·세척 받으신 지', '얼마나 되셨나요?'),
+    as_say_free: '시공 후 2년 이내라 무상 점검 대상입니다.',
+    as_say_paid: L('시공 후 2년이 지나 유상 점검으로 진행됩니다.', '방문 전에 예상 금액을 안내드립니다.'),
+    as_card: '접수 내용을 정리했습니다.',
+
+    /* --- 트리3 설치 --- */
+    install_space: '설치 공간이 어디인가요?',
+    install_brand: '브랜드를 선택해 주세요.',
+    install_type: '설치 유형을 선택해 주세요.',
+    install_say_move: L(
+      '이전 설치는 기존 배관 상태를 봐야 해서',
+      '전화 상담이 정확합니다.',
+      '접수만 남겨주셔도 됩니다.',
+    ),
+    // 위치 — 공간에 따라 아파트명 / 건물명으로 갈린다
+    install_place_home: L('설치할 곳의 아파트명과 층수를', '적어주세요.'),
+    install_place_shop: L('설치할 곳의 건물명과 층수를', '적어주세요.'),
+    install_place_hint_home: '예: 바람아파트 101동 15층',
+    install_place_hint_shop: '예: 바람빌딩 3층',
+    install_live: L('지금 살고 계신 곳인가요,', '입주 예정인 곳인가요?'),
+    install_say_movein: L(
+      '신축·입주 예정 단지는',
+      '공동구매를 진행합니다.',
+      '접수 남겨주시면',
+      '단지 일정에 맞춰 안내드립니다.',
+    ),
+    install_interior: L('인테리어 공사는', '어떻게 진행되나요?'),
+    install_say_interior: L('인테리어 일정과 맞물리는 공정이라', '접수 때 현재 상황을 함께 알려주세요.'),
+    install_end: L('도면이나 설치 위치 사진이 있으면', '함께 보내주세요.'),
+
+    /* --- 트리4 기타 --- */
+    etc: '원하시는 채널로 문의해 주세요.',
+  };
 
   const regionOptions = (next: string): Option[] => [
     { label: '수도권', next, set: { 지역: '수도권' } },
-    { label: '그 외 지역', next, set: { 지역: '그 외 지역' }, say: REGION_NOTICE },
+    { label: '그 외 지역', next, set: { 지역: '그 외 지역' }, say: COPY.region_notice },
   ];
 
   const NODES: Record<string, Node> = {
@@ -127,7 +238,7 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
 
     /* 트리1 — 세척 */
     'clean.start': {
-      text: '기종을 선택해 주세요.',
+      text: COPY.clean_start,
       options: [
         { label: '벽걸이', next: 'clean.units', set: { 분류: '세척', 기종: '벽걸이' } },
         { label: '스탠드', next: 'clean.units', set: { 분류: '세척', 기종: '스탠드' } },
@@ -136,25 +247,25 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
       ],
     },
     'clean.units': {
-      text: '몇 대인가요? 숫자로 입력해 주세요.',
-      input: { placeholder: '예: 2', key: '대수', next: 'clean.region' },
+      text: COPY.ask_units,
+      input: { placeholder: '예: 2', key: '대수', next: 'clean.region', type: 'number', suffix: '대' },
     },
-    'clean.region': { text: '지역이 어디신가요?', options: regionOptions('clean.end') },
+    'clean.region': { text: COPY.ask_region, options: regionOptions('clean.end') },
     'clean.end': {
-      text: '전면·측면 사진을 보내주시면 확정 견적을 드립니다.',
+      text: COPY.clean_end,
       card: true,
     },
 
     /* 트리2 — AS */
     'as.q1': {
-      text: '바람대로에서 시공 또는 세척·관리를 받으셨나요?',
+      text: COPY.as_q1,
       options: [
         { label: '예', next: 'as.symptom', set: { 분류: 'AS' } },
         { label: '아니오 · 모르겠음', next: 'as.nonclient' },
       ],
     },
     'as.nonclient': {
-      text: 'AS는 바람대로 시공·관리 고객 대상으로 운영하고 있습니다. 제품 자체 이상은 제조사 서비스센터가 가장 빠릅니다. 혹시 저희에게 받으신 것 같은데 기억이 안 나신다면, 연락처로 확인해 드립니다.',
+      text: COPY.as_nonclient,
       options: [
         { label: '상담 연결', consult: true },
         { label: '삼성 서비스센터 1588-3366', tel: '15883366' },
@@ -164,91 +275,117 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
       ],
     },
     'as.othermaker': {
-      text: '제품 본체 라벨에 적힌 제조사 고객센터로 문의해 주세요. 세척·점검은 바람대로에서 브랜드 관계없이 가능합니다.',
+      text: COPY.as_othermaker,
       options: [
         { label: '세척 견적 받기', next: 'clean.start' },
         { label: '처음으로', next: 'home', sub: true },
       ],
     },
     'as.symptom': {
-      text: '어떤 증상인가요?',
+      text: COPY.as_symptom,
       options: [
         { label: '냄새', next: 'as.smell', set: { 증상: '냄새' } },
         { label: '누수 (물이 샘)', next: 'as.leak', set: { 증상: '누수', 긴급: '긴급' } },
-        { label: '소음·진동', next: 'as.when', set: { 증상: '소음·진동' }, say: '작동 영상을 함께 보내주시면 확인이 빠릅니다.' },
+        { label: '소음·진동', next: 'as.when', set: { 증상: '소음·진동' }, say: COPY.as_say_noise },
         { label: '에러코드·작동불량', next: 'as.when', set: { 증상: '에러코드·작동불량' } },
-        { label: '냉방 약함', next: 'as.when', set: { 증상: '냉방 약함' }, say: '실내기·실외기 사진을 함께 보내주시면 확인이 빠릅니다.' },
+        { label: '냉방 약함', next: 'as.when', set: { 증상: '냉방 약함' }, say: COPY.as_say_weak },
       ],
     },
     'as.smell': {
-      text: '냄새는 고장이 아니라 내부 오염입니다. 분해 세척으로 해결됩니다. 세척 견적으로 이어드릴게요.',
+      text: COPY.as_smell,
       options: [{ label: '세척 견적 받기', next: 'clean.start' }],
     },
     'as.leak': {
-      text: '누수는 긴급 상황입니다. 감전·합선 위험이 있으니 에어컨 전원을 꺼두세요. 빠른 처리가 필요하면 전화 주세요.',
+      text: COPY.as_leak,
       phoneFirst: true,
       options: regionOptions('as.card'),
     },
     'as.when': {
-      text: '시공·세척 받으신 지 얼마나 되셨나요?',
+      text: COPY.as_when,
       options: [
-        { label: '2년 이내', next: 'as.region', set: { 고객구분: '무상' }, say: '시공 후 2년 이내라 무상 점검 대상입니다.' },
-        { label: '2년 넘음', next: 'as.region', set: { 고객구분: '유상' }, say: '시공 후 2년이 지나 유상 점검으로 진행됩니다. 방문 전에 예상 금액을 안내드립니다.' },
+        { label: '2년 이내', next: 'as.region', set: { 고객구분: '무상' }, say: COPY.as_say_free },
+        { label: '2년 넘음', next: 'as.region', set: { 고객구분: '유상' }, say: COPY.as_say_paid },
         { label: '모름', next: 'as.region', set: { 고객구분: '확인 필요' } },
       ],
     },
-    'as.region': { text: '지역이 어디신가요?', options: regionOptions('as.card') },
+    'as.region': { text: COPY.ask_region, options: regionOptions('as.card') },
     'as.card': {
-      text: '접수 내용을 정리했습니다.',
+      text: COPY.as_card,
       card: true,
     },
 
-    /* 트리3 — 설치 */
+    /* 트리3 — 설치
+       위치(아파트명·층수) → 거주 상태 → (입주 예정이면) 인테리어 진행 여부 순.
+       구 '신축 입주 예정' 공간 선택지는 거주 상태의 '입주 예정'으로 흡수됐다
+       (같은 걸 두 번 묻지 않기 위함) — 공동구매 안내도 그쪽으로 옮겼다. */
     'install.space': {
-      text: '설치 공간이 어디인가요?',
+      text: COPY.install_space,
       options: [
         { label: '아파트·주택', next: 'install.brand', set: { 분류: '설치', 공간: '아파트·주택' } },
         { label: '상가·사무실', next: 'install.brand', set: { 분류: '설치', 공간: '상가·사무실' } },
-        {
-          label: '신축 입주 예정',
-          next: 'install.brand',
-          set: { 분류: '설치', 공간: '신축 입주 예정' },
-          say: '신축 입주 단지는 공동구매를 진행합니다. 접수 남겨주시면 단지 일정에 맞춰 안내드립니다.',
-        },
       ],
     },
     'install.brand': {
-      text: '브랜드를 선택해 주세요.',
+      text: COPY.install_brand,
       options: [
         ...SITE_CONFIG.BRANDS_INSTALL.map((b: string) => ({ label: b, next: 'install.type', set: { 브랜드: b } })),
         { label: '상담으로 결정', next: 'install.type', set: { 브랜드: '상담으로 결정' } },
       ],
     },
     'install.type': {
-      text: '설치 유형을 선택해 주세요.',
+      text: COPY.install_type,
       options: [
         { label: '신규 설치', next: 'install.units', set: { 유형: '신규 설치' } },
         {
           label: '이전 설치',
           next: 'install.units',
           set: { 유형: '이전 설치' },
-          say: '이전 설치는 기존 배관 상태를 봐야 해서 전화 상담이 정확합니다. 접수만 남겨주셔도 됩니다.',
+          say: COPY.install_say_move,
         },
       ],
     },
     'install.units': {
-      text: '몇 대인가요? 숫자로 입력해 주세요.',
-      input: { placeholder: '예: 1', key: '대수', next: 'install.region' },
+      text: COPY.ask_units,
+      input: { placeholder: '예: 1', key: '대수', next: 'install.place', type: 'number', suffix: '대' },
     },
-    'install.region': { text: '지역이 어디신가요?', options: regionOptions('install.end') },
+    'install.place': {
+      text: (d) => (d.공간 === '상가·사무실' ? COPY.install_place_shop : COPY.install_place_home),
+      input: {
+        placeholder: (d) => (d.공간 === '상가·사무실' ? COPY.install_place_hint_shop : COPY.install_place_hint_home),
+        key: '위치',
+        next: 'install.live',
+        type: 'text',
+        max: 40,
+      },
+    },
+    'install.live': {
+      text: COPY.install_live,
+      options: [
+        { label: '거주 중', next: 'install.end', set: { 거주상태: '거주 중' } },
+        {
+          label: '입주 예정',
+          next: 'install.interior',
+          set: { 거주상태: '입주 예정' },
+          say: COPY.install_say_movein,
+        },
+      ],
+    },
+    'install.interior': {
+      text: COPY.install_interior,
+      options: [
+        { label: '진행 중', next: 'install.end', set: { 인테리어: '진행 중' }, say: COPY.install_say_interior },
+        { label: '예정 · 일정 미정', next: 'install.end', set: { 인테리어: '예정 · 일정 미정' } },
+        { label: '없음', next: 'install.end', set: { 인테리어: '없음' } },
+      ],
+    },
     'install.end': {
-      text: '도면이나 설치 위치 사진이 있으면 함께 보내주세요.',
+      text: COPY.install_end,
       card: true,
     },
 
     /* 트리4 — 기타 */
     etc: {
-      text: '원하시는 채널로 문의해 주세요.',
+      text: COPY.etc,
       etc: true,
     },
   };
@@ -325,14 +462,19 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     chosen?.classList.add('is-chosen');
   }
 
-  /* ---------- 입력바 ---------- */
-  let inputHandler: ((value: number) => void) | null = null;
+  /* ---------- 입력바 ----------
+     숫자 입력(대수)과 자유 입력(아파트명·층수) 두 모드. 검증은 모드별로 갈린다. */
+  let inputHandler: ((value: string) => void) | null = null;
+  let inputMode: 'number' | 'text' = 'number';
 
-  function armInput(placeholder: string, onSubmit: (n: number) => void) {
+  function armInput(placeholder: string, mode: 'number' | 'text', max: number, onSubmit: (v: string) => void) {
     inputHandler = onSubmit;
+    inputMode = mode;
     input.disabled = false;
     sendBtn.disabled = false;
     input.placeholder = placeholder;
+    input.inputMode = mode === 'number' ? 'numeric' : 'text';
+    input.maxLength = max;
     input.value = '';
     input.focus();
   }
@@ -342,17 +484,26 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     input.disabled = true;
     sendBtn.disabled = true;
     input.placeholder = '선택지를 눌러 주세요';
+    input.inputMode = 'numeric';
     input.value = '';
   }
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     if (!inputHandler) return;
-    const n = parseInt(input.value, 10);
-    if (!n || n < 1) { input.focus(); return; }
+    const raw = input.value.trim();
+    let value: string;
+    if (inputMode === 'number') {
+      const n = parseInt(raw, 10);
+      if (!n || n < 1) { input.focus(); return; }
+      value = String(n);
+    } else {
+      if (!raw) { input.focus(); return; }
+      value = raw;
+    }
     const handler = inputHandler;
     disarmInput();
-    handler(n);
+    handler(value);
   });
 
   /* ---------- 히스토리 (← 이전) ---------- */
@@ -435,9 +586,11 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
 
       if (node.input) {
         const spec = node.input;
-        armInput(spec.placeholder, (n) => {
-          data[spec.key] = `${n}대`;
-          bubble(`${n}대`, 'user');
+        const hint = typeof spec.placeholder === 'function' ? spec.placeholder(data) : spec.placeholder;
+        armInput(hint, spec.type ?? 'number', spec.max ?? 20, (v) => {
+          const shown = `${v}${spec.suffix ?? ''}`;
+          data[spec.key] = shown;
+          bubble(shown, 'user');
           void goto(spec.next);
         });
       }
@@ -532,6 +685,9 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     if (data.분류 === '설치') push('브랜드·유형', [data.브랜드, data.유형].filter(Boolean).join(' · '));
     push('기종', data.기종);
     push('대수', data.대수);
+    push('위치', data.위치);
+    push('거주 상태', data.거주상태);
+    push('인테리어', data.인테리어);
     push('지역', data.지역);
     push('증상', data.증상);
     return lines.join('\n');
@@ -872,6 +1028,8 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     max-width: 85%;
     font-size: 14px;
     line-height: 1.55;
+    /* COPY의 L(...) 줄 나눔이 화면에 그대로 나오게 — 개행 위치를 문구가 통제한다 */
+    white-space: pre-wrap;
     padding: 10px 14px;
     border-radius: 12px;
     opacity: 1;

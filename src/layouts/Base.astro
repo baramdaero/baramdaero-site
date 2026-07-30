@@ -74,8 +74,6 @@ const extraJsonLd = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
 
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
     <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&display=swap" />
 
     <script type="application/ld+json" set:html={JSON.stringify(businessJsonLd)} />
     {extraJsonLd.map((ld) => (
@@ -89,5 +87,9 @@ const extraJsonLd = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
     </main>
     <SiteFooter />
     <Chatbot />
+    <script>
+      // 공용 모션 v2 — 리빌·카운트업 (no-JS 시 콘텐츠 전부 노출)
+      import '../scripts/motion.ts';
+    </script>
   </body>
 </html>

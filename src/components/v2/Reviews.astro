@@ -1,0 +1,75 @@
+---
+// S9 고객 후기 — 가로 스크롤 스냅 캐러셀.
+// ⚠️ 아래 3건은 전부 [실후기교체] 더미 — 실후기(동의 확보분) 교체 전까지
+//    페이지에서 이 컴포넌트를 주석 상태로 유지한다 (홈 미노출).
+const REVIEWS = [
+  {
+    body: '천장을 뜯어서 팬을 통째로 꺼내 씻는 걸 처음 봤습니다. 세척 후 첫 가동 때 냄새가 없어진 게 바로 느껴졌고, 전후 사진을 같이 받아서 믿음이 갔습니다.',
+    meta: '서울 강동구 · 34평 · 분해 세척',
+  },
+  {
+    body: '구축 아파트라 배관 상태 걱정이 많았는데, 실측 때 배관 경로를 사진으로 찍어 설명해 주셨습니다. 견적서에 적힌 범위 그대로 하루 만에 끝났습니다.',
+    meta: '경기 성남시 · 42평 · 시스템에어컨 설치',
+  },
+  {
+    body: '매장이라 영업 끝난 밤 시간에 맞춰 와 주셨습니다. 점검 내역을 매번 문자로 남겨 줘서 관리 상태를 따로 물어볼 일이 없습니다.',
+    meta: '서울 마포구 · 상가 · 정기 관리',
+  },
+];
+---
+<section class="bd-section v2-reviews">
+  <div class="bd-container">
+    <span class="br-eyebrow br-reveal">고객 후기</span>
+    <h2 class="br-h br-reveal">먼저 맡겨본 분들의<br />기록입니다</h2>
+  </div>
+  <div class="v2-reviews__rail br-reveal" aria-label="고객 후기 목록">
+    {REVIEWS.map((r) => (
+      <article class="v2-reviews__card">
+        <p class="v2-reviews__stars" aria-label="별점 5점 만점에 5점">★★★★★</p>
+        <p class="v2-reviews__body">{r.body}</p>
+        <p class="v2-reviews__meta">{r.meta} <span class="v2-reviews__tag">[실후기교체]</span></p>
+      </article>
+    ))}
+  </div>
+</section>
+
+<style>
+  .v2-reviews { background: var(--br-bg); }
+  .v2-reviews__rail {
+    margin-top: 48px;
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding: 4px 20px 16px;
+    -webkit-overflow-scrolling: touch;
+  }
+  @media (min-width: 1160px) {
+    .v2-reviews__rail {
+      padding-left: calc((100vw - 1120px) / 2 + 20px);
+      padding-right: calc((100vw - 1120px) / 2 + 20px);
+    }
+  }
+  .v2-reviews__card {
+    flex: none;
+    width: 82%;
+    max-width: 340px;
+    scroll-snap-align: start;
+    border: 1px solid var(--br-line);
+    border-radius: 16px;
+    padding: 24px 20px;
+  }
+  .v2-reviews__stars { font-size: 15px; letter-spacing: 2px; color: var(--br-canopy); }
+  .v2-reviews__body { margin-top: 12px; font-size: 15px; line-height: 1.7; }
+  .v2-reviews__meta { margin-top: 14px; font-size: 13px; color: var(--br-text-sub); }
+  .v2-reviews__tag {
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--br-bg-alt);
+    border: 1px solid var(--br-line);
+    border-radius: 6px;
+    padding: 1px 6px;
+  }
+</style>

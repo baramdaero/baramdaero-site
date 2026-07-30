@@ -1,0 +1,93 @@
+---
+// S6 시공 마퀴 (canopy-deep 풀폭) — 카드는 cases 컬렉션에서 온다 (더미 생성 금지).
+// 트랙 안에 동일 세트 2벌 → translateX(-50%) 무한 루프로 이음새 제거. hover 시 정지.
+// 사례가 적으면 세트 안에서 순환 반복해 최소 6카드를 채운다.
+import type { CollectionEntry } from 'astro:content';
+
+interface Props { entries: CollectionEntry<'cases'>[] }
+const { entries } = Astro.props;
+
+const MIN_CARDS = 6;
+function fill(list: CollectionEntry<'cases'>[]) {
+  if (!list.length) return [];
+  const out = [...list];
+  while (out.length < MIN_CARDS) out.push(list[out.length % list.length]);
+  return out;
+}
+const row1 = fill(entries);
+const row2 = fill([...entries].reverse());
+
+const label = (e: CollectionEntry<'cases'>) =>
+  `${e.data.region} · ${e.data.space} ${e.data.type} ${e.data.units}대${e.data.sample ? ' (샘플)' : ''}`;
+---
+{entries.length > 0 && (
+  <section class="bd-section v2-mq">
+    <div class="bd-container v2-mq__head">
+      <span class="br-eyebrow br-reveal">시공 기록</span>
+      <h2 class="br-h v2-mq__title br-reveal">현장이 증명합니다</h2>
+    </div>
+    {[row1, row2].map((row, i) => (
+      <div class="v2-mq__row">
+        <div class:list={['v2-mq__track', { 'v2-mq__track--rev': i === 1 }]}>
+          {[0, 1].map((dup) => (
+            <div class="v2-mq__set" aria-hidden={dup === 1 ? 'true' : undefined}>
+              {row.map((e) => (
+                <a class="v2-mq__card" href={`/cases/${e.id}/`} tabindex={dup === 1 ? -1 : undefined}>
+                  {e.data.cover ? (
+                    <img src={e.data.cover} alt="" loading="lazy" />
+                  ) : (
+                    <div class="v2-mq__empty" aria-hidden="true"></div>
+                  )}
+                  <p class="v2-mq__label">{label(e)}</p>
+                </a>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    ))}
+    <p class="v2-mq__more br-reveal">
+      <a class="bd-cta bd-cta--deep" href="/cases/">시공사례 전체 보기</a>
+    </p>
+  </section>
+)}
+
+<style>
+  .v2-mq { background: var(--br-canopy-deep); overflow: hidden; }
+  .v2-mq__head { text-align: center; margin-bottom: 48px; }
+  .v2-mq__title { color: #fff; }
+  .v2-mq__row { overflow: hidden; margin-top: 16px; }
+  .v2-mq__track {
+    display: flex;
+    width: max-content;
+    animation: v2-mq-flow 48s linear infinite;
+  }
+  .v2-mq__track--rev { animation-direction: reverse; }
+  .v2-mq__row:hover .v2-mq__track { animation-play-state: paused; }
+  @keyframes v2-mq-flow { to { transform: translateX(-50%); } }
+  .v2-mq__set { display: flex; }
+  .v2-mq__card { width: 260px; margin-right: 16px; flex: none; }
+  .v2-mq__card img,
+  .v2-mq__empty {
+    aspect-ratio: 16 / 10;
+    width: 100%;
+    object-fit: cover;
+    border-radius: var(--radius);
+  }
+  .v2-mq__empty {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+  }
+  .v2-mq__label {
+    margin-top: 8px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.75);
+  }
+  .v2-mq__more { text-align: center; margin-top: 48px; }
+  @media (min-width: 768px) {
+    .v2-mq__card { width: 320px; margin-right: 20px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .v2-mq__track { animation: none; }
+  }
+</style>
