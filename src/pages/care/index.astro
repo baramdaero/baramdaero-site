@@ -83,10 +83,11 @@ if (careFaq.length) {
     {intro && <Fragment slot="sub">{intro}</Fragment>}
   </PageHero>
 
+  {/* 세척·관리 트랙 v3 — 기존 에어컨 관리(증상) → 분해세척(절차→기준가) → 정기관리(시기) 순서 */}
   {symptoms.length > 0 && (
     <section class="bd-section care-symptoms">
       <div class="bd-container">
-        <span class="br-eyebrow br-reveal">증상 체크</span>
+        <span class="br-eyebrow br-reveal">기존 에어컨 관리</span>
         <h2 class="br-h br-reveal">이런 증상이 있다면<br />세척 시점입니다</h2>
         <div class="care-symptoms__grid">
           {symptoms.map((s) => (
@@ -105,6 +106,27 @@ if (careFaq.length) {
             </div>
           ))}
         </div>
+      </div>
+    </section>
+  )}
+
+  {process.length > 0 && (
+    <section class="bd-section care-process">
+      <div class="bd-container">
+        <span class="br-eyebrow br-reveal">분해세척 절차</span>
+        <h2 class="br-h br-reveal">뜯고, 씻고,<br />기록으로 남깁니다</h2>
+        <ol class="care-process__list">
+          {process.map((st) => (
+            <li class="care-process__item br-reveal">
+              <span class="care-process__no">{String(st.step).padStart(2, '0')}</span>
+              <div class="care-process__body">
+                <h3>{st.title}</h3>
+                <p>{st.body}</p>
+                {st.image && <img src={st.image} alt={`${st.title} 작업 사진`} loading="lazy" />}
+              </div>
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   )}
@@ -148,31 +170,10 @@ if (careFaq.length) {
     </div>
   </section>
 
-  {process.length > 0 && (
-    <section class="bd-section care-process">
-      <div class="bd-container">
-        <span class="br-eyebrow br-reveal">세척 절차</span>
-        <h2 class="br-h br-reveal">뜯고, 씻고,<br />기록으로 남깁니다</h2>
-        <ol class="care-process__list">
-          {process.map((st) => (
-            <li class="care-process__item br-reveal">
-              <span class="care-process__no">{String(st.step).padStart(2, '0')}</span>
-              <div class="care-process__body">
-                <h3>{st.title}</h3>
-                <p>{st.body}</p>
-                {st.image && <img src={st.image} alt={`${st.title} 작업 사진`} loading="lazy" />}
-              </div>
-            </li>
-          ))}
-        </ol>
-      </div>
-    </section>
-  )}
-
   {seasons.length > 0 && (
     <section class="bd-section care-seasons">
       <div class="bd-container">
-        <span class="br-eyebrow br-reveal">시기별 이유</span>
+        <span class="br-eyebrow br-reveal">정기 관리</span>
         <h2 class="br-h br-reveal">미룰수록<br />오염은 깊어집니다</h2>
         <div class="care-seasons__grid">
           {seasons.map((s) => (
@@ -211,7 +212,7 @@ if (careFaq.length) {
 
 <style>
   /* 증상 카드 — 화이트 섹션 */
-  .care-symptoms { background: var(--br-bg); }
+  .care-symptoms { background: var(--br-base); }
   .care-symptoms__grid {
     margin-top: 48px;
     display: grid;
@@ -226,9 +227,9 @@ if (careFaq.length) {
     display: flex;
     flex-direction: column;
   }
-  .care-symptoms__icon { color: var(--br-canopy); margin-bottom: 12px; }
-  .care-symptoms__title { font-size: 17px; margin-bottom: 8px; color: var(--br-canopy); }
-  .care-symptoms__body { font-size: 14px; color: var(--br-text-sub); flex: 1; }
+  .care-symptoms__icon { color: var(--br-teal); margin-bottom: 12px; }
+  .care-symptoms__title { font-size: 17px; margin-bottom: 8px; color: var(--br-teal); }
+  .care-symptoms__body { font-size: 14px; color: var(--br-ink-sub); flex: 1; }
   .care-symptoms__cta {
     display: inline-flex;
     align-items: center;
@@ -237,14 +238,14 @@ if (careFaq.length) {
     min-height: 44px;
     font-size: 14px;
     font-weight: 700;
-    color: var(--br-canopy);
+    color: var(--br-teal);
     transition: color var(--dur-color) ease, gap var(--dur-color) var(--ease-out);
   }
-  .care-symptoms__cta:hover { color: var(--br-canopy-deep); }
+  .care-symptoms__cta:hover { color: var(--br-teal-deep); }
   .care-symptoms__cta:active { transform: scale(0.98); }
 
   /* 기준가 표 — bg-alt 섹션 */
-  .care-prices { background: var(--br-bg-alt); }
+  .care-prices { background: var(--br-base); }
   .care-prices__wrap {
     margin-top: 48px;
     background: #fff;
@@ -264,19 +265,19 @@ if (careFaq.length) {
   .care-prices__table thead th {
     font-size: 13px;
     font-weight: 700;
-    color: var(--br-canopy);
+    color: var(--br-teal);
     border-bottom: 2px solid var(--br-line);
   }
   .care-prices__table tbody th { font-weight: 600; }
   .care-prices__value {
     font-weight: 700;
     font-size: 19px;
-    color: var(--br-canopy);
+    color: var(--br-teal);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
   .care-prices__unit { font-size: 14px; margin-left: 1px; }
-  .care-prices__note { font-size: 13.5px; color: var(--br-text-sub); }
+  .care-prices__note { font-size: 13.5px; color: var(--br-ink-sub); }
   .care-prices__conditions {
     margin-top: 16px;
     list-style: none;
@@ -285,7 +286,7 @@ if (careFaq.length) {
   }
   .care-prices__conditions li {
     font-size: 13px;
-    color: var(--br-text-sub);
+    color: var(--br-ink-sub);
     padding-left: 14px;
     position: relative;
   }
@@ -298,8 +299,8 @@ if (careFaq.length) {
     padding: 40px 24px;
     text-align: center;
   }
-  .care-prices__pending-title { font-size: 20px; font-weight: 800; color: var(--br-canopy); }
-  .care-prices__pending-body { margin-top: 12px; font-size: 15px; line-height: 1.7; color: var(--br-text-sub); }
+  .care-prices__pending-title { font-size: 20px; font-weight: 800; color: var(--br-teal); }
+  .care-prices__pending-body { margin-top: 12px; font-size: 15px; line-height: 1.7; color: var(--br-ink-sub); }
   .care-prices__pending-cta { margin-top: 28px; }
 
   .care-prices__conditions li::before {
@@ -309,11 +310,11 @@ if (careFaq.length) {
     top: 0.72em;
     width: 6px;
     height: 1px;
-    background: var(--br-text-sub);
+    background: var(--br-ink-sub);
   }
 
-  /* 절차 — 화이트 섹션 */
-  .care-process { background: var(--br-bg); }
+  /* 절차 — mist 섹션 */
+  .care-process { background: var(--br-mist); }
   .care-process__list { margin-top: 48px; list-style: none; display: grid; max-width: 760px; }
   .care-process__item {
     display: grid;
@@ -329,19 +330,19 @@ if (careFaq.length) {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--br-lime);
-    color: var(--br-canopy);
+    background: var(--br-ice);
+    color: var(--br-teal);
     font-size: 13px;
     font-weight: 700;
     border-radius: 999px;
     font-variant-numeric: tabular-nums;
   }
-  .care-process__body h3 { font-size: 17px; margin-bottom: 6px; color: var(--br-canopy); }
-  .care-process__body p { font-size: 15px; color: var(--br-text-sub); }
+  .care-process__body h3 { font-size: 17px; margin-bottom: 6px; color: var(--br-teal); }
+  .care-process__body p { font-size: 15px; color: var(--br-ink-sub); }
   .care-process__body img { margin-top: 12px; border-radius: var(--radius); }
 
   /* 계절 카드 — bg-alt 섹션 */
-  .care-seasons { background: var(--br-bg-alt); }
+  .care-seasons { background: var(--br-mist); }
   .care-seasons__grid {
     margin-top: 48px;
     display: grid;
@@ -354,15 +355,15 @@ if (careFaq.length) {
     border-radius: var(--radius);
     padding: 20px 18px;
   }
-  .care-seasons__card h3 { font-size: 16px; margin-bottom: 8px; color: var(--br-canopy); }
-  .care-seasons__card p { font-size: 14px; color: var(--br-text-sub); }
+  .care-seasons__card h3 { font-size: 16px; margin-bottom: 8px; color: var(--br-teal); }
+  .care-seasons__card p { font-size: 14px; color: var(--br-ink-sub); }
 
   /* FAQ — 화이트 섹션 */
-  .care-faq { background: var(--br-bg); }
-  .care-faq__list { margin-top: 48px; display: grid; gap: 0; max-width: 760px; border-top: 2px solid var(--br-canopy); }
+  .care-faq { background: var(--br-base); }
+  .care-faq__list { margin-top: 48px; display: grid; gap: 0; max-width: 760px; border-top: 2px solid var(--br-teal); }
   .care-faq__item { padding: 18px 4px; border-bottom: 1px solid var(--br-line); }
-  .care-faq__item dt { font-weight: 700; font-size: 16px; margin-bottom: 6px; color: var(--br-text); }
-  .care-faq__item dd { font-size: 15px; color: var(--br-text-sub); }
+  .care-faq__item dt { font-weight: 700; font-size: 16px; margin-bottom: 6px; color: var(--br-ink); }
+  .care-faq__item dd { font-size: 15px; color: var(--br-ink-sub); }
 
   @media (max-width: 900px) {
     .care-symptoms__grid, .care-seasons__grid { grid-template-columns: repeat(2, 1fr); }

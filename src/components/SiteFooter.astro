@@ -1,5 +1,5 @@
 ---
-// 푸터 v2 — canopy-deep. 구 버전은 src/legacy/SiteFooter-v1.astro.txt 보존.
+// 푸터 v2 — teal-deep. 구 버전은 src/legacy/SiteFooter-v1.astro.txt 보존.
 import { SITE_CONFIG } from '../config.js';
 const year = new Date().getFullYear();
 ---
@@ -10,8 +10,10 @@ const year = new Date().getFullYear();
       <p class="bd-footer__slogan">{SITE_CONFIG.SLOGAN}</p>
     </div>
     <nav class="bd-footer__nav" aria-label="푸터 메뉴">
-      <a href="/cases/">시공사례</a>
       <a href="/care/">세척·관리</a>
+      <a href="/install/">설치</a>
+      <a href="/cases/">시공사례</a>
+      <a href="/faq/">자주 묻는 질문</a>
       <a href="/story/">브랜드이야기</a>
       <a href="/blog/">블로그</a>
       {/* SHOP_URL이 비면 미렌더 — 죽은 링크 차단 (헤더와 동일 규칙) */}
@@ -27,14 +29,14 @@ const year = new Date().getFullYear();
 
 <style>
   .bd-footer {
-    background: var(--br-canopy-deep);
+    background: var(--br-teal-deep);
     color: rgba(255, 255, 255, 0.75);
     padding: 56px 0 40px;
     margin-top: 0;
   }
   .bd-footer__inner { display: grid; gap: 24px; }
   .bd-footer__name { font-weight: 800; font-size: 20px; color: #fff; }
-  .bd-footer__slogan { color: var(--br-lime); font-size: 14px; font-weight: 600; margin-top: 4px; }
+  .bd-footer__slogan { color: var(--br-ice); font-size: 14px; font-weight: 600; margin-top: 4px; }
   .bd-footer__nav {
     display: flex;
     flex-wrap: wrap;
@@ -42,7 +44,7 @@ const year = new Date().getFullYear();
     font-size: 14px;
   }
   .bd-footer__nav a { padding: 8px 0; transition: color var(--dur-color) ease; }
-  .bd-footer__nav a:hover { color: var(--br-lime); }
+  .bd-footer__nav a:hover { color: var(--br-ice); }
   .bd-footer__hairline { border: 0; border-top: 1px solid rgba(255, 255, 255, 0.15); }
   .bd-footer__legal { font-size: 12px; color: rgba(255, 255, 255, 0.5); }
 </style>

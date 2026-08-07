@@ -1,15 +1,15 @@
-/* 바람대로 디자인 토큰 + 베이스 v2 (redesign-v2) — DESIGN.md가 원본. 위반 스타일 커밋 금지.
-   그린 토큰 체계(canopy/lime). 구 웜우드 토큰은 하단 레거시 별칭으로만 존재한다. */
+/* 바람대로 디자인 토큰 + 베이스 v3 (teal-rebrand) — DESIGN.md가 원본. 위반 스타일 커밋 금지.
+   틸 토큰 체계(teal/ice). 구 웜우드 토큰은 하단 레거시 별칭으로만 존재한다. */
 :root {
-  /* 색 v2 — DESIGN.md §2. 대비는 그린 계열 명도 차로만, 제3색 금지 */
-  --br-canopy: #2d3e2c;      /* 주색: 헤드라인, CTA, 딥섹션·푸터 배경 */
-  --br-canopy-deep: #1f2b1e;
-  --br-lime: #e4fd97;        /* 액센트: 눈썹 칩, 딥섹션 위 강조, hover */
-  --br-bg: #ffffff;
-  --br-bg-alt: #f6f9ee;
-  --br-line: #e2e8dc;
-  --br-text: #1e241d;
-  --br-text-sub: #5c665a;
+  /* 색 v3 — DESIGN.md §1. CTA=teal(라이트)·ice(다크) / 본문=ink / 섹션 교차=base↔mist */
+  --br-teal: #004e64;        /* 주색: 헤드라인, CTA(라이트 구간), 딥섹션 배경 */
+  --br-teal-deep: #00293a;   /* 다크 구간 배경 (푸터·마퀴·서브 히어로·스크럽) */
+  --br-ice: #bfe9f2;         /* 액센트: 눈썹 칩, 다크 구간 강조·CTA, hover */
+  --br-base: #f7f9fa;
+  --br-mist: #e0e5e9;        /* 교차 섹션 배경 겸 1px 라인 */
+  --br-line: var(--br-mist);
+  --br-ink: #0b2027;
+  --br-ink-sub: #465d68;     /* 서브 텍스트 — ink 계열 명도 상승 (base 6.57 / mist 5.47) */
 
   /* 타이포 — Pretendard 단일 (세리프 폐기) */
   --sans: 'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', sans-serif;
@@ -25,13 +25,13 @@
   --radius: 12px;
 
   /* ---- 레거시 별칭 (v1 컴포넌트·챗봇 호환용 — 신규 코드에서 사용 금지) ---- */
-  --bg: var(--br-bg);
-  --bg-soft: var(--br-bg-alt);
-  --ink: var(--br-text);
-  --ink-soft: var(--br-text-sub);
-  --copper: var(--br-canopy);          /* 구 CTA색 → canopy */
-  --copper-deep: var(--br-canopy-deep);
-  --silver: var(--br-text-sub);        /* 구 마이크로라벨색 → text-sub */
+  --bg: var(--br-base);
+  --bg-soft: var(--br-mist);
+  --ink: var(--br-ink);
+  --ink-soft: var(--br-ink-sub);
+  --copper: var(--br-teal);            /* 구 CTA색 → teal */
+  --copper-deep: var(--br-teal-deep);
+  --silver: var(--br-ink-sub);         /* 구 마이크로라벨색 → ink-sub */
   --line: var(--br-line);
   --serif: var(--sans);                /* 세리프 전부 제거 — sans로 폴백 */
 }
@@ -47,8 +47,8 @@ html {
 body {
   font-family: var(--sans);
   font-variant-numeric: tabular-nums;
-  background: var(--br-bg);
-  color: var(--br-text);
+  background: var(--br-base);
+  color: var(--br-ink);
   line-height: 1.7;
   letter-spacing: -0.005em;
   word-break: keep-all;
@@ -82,11 +82,11 @@ button {
 .bd-section { padding: 72px 0; }
 @media (min-width: 768px) { .bd-section { padding: 120px 0; } }
 
-/* 눈썹 라벨 — lime 칩 + canopy 텍스트 */
+/* 눈썹 라벨 — ice 칩 + teal 텍스트 */
 .br-eyebrow {
   display: inline-block;
-  background: var(--br-lime);
-  color: var(--br-canopy);
+  background: var(--br-ice);
+  color: var(--br-teal);
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -101,15 +101,15 @@ button {
   font-weight: 800;
   line-height: 1.15;
   letter-spacing: -0.02em;
-  color: var(--br-canopy);
+  color: var(--br-teal);
 }
-.br-h em { font-style: normal; color: var(--br-lime); } /* 딥 배경 전용 강조 */
+.br-h em { font-style: normal; color: var(--br-ice); } /* 딥 배경 전용 강조 */
 
 .br-body {
   margin-top: 20px;
   font-size: 16px;
   line-height: 1.7;
-  color: var(--br-text-sub);
+  color: var(--br-ink-sub);
 }
 @media (min-width: 768px) { .br-body { font-size: 17px; } }
 
@@ -119,40 +119,40 @@ button {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.2em;
-  color: var(--br-text-sub);
+  color: var(--br-ink-sub);
   text-transform: uppercase;
 }
 
 .bd-section-title {
   font-size: clamp(24px, 3.2vw, 34px);
   margin: 10px 0 36px;
-  color: var(--br-canopy);
+  color: var(--br-teal);
 }
 
-/* CTA — canopy 채움 + 흰 글자, hover = lime 채움 + canopy 글자 (DESIGN.md §2) */
+/* CTA(라이트 구간) — teal 채움 + 흰 글자, hover = ice 채움 + teal 글자 (DESIGN.md §1) */
 .bd-cta {
   display: inline-block;
   padding: 15px 32px;
-  background: var(--br-canopy);
+  background: var(--br-teal);
   color: #fff;
   font-weight: 700;
   font-size: 15px;
   border-radius: 10px;
   transition: background-color var(--dur-color) ease, color var(--dur-color) ease, transform 160ms var(--ease-out);
 }
-.bd-cta:hover { background: var(--br-lime); color: var(--br-canopy); }
+.bd-cta:hover { background: var(--br-ice); color: var(--br-teal); }
 .bd-cta:active { transform: scale(0.96); }
 
-/* CTA 딥 배경 변형 — lime 채움 + canopy 글자, hover 흰 채움 */
-.bd-cta--deep { background: var(--br-lime); color: var(--br-canopy); }
-.bd-cta--deep:hover { background: var(--br-bg); color: var(--br-canopy); }
+/* CTA 다크 구간 변형 — ice 채움 + teal 글자, hover 흰 채움 */
+.bd-cta--deep { background: var(--br-ice); color: var(--br-teal); }
+.bd-cta--deep:hover { background: var(--br-base); color: var(--br-teal); }
 
 /* 보조 버튼 — 라인 */
 .bd-btn-ghost {
   display: inline-block;
   padding: 14px 28px;
-  border: 1px solid var(--br-canopy);
-  color: var(--br-canopy);
+  border: 1px solid var(--br-teal);
+  color: var(--br-teal);
   font-weight: 600;
   font-size: 15px;
   border-radius: 10px;
@@ -160,7 +160,7 @@ button {
 }
 .bd-btn-ghost:active { transform: scale(0.96); }
 @media (hover: hover) and (pointer: fine) {
-  .bd-btn-ghost:hover { background: var(--br-canopy); color: #fff; }
+  .bd-btn-ghost:hover { background: var(--br-teal); color: #fff; }
 }
 
 .bd-hairline { border: 0; border-top: 1px solid var(--br-line); }
@@ -185,7 +185,7 @@ html.br-js .br-reveal.br-in { opacity: 1; transform: translateY(0); }
   border: 0;
 }
 
-:focus-visible { outline: 2px solid var(--br-canopy); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

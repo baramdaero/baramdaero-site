@@ -24,7 +24,7 @@ const MIN_STATS = 2;
 )}
 
 <style>
-  .v2-stats { background: var(--br-bg); }
+  .v2-stats { background: var(--br-base); }
   .v2-stats__grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -36,11 +36,11 @@ const MIN_STATS = 2;
     font-weight: 700;
     line-height: 1.1;
     letter-spacing: -0.02em;
-    color: var(--br-canopy);
+    color: var(--br-teal);
     font-variant-numeric: tabular-nums;
   }
   .v2-stats__suffix { font-size: 0.55em; font-weight: 700; margin-left: 4px; }
-  .v2-stats__label { margin-top: 10px; font-size: 15px; color: var(--br-text-sub); }
+  .v2-stats__label { margin-top: 10px; font-size: 15px; color: var(--br-ink-sub); }
   @media (min-width: 768px) {
     .v2-stats__grid { grid-template-columns: repeat(var(--stat-cols, 4), 1fr); }
   }

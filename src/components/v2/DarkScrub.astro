@@ -1,0 +1,168 @@
+---
+// S2 다크 스크럽 (teal-deep 풀블리드) — 스크롤 진행도 → 프레임 시퀀스 캔버스 (전부 바닐라, DESIGN.md §4).
+// 프레임 에셋은 /public/scrub/ (별도 생성 예정 — 현재 플레이스홀더). 없으면 poster 1장 폴백,
+// poster도 없으면 teal-deep 단색 위 카피만 동작한다. 카피 2는 확정 전 임시 문구.
+---
+<section class="v2-scrub" data-scrub>
+  <div class="v2-scrub__sticky">
+    <img class="v2-scrub__poster" src="/scrub/poster.jpg" alt="" aria-hidden="true" data-scrub-poster />
+    <canvas class="v2-scrub__cv" data-scrub-canvas aria-hidden="true"></canvas>
+    <div class="bd-container v2-scrub__copy">
+      <p class="v2-scrub__line" data-scrub-copy="0">보이지 않는 곳에서<br />공기는 오염되고 있습니다</p>
+      <p class="v2-scrub__line" data-scrub-copy="1">분해 세척은 그 오염을<br /><em>부품째</em> 씻어냅니다</p>
+    </div>
+  </div>
+</section>
+
+<script>
+  // 스크럽 로더 — 프레임 시퀀스가 없으면 poster 폴백, reduced-motion이면 정지컷 (CSS가 처리).
+  const FRAME_COUNT = 120;                 // 에셋 확정 시 실제 장수로 교체
+  const frameSrc = (i: number) => `/scrub/frame_${String(i).padStart(4, '0')}.jpg`;
+
+  const root = document.querySelector<HTMLElement>('[data-scrub]');
+  const canvas = root?.querySelector<HTMLCanvasElement>('[data-scrub-canvas]');
+  const poster = root?.querySelector<HTMLImageElement>('[data-scrub-poster]');
+  const copies = root ? Array.from(root.querySelectorAll<HTMLElement>('[data-scrub-copy]')) : [];
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // poster 미존재 시 깨진 이미지 아이콘 방지 — teal-deep 단색만 남긴다.
+  // 스크립트 실행 전에 error가 이미 발화했을 수 있어 complete 상태도 함께 본다 (레이스 방지)
+  if (poster) {
+    if (poster.complete && poster.naturalWidth === 0) poster.remove();
+    else poster.addEventListener('error', () => poster.remove());
+  }
+
+  if (root && canvas && !reduced) {
+    root.classList.add('br-scrub'); // 이 시점부터만 런웨이·크로스페이드 레이아웃 (no-JS·reduced = 정지컷)
+    const ctx = canvas.getContext('2d');
+    // 모바일은 프레임 절반만 로드 (초기 로드 시 1회 판정)
+    const step = window.matchMedia('(max-width: 767px)').matches ? 2 : 1;
+    const frames: (HTMLImageElement | null)[] = [];
+    let framesUsable = false;
+    let lastDrawn = -1;
+
+    const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+
+    const progress = () => {
+      const rect = root.getBoundingClientRect();
+      return clamp01(-rect.top / (rect.height - window.innerHeight));
+    };
+
+    const fitCanvas = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = canvas.clientWidth * dpr;
+      canvas.height = canvas.clientHeight * dpr;
+      lastDrawn = -1; // 리사이즈 후 강제 재드로잉
+    };
+
+    const drawCover = (img: HTMLImageElement) => {
+      if (!ctx) return;
+      const { width: cw, height: ch } = canvas;
+      const scale = Math.max(cw / img.naturalWidth, ch / img.naturalHeight);
+      const w = img.naturalWidth * scale;
+      const h = img.naturalHeight * scale;
+      ctx.clearRect(0, 0, cw, ch);
+      ctx.drawImage(img, (cw - w) / 2, (ch - h) / 2, w, h);
+    };
+
+    const render = () => {
+      const p = progress();
+      // 카피 크로스페이드 — 전반 카피1, 후반 카피2
+      if (copies[0]) copies[0].style.opacity = String(clamp01(2 - p * 4));
+      if (copies[1]) copies[1].style.opacity = String(clamp01(p * 4 - 2));
+
+      if (!framesUsable) return;
+      const idx = Math.round(p * (frames.length - 1));
+      if (idx === lastDrawn) return;
+      // 아직 안 실린 프레임이면 가장 가까운 로드 완료 프레임으로 대체
+      for (let i = idx; i >= 0; i--) {
+        const f = frames[i];
+        if (f?.complete && f.naturalWidth > 0) {
+          drawCover(f);
+          lastDrawn = idx;
+          break;
+        }
+      }
+    };
+
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => { render(); ticking = false; });
+    };
+
+    // 첫 프레임 로드 성공 시에만 시퀀스 프리로드 — 실패하면 poster 폴백 (카피 스크럽은 유지)
+    const probe = new Image();
+    probe.src = frameSrc(1);
+    probe.onload = () => {
+      framesUsable = true;
+      poster?.remove();
+      for (let i = 1; i <= FRAME_COUNT; i += step) {
+        const img = new Image();
+        img.src = frameSrc(i);
+        img.onload = () => { lastDrawn = -1; render(); };
+        frames.push(img);
+      }
+      fitCanvas();
+      render();
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', () => { fitCanvas(); render(); }, { passive: true });
+    fitCanvas();
+    render();
+  }
+</script>
+
+<style>
+  /* 기본(no-JS·reduced-motion 공통) = 정지컷: 단일 뷰포트, 카피 두 줄 정적 노출.
+     스크럽 런웨이·카피 겹침·초기 숨김은 전부 html.br-js 게이트 하위에서만 (DESIGN.md §4). */
+  .v2-scrub {
+    background: var(--br-teal-deep);
+  }
+  .v2-scrub__sticky {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    min-height: 60vh;
+    padding: 120px 0;
+  }
+  .v2-scrub__poster,
+  .v2-scrub__cv {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .v2-scrub__cv { display: none; }
+  .v2-scrub__copy { position: relative; width: 100%; }
+  .v2-scrub__line {
+    font-size: clamp(32px, 6vw, 64px);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: #fff;
+    text-wrap: balance;
+    word-break: keep-all;
+  }
+  .v2-scrub__line + .v2-scrub__line { margin-top: 32px; }
+  .v2-scrub__line em { font-style: normal; color: var(--br-ice); }
+
+  /* 스크립트 초기화 시(.br-scrub)에만 — 280vh 런웨이 + sticky 1뷰포트, 카피 크로스페이드.
+     reduced-motion이면 스크립트가 스킵돼 이 블록은 영영 적용되지 않는다 (= 정지컷 유지). */
+  .v2-scrub.br-scrub { height: 280vh; }
+  .v2-scrub.br-scrub .v2-scrub__sticky {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100svh;
+    min-height: 0;
+    padding: 0;
+  }
+  .v2-scrub.br-scrub .v2-scrub__cv { display: block; }
+  .v2-scrub.br-scrub .v2-scrub__copy { display: grid; }
+  .v2-scrub.br-scrub .v2-scrub__line { grid-area: 1 / 1; margin-top: 0; }
+</style>

@@ -1,0 +1,113 @@
+---
+// 설치 트랙 랜딩 — 신규 설치 안내 + 이후 세척·정기관리 연결 (IA v3).
+// 수치·가격 하드코딩 금지 (DESIGN.md §7) — 절차·연결 설명만 다룬다.
+import Base from '../../layouts/Base.astro';
+import PageHero from '../../components/v2/PageHero.astro';
+import CtaBand from '../../components/v2/CtaBand.astro';
+import { SITE_CONFIG } from '../../config.js';
+
+const STEPS = [
+  { title: '상담·견적', body: '공간 구조와 기종, 대수를 확인하고 견적 범위를 안내합니다.' },
+  { title: '실측·설계', body: '도면 검토와 현장 실측으로 배관 경로와 실외기 위치를 확정합니다.' },
+  { title: '시공', body: '천장 매립 설계로 벽걸이와 스탠드가 차지하던 자리를 돌려드립니다.' },
+  { title: '시운전·확인', body: '냉방·배수 상태를 확인하고 사용 방법을 안내한 뒤 마무리합니다.' },
+];
+
+const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? '';
+const breadcrumbJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: '홈', item: `${siteUrl}/` },
+    { '@type': 'ListItem', position: 2, name: '설치', item: `${siteUrl}/install/` },
+  ],
+};
+---
+<Base
+  title="시스템에어컨 설치"
+  description={`시스템에어컨 신규 설치. ${SITE_CONFIG.BRANDS_INSTALL.join('·')} 취급, 도면 검토부터 실측·시공까지. 설치한 팀이 세척·정기관리까지 이어서 맡습니다.`}
+  jsonLd={breadcrumbJsonLd}
+>
+  <PageHero eyebrow="시스템에어컨 설치">
+    에어컨은 사라지고<br />공간만 남습니다
+    <Fragment slot="sub">
+      도면 검토부터 배관 경로, 실외기 위치까지 실측 후에 확정합니다.
+      취급 브랜드는 {SITE_CONFIG.BRANDS_INSTALL.join('·')}입니다.
+    </Fragment>
+  </PageHero>
+
+  <section class="bd-section install-steps">
+    <div class="bd-container">
+      <span class="br-eyebrow br-reveal">설치 절차</span>
+      <h2 class="br-h br-reveal">실측으로 확정하고<br />설계대로 시공합니다</h2>
+      <ol class="install-steps__list">
+        {STEPS.map((st, i) => (
+          <li class="install-steps__item br-reveal">
+            <span class="install-steps__no">{String(i + 1).padStart(2, '0')}</span>
+            <div class="install-steps__body">
+              <h3>{st.title}</h3>
+              <p>{st.body}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="bd-section install-after">
+    <div class="bd-container">
+      <span class="br-eyebrow br-reveal">설치 이후</span>
+      <h2 class="br-h br-reveal">설치로 끝나지 않습니다</h2>
+      <p class="br-body br-reveal">처음 설치한 팀이 그 이후의 관리까지 맡습니다.<br />배관 경로와 시공 이력을 아는 팀이 분해세척과 정기 점검을 이어갑니다.</p>
+      <p class="install-after__more br-reveal">
+        <a class="install-after__link" href="/care/">세척·정기관리 안내 보기 <span aria-hidden="true">→</span></a>
+      </p>
+    </div>
+  </section>
+
+  <CtaBand chatTree="install" buttonLabel="설치 상담 시작">
+    도면이나 <em>사진</em>이면<br />상담이 시작됩니다
+    <Fragment slot="sub">공간 구조와 희망 기종을 알려주시면 실측 일정을 잡아드립니다.</Fragment>
+  </CtaBand>
+</Base>
+
+<style>
+  .install-steps { background: var(--br-base); }
+  .install-steps__list { margin-top: 48px; list-style: none; display: grid; max-width: 760px; }
+  .install-steps__item {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 14px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--br-line);
+  }
+  .install-steps__item:last-child { border-bottom: 0; }
+  .install-steps__no {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--br-ice);
+    color: var(--br-teal);
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 999px;
+    font-variant-numeric: tabular-nums;
+  }
+  .install-steps__body h3 { font-size: 17px; margin-bottom: 6px; color: var(--br-teal); }
+  .install-steps__body p { font-size: 15px; color: var(--br-ink-sub); }
+
+  .install-after { background: var(--br-mist); }
+  .install-after__more { margin-top: 24px; }
+  .install-after__link {
+    display: inline-block;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--br-teal);
+    border-bottom: 2px solid var(--br-teal);
+    padding-bottom: 2px;
+    transition: color var(--dur-color) ease, border-color var(--dur-color) ease;
+  }
+  .install-after__link:hover { color: var(--br-teal-deep); border-color: var(--br-ice); }
+</style>

@@ -7,10 +7,12 @@ interface Props {
 }
 const { variant = 'solid' } = Astro.props;
 
+// IA v3 — 세척/설치 2트랙 분리. 브랜드이야기는 푸터로 이동.
 const nav = [
-  { href: '/cases/', label: '시공사례' },
   { href: '/care/', label: '세척·관리' },
-  { href: '/story/', label: '브랜드이야기' },
+  { href: '/install/', label: '설치' },
+  { href: '/cases/', label: '시공사례' },
+  { href: '/faq/', label: '자주 묻는 질문' },
 ];
 const path = Astro.url.pathname;
 ---
@@ -47,11 +49,11 @@ const path = Astro.url.pathname;
   }
   /* 히어로를 지나면 흰 바탕 위 백색 텍스트가 사라지는 문제 — 스크롤 시 솔리드 전환 */
   .bd-header--overlay.is-scrolled {
-    background: color-mix(in srgb, var(--br-bg) 92%, transparent);
+    background: color-mix(in srgb, var(--br-base) 92%, transparent);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border-bottom: 1px solid var(--br-line);
-    color: var(--br-text);
+    color: var(--br-ink);
   }
   .bd-header--solid {
     position: sticky;

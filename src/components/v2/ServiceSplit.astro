@@ -39,7 +39,7 @@ const { id, eyebrow, image = '', imageAlt = '', linkLabel, link, chatTree, flip 
 </section>
 
 <style>
-  .v2-svc { background: var(--br-bg); }
+  .v2-svc { background: var(--br-base); }
   .v2-svc__grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -51,12 +51,12 @@ const { id, eyebrow, image = '', imageAlt = '', linkLabel, link, chatTree, flip 
     display: inline-block;
     font-size: 16px;
     font-weight: 700;
-    color: var(--br-canopy);
-    border-bottom: 2px solid var(--br-canopy);
+    color: var(--br-teal);
+    border-bottom: 2px solid var(--br-teal);
     padding-bottom: 2px;
     transition: color var(--dur-color) ease, border-color var(--dur-color) ease;
   }
-  .v2-svc__link:hover { color: var(--br-canopy-deep); border-color: var(--br-lime); }
+  .v2-svc__link:hover { color: var(--br-teal-deep); border-color: var(--br-ice); }
   .v2-svc__vis img,
   .v2-svc__empty {
     aspect-ratio: 4 / 3;
@@ -64,7 +64,7 @@ const { id, eyebrow, image = '', imageAlt = '', linkLabel, link, chatTree, flip 
     object-fit: cover;
     border-radius: 16px;
   }
-  .v2-svc__empty { background: var(--br-bg-alt); border: 1px solid var(--br-line); }
+  .v2-svc__empty { background: var(--br-mist); border: 1px solid var(--br-line); }
   @media (min-width: 768px) {
     .v2-svc__grid { grid-template-columns: 1fr 1fr; gap: 64px; }
     .v2-svc__grid--flip .v2-svc__txt { order: 2; }

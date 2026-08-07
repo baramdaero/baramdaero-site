@@ -1,5 +1,5 @@
 ---
-// S6 시공 마퀴 (canopy-deep 풀폭) — 카드는 cases 컬렉션에서 온다 (더미 생성 금지).
+// S6 시공 마퀴 (teal-deep 풀폭) — 카드는 cases 컬렉션에서 온다 (더미 생성 금지).
 // 트랙 안에 동일 세트 2벌 → translateX(-50%) 무한 루프로 이음새 제거. hover 시 정지.
 // 사례가 적으면 세트 안에서 순환 반복해 최소 6카드를 채운다.
 import type { CollectionEntry } from 'astro:content';
@@ -58,7 +58,7 @@ const label = (e: CollectionEntry<'cases'>) =>
 )}
 
 <style>
-  .v2-mq { background: var(--br-canopy-deep); overflow: hidden; }
+  .v2-mq { background: var(--br-teal-deep); overflow: hidden; }
   .v2-mq__head { text-align: center; margin-bottom: 48px; }
   .v2-mq__title { color: #fff; }
   .v2-mq__row { overflow: hidden; margin-top: 16px; }
