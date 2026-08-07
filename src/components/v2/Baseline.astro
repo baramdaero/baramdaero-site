@@ -1,0 +1,121 @@
+---
+// 기준가 철학(바람대로 기준가) + 추가비용 없음 블록 — 콘텐츠는 standards.json 단일 소스.
+// baseline 없으면 통째로 미렌더, updated 비면 갱신일 줄만 미노출 (빈 값 = 미노출 규칙).
+import type { StandardsData } from '../../lib/standards.ts';
+
+interface Props {
+  baseline: StandardsData['baseline'];
+  noExtra: StandardsData['noExtra'];
+}
+const { baseline, noExtra } = Astro.props;
+---
+{baseline && (
+  <section class="bd-section v2-baseline">
+    <div class="bd-container">
+      <span class="br-eyebrow br-reveal">가격 기준</span>
+      <h2 class="br-h br-reveal">{baseline.title}</h2>
+      <p class="br-body br-reveal">
+        {baseline.bodyLines.map((line, i) => (
+          <Fragment>{i > 0 && <br />}{line}</Fragment>
+        ))}
+      </p>
+
+      {baseline.formulaLine && (
+        <p class="v2-baseline__formula br-reveal">{baseline.formulaLine}</p>
+      )}
+
+      {baseline.policyLines.length > 0 && (
+        <ul class="v2-baseline__policy br-reveal">
+          {baseline.policyLines.map((line) => <li>{line}</li>)}
+        </ul>
+      )}
+
+      {noExtra && (
+        <div class="v2-baseline__noextra br-reveal">
+          <h3>{noExtra.title}</h3>
+          <ul>
+            {noExtra.items.map((item) => <li>{item}</li>)}
+          </ul>
+          {noExtra.closing && <p class="v2-baseline__closing">{noExtra.closing}</p>}
+        </div>
+      )}
+
+      {baseline.updated && (
+        <p class="v2-baseline__updated br-reveal">기준가 최종 갱신: {baseline.updated}</p>
+      )}
+    </div>
+  </section>
+)}
+
+<style>
+  .v2-baseline { background: var(--br-base); }
+
+  /* 산출 공식 — teal 라인 위 강조 한 줄 */
+  .v2-baseline__formula {
+    margin-top: 28px;
+    padding: 16px 20px;
+    border-left: 3px solid var(--br-teal);
+    background: var(--br-mist);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--br-teal);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    max-width: 760px;
+  }
+
+  .v2-baseline__policy {
+    margin-top: 24px;
+    list-style: none;
+    display: grid;
+    gap: 8px;
+    max-width: 760px;
+  }
+  .v2-baseline__policy li {
+    font-size: 15px;
+    color: var(--br-ink-sub);
+    padding-left: 16px;
+    position: relative;
+  }
+  .v2-baseline__policy li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.72em;
+    width: 8px;
+    height: 1px;
+    background: var(--br-teal);
+  }
+
+  .v2-baseline__noextra {
+    margin-top: 40px;
+    max-width: 760px;
+    border: 1px solid var(--br-line);
+    border-radius: var(--radius);
+    padding: 24px 22px;
+  }
+  .v2-baseline__noextra h3 { font-size: 17px; color: var(--br-teal); margin-bottom: 12px; }
+  .v2-baseline__noextra ul { list-style: none; display: grid; gap: 6px; }
+  .v2-baseline__noextra li {
+    font-size: 15px;
+    color: var(--br-ink);
+    padding-left: 16px;
+    position: relative;
+  }
+  .v2-baseline__noextra li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.72em;
+    width: 8px;
+    height: 1px;
+    background: var(--br-teal);
+  }
+  .v2-baseline__closing { margin-top: 14px; font-size: 14px; color: var(--br-ink-sub); }
+
+  .v2-baseline__updated {
+    margin-top: 24px;
+    font-size: 13px;
+    color: var(--br-ink-sub);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

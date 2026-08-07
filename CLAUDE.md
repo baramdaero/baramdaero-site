@@ -1,6 +1,6 @@
 # CLAUDE.md — baramdaero-site
 
-바람대로(에어컨 설치·세척·AS) 본진 정적 사이트. 에인연(ain-*)과는 **별개 회사 프로젝트** — 자산·코드 혼입 금지.
+바람대로(에어컨 설치·세척·AS) 본진 정적 사이트. **외부 프로젝트와 자산·코드 혼입 금지.**
 
 ## 스택
 - Astro 정적 사이트 (빌드: `npm run build`). 콘텐츠는 md(Content Collections), 챗봇은 바닐라 JS 컴포넌트

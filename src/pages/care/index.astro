@@ -4,11 +4,15 @@
 import Base from '../../layouts/Base.astro';
 import PageHero from '../../components/v2/PageHero.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
+import Baseline from '../../components/v2/Baseline.astro';
+import CompareChecklist from '../../components/v2/CompareChecklist.astro';
 import { SITE_CONFIG } from '../../config.js';
 import { loadPricing } from '../../lib/pricing.ts';
 import { loadFaq } from '../../lib/faq.ts';
+import { loadStandards } from '../../lib/standards.ts';
 
 const pricing = loadPricing();
+const standards = loadStandards();
 const { prices, conditions, process, symptoms, seasons } = pricing;
 
 const headline = pricing.headline || '세척·유지관리';
@@ -131,6 +135,9 @@ if (careFaq.length) {
     </section>
   )}
 
+  {/* 기준가 철학 — standards.json (빈 값 = 미노출) */}
+  <Baseline baseline={standards.baseline} noExtra={standards.noExtra} />
+
   <section class="bd-section care-prices">
     <div class="bd-container">
       <span class="br-eyebrow br-reveal">기준가</span>
@@ -169,6 +176,9 @@ if (careFaq.length) {
       )}
     </div>
   </section>
+
+  {/* 세척 견적 비교 체크리스트 — ours 확정 전에도 소비자 가이드로 노출 */}
+  <CompareChecklist checklist={standards.careChecklist} />
 
   {seasons.length > 0 && (
     <section class="bd-section care-seasons">

@@ -1,0 +1,65 @@
+---
+// 견적 비교 체크리스트 (세척/설치 공용) — 콘텐츠는 standards.json 단일 소스.
+// ours가 비면 그 항목의 '바람대로는 —' 줄만 미노출. 전 항목이 비어도 리스트는 소비자 가이드로 노출.
+import type { Checklist } from '../../lib/standards.ts';
+
+interface Props {
+  checklist: Checklist | null;
+  eyebrow?: string;
+}
+const { checklist, eyebrow = '견적 비교' } = Astro.props;
+---
+{checklist && (
+  <section class="bd-section v2-cklist">
+    <div class="bd-container">
+      <span class="br-eyebrow br-reveal">{eyebrow}</span>
+      <h2 class="br-h br-reveal">{checklist.title}</h2>
+      <ol class="v2-cklist__list">
+        {checklist.items.map((item, i) => (
+          <li class="v2-cklist__item br-reveal">
+            <span class="v2-cklist__no">{String(i + 1).padStart(2, '0')}</span>
+            <div class="v2-cklist__body">
+              <h3>{item.q}</h3>
+              <p>{item.why}</p>
+              {item.ours && <p class="v2-cklist__ours">바람대로는 — {item.ours}</p>}
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+)}
+
+<style>
+  .v2-cklist { background: var(--br-mist); }
+  .v2-cklist__list { margin-top: 48px; list-style: none; display: grid; max-width: 760px; }
+  .v2-cklist__item {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 14px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--br-line);
+  }
+  .v2-cklist__item { border-bottom-color: rgba(0, 78, 100, 0.14); } /* mist 위 라인 시인성 */
+  .v2-cklist__item:last-child { border-bottom: 0; }
+  .v2-cklist__no {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--br-ice);
+    color: var(--br-teal);
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 999px;
+    font-variant-numeric: tabular-nums;
+  }
+  .v2-cklist__body h3 { font-size: 17px; margin-bottom: 6px; color: var(--br-teal); }
+  .v2-cklist__body p { font-size: 15px; color: var(--br-ink-sub); }
+  .v2-cklist__body .v2-cklist__ours {
+    margin-top: 8px;
+    font-weight: 600;
+    color: var(--br-ink);
+  }
+</style>
