@@ -15,3 +15,8 @@
 ## 그린 토큰 참조 grep (완료 조건)
 `grep -rliE "canopy|lime|#2d3e2c|#1f2b1e|#e4fd97" src/ public/` → 0건
 (src/legacy/는 v1 웜우드 보존분 — 그린 토큰 자체가 없음. 히스토리 주석 1건은 DESIGN.md의 "v2 폐기" 기록 문구)
+
+## 기준가·체크리스트 검증 (2026-08-07 후속 커밋)
+- `care-ours-empty.png` / `install-ours-empty.png` — ours 전부 빈 상태: "바람대로는 —" 줄 미노출 (dist grep 0건)
+- `care-ours-filled.png` — care_checklist[0].ours 임시값 기입 시 해당 항목에만 노출 확인 후 되돌림 (되돌림 후 dist grep 0건 재확인)
+- FAQPage JSON-LD: 신규 6건 전부 dist/faq/index.html에 포함 (질문별 grep 각 3회 — JSON-LD·본문·챗봇 데이터)

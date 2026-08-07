@@ -4,7 +4,12 @@
 import Base from '../../layouts/Base.astro';
 import PageHero from '../../components/v2/PageHero.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
+import Baseline from '../../components/v2/Baseline.astro';
+import CompareChecklist from '../../components/v2/CompareChecklist.astro';
 import { SITE_CONFIG } from '../../config.js';
+import { loadStandards } from '../../lib/standards.ts';
+
+const standards = loadStandards();
 
 const STEPS = [
   { title: '상담·견적', body: '공간 구조와 기종, 대수를 확인하고 견적 범위를 안내합니다.' },
@@ -53,6 +58,11 @@ const breadcrumbJsonLd = {
       </ol>
     </div>
   </section>
+
+  {/* 기준가 철학(세척과 동일 데이터) + 설치 견적 비교 체크리스트 — standards.json */}
+  <Baseline baseline={standards.baseline} noExtra={standards.noExtra} />
+
+  <CompareChecklist checklist={standards.installChecklist} />
 
   <section class="bd-section install-after">
     <div class="bd-container">
