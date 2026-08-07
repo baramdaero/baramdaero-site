@@ -121,7 +121,7 @@ const breadcrumb = {
     min-height: 40px;
     border: 1px solid var(--br-line);
     border-radius: 999px;
-    color: var(--br-text-sub);
+    color: var(--br-ink-sub);
     transition: color var(--dur-color) ease, border-color var(--dur-color) ease, background-color var(--dur-color) ease;
   }
   .case-filters__btn:active { transform: scale(0.96); }
@@ -129,11 +129,11 @@ const breadcrumb = {
     .case-filters__btn { min-height: 44px; padding: 11px 16px; }
   }
   @media (hover: hover) and (pointer: fine) {
-    .case-filters__btn:hover { border-color: var(--br-canopy); color: var(--br-canopy); }
+    .case-filters__btn:hover { border-color: var(--br-teal); color: var(--br-teal); }
   }
   .case-filters__btn.is-active {
-    background: var(--br-canopy);
-    border-color: var(--br-canopy);
+    background: var(--br-teal);
+    border-color: var(--br-teal);
     color: #fff;
   }
   .case-grid {
@@ -141,18 +141,18 @@ const breadcrumb = {
     grid-template-columns: repeat(3, 1fr);
     gap: 20px;
   }
-  .case-empty { color: var(--br-text-sub); padding: 40px 0; }
+  .case-empty { color: var(--br-ink-sub); padding: 40px 0; }
 
   /* 실사례 0건 폴백 — 빈 그리드 대신 안내 + 챗봇 접수 */
   .case-pending {
     border: 1px solid var(--br-line);
     border-radius: 16px;
-    background: var(--br-bg-alt);
+    background: var(--br-mist);
     padding: 48px 24px;
     text-align: center;
   }
-  .case-pending__title { font-size: 20px; font-weight: 800; color: var(--br-canopy); }
-  .case-pending__body { margin-top: 12px; font-size: 15px; line-height: 1.7; color: var(--br-text-sub); }
+  .case-pending__title { font-size: 20px; font-weight: 800; color: var(--br-teal); }
+  .case-pending__body { margin-top: 12px; font-size: 15px; line-height: 1.7; color: var(--br-ink-sub); }
   .case-pending__cta { margin-top: 28px; }
   @media (max-width: 900px) {
     .case-grid { grid-template-columns: repeat(2, 1fr); }

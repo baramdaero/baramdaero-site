@@ -1,5 +1,5 @@
 ---
-// S10 CTA 밴드 (canopy 풀폭) — CTA는 챗봇 호출 단일 (문의 폼 신설 금지).
+// S10 CTA 밴드 (teal 풀폭) — CTA는 챗봇 호출 단일 (문의 폼 신설 금지).
 // PHONE이 비어 있으면 전화 보조 CTA는 렌더하지 않는다 (임의 기입 금지).
 import { SITE_CONFIG } from '../../config.js';
 
@@ -23,7 +23,7 @@ const { chatTree = 'menu', buttonLabel = '견적 문의' } = Astro.props;
 </section>
 
 <style>
-  .v2-cta { background: var(--br-canopy); text-align: center; }
+  .v2-cta { background: var(--br-teal); text-align: center; }
   .v2-cta__title { color: #fff; margin-top: 0; }
   .v2-cta__sub { margin-top: 18px; font-size: 16px; line-height: 1.7; color: rgba(255, 255, 255, 0.82); }
   .v2-cta__row {
@@ -35,6 +35,6 @@ const { chatTree = 'menu', buttonLabel = '견적 문의' } = Astro.props;
     align-items: center;
   }
   .v2-cta__btn { font-size: 18px; padding: 18px 48px; border-radius: 12px; }
-  .v2-cta__phone { font-weight: 700; color: var(--br-lime); }
+  .v2-cta__phone { font-weight: 700; color: var(--br-ice); }
   @media (min-width: 768px) { .v2-cta__sub { font-size: 17px; } }
 </style>
