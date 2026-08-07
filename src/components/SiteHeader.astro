@@ -7,10 +7,12 @@ interface Props {
 }
 const { variant = 'solid' } = Astro.props;
 
+// IA v3 — 세척/설치 2트랙 분리. 브랜드이야기는 푸터로 이동.
 const nav = [
-  { href: '/cases/', label: '시공사례' },
   { href: '/care/', label: '세척·관리' },
-  { href: '/story/', label: '브랜드이야기' },
+  { href: '/install/', label: '설치' },
+  { href: '/cases/', label: '시공사례' },
+  { href: '/faq/', label: '자주 묻는 질문' },
 ];
 const path = Astro.url.pathname;
 ---
