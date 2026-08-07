@@ -1,10 +1,11 @@
 ---
 // 홈 v2 — 스크롤 스토리텔링 (1뷰포트 1메시지). 구 홈은 src/legacy/index-v1.astro.txt 보존.
-// 순서: S1 히어로 → S2 문제 → S3~S5 서비스 → S6 마퀴 → S7 지표 → S8 절차 → (S9 후기 — 실후기 확보 전 미노출) → S10 CTA → 푸터
+// 순서: S1 히어로 → S2 다크 스크럽 → S3~S5 서비스 2트랙 → S6 마퀴 → S7 지표 → S8 절차 → (S9 후기 — 실후기 확보 전 미노출) → S10 CTA → 푸터
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import Hero from '../components/v2/Hero.astro';
-import Problem from '../components/v2/Problem.astro';
+import DarkScrub from '../components/v2/DarkScrub.astro';
+// import Problem from '../components/v2/Problem.astro'; // 구 S2 — DarkScrub이 동일 메시지를 대체 (비포 사진 확보 후 재검토)
 import ServiceSplit from '../components/v2/ServiceSplit.astro';
 import Marquee from '../components/v2/Marquee.astro';
 import Stats from '../components/v2/Stats.astro';
@@ -23,7 +24,7 @@ const cases = (await getCollection('cases'))
 <Base headerVariant="overlay">
   <Hero />
 
-  <Problem />
+  <DarkScrub />
 
   {/* 서비스 2트랙 (IA v3) — 세척·관리 트랙(분해세척→정기관리) / 설치 트랙(신규 설치→관리 연결) */}
   <ServiceSplit id="clean" eyebrow="세척·관리 — 분해 세척" link="/care/" linkLabel="세척 기준가 보기">
