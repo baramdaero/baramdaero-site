@@ -8,7 +8,7 @@ const year = new Date().getFullYear();
 <footer class="bd-footer">
   <div class="bd-container bd-footer__inner">
     <div class="bd-footer__brand">
-      <img class="bd-footer__logo" src={wideReverseUrl} alt="바람대로" width="1389" height="341" />
+      <img class="bd-footer__logo" src={wideReverseUrl} alt="바람대로" width="1472" height="341" />
       <p class="bd-footer__slogan">{SITE_CONFIG.SLOGAN}</p>
     </div>
     <nav class="bd-footer__nav" aria-label="푸터 메뉴">
@@ -37,7 +37,8 @@ const year = new Date().getFullYear();
     margin-top: 0;
   }
   .bd-footer__inner { display: grid; gap: 24px; }
-  .bd-footer__logo { height: 28px; width: auto; } /* 비율 무변경 */
+  /* 36px — 28px면 워드마크가 11.3px로 14px 하한을 깬다 (락업 높이 x 0.405) */
+  .bd-footer__logo { height: 36px; width: auto; }
   .bd-footer__slogan { color: var(--br-ice); font-size: 14px; font-weight: 600; margin-top: 4px; }
   .bd-footer__nav {
     display: flex;

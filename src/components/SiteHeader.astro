@@ -8,10 +8,12 @@ import wideReverseUrl from '../assets/logo/baramdaero-wide-reverse.svg?url';
 import markUrl from '../assets/logo/baramdaero-mark.svg?url';
 import markReverseUrl from '../assets/logo/baramdaero-mark-reverse.svg?url';
 
-/** 이 폭 이하는 마크 단독 강등 — 가로형을 28px로 낮춰도 4개 메뉴와 부딪히는 구간.
- *  가로형 소요폭: 높이 36px일 때 147px(≥400px 구간), 28px일 때 114px(360~399px 구간).
- *  실측 근거는 screenshots/VERIFY.md */
-const MARK_MAX = 359;
+/** 이 폭 이하는 마크 단독 강등.
+ *  v3 락업(비율 4.32)은 워드마크가 락업 높이의 0.405 — 워드마크 14px 하한을 지키려면
+ *  락업 높이 35px 이상이어야 한다. 그래서 헤더는 36px 고정이고, 그 폭(155px)이
+ *  4개 메뉴와 부딪히는 구간부터는 높이를 낮추는 대신 마크로 강등한다.
+ *  실측 표는 screenshots/VERIFY.md */
+const MARK_MAX = 391;
 
 interface Props {
   variant?: 'overlay' | 'solid';
@@ -106,7 +108,7 @@ const path = Astro.url.pathname;
     display: block;
     height: 36px;
     width: auto;
-    aspect-ratio: 1389.3 / 341; /* 로드 전 레이아웃 밀림 방지 */
+    aspect-ratio: 1472 / 341; /* v3 락업 비율 — 로드 전 레이아웃 밀림 방지 */
     /* flex 축소 금지 — 없으면 협소 폭에서 로고가 가로로 눌려 비율이 깨진다 (320px에서 114→83px 실측) */
     flex-shrink: 0;
   }
@@ -145,13 +147,14 @@ const path = Astro.url.pathname;
   .bd-header__cta,
   .bd-header__brand { white-space: nowrap; }
 
-  /* 소형 화면 — 가로형을 28px(폭 114px)로 낮춰 워드마크를 유지한다.
-     아이폰 14·15(390~393px)가 이 구간이라 브랜드명 노출을 우선한다 */
-  @media (max-width: 399px) {
-    .bd-header__logo img { height: 28px; }
+  /* 데스크톱 헤더(64px)는 여유가 있어 40px — 워드마크 16.2px로 더 크게 */
+  @media (min-width: 641px) {
+    .bd-header__logo img { height: 40px; }
   }
-  /* 그보다 좁으면 28px로도 안 들어감 — 마크 단독 강등 (파일 교체는 <picture> media가) */
-  @media (max-width: 359px) {
+
+  /* 가로형이 안 들어가는 폭 — 마크 단독 강등 (파일 교체는 <picture> media가).
+     높이를 낮춰 끼워넣지 않는다: 35px 미만이면 워드마크가 14px 하한을 깬다 */
+  @media (max-width: 391px) {
     .bd-header__logo img { height: 32px; aspect-ratio: 1 / 1; }
   }
 
