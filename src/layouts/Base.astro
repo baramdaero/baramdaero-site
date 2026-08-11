@@ -20,7 +20,7 @@ const {
   description = SITE_CONFIG.DESCRIPTION,
   jsonLd,
   headerVariant = 'solid',
-  ogImage = SITE_CONFIG.HERO_POSTER,
+  ogImage = SITE_CONFIG.OG_IMAGE,
 } = Astro.props;
 
 const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? 'https://baramdaero.com';
@@ -55,6 +55,11 @@ const extraJsonLd = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-16.png" type="image/png" sizes="16x16" />
+    <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="icon" href="/favicon-48.png" type="image/png" sizes="48x48" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180.png" sizes="180x180" />
+    <meta name="theme-color" content="#004E64" />
     <link rel="sitemap" href="/sitemap-index.xml" />
 
     {SITE_CONFIG.NAVER_SITE_VERIFICATION && (
