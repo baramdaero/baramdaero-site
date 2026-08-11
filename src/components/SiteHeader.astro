@@ -1,6 +1,15 @@
 ---
 // 전역 헤더. overlay = 홈 히어로 위 투명 고정 / solid = 서브페이지 상단.
+// 로고 톤은 기존 상태 클래스(.bd-header--overlay / .is-scrolled)에만 물린다 — 스크롤 리스너 추가 없음.
+// 락업은 <picture> media로 전환: 협소 폭에서 wide → mark 강등 (해당 파일 1개만 내려받는다).
 import { SITE_CONFIG } from '../config.js';
+import wideUrl from '../assets/logo/baramdaero-wide.svg?url';
+import wideReverseUrl from '../assets/logo/baramdaero-wide-reverse.svg?url';
+import markUrl from '../assets/logo/baramdaero-mark.svg?url';
+import markReverseUrl from '../assets/logo/baramdaero-mark-reverse.svg?url';
+
+/** 이 폭 이하는 마크 단독 강등 — 가로형(36px=147px 폭)이 4개 메뉴와 부딪히는 구간 */
+const MARK_MAX = 399;
 
 interface Props {
   variant?: 'overlay' | 'solid';
@@ -18,7 +27,17 @@ const path = Astro.url.pathname;
 ---
 <header class:list={['bd-header', `bd-header--${variant}`]}>
   <div class="bd-header__inner">
-    <a href="/" class="bd-header__brand" aria-label="바람대로 홈">바람대로</a>
+    <a href="/" class="bd-header__brand" aria-label="바람대로 홈">
+      {/* alt는 빈 값 — 링크의 aria-label이 이름을 이미 읽는다 (중복 읽기 방지) */}
+      <picture class="bd-header__logo bd-header__logo--ink">
+        <source media={`(max-width: ${MARK_MAX}px)`} srcset={markUrl} />
+        <img src={wideUrl} alt="" />
+      </picture>
+      <picture class="bd-header__logo bd-header__logo--rev">
+        <source media={`(max-width: ${MARK_MAX}px)`} srcset={markReverseUrl} />
+        <img src={wideReverseUrl} alt="" />
+      </picture>
+    </a>
     <nav class="bd-header__nav" aria-label="주 메뉴">
       {nav.map((item) => (
         <a
@@ -74,11 +93,24 @@ const path = Astro.url.pathname;
     gap: 28px;
   }
   .bd-header__brand {
-    font-weight: 800;
-    font-size: 19px;
-    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
     margin-right: auto;
   }
+
+  /* 로고 — 높이 고정·width auto (비율 무변경). 톤 전환은 기존 상태 클래스만 사용 */
+  .bd-header__logo { display: none; }
+  .bd-header__logo img {
+    display: block;
+    height: 36px;
+    width: auto;
+    aspect-ratio: 1389.3 / 341; /* 로드 전 레이아웃 밀림 방지 */
+  }
+  /* 라이트 구간(서브페이지 솔리드 · 오버레이 스크롤 후) = teal 잉크 */
+  .bd-header--solid .bd-header__logo--ink,
+  .bd-header--overlay.is-scrolled .bd-header__logo--ink { display: block; }
+  /* 다크 구간(히어로 위 오버레이) = 리버스 */
+  .bd-header--overlay:not(.is-scrolled) .bd-header__logo--rev { display: block; }
   .bd-header__nav {
     display: flex;
     gap: 22px;
@@ -109,9 +141,13 @@ const path = Astro.url.pathname;
   .bd-header__cta,
   .bd-header__brand { white-space: nowrap; }
 
+  /* 협소 폭 — 마크 단독 강등 (파일 교체는 <picture> media가, 크기·비율은 여기서) */
+  @media (max-width: 399px) {
+    .bd-header__logo img { height: 32px; aspect-ratio: 1 / 1; }
+  }
+
   @media (max-width: 640px) {
     .bd-header__inner { gap: 10px; padding: 0 12px; height: 56px; }
-    .bd-header__brand { font-size: 16px; }
     .bd-header__nav { gap: 10px; }
     .bd-header__link { font-size: 12px; padding: 12px 0; }
     .bd-header__cta { padding: 8px 11px; font-size: 12px; }

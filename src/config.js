@@ -32,6 +32,9 @@ export const SITE_CONFIG = {
   HERO_VIDEO: '/media/hero-loop.mp4',   // 사전 렌더 왕복 루프 (교체 시 이 경로만)
   HERO_POSTER: '/media/hero-still.jpg', // 영상 로드 전·폴백 정적 이미지
 
+  // 공유 카드 기본 이미지 1200×630 (#004E64 + 로고 리버스 중앙). 페이지별 ogImage prop으로 덮어쓴다
+  OG_IMAGE: '/og-default.png',
+
   // 사이트 인증 메타 — 발급 후 기입하면 <head>에 자동 렌더
   NAVER_SITE_VERIFICATION: '',
   GOOGLE_SITE_VERIFICATION: '',
