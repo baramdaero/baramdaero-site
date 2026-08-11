@@ -1,12 +1,14 @@
 ---
 // 푸터 v2 — teal-deep. 구 버전은 src/legacy/SiteFooter-v1.astro.txt 보존.
+// 배경이 다크라 로고는 reverse 고정 (톤 전환 없음).
 import { SITE_CONFIG } from '../config.js';
+import wideReverseUrl from '../assets/logo/baramdaero-wide-reverse.svg?url';
 const year = new Date().getFullYear();
 ---
 <footer class="bd-footer">
   <div class="bd-container bd-footer__inner">
     <div class="bd-footer__brand">
-      <p class="bd-footer__name">바람대로</p>
+      <img class="bd-footer__logo" src={wideReverseUrl} alt="바람대로" width="1389" height="341" />
       <p class="bd-footer__slogan">{SITE_CONFIG.SLOGAN}</p>
     </div>
     <nav class="bd-footer__nav" aria-label="푸터 메뉴">
@@ -35,7 +37,7 @@ const year = new Date().getFullYear();
     margin-top: 0;
   }
   .bd-footer__inner { display: grid; gap: 24px; }
-  .bd-footer__name { font-weight: 800; font-size: 20px; color: #fff; }
+  .bd-footer__logo { height: 28px; width: auto; } /* 비율 무변경 */
   .bd-footer__slogan { color: var(--br-ice); font-size: 14px; font-weight: 600; margin-top: 4px; }
   .bd-footer__nav {
     display: flex;
