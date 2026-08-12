@@ -3,7 +3,10 @@
 // 배경이 다크라 로고는 reverse 고정 (톤 전환 없음).
 import { SITE_CONFIG } from '../config.js';
 import wideReverseUrl from '../assets/logo/baramdaero-wide-reverse.svg?url';
+import { loadSituations } from '../lib/situations.ts';
 const year = new Date().getFullYear();
+// 상황별 안내 — situations.json에 준비된 페이지만 (없으면 그룹 자체가 미노출)
+const situations = loadSituations();
 ---
 <footer class="bd-footer">
   <div class="bd-container bd-footer__inner">
@@ -21,6 +24,12 @@ const year = new Date().getFullYear();
       {/* SHOP_URL이 비면 미렌더 — 죽은 링크 차단 (헤더와 동일 규칙) */}
       {SITE_CONFIG.SHOP_URL && <a href={SITE_CONFIG.SHOP_URL} rel="noopener">예약·구매</a>}
     </nav>
+    {situations.length > 0 && (
+      <nav class="bd-footer__nav bd-footer__nav--sub" aria-label="상황별 안내">
+        <span class="bd-footer__navlabel">상황별 안내</span>
+        {situations.map((s) => <a href={`/situation/${s.slug}/`}>{s.meta.title}</a>)}
+      </nav>
+    )}
     <hr class="bd-footer__hairline" />
     <p class="bd-footer__legal">
       <!-- 사업자 정보 확정 후 기입: 상호·대표·사업자등록번호·주소·연락처 -->
@@ -48,6 +57,8 @@ const year = new Date().getFullYear();
   }
   .bd-footer__nav a { padding: 8px 0; transition: color var(--dur-color) ease; }
   .bd-footer__nav a:hover { color: var(--br-ice); }
+  .bd-footer__nav--sub { font-size: 13px; align-items: center; }
+  .bd-footer__navlabel { color: rgba(255, 255, 255, 0.5); }
   .bd-footer__hairline { border: 0; border-top: 1px solid rgba(255, 255, 255, 0.15); }
   .bd-footer__legal { font-size: 12px; color: rgba(255, 255, 255, 0.5); }
 </style>

@@ -1,6 +1,6 @@
 ---
 // 홈 v2 — 스크롤 스토리텔링 (1뷰포트 1메시지). 구 홈은 src/legacy/index-v1.astro.txt 보존.
-// 순서: S1 히어로 → S2 다크 스크럽 → S3~S5 서비스 2트랙 → S6 마퀴 → S7 지표 → S8 절차 → (S9 후기 — 실후기 확보 전 미노출) → S10 CTA → 푸터
+// 순서: S1 히어로 → S2 다크 스크럽 → S3~S5 서비스 2트랙 → S5b 상황별 안내 → S6 마퀴 → S7 지표 → S8 절차 → (S9 후기 — 실후기 확보 전 미노출) → S10 CTA → 푸터
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import Hero from '../components/v2/Hero.astro';
@@ -12,10 +12,15 @@ import Stats from '../components/v2/Stats.astro';
 import Process from '../components/v2/Process.astro';
 // import Reviews from '../components/v2/Reviews.astro'; // S9 — [실후기교체] 확보 후 주석 해제
 import CtaBand from '../components/v2/CtaBand.astro';
+import SituationCards from '../components/v2/SituationCards.astro';
 import { loadTrust } from '../lib/trust.ts';
+import { loadSituations } from '../lib/situations.ts';
 
 // 신뢰 지표 — trust.json 단일 소스 (하드코딩 금지)
 const trust = loadTrust();
+
+// 상황별 안내 — situations.json에 준비된 페이지만 카드로 (없으면 섹션 자체가 미노출)
+const situations = loadSituations();
 
 // 마퀴 카드 — cases 컬렉션 최신순
 const cases = (await getCollection('cases'))
@@ -41,6 +46,8 @@ const cases = (await getCollection('cases'))
     <Fragment slot="headline">에어컨은 사라지고<br />공간만 남습니다</Fragment>
     <Fragment slot="body">천장 매립 설계로 벽걸이와 스탠드가 차지하던 자리를 돌려드립니다.<br />도면 검토부터 배관 경로, 실외기 위치까지 실측 후에 확정합니다.<br />설치한 팀이 이후의 세척·정기관리까지 이어서 맡습니다.</Fragment>
   </ServiceSplit>
+
+  <SituationCards situations={situations} />
 
   <Marquee entries={cases} />
 
