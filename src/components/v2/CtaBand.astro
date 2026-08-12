@@ -34,7 +34,8 @@ const { chatTree = 'menu', buttonLabel = '견적 문의' } = Astro.props;
     justify-content: center;
     align-items: center;
   }
-  .v2-cta__btn { font-size: 18px; padding: 18px 48px; border-radius: 12px; }
+  /* 밴드 CTA — 기본 CTA와 동일 비율(상하 0.7배·좌우 1.7배), 크기만 한 단계 위 */
+  .v2-cta__btn { font-size: 20px; padding: 14px 34px; border-radius: 12px; }
   .v2-cta__phone { font-weight: 700; color: var(--br-ice); }
   @media (min-width: 768px) { .v2-cta__sub { font-size: 17px; } }
 </style>

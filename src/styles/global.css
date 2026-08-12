@@ -129,14 +129,18 @@ button {
   color: var(--br-teal);
 }
 
-/* CTA(라이트 구간) — teal 채움 + 흰 글자, hover = ice 채움 + teal 글자 (DESIGN.md §1) */
+/* CTA(라이트 구간) — teal 채움 + 흰 글자, hover = ice 채움 + teal 글자 (DESIGN.md §1)
+   비율 기준(실측 조정): 폰트는 본문(16~17px) 이상, 상하 패딩 ≈ 폰트의 0.7배,
+   좌우 패딩 ≈ 폰트의 1.5배. 이전 값(15px / 15·32px)은 폰트가 본문보다 작고 패딩이
+   폰트와 1:1이라 글자가 큰 박스 안에 떠 보였다. 높이 52.9px로 44px 터치영역 유지. */
 .bd-cta {
   display: inline-block;
-  padding: 15px 32px;
+  padding: 12px 26px;
   background: var(--br-teal);
   color: #fff;
   font-weight: 700;
-  font-size: 15px;
+  font-size: 17px;
+  letter-spacing: -0.01em;
   border-radius: 10px;
   transition: background-color var(--dur-color) ease, color var(--dur-color) ease, transform 160ms var(--ease-out);
 }
@@ -147,14 +151,15 @@ button {
 .bd-cta--deep { background: var(--br-ice); color: var(--br-teal); }
 .bd-cta--deep:hover { background: var(--br-base); color: var(--br-teal); }
 
-/* 보조 버튼 — 라인 */
+/* 보조 버튼 — 라인. CTA와 같은 비율 규칙, 위계는 굵기(600)와 채움 없음으로 준다 */
 .bd-btn-ghost {
   display: inline-block;
-  padding: 14px 28px;
+  padding: 11px 24px;
   border: 1px solid var(--br-teal);
   color: var(--br-teal);
   font-weight: 600;
-  font-size: 15px;
+  font-size: 16px;
+  letter-spacing: -0.01em;
   border-radius: 10px;
   transition: background-color var(--dur-color) ease, color var(--dur-color) ease, transform 160ms var(--ease-out);
 }
