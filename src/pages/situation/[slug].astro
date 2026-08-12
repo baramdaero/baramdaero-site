@@ -1,0 +1,201 @@
+---
+// 상황별 안내 — situations.json의 키 하나 = 페이지 하나 (JSON에 키를 추가하면 페이지가 생긴다).
+// 수치·가격 하드코딩 금지 (DESIGN.md §7) — 절차·확인 항목만 다룬다.
+import Base from '../../layouts/Base.astro';
+import PageHero from '../../components/v2/PageHero.astro';
+import Timeline from '../../components/v2/Timeline.astro';
+import Baseline from '../../components/v2/Baseline.astro';
+import CompareChecklist from '../../components/v2/CompareChecklist.astro';
+import CtaBand from '../../components/v2/CtaBand.astro';
+import { loadSituations } from '../../lib/situations.ts';
+import { loadStandards } from '../../lib/standards.ts';
+import { loadFaq } from '../../lib/faq.ts';
+
+export function getStaticPaths() {
+  return loadSituations().map((situation) => ({ params: { slug: situation.slug }, props: { situation } }));
+}
+
+const { situation } = Astro.props;
+const { meta, timeline, prewired, groupBuy, faqTags, related } = situation;
+
+const standards = loadStandards();
+
+// faq_tags 중 하나라도 질문·답변에 들어간 항목만 (faq.json 스키마는 그대로 둔다)
+const faq = faqTags.length
+  ? loadFaq().filter((f) => faqTags.some((tag) => f.q.includes(tag) || f.a.includes(tag)))
+  : [];
+
+const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? '';
+const jsonLd: object[] = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: '홈', item: `${siteUrl}/` },
+      { '@type': 'ListItem', position: 2, name: '상황별 안내' },
+      { '@type': 'ListItem', position: 3, name: meta.title, item: `${siteUrl}/situation/${situation.slug}/` },
+    ],
+  },
+];
+if (faq.length) {
+  jsonLd.push({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faq.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  });
+}
+---
+<Base title={meta.title} description={meta.description} jsonLd={jsonLd}>
+  <PageHero eyebrow={meta.eyebrow}>
+    {meta.headlineLines.map((line, i) => (
+      <Fragment>{i > 0 && <br />}{line}</Fragment>
+    ))}
+    <Fragment slot="sub">{meta.intro}</Fragment>
+  </PageHero>
+
+  <Timeline stages={timeline} />
+
+  {prewired && (
+    <section class="bd-section sit-prewired">
+      <div class="bd-container">
+        <span class="br-eyebrow br-reveal">현장 확인</span>
+        <h2 class="br-h br-reveal">{prewired.title}</h2>
+        {prewired.bodyLines.length > 0 && (
+          <p class="br-body br-reveal">
+            {prewired.bodyLines.map((line, i) => (
+              <Fragment>{i > 0 && <br />}{line}</Fragment>
+            ))}
+          </p>
+        )}
+        <ul class="sit-prewired__list br-reveal">
+          {prewired.checkItems.map((item) => <li>{item}</li>)}
+        </ul>
+      </div>
+    </section>
+  )}
+
+  {/* 설치 견적 비교 체크리스트 + 기준가 철학 — standards.json (설치 페이지와 동일 데이터) */}
+  <CompareChecklist checklist={standards.installChecklist} />
+
+  <Baseline baseline={standards.baseline} noExtra={standards.noExtra} />
+
+  {faq.length > 0 && (
+    <section class="bd-section sit-faq">
+      <div class="bd-container">
+        <span class="br-eyebrow br-reveal">자주 묻는 질문</span>
+        <h2 class="br-h br-reveal">이 상황에서<br />많이 묻는 것</h2>
+        <dl class="sit-faq__list br-reveal">
+          {faq.map((f) => (
+            <div class="sit-faq__item">
+              <dt>{f.q}</dt>
+              <dd>{f.a}</dd>
+            </div>
+          ))}
+        </dl>
+        <p class="sit-faq__more br-reveal">
+          <a class="sit-faq__link" href="/faq/">전체 질문 보기 <span aria-hidden="true">→</span></a>
+        </p>
+      </div>
+    </section>
+  )}
+
+  {groupBuy && (
+    <section class="bd-section sit-group">
+      <div class="bd-container">
+        <span class="br-eyebrow br-reveal">단지 공동구매</span>
+        <h2 class="br-h br-reveal">{groupBuy.title}</h2>
+        <p class="br-body br-reveal">{groupBuy.body}</p>
+        {groupBuy.ctaLabel && (
+          <p class="sit-group__cta br-reveal">
+            <button type="button" class="bd-cta" data-chat-tree="install">{groupBuy.ctaLabel}</button>
+          </p>
+        )}
+      </div>
+    </section>
+  )}
+
+  {related.length > 0 && (
+    <section class="bd-section sit-related">
+      <div class="bd-container">
+        <span class="br-eyebrow br-reveal">함께 보기</span>
+        <ul class="sit-related__list br-reveal">
+          {related.map((r) => (
+            <li><a href={r.href}>{r.label} <span aria-hidden="true">→</span></a></li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )}
+
+  <CtaBand chatTree="install" buttonLabel="설치 상담 시작">
+    도면이나 <em>사진</em>이면<br />상담이 시작됩니다
+    <Fragment slot="sub">사전점검에서 찍은 사진만 있어도 견적 범위를 잡아드립니다.</Fragment>
+  </CtaBand>
+</Base>
+
+<style>
+  .sit-prewired { background: var(--br-mist); }
+  .sit-prewired__list {
+    margin-top: 32px;
+    list-style: none;
+    display: grid;
+    gap: 10px;
+    max-width: 760px;
+  }
+  .sit-prewired__list li {
+    font-size: 15px;
+    color: var(--br-ink);
+    padding-left: 16px;
+    position: relative;
+  }
+  .sit-prewired__list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.72em;
+    width: 8px;
+    height: 1px;
+    background: var(--br-teal);
+  }
+
+  .sit-faq { background: var(--br-base); }
+  .sit-faq__list { margin-top: 48px; display: grid; gap: 0; max-width: 760px; border-top: 2px solid var(--br-teal); }
+  .sit-faq__item { padding: 18px 4px; border-bottom: 1px solid var(--br-line); }
+  .sit-faq__item dt { font-weight: 700; font-size: 16px; margin-bottom: 6px; color: var(--br-ink); }
+  .sit-faq__item dd { font-size: 15px; color: var(--br-ink-sub); }
+  .sit-faq__more { margin-top: 24px; }
+  .sit-faq__link {
+    display: inline-block;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--br-teal);
+    border-bottom: 2px solid var(--br-teal);
+    padding-bottom: 2px;
+    transition: color var(--dur-color) ease, border-color var(--dur-color) ease;
+  }
+  .sit-faq__link:hover { color: var(--br-teal-deep); border-color: var(--br-ice); }
+
+  .sit-group { background: var(--br-mist); }
+  .sit-group__cta { margin-top: 32px; }
+
+  .sit-related { background: var(--br-base); }
+  .sit-related__list {
+    margin-top: 24px;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+  }
+  .sit-related__list a {
+    display: inline-block;
+    padding: 8px 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--br-teal);
+  }
+  .sit-related__list a:hover { color: var(--br-teal-deep); }
+</style>

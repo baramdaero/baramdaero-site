@@ -8,8 +8,12 @@ import Baseline from '../../components/v2/Baseline.astro';
 import CompareChecklist from '../../components/v2/CompareChecklist.astro';
 import { SITE_CONFIG } from '../../config.js';
 import { loadStandards } from '../../lib/standards.ts';
+import { loadSituations } from '../../lib/situations.ts';
 
 const standards = loadStandards();
+
+// 상황별 안내 — situations.json에 준비된 페이지만 (없으면 링크 목록 미노출)
+const situations = loadSituations();
 
 const STEPS = [
   { title: '상담·견적', body: '공간 구조와 기종, 대수를 확인하고 견적 범위를 안내합니다.' },
@@ -72,6 +76,13 @@ const breadcrumbJsonLd = {
       <p class="install-after__more br-reveal">
         <a class="install-after__link" href="/care/">세척·정기관리 안내 보기 <span aria-hidden="true">→</span></a>
       </p>
+      {situations.length > 0 && (
+        <ul class="install-situations br-reveal">
+          {situations.map((s) => (
+            <li><a href={`/situation/${s.slug}/`}>{s.meta.title} <span aria-hidden="true">→</span></a></li>
+          ))}
+        </ul>
+      )}
     </div>
   </section>
 
@@ -120,4 +131,14 @@ const breadcrumbJsonLd = {
     transition: color var(--dur-color) ease, border-color var(--dur-color) ease;
   }
   .install-after__link:hover { color: var(--br-teal-deep); border-color: var(--br-ice); }
+
+  .install-situations { margin-top: 20px; list-style: none; display: flex; flex-wrap: wrap; gap: 4px 24px; }
+  .install-situations a {
+    display: inline-block;
+    padding: 8px 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--br-teal);
+  }
+  .install-situations a:hover { color: var(--br-teal-deep); }
 </style>

@@ -1,0 +1,108 @@
+---
+// 상황별 안내 타임라인 — 콘텐츠는 situations.json 단일 소스.
+// 단계가 없으면 통째로 미렌더, when·caution이 비면 그 줄만 미노출 (빈 값 = 미노출 규칙).
+import type { TimelineStage } from '../../lib/situations.ts';
+
+interface Props {
+  stages: TimelineStage[];
+  eyebrow?: string;
+  title?: string;
+}
+const { stages, eyebrow = '진행 순서', title = '언제 무엇을 정하나' } = Astro.props;
+---
+{stages.length > 0 && (
+  <section class="bd-section v2-tl">
+    <div class="bd-container">
+      <span class="br-eyebrow br-reveal">{eyebrow}</span>
+      <h2 class="br-h br-reveal">{title}</h2>
+      <ol class="v2-tl__list">
+        {stages.map((st, i) => (
+          <li class="v2-tl__item br-reveal">
+            <span class="v2-tl__no" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+            <div class="v2-tl__body">
+              <h3 class="v2-tl__stage">{st.stage}</h3>
+              {st.when && <p class="v2-tl__when">{st.when}</p>}
+              <ul class="v2-tl__todo">
+                {st.todo.map((t) => <li>{t}</li>)}
+              </ul>
+              {st.caution && <p class="v2-tl__caution">{st.caution}</p>}
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+)}
+
+<style>
+  .v2-tl { background: var(--br-base); }
+  .v2-tl__list { margin-top: 48px; list-style: none; display: grid; max-width: 760px; }
+
+  .v2-tl__item {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 14px;
+    padding: 0 0 32px;
+    position: relative;
+  }
+  .v2-tl__item:last-child { padding-bottom: 0; }
+  /* 단계를 잇는 세로선 — 번호 원 아래에서 다음 항목까지 */
+  .v2-tl__item::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 44px;
+    bottom: 8px;
+    width: 1px;
+    background: var(--br-line);
+  }
+  .v2-tl__item:last-child::before { display: none; }
+
+  .v2-tl__no {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--br-ice);
+    color: var(--br-teal);
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 999px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .v2-tl__stage { font-size: 17px; color: var(--br-teal); }
+  .v2-tl__when {
+    margin-top: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--br-ink-sub);
+    font-variant-numeric: tabular-nums;
+  }
+  .v2-tl__todo { margin-top: 14px; list-style: none; display: grid; gap: 8px; }
+  .v2-tl__todo li {
+    font-size: 15px;
+    color: var(--br-ink-sub);
+    padding-left: 16px;
+    position: relative;
+  }
+  .v2-tl__todo li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.72em;
+    width: 8px;
+    height: 1px;
+    background: var(--br-teal);
+  }
+  .v2-tl__caution {
+    margin-top: 14px;
+    padding: 12px 16px;
+    border-left: 3px solid var(--br-teal);
+    background: var(--br-mist);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    font-size: 14px;
+    color: var(--br-ink);
+  }
+</style>
