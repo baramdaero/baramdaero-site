@@ -1,17 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000" role="img" aria-label="바람대로">
-<title>바람대로</title><g fill="#F7F9FA">
-<rect x="236.13" y="120.0" width="175.55" height="52.34"/>
-<rect x="495.64" y="120.0" width="175.55" height="52.34"/>
-<rect x="236.13" y="172.34" width="435.06" height="131.94"/>
-<rect x="236.13" y="304.28" width="175.55" height="50.16"/>
-<rect x="495.64" y="304.28" width="175.55" height="50.16"/>
-<rect x="236.13" y="354.43" width="175.55" height="1.09"/>
-<rect x="494.55" y="354.43" width="176.64" height="1.09"/>
-<rect x="236.13" y="355.52" width="435.06" height="136.3"/>
-<rect x="236.13" y="508.18" width="435.06" height="147.2"/>
-<rect x="236.13" y="655.38" width="181.0" height="77.42"/>
-<rect x="236.13" y="732.8" width="435.06" height="80.69"/>
-<rect x="236.13" y="813.49" width="435.06" height="64.33"/>
-<rect x="684.28" y="813.49" width="79.6" height="64.33"/>
-<rect x="236.13" y="877.82" width="435.06" height="2.18"/>
+<title>바람대로</title>
+<g fill="#F7F9FA" fill-rule="nonzero">
+<path transform="translate(236.13 120.0) scale(1.090387)" d="M0 0 L161 0 L161 48 L238 48 L238 0 L399 0 L399 341 L0 341 Z M161 169 L161 216 L237 216 L237 215 L238 215 L238 169 Z M0 356 L399 356 L399 491 L166 491 L166 562 L399 562 L399 697 L0 697 Z M411 636 L484 636 L484 695 L411 695 Z"/>
 </g></svg>

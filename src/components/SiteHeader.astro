@@ -8,8 +8,13 @@ import wideReverseUrl from '../assets/logo/baramdaero-wide-reverse.svg?url';
 import markUrl from '../assets/logo/baramdaero-mark.svg?url';
 import markReverseUrl from '../assets/logo/baramdaero-mark-reverse.svg?url';
 
-/** 이 폭 이하는 마크 단독 강등 — 가로형(36px=147px 폭)이 4개 메뉴와 부딪히는 구간 */
-const MARK_MAX = 399;
+/** 이 폭 이하는 마크 단독 강등.
+ *  v3 락업(비율 4.32)은 워드마크가 락업 높이의 0.405 — 워드마크 14px 하한을 지키려면
+ *  락업 높이 35px 이상이어야 한다. 그래서 헤더는 36px 고정이고, 그 폭(155px)이
+ *  4개 메뉴와 부딪히는 구간부터는 높이를 낮추는 대신 마크로 강등한다.
+ *  소형 패딩을 8px로 줄여 390px(아이폰 14·15)까지 가로형을 확보했다.
+ *  실측 표는 screenshots/VERIFY.md */
+const MARK_MAX = 389;
 
 interface Props {
   variant?: 'overlay' | 'solid';
@@ -92,19 +97,23 @@ const path = Astro.url.pathname;
     align-items: center;
     gap: 28px;
   }
+  /* flex 축소 금지 — 축소는 flex '아이템'에서 일어난다. img에만 걸면 부모 picture/brand가
+     대신 눌려 로고 비율이 깨진다 (360px에서 155→123px 실측). 사슬 전체에 건다 */
   .bd-header__brand {
     display: flex;
     align-items: center;
     margin-right: auto;
+    flex-shrink: 0;
   }
 
   /* 로고 — 높이 고정·width auto (비율 무변경). 톤 전환은 기존 상태 클래스만 사용 */
-  .bd-header__logo { display: none; }
+  .bd-header__logo { display: none; flex-shrink: 0; }
   .bd-header__logo img {
     display: block;
     height: 36px;
     width: auto;
-    aspect-ratio: 1389.3 / 341; /* 로드 전 레이아웃 밀림 방지 */
+    aspect-ratio: 1472 / 341; /* v3 락업 비율 — 로드 전 레이아웃 밀림 방지 */
+    flex-shrink: 0;
   }
   /* 라이트 구간(서브페이지 솔리드 · 오버레이 스크롤 후) = teal 잉크 */
   .bd-header--solid .bd-header__logo--ink,
@@ -141,13 +150,20 @@ const path = Astro.url.pathname;
   .bd-header__cta,
   .bd-header__brand { white-space: nowrap; }
 
-  /* 협소 폭 — 마크 단독 강등 (파일 교체는 <picture> media가, 크기·비율은 여기서) */
-  @media (max-width: 399px) {
+  /* 데스크톱 헤더(64px)는 여유가 있어 40px — 워드마크 16.2px로 더 크게 */
+  @media (min-width: 641px) {
+    .bd-header__logo img { height: 40px; }
+  }
+
+  /* 가로형이 안 들어가는 폭 — 마크 단독 강등 (파일 교체는 <picture> media가).
+     높이를 낮춰 끼워넣지 않는다: 35px 미만이면 워드마크가 14px 하한을 깬다 */
+  @media (max-width: 389px) {
     .bd-header__logo img { height: 32px; aspect-ratio: 1 / 1; }
   }
 
   @media (max-width: 640px) {
-    .bd-header__inner { gap: 10px; padding: 0 12px; height: 56px; }
+    /* 패딩 8px — 390px에서 가로형(155px)+메뉴가 들어가게 하는 마지막 4px (실측) */
+    .bd-header__inner { gap: 10px; padding: 0 8px; height: 56px; }
     .bd-header__nav { gap: 10px; }
     .bd-header__link { font-size: 12px; padding: 12px 0; }
     .bd-header__cta { padding: 8px 11px; font-size: 12px; }
