@@ -29,6 +29,12 @@ const nav = [
   { href: '/faq/', label: '자주 묻는 질문' },
 ];
 const path = Astro.url.pathname;
+
+/** 현재 페이지 판정. href가 '/'이면 startsWith가 모든 경로에 참이 되어 항상 현재로 표시된다
+ *  — 정확 일치로 분기해 둔다. 지금 메뉴엔 '/'가 없지만 홈 항목이 추가되면 바로 걸리는 자리다.
+ *  로고(`<a href="/">`)에는 aria-current를 주지 않는다 — 한 페이지에 두 개면 보조기기가
+ *  현재 위치를 두 번 읽는다. */
+const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
 ---
 <header class:list={['bd-header', `bd-header--${variant}`]}>
   <div class="bd-header__inner">
@@ -48,7 +54,7 @@ const path = Astro.url.pathname;
         <a
           href={item.href}
           class="bd-header__link"
-          aria-current={path.startsWith(item.href) ? 'page' : undefined}
+          aria-current={isCurrent(item.href) ? 'page' : undefined}
         >{item.label}</a>
       ))}
     </nav>
