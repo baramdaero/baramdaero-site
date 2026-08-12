@@ -1,6 +1,7 @@
 ---
 // 홈 v2 — 스크롤 스토리텔링 (1뷰포트 1메시지). 구 홈은 src/legacy/index-v1.astro.txt 보존.
 // 순서: S1 히어로 → S2 다크 스크럽 → S3~S5 서비스 2트랙 → S5b 상황별 안내 → S6 마퀴 → S7 지표 → S8 절차 → (S9 후기 — 실후기 확보 전 미노출) → S10 CTA → 푸터
+// 섹션 문구는 전부 src/content/site/home.json (하드코딩 금지). 히어로·다크구간은 각자 다른 소스.
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import Hero from '../components/v2/Hero.astro';
@@ -15,6 +16,10 @@ import CtaBand from '../components/v2/CtaBand.astro';
 import SituationCards from '../components/v2/SituationCards.astro';
 import { loadTrust } from '../lib/trust.ts';
 import { loadSituations } from '../lib/situations.ts';
+import { loadHome } from '../lib/home.ts';
+
+// 홈 섹션 문구 — home.json 단일 소스
+const home = loadHome();
 
 // 신뢰 지표 — trust.json 단일 소스 (하드코딩 금지)
 const trust = loadTrust();
@@ -25,40 +30,96 @@ const situations = loadSituations();
 // 마퀴 카드 — cases 컬렉션 최신순
 const cases = (await getCollection('cases'))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+/* 서비스 카드의 앵커 id와 지그재그 방향은 문구가 아니라 레이아웃이라 여기 둔다.
+   home.json의 services 순서와 짝지어 쓰며, 카드가 더 늘면 id 없이 렌더된다. */
+const SERVICE_LAYOUT = [
+  { id: 'clean', flip: false },
+  { id: 'care', flip: true },
+  { id: 'install', flip: false },
+];
+
+/** CTA 헤드라인에서 강조 단어만 <em>으로 감싼다 (색 강조는 .br-h em이 처리) */
+const splitEmphasis = (line: string, word: string) => {
+  if (!word || !line.includes(word)) return [line];
+  const [before, ...rest] = line.split(word);
+  return [before, word, rest.join(word)];
+};
+const cta = home.ctaBand;
 ---
 <Base headerVariant="overlay">
   <Hero />
 
   <DarkScrub />
 
-  {/* 서비스 2트랙 (IA v3) — 세척·관리 트랙(분해세척→정기관리) / 설치 트랙(신규 설치→관리 연결) */}
-  <ServiceSplit id="clean" eyebrow="세척·관리 — 분해 세척" link="/care/" linkLabel="세척 기준가 보기">
-    <Fragment slot="headline">오늘 들이마시는 공기가<br />달라집니다</Fragment>
-    <Fragment slot="body">커버와 송풍팬, 열교환기를 분해해 고압으로 세척합니다.<br />겉면 닦기가 아니라 오염이 쌓이는 부품 자체를 씻어냅니다.<br />세척 전후 상태는 사진으로 남겨 직접 확인시켜 드립니다.</Fragment>
-  </ServiceSplit>
+  {/* 서비스 2트랙 (IA v3) — 세척·관리 트랙(정돈→기록) / 설치 트랙(설계).
+      리드 문장이 다크 구간의 착지점을 받아 3카드로 나눈다 */}
+  {home.services.leadHeading.length > 0 && (
+    <section class="bd-section v2-svc-lead">
+      <div class="bd-container">
+        <h2 class="br-h br-reveal">
+          {home.services.leadHeading.map((line, i) => (
+            <Fragment>{i > 0 && <br />}{line}</Fragment>
+          ))}
+        </h2>
+      </div>
+    </section>
+  )}
 
-  <ServiceSplit id="care" eyebrow="세척·관리 — 정기 관리" link="/care/" linkLabel="관리 안내 보기" flip>
-    <Fragment slot="headline">당신은 켜기만 하세요.<br />관리는 바람대로가 합니다</Fragment>
-    <Fragment slot="body">정기 방문으로 필터·배수·냉매 상태를 점검합니다.<br />이상 신호를 먼저 찾아 고장으로 커지기 전에 조치합니다.<br />점검 내역은 방문 때마다 기록으로 남깁니다.</Fragment>
-  </ServiceSplit>
+  {home.services.cards.map((svc, i) => (
+    <ServiceSplit
+      id={SERVICE_LAYOUT[i]?.id}
+      eyebrow={svc.eyebrow}
+      link={svc.cta?.href}
+      linkLabel={svc.cta?.label ?? ''}
+      flip={SERVICE_LAYOUT[i]?.flip ?? false}
+    >
+      <Fragment slot="headline">
+        {svc.heading.map((line, j) => (
+          <Fragment>{j > 0 && <br />}{line}</Fragment>
+        ))}
+      </Fragment>
+      <Fragment slot="body">
+        {svc.lines.map((line, j) => (
+          <Fragment>{j > 0 && <br />}{line}</Fragment>
+        ))}
+      </Fragment>
+    </ServiceSplit>
+  ))}
 
-  <ServiceSplit id="install" eyebrow="설치 — 신규 설치" link="/install/" linkLabel="설치 안내 보기">
-    <Fragment slot="headline">에어컨은 사라지고<br />공간만 남습니다</Fragment>
-    <Fragment slot="body">천장 매립 설계로 벽걸이와 스탠드가 차지하던 자리를 돌려드립니다.<br />도면 검토부터 배관 경로, 실외기 위치까지 실측 후에 확정합니다.<br />설치한 팀이 이후의 세척·정기관리까지 이어서 맡습니다.</Fragment>
-  </ServiceSplit>
-
-  <SituationCards situations={situations} />
+  <SituationCards
+    situations={situations}
+    eyebrow={home.situations?.eyebrow}
+    title={home.situations?.heading.join('\n')}
+  />
 
   <Marquee entries={cases} />
 
   <Stats stats={trust.stats} />
 
-  <Process />
+  {home.process && (
+    <Process eyebrow={home.process.eyebrow} heading={home.process.heading} steps={home.process.steps} />
+  )}
 
   {/* <Reviews /> — S9 후기: 실후기(동의 확보분) 교체 전 미노출 */}
 
-  <CtaBand>
-    지금, 우리 집 <em>공기</em>부터<br />확인해 보세요
-    <Fragment slot="sub">사진 몇 장이면 견적 상담이 시작됩니다.</Fragment>
-  </CtaBand>
+  {cta && (
+    <CtaBand buttonLabel={cta.buttonLabel}>
+      {cta.heading.map((line, i) => (
+        <Fragment>
+          {i > 0 && <br />}
+          {splitEmphasis(line, cta.headingEmphasis).map((part, j) => (
+            j === 1 ? <em>{part}</em> : <Fragment>{part}</Fragment>
+          ))}
+        </Fragment>
+      ))}
+      {cta.body && <Fragment slot="sub">{cta.body}</Fragment>}
+    </CtaBand>
+  )}
 </Base>
+
+<style>
+  /* 리드 문장은 바로 아래 첫 서비스 카드와 한 덩어리로 읽혀야 해서 아래 여백만 줄인다.
+     섹션 상단 여백(.bd-section)은 그대로 두어 다크 구간과의 간격은 유지된다. */
+  .v2-svc-lead { background: var(--br-base); padding-bottom: 0; }
+</style>
