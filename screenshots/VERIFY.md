@@ -264,3 +264,34 @@ rect 모킹 검증만으로는 안 잡히고 **실스크롤 검증에서 드러�
 ### 비고
 `cta_band.heading_emphasis`는 빈 값으로 뒀다. 구 카피는 「공기」가 ice 색으로 강조돼 있었으나
 전달 카피에 강조 지정이 없어 임의로 넣지 않았다. 필요하면 이 값에 "공기"만 적으면 복원된다.
+
+## 블로그 GEO 재설계 (2026-08-12, feat/blog-geo)
+
+### 구조 — 프론트매터가 데이터, 본문이 화면
+- blog 스키마 확장(전부 선택 — 기존 글 호환): question·answer·topic(세척|설치|비용|상황|문의)·
+  qa[]·facts[]·claims[]·related_checklist/situation/cases·sources[]·updated
+- **cases는 신설 대신 기존 컬렉션 확장** — 별도 컬렉션이면 사례 소스가 둘로 갈라져(마퀴·목록·상세 vs 블로그 연결)
+  데이터가 이원화된다. 신규 필드 전부 선택이라 기존 md 3건·소비처 무영향.
+  개인정보 규칙은 `src/content/cases/README.txt`(glob이 md만 잡아 컬렉션에 안 섞임)
+- 글 상세 템플릿: answer(mist) → 본문 → qa 아코디언(**순수 details/summary, JS 0**) →
+  실제 사례(related_cases, 0건이면 미노출) → 출처 → 연결 카드 → updated
+- 글 목록: topic 그룹 + 앵커 점프 — **목록 전용 JS 0건**(dist 스크립트는 헤더·챗봇·모션 공통분만)
+- /cases/: 기존 region/type 필터에 model·tags 축 추가(값 있는 사례 있을 때만 그룹 노출),
+  0건 상태는 기존 준비 중 문구 유지
+
+### 검증 (dist)
+| 항목 | 결과 |
+|---|---|
+| astro build | 통과 (11페이지 — 샘플 글 1편 추가) |
+| 본문·qa 텍스트 grep | 결론·5유형·qa 5건·facts(58개, 자사 시장조사) 전부 존재 |
+| FAQPage JSON-LD | qa **5건 전체** 포함 + Article + BreadcrumbList |
+| cases 0건 | 글의 "실제 사례" 블록 미노출 · /cases/ 준비 중 문구 유지 |
+| 금지어·톤 | 최상급·공포 표현·업체명 0건 |
+| 시장 가격 | 본문·qa에 구체 금액 0건 (분류·조건만) |
+
+- `blog-post-1440/390.png` · `blog-list-1440/390.png`
+
+### 샘플 글
+`aircon-install-extra-costs` — "에어컨 설치 추가비용에는 어떤 항목이 있나요" (topic: 비용).
+answer 3문장, qa 5개, facts 1건(항목 수 58, 출처: 자사 시장조사 2026-08), claims 빈 배열,
+연결: /install/ 체크리스트 + newhome 상황 페이지. sources는 자사 조사(내부 자료라 url 없음).

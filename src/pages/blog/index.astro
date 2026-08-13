@@ -1,5 +1,6 @@
 ---
-// 블로그 목록
+// 블로그 목록 — topic별 그룹 + 앵커 점프. 전부 정적 HTML (JS 렌더 금지 조건).
+// question(검색어형 제목)이 있으면 그걸 노출하고, 없으면 title로 폴백.
 import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 
@@ -7,6 +8,12 @@ import Base from '../../layouts/Base.astro';
 const posts = (await getCollection('blog'))
   .filter((p) => !p.data.sample)
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+// topic 그룹 — 스키마 enum 순서 고정, 글이 있는 토픽만 필터 UI에 노출.
+// topic 없는 글은 '전체' 목록에만 나온다.
+const TOPICS = ['세척', '설치', '비용', '상황', '문의'] as const;
+const grouped = TOPICS.map((t) => ({ topic: t, posts: posts.filter((p) => p.data.topic === t) }))
+  .filter((g) => g.posts.length > 0);
 
 const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? '';
 const breadcrumb = {
@@ -18,23 +25,59 @@ const breadcrumb = {
   ],
 };
 ---
-<Base title="블로그" description="에어컨 관리에 도움이 되는 글." jsonLd={breadcrumb}>
+<Base title="블로그" description="에어컨 설치·세척·비용에 대해 자주 검색되는 질문과 답." jsonLd={breadcrumb}>
   <section class="bd-section blog">
     <div class="bd-container">
       <p class="bd-microlabel">Blog</p>
       <h1 class="bd-section-title">블로그</h1>
-      {posts.length > 0 ? (
-        <ul class="blog__list">
-          {posts.map((post) => (
-            <li>
-              <a class="blog__item" href={`/blog/${post.id}/`}>
-                <span class="blog__date">{post.data.date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                <span class="blog__title">{post.data.title}</span>
-                <span class="blog__desc">{post.data.description}</span>
-              </a>
-            </li>
+
+      {grouped.length > 0 && (
+        <nav class="blog__topics" aria-label="주제 필터">
+          <a class="blog__topic-chip" href="#all">전체</a>
+          {grouped.map((g) => (
+            <a class="blog__topic-chip" href={`#topic-${g.topic}`}>{g.topic}</a>
           ))}
-        </ul>
+        </nav>
+      )}
+
+      {posts.length > 0 ? (
+        <Fragment>
+          <div id="all">
+            <ul class="blog__list">
+              {posts.map((post) => (
+                <li>
+                  <a class="blog__item" href={`/blog/${post.id}/`}>
+                    <span class="blog__meta">
+                      {post.data.topic && <span class="blog__topic-tag">{post.data.topic}</span>}
+                      <span class="blog__date">{post.data.date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                    </span>
+                    <span class="blog__title">{post.data.question || post.data.title}</span>
+                    <span class="blog__desc">{post.data.description}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* topic별 섹션 — 앵커 점프용. 목록이 길어지기 전까지는 전체와 중복 노출이 아니라
+              그룹 헤딩으로 구분만 한다 (topic 2개 이상일 때부터 의미가 생기므로 그때만 렌더) */}
+          {grouped.length > 1 && grouped.map((g) => (
+            <div class="blog__group" id={`topic-${g.topic}`}>
+              <h2 class="blog__group-title">{g.topic}</h2>
+              <ul class="blog__list">
+                {g.posts.map((post) => (
+                  <li>
+                    <a class="blog__item" href={`/blog/${post.id}/`}>
+                      <span class="blog__date">{post.data.date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                      <span class="blog__title">{post.data.question || post.data.title}</span>
+                      <span class="blog__desc">{post.data.description}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </Fragment>
       ) : (
         <p class="blog__pending">글을 준비 중입니다.</p>
       )}
@@ -45,22 +88,46 @@ const breadcrumb = {
 <style>
   .blog .bd-container { max-width: 760px; }
   .blog__pending { color: var(--br-ink-sub); padding: 32px 0; }
+
+  .blog__topics { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+  .blog__topic-chip {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--br-teal);
+    border: 1px solid var(--br-line);
+    border-radius: 999px;
+    padding: 7px 16px;
+    transition: border-color var(--dur-color) ease, background-color var(--dur-color) ease;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .blog__topic-chip:hover { border-color: var(--br-teal); background: var(--br-mist); }
+  }
+
+  .blog__group { margin-top: 40px; scroll-margin-top: 80px; }
+  .blog__group-title { font-size: 19px; color: var(--br-teal); padding-bottom: 8px; border-bottom: 2px solid var(--br-teal); }
+  #all { scroll-margin-top: 80px; }
+
   .blog__list { list-style: none; }
   .blog__item {
     display: grid;
     gap: 6px;
     padding: 22px 4px;
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid var(--br-line);
     transition: background-color var(--dur-color) ease;
   }
   @media (hover: hover) and (pointer: fine) {
-    .blog__item:hover { background: var(--bg-soft); }
+    .blog__item:hover { background: var(--br-mist); }
   }
-  .blog__date { font-size: 12.5px; color: var(--ink-soft); }
-  .blog__title {
-    font-family: var(--serif);
-    font-weight: 600;
-    font-size: 19px;
+  .blog__meta { display: flex; align-items: center; gap: 10px; }
+  .blog__topic-tag {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--br-teal);
+    background: var(--br-ice);
+    border-radius: 999px;
+    padding: 3px 10px;
   }
-  .blog__desc { font-size: 14.5px; color: var(--ink-soft); }
+  .blog__date { font-size: 12.5px; color: var(--br-ink-sub); }
+  .blog__title { font-weight: 700; font-size: 19px; color: var(--br-ink); }
+  .blog__desc { font-size: 14.5px; color: var(--br-ink-sub); }
 </style>
