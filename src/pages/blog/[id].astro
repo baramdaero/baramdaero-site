@@ -1,7 +1,11 @@
 ---
-// 블로그 상세
+// 블로그 상세 — 구조화 지식 템플릿.
+// 순서: answer(결론, mist) → 본문 → qa(FAQ 아코디언, 정적 details) → 실제 사례 → sources → 연결 카드 → updated.
+// 프론트매터가 데이터(FAQPage JSON-LD·챗봇 재료)이고, 값이 없는 블록은 조용히 빠진다.
 import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
+import CaseCard from '../../components/CaseCard.astro';
+import { loadSituations } from '../../lib/situations.ts';
 
 export async function getStaticPaths() {
   // sample: true 글은 페이지 자체를 만들지 않는다 (cases와 동일 원칙)
@@ -11,17 +15,35 @@ export async function getStaticPaths() {
 
 const { post } = Astro.props;
 const { Content } = await render(post);
-const { title, description, date, cover, sample } = post.data;
-const dateLabel = date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+const {
+  title, description, date, cover,
+  question, answer, qa, facts, claims,
+  related_checklist, related_situation, related_cases, sources, updated,
+} = post.data;
+
+const heading = question || title;
+const dateLabel = (d: Date) => d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+
+// 실제 사례 — related_cases의 id로 cases 레코드를 찾는다 (sample 제외, 없는 id는 조용히 스킵)
+const allCases = (await getCollection('cases')).filter((c) => !c.data.sample);
+const linkedCases = related_cases
+  .map((id) => allCases.find((c) => c.id === id))
+  .filter((c) => c !== undefined);
+
+// 연결 카드 — 상황 페이지는 준비된 것만 (situations.json 게이트)
+const situation = related_situation
+  ? loadSituations().find((s) => s.slug === related_situation)
+  : undefined;
 
 const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? '';
-const jsonLd = [
+const jsonLd: object[] = [
   {
     '@context': 'https://schema.org',
     '@type': 'Article',
-    headline: title,
+    headline: heading,
     description,
     datePublished: date.toISOString(),
+    ...(updated ? { dateModified: updated.toISOString() } : {}),
     author: { '@type': 'Organization', name: '바람대로' },
     ...(cover ? { image: `${siteUrl}${cover}` } : {}),
   },
@@ -31,20 +53,102 @@ const jsonLd = [
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: '홈', item: `${siteUrl}/` },
       { '@type': 'ListItem', position: 2, name: '블로그', item: `${siteUrl}/blog/` },
-      { '@type': 'ListItem', position: 3, name: title, item: `${siteUrl}/blog/${post.id}/` },
+      { '@type': 'ListItem', position: 3, name: heading, item: `${siteUrl}/blog/${post.id}/` },
     ],
   },
 ];
+if (qa.length) {
+  jsonLd.push({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: qa.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  });
+}
 ---
-<Base title={title} description={description} jsonLd={jsonLd} ogImage={cover}>
+<Base title={heading} description={description} jsonLd={jsonLd} ogImage={cover}>
   <article class="bd-section post">
     <div class="bd-container">
-      <p class="post__date">{dateLabel}</p>
-      <h1 class="post__title">{title}</h1>
-      {sample && <p class="post__sample">샘플 콘텐츠 — 실제 글로 교체 예정</p>}
+      <p class="post__date">{dateLabel(date)}</p>
+      <h1 class="post__title">{heading}</h1>
+
+      {answer && (
+        <div class="post__answer">
+          <p class="post__answer-label">결론부터</p>
+          <p class="post__answer-body">{answer}</p>
+        </div>
+      )}
+
       <div class="post__body">
         <Content />
       </div>
+
+      {qa.length > 0 && (
+        <section class="post__qa">
+          <h2 class="post__h2">함께 묻는 질문</h2>
+          {qa.map((f) => (
+            <details class="post__qa-item">
+              <summary>{f.q}</summary>
+              <p>{f.a}</p>
+            </details>
+          ))}
+        </section>
+      )}
+
+      {claims.length > 0 && (
+        <section class="post__claims">
+          <h2 class="post__h2">바람대로의 기준</h2>
+          <ul>
+            {claims.map((c) => <li>{c}</li>)}
+          </ul>
+        </section>
+      )}
+
+      {linkedCases.length > 0 && (
+        <section class="post__cases">
+          <h2 class="post__h2">실제 사례</h2>
+          <div class="post__cases-grid">
+            {linkedCases.map((entry) => <CaseCard entry={entry} />)}
+          </div>
+        </section>
+      )}
+
+      {sources.length > 0 && (
+        <section class="post__sources">
+          <h2 class="post__h2">출처</h2>
+          <ul>
+            {sources.map((s) => (
+              <li>
+                {s.url ? <a href={s.url} rel="noopener">{s.label}</a> : s.label}
+                {s.year && <span class="post__source-year"> ({s.year})</span>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {(related_checklist || situation) && (
+        <section class="post__links">
+          {related_checklist && (
+            <a class="post__link-card" href={related_checklist}>
+              <span class="post__link-label">견적 비교 체크리스트</span>
+              <span class="post__link-hint">견적서에서 확인할 항목을 정리해 두었습니다 →</span>
+            </a>
+          )}
+          {situation && (
+            <a class="post__link-card" href={`/situation/${situation.slug}/`}>
+              <span class="post__link-label">{situation.meta.title}</span>
+              <span class="post__link-hint">상황별 안내 보기 →</span>
+            </a>
+          )}
+        </section>
+      )}
+
+      {updated && <p class="post__updated">최종 확인: {dateLabel(updated)}</p>}
+
       <p class="post__back"><a class="bd-btn-ghost" href="/blog/">목록으로</a></p>
     </div>
   </article>
@@ -52,26 +156,88 @@ const jsonLd = [
 
 <style>
   .post .bd-container { max-width: 680px; }
-  .post__date { font-size: 13px; color: var(--ink-soft); }
-  .post__title { font-size: clamp(24px, 3.4vw, 34px); margin: 10px 0 18px; }
-  .post__sample {
-    display: inline-block;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--copper);
-    border: 1px solid currentColor;
-    border-radius: 999px;
-    padding: 4px 12px;
-    margin-bottom: 10px;
+  .post__date { font-size: 13px; color: var(--br-ink-sub); }
+  .post__title { font-size: clamp(24px, 3.4vw, 34px); margin: 10px 0 18px; color: var(--br-teal); }
+
+  /* 결론 블록 — 본문보다 먼저 답을 준다 */
+  .post__answer {
+    background: var(--br-mist);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    margin: 24px 0 32px;
   }
+  .post__answer-label { font-size: 12.5px; font-weight: 700; color: var(--br-teal); margin-bottom: 8px; }
+  .post__answer-body { font-size: 16.5px; line-height: 1.8; color: var(--br-ink); }
+
   .post__body { font-size: 16px; }
   .post__body :global(p) { margin-bottom: 16px; }
+  .post__body :global(h2) { font-size: 20px; margin: 32px 0 12px; color: var(--br-teal); }
   .post__body :global(ul) { margin: 0 0 16px 20px; }
   .post__body :global(blockquote) {
-    border-left: 2px solid var(--copper);
+    border-left: 2px solid var(--br-teal);
     padding: 6px 0 6px 16px;
-    color: var(--ink-soft);
+    color: var(--br-ink-sub);
     margin-bottom: 18px;
   }
+
+  .post__h2 { font-size: 20px; margin: 0 0 16px; color: var(--br-teal); }
+
+  /* FAQ 아코디언 — 순수 details/summary (JS 없음) */
+  .post__qa { margin-top: 44px; }
+  .post__qa-item {
+    border-bottom: 1px solid var(--br-line);
+  }
+  .post__qa-item summary {
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 16px;
+    padding: 16px 4px;
+    list-style-position: outside;
+  }
+  .post__qa-item p { font-size: 15px; color: var(--br-ink-sub); padding: 0 4px 16px; line-height: 1.8; }
+
+  .post__claims { margin-top: 44px; }
+  .post__claims ul { list-style: none; display: grid; gap: 8px; }
+  .post__claims li {
+    font-size: 15px;
+    padding-left: 16px;
+    position: relative;
+  }
+  .post__claims li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.72em;
+    width: 8px;
+    height: 1px;
+    background: var(--br-teal);
+  }
+
+  .post__cases { margin-top: 44px; }
+  .post__cases-grid { display: grid; gap: 16px; }
+  @media (min-width: 640px) { .post__cases-grid { grid-template-columns: 1fr 1fr; } }
+
+  .post__sources { margin-top: 44px; }
+  .post__sources ul { list-style: none; display: grid; gap: 6px; }
+  .post__sources li { font-size: 14px; color: var(--br-ink-sub); }
+  .post__sources a { color: var(--br-teal); border-bottom: 1px solid currentColor; }
+  .post__source-year { color: var(--br-ink-sub); }
+
+  .post__links { margin-top: 44px; display: grid; gap: 12px; }
+  .post__link-card {
+    display: grid;
+    gap: 4px;
+    border: 1px solid var(--br-line);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    transition: border-color var(--dur-color) ease;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .post__link-card:hover { border-color: var(--br-teal); }
+  }
+  .post__link-label { font-weight: 700; font-size: 16px; color: var(--br-teal); }
+  .post__link-hint { font-size: 14px; color: var(--br-ink-sub); }
+
+  .post__updated { margin-top: 36px; font-size: 13px; color: var(--br-ink-sub); font-variant-numeric: tabular-nums; }
   .post__back { margin-top: 40px; }
 </style>
