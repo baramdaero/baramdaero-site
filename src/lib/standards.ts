@@ -7,6 +7,8 @@ const STANDARDS_PATH = join(process.cwd(), 'src/content/site/standards.json');
 
 export interface ChecklistItem { q: string; why: string; ours: string }
 export interface Checklist { title: string; items: ChecklistItem[] }
+export interface PromiseItem { no: string; title: string; lines: string[] }
+export interface PromiseBlock { heading: string; items: PromiseItem[] }
 export interface StandardsData {
   baseline: {
     title: string;
@@ -16,11 +18,18 @@ export interface StandardsData {
     policyLines: string[];
   } | null;
   noExtra: { title: string; items: string[]; closing: string } | null;
+  promise: PromiseBlock | null;
   careChecklist: Checklist | null;
   installChecklist: Checklist | null;
 }
 
-const EMPTY: StandardsData = { baseline: null, noExtra: null, careChecklist: null, installChecklist: null };
+const EMPTY: StandardsData = {
+  baseline: null,
+  noExtra: null,
+  promise: null,
+  careChecklist: null,
+  installChecklist: null,
+};
 
 const warn = (msg: string) => console.warn(`[standards.json 경고] ${msg}`);
 const isNonEmptyString = (v: unknown): v is string => typeof v === 'string' && v.trim() !== '';
@@ -103,9 +112,35 @@ export function loadStandards(): StandardsData {
     }
   }
 
+  /* ---------- promise — 「바람대로가 일하는 방식」 선언 ---------- */
+  let promise: PromiseBlock | null = null;
+  if (raw.promise) {
+    const heading = isNonEmptyString(raw.promise.heading) ? raw.promise.heading.trim() : '';
+    const items: PromiseItem[] = [];
+    if (Array.isArray(raw.promise.items)) {
+      raw.promise.items.forEach((it: any, i: number) => {
+        if (!isNonEmptyString(it?.title)) {
+          if (it?.title || it?.lines) warn(`promise.items[${i}] — title이 필요합니다. 항목을 건너뜁니다.`);
+          return;
+        }
+        items.push({
+          no: isNonEmptyString(it?.no) ? it.no.trim() : String(i + 1).padStart(2, '0'),
+          title: it.title.trim(),
+          lines: strArray(it?.lines),
+        });
+      });
+    }
+    // 항목이 하나도 없으면 블록째 미노출 (빈 값 = 미노출 규칙)
+    if (heading && items.length) promise = { heading, items };
+    else if (raw.promise.heading || raw.promise.items) {
+      warn('"promise" — heading과 items가 모두 필요합니다. 블록을 건너뜁니다.');
+    }
+  }
+
   return {
     baseline,
     noExtra,
+    promise,
     careChecklist: pickChecklist(raw.care_checklist, 'care_checklist'),
     installChecklist: pickChecklist(raw.install_checklist, 'install_checklist'),
   };

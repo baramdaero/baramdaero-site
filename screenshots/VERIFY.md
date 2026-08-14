@@ -295,3 +295,48 @@ rect 모킹 검증만으로는 안 잡히고 **실스크롤 검증에서 드러�
 `aircon-install-extra-costs` — "에어컨 설치 추가비용에는 어떤 항목이 있나요" (topic: 비용).
 answer 3문장, qa 5개, facts 1건(항목 수 58, 출처: 자사 시장조사 2026-08), claims 빈 배열,
 연결: /install/ 체크리스트 + newhome 상황 페이지. sources는 자사 조사(내부 자료라 url 없음).
+
+## 카피 방향 전환 3건 (2026-08-13, feat/copy-promise)
+
+### 1) 체크리스트 → 「바람대로가 일하는 방식」
+`standards.json`의 care/install_checklist는 **items만 비웠다**(title·스키마·CompareChecklist 컴포넌트 유지).
+빈 값=미노출 규칙으로 화면에서 빠지고, items를 다시 채우면 그대로 복귀한다.
+`promise` 블록 신설 + `Promise.astro` 컴포넌트 → /care/ · /install/ · /situation/[slug] 3곳에서 소비.
+
+### 2) 사진 요구 문구 전면 제거
+지시가 명시한 /care/ 밴드 외에 **6개 소스에 더 있었다** — 전수 처리:
+| 파일 | 처리 |
+|---|---|
+| `config.js` | DESCRIPTION·CARE_SEO_DESCRIPTION "사진 한 장으로/사진으로 확정 견적" → "방문 전에 견적" |
+| `faq.json` | "사진을 보내주시면 확정 금액" → "기종과 대수, 설치 위치. 이 정도면 됩니다" |
+| `trust.json` | "사진 먼저, 견적 그다음" → "견적 먼저, 방문 그다음" |
+| `pricing.json` | conditions "사진으로 먼저 확인" → "방문 전에 확인" |
+| `situations.json` | "사진과 평면도를 그대로 보내 견적" → "기종과 대수, 설치 위치를 알려주고 견적" |
+| `Chatbot.astro` | clean_end·install_end·as_say_weak·기종 '모름·사진으로 확인' 선택지 + 주석 예시 |
+| 페이지 CTA | /care/ /install/ /cases/ /situation/[slug] 4곳 |
+
+**유지한 맥락(우리가 남겨 드리는 사진)**: home services "전후 상태는 사진으로 남깁니다",
+process 04 "작업 사진을 전달합니다", Promise 02 "작업 사진을 남겨 전달합니다",
+pricing 절차 스텝, situations 배관 기록, /cases/ 기록 문구, /story/ 기록 문구.
+
+챗봇 교체분은 **한 줄 25자 상한** 준수 확인 (최대 16자).
+
+### 3) 추가금 문구 통일
+`no_extra` 대표 문장(title) → "사전에 말씀드리지 않은 추가금은 없습니다", 하위 나열 유지.
+closing은 중복 문장("현장에서 금액이 올라가는…")만 덜어내고 "작업 난이도는 저희가 감당할 부분입니다."로 축약.
+
+### 검증 (dist 전수)
+| 항목 | 결과 |
+|---|---|
+| astro build | 통과 (11페이지) |
+| 3개 라우트 | 체크리스트 미노출 ✅ · Promise 3항목 노출 ✅ |
+| "확인하세요" | **0건** |
+| 사진 요구 문구 10패턴 | **0건** (사진을 보내/사진 몇 장/사진 한 장/사진으로 확정/사진 먼저 등) |
+| 우리가 남기는 맥락 | 3곳 전부 유지 확인 |
+| 추가금 문구 | 신규 14건 · 구 문구 **0건** |
+| 홈 process 02 | "실측"→"견적", 방문 전 확정 문구 반영 |
+| 홈 CTA | `<em>견적</em>은 방문 전에 나옵니다` (강조 적용) |
+
+'보증' 2건은 `situations.json`의 **기존** 문구(newhome 페이지) — 이번 신규 사용 아님.
+
+- `promise-1440.png` · `promise-390.png`

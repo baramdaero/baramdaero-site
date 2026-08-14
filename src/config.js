@@ -5,7 +5,7 @@ export const SITE_CONFIG = {
   SITE_NAME: '바람대로',
   SLOGAN: '당신의 바람대로.',
   HOME_TITLE: '바람대로 — 시스템에어컨 설치·세척·관리',
-  DESCRIPTION: '시스템에어컨 설치·분해세척·유지관리. 수도권 전 지역, 사진 한 장으로 확정 견적.',
+  DESCRIPTION: '시스템에어컨 설치·분해세척·유지관리. 수도권 전 지역, 방문 전에 견적을 확정해 드립니다.',
 
   KAKAO_CHANNEL_URL: '', // 카카오채널 개설 후 기입 (예: https://pf.kakao.com/_xxxxx)
   PHONE: '',             // 대표번호 확정 후 기입 (예: 0507-0000-0000)
@@ -25,7 +25,7 @@ export const SITE_CONFIG = {
   // /care/ SEO 문구 — 지역+비용 키워드 구조 (검색·AI 인용 표적)
   CARE_SEO_TITLE: '에어컨 청소 비용·분해세척 기준가',
   CARE_SEO_DESCRIPTION:
-    '수도권 에어컨 분해세척 기준가와 표준 절차. 벽걸이·스탠드·시스템 기종별 비용을 확인하고 사진으로 확정 견적을 받으세요.',
+    '수도권 에어컨 분해세척 기준가와 표준 절차. 벽걸이·스탠드·시스템 기종별 비용을 확인하고 방문 전에 견적을 받으세요.',
 
   BRANDS_INSTALL: ['삼성', 'LG'],
 

@@ -125,9 +125,9 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
      아래 NODES는 순서·분기만 담당하므로, 말투를 고칠 때 NODES는 건드리지 않는다.
 
      ▸ L(...) 의 인자 한 칸 = 화면의 한 줄. 줄바꿈 위치를 그대로 통제한다.
-         L('도면이나 설치 위치 사진이 있으면', '함께 보내주세요.')
-           →  도면이나 설치 위치 사진이 있으면
-              함께 보내주세요.
+         L('방문 전에 견적을 확정해', '알려드리겠습니다.')
+           →  방문 전에 견적을 확정해
+              알려드리겠습니다.
      ▸ 한 줄로 끝나는 문구는 L 없이 그냥 문자열로 둔다.
      ▸ 한 줄 상한은 한글 25자다 (360px·데스크톱 패널 모두 말풍선 279px로 동일 — 실측).
        넘기면 자동 줄바꿈이 끼어들어 의도한 줄 나눔이 깨진다. 여유를 두고 22자 안쪽 권장.
@@ -157,7 +157,7 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
 
     /* --- 트리1 세척 --- */
     clean_start: '기종을 선택해 주세요.',
-    clean_end: L('전면·측면 사진을 보내주시면', '확정 견적을 드립니다.'),
+    clean_end: L('방문 전에 견적을 확정해', '알려드리겠습니다.'),
 
     /* --- 트리2 AS --- */
     as_q1: L('바람대로에서 시공 또는', '세척·관리를 받으셨나요?'),
@@ -178,7 +178,7 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     ),
     as_symptom: '어떤 증상인가요?',
     as_say_noise: L('작동 영상을 함께 보내주시면', '확인이 빠릅니다.'),
-    as_say_weak: L('실내기·실외기 사진을 함께 보내주시면', '확인이 빠릅니다.'),
+    as_say_weak: L('증상이 언제부터인지 알려주시면', '확인이 빠릅니다.'),
     as_smell: L(
       '냄새는 고장이 아니라 내부 오염입니다.',
       '분해 세척으로 해결됩니다.',
@@ -218,7 +218,7 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     ),
     install_interior: L('인테리어 공사는', '어떻게 진행되나요?'),
     install_say_interior: L('인테리어 일정과 맞물리는 공정이라', '접수 때 현재 상황을 함께 알려주세요.'),
-    install_end: L('도면이나 설치 위치 사진이 있으면', '함께 보내주세요.'),
+    install_end: L('방문 전에 견적을 확정해', '알려드리겠습니다.'),
 
     /* --- 트리4 기타 --- */
     etc: '원하시는 채널로 문의해 주세요.',
@@ -243,7 +243,7 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
         { label: '벽걸이', next: 'clean.units', set: { 분류: '세척', 기종: '벽걸이' } },
         { label: '스탠드', next: 'clean.units', set: { 분류: '세척', 기종: '스탠드' } },
         { label: '천장형', next: 'clean.units', set: { 분류: '세척', 기종: '천장형' } },
-        { label: '모름 · 사진으로 확인', next: 'clean.units', set: { 분류: '세척', 기종: '모름 · 사진으로 확인' } },
+        { label: '모름 · 확인 필요', next: 'clean.units', set: { 분류: '세척', 기종: '모름 · 확인 필요' } },
       ],
     },
     'clean.units': {

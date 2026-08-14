@@ -1,0 +1,64 @@
+---
+// 「바람대로가 일하는 방식」 선언 블록 — 콘텐츠는 standards.json 단일 소스.
+// 견적 비교 체크리스트(CompareChecklist) 자리를 대체한다. 항목이 없으면 통째로 미렌더.
+import type { PromiseBlock } from '../../lib/standards.ts';
+
+interface Props {
+  promise: PromiseBlock | null;
+  eyebrow?: string;
+}
+const { promise, eyebrow = '약속' } = Astro.props;
+---
+{promise && (
+  <section class="bd-section v2-promise">
+    <div class="bd-container">
+      {eyebrow && <span class="br-eyebrow br-reveal">{eyebrow}</span>}
+      <h2 class="br-h br-reveal">{promise.heading}</h2>
+      <ol class="v2-promise__list">
+        {promise.items.map((item) => (
+          <li class="v2-promise__item br-reveal">
+            <span class="v2-promise__no">{item.no}</span>
+            <div class="v2-promise__body">
+              <h3>{item.title}</h3>
+              {item.lines.length > 0 && (
+                <p>
+                  {item.lines.map((line, i) => (
+                    <Fragment>{i > 0 && <br />}{line}</Fragment>
+                  ))}
+                </p>
+              )}
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+)}
+
+<style>
+  .v2-promise { background: var(--br-mist); }
+  .v2-promise__list { margin-top: 48px; list-style: none; display: grid; max-width: 760px; }
+  .v2-promise__item {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 14px;
+    padding: 22px 0;
+    border-bottom: 1px solid rgba(0, 78, 100, 0.14); /* mist 위 라인 시인성 */
+  }
+  .v2-promise__item:last-child { border-bottom: 0; }
+  .v2-promise__no {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--br-ice);
+    color: var(--br-teal);
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 999px;
+    font-variant-numeric: tabular-nums;
+  }
+  .v2-promise__body h3 { font-size: 18px; margin-bottom: 8px; color: var(--br-teal); }
+  .v2-promise__body p { font-size: 15px; line-height: 1.8; color: var(--br-ink-sub); }
+</style>
