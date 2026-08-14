@@ -1,13 +1,23 @@
 ---
-// 자주 묻는 질문 — faq.json 전 항목 (IA v3 신설, 콘텐츠 소스는 기존 faq.json 유지).
+// 자주 묻는 질문 — 카테고리 5개 섹션 + 앵커 네비 + 검색(필터만 JS).
+// 콘텐츠는 faq.json 단일 소스. hold 문항은 페이지·JSON-LD 모두 제외.
+// 아코디언은 순수 details/summary — JS가 죽어도 전 문항이 HTML로 노출된다.
 import Base from '../../layouts/Base.astro';
 import PageHero from '../../components/v2/PageHero.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
-import { loadFaq } from '../../lib/faq.ts';
+import { loadFaqPage, renderFaqMd, faqPlainText, FAQ_CATEGORIES } from '../../lib/faq.ts';
 
-const faq = loadFaq();
+const items = loadFaqPage();
+
+// 카테고리 순서 고정 (비용 먼저) — 문항이 있는 카테고리만 섹션 생성
+const sections = FAQ_CATEGORIES
+  .map((cat) => ({ cat, items: items.filter((i) => i.category === cat) }))
+  .filter((s) => s.items.length > 0);
+
+// 검색 인덱스 — 질의·대상 모두 공백 제거+소문자 후 부분 일치 (마크다운 기호 제거한 평문 기준)
+const norm = (s: string) => s.replace(/\s+/g, '').toLowerCase();
+
 const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? '';
-
 const jsonLd: object[] = [
   {
     '@context': 'https://schema.org',
@@ -18,39 +28,80 @@ const jsonLd: object[] = [
     ],
   },
 ];
-if (faq.length) {
+if (items.length) {
+  // FAQPage — live 문항의 q+a 전체 (hook 제외)
   jsonLd.push({
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    mainEntity: faq.map((f) => ({
+    mainEntity: items.map((f) => ({
       '@type': 'Question',
       name: f.q,
-      acceptedAnswer: { '@type': 'Answer', text: f.a },
+      acceptedAnswer: { '@type': 'Answer', text: faqPlainText(f.a) },
     })),
   });
 }
 ---
-<Base title="자주 묻는 질문" description="설치·세척·정기관리에 대해 자주 받는 질문과 답변." jsonLd={jsonLd}>
+<Base title="자주 묻는 질문" description="비용·세척·설치·진행·사후 관리까지, 자주 받는 질문과 답변." jsonLd={jsonLd}>
   <PageHero eyebrow="자주 묻는 질문">
     묻기 전에<br />먼저 답해 둡니다
   </PageHero>
 
   <section class="bd-section faq-page">
     <div class="bd-container">
-      {faq.length > 0 ? (
-        <dl class="faq-page__list br-reveal">
-          {faq.map((f) => (
-            <div class="faq-page__item">
-              <dt>{f.q}</dt>
-              <dd>{f.a}</dd>
+      {items.length > 0 ? (
+        <Fragment>
+          {/* 검색 — JS 없으면 그냥 입력창일 뿐, 전 문항은 아래에 항상 있다 */}
+          <div class="faq-search br-reveal">
+            <input
+              type="search"
+              class="faq-search__input"
+              placeholder="질문 검색 (예: 추가비용, 소음)"
+              aria-label="질문 검색"
+              data-faq-search
+            />
+            <p class="faq-search__empty" data-faq-empty hidden>
+              해당하는 질문이 없습니다. 챗봇으로 바로 물어보실 수 있습니다.
+            </p>
+          </div>
+
+          <nav class="faq-nav br-reveal" aria-label="분류" data-faq-nav>
+            {sections.map((s) => (
+              <a class="faq-nav__chip" href={`#cat-${s.cat}`}>{s.cat} <span class="faq-nav__n">{s.items.length}</span></a>
+            ))}
+          </nav>
+
+          {sections.map((s, si) => (
+            <div class="faq-cat" id={`cat-${s.cat}`} data-faq-cat>
+              <h2 class="faq-cat__title">{s.cat}</h2>
+              {s.items.map((f, fi) => (
+                <details
+                  class="faq-item"
+                  id={f.id}
+                  open={si === 0 && fi === 0}
+                  data-faq-item
+                  data-search={norm(`${f.q} ${f.hook} ${faqPlainText(f.a)}`)}
+                >
+                  <summary class="faq-item__q">{f.q}</summary>
+                  <div class="faq-item__body">
+                    {f.hook && <p class="faq-item__hook">{f.hook}</p>}
+                    <div class="faq-item__a" set:html={renderFaqMd(f.a)} />
+                    {f.priceNote && <p class="faq-item__price">{f.priceNote}</p>}
+                    {f.related.length > 0 && (
+                      <p class="faq-item__related">
+                        {f.related.map((r) => (
+                          <a href={r.href}>{r.label} <span aria-hidden="true">→</span></a>
+                        ))}
+                      </p>
+                    )}
+                  </div>
+                </details>
+              ))}
             </div>
           ))}
-        </dl>
+        </Fragment>
       ) : (
-        /* faq.json이 전부 sample이면 빈 목록 대신 상담으로 연결 */
         <div class="faq-page__pending br-reveal">
           <p class="faq-page__pending-title">질문 목록을 준비하고 있습니다.</p>
-          <p class="faq-page__pending-body">궁금한 점은 챗봇으로 바로 물어보실 수 있습니다.</p>
           <button type="button" class="bd-cta" data-chat-tree="menu">바로 문의하기</button>
         </div>
       )}
@@ -59,18 +110,152 @@ if (faq.length) {
 
   <CtaBand>
     답이 없는 질문은<br />직접 <em>답</em>해 드립니다
-    <Fragment slot="sub">기종과 상황을 알려주시면 상담으로 이어드립니다.</Fragment>
+    <Fragment slot="sub">기종과 대수, 설치 위치. 이 정도면 됩니다.</Fragment>
   </CtaBand>
 </Base>
 
+<script>
+  // 검색 = 필터만. 공백·대소문자 무시, q·hook·본문 부분 일치.
+  // JS가 없으면 이 스크립트 전체가 안 돌 뿐 전 문항은 이미 HTML에 있다.
+  const input = document.querySelector<HTMLInputElement>('[data-faq-search]');
+  const empty = document.querySelector<HTMLElement>('[data-faq-empty]');
+  const nav = document.querySelector<HTMLElement>('[data-faq-nav]');
+  const cats = Array.from(document.querySelectorAll<HTMLElement>('[data-faq-cat]'));
+  const norm = (s: string) => s.replace(/\s+/g, '').toLowerCase();
+
+  input?.addEventListener('input', () => {
+    const q = norm(input.value);
+    let visible = 0;
+    cats.forEach((cat) => {
+      let catVisible = 0;
+      cat.querySelectorAll<HTMLElement>('[data-faq-item]').forEach((item) => {
+        const hit = !q || (item.dataset.search ?? '').includes(q);
+        item.hidden = !hit;
+        if (hit) catVisible += 1;
+      });
+      cat.hidden = catVisible === 0;
+      visible += catVisible;
+    });
+    if (empty) empty.hidden = visible > 0;
+    if (nav) nav.hidden = !!q; // 검색 중에는 앵커 네비 숨김 (결과와 어긋나므로)
+  });
+</script>
+
 <style>
-  .faq-page { background: var(--br-base); }
-  .faq-page__list { display: grid; gap: 0; max-width: 760px; border-top: 2px solid var(--br-teal); }
-  .faq-page__item { padding: 18px 4px; border-bottom: 1px solid var(--br-line); }
-  .faq-page__item dt { font-weight: 700; font-size: 16px; margin-bottom: 6px; color: var(--br-ink); }
-  .faq-page__item dd { font-size: 15px; color: var(--br-ink-sub); }
+  .faq-page .bd-container { max-width: 760px; }
+
+  .faq-search { margin-bottom: 20px; }
+  .faq-search__input {
+    width: 100%;
+    font: inherit;
+    font-size: 16px;
+    padding: 13px 18px;
+    border: 1px solid var(--br-line);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--br-ink);
+  }
+  .faq-search__input:focus { outline: 2px solid var(--br-teal); outline-offset: 1px; }
+  .faq-search__empty { margin-top: 14px; font-size: 15px; color: var(--br-ink-sub); }
+
+  .faq-nav { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 36px; }
+  .faq-nav__chip {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--br-teal);
+    border: 1px solid var(--br-line);
+    border-radius: 999px;
+    padding: 8px 16px;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: border-color var(--dur-color) ease, background-color var(--dur-color) ease;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .faq-nav__chip:hover { border-color: var(--br-teal); background: var(--br-mist); }
+  }
+  .faq-nav__n { font-size: 11.5px; color: var(--br-ink-sub); }
+
+  .faq-cat { margin-top: 44px; scroll-margin-top: 80px; }
+  .faq-cat:first-of-type { margin-top: 0; }
+  .faq-cat__title {
+    font-size: 20px;
+    color: var(--br-teal);
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--br-teal);
+  }
+
+  .faq-item { border-bottom: 1px solid var(--br-line); }
+  .faq-item__q {
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 16.5px;
+    line-height: 1.6;
+    padding: 18px 4px;
+    color: var(--br-ink);
+  }
+  .faq-item__body { padding: 2px 4px 24px; }
+
+  /* 후킹 한 줄 — 답의 얼굴 */
+  .faq-item__hook {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--br-teal);
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+
+  /* 본문 — 길어도 읽히게 */
+  .faq-item__a { font-size: 15.5px; line-height: 1.85; color: var(--br-ink-sub); }
+  .faq-item__a :global(p) { margin-bottom: 14px; }
+  .faq-item__a :global(p:last-child) { margin-bottom: 0; }
+  .faq-item__a :global(h3) { font-size: 16px; color: var(--br-ink); margin: 22px 0 10px; }
+  .faq-item__a :global(ul) { margin: 0 0 14px 4px; list-style: none; display: grid; gap: 8px; }
+  .faq-item__a :global(li) { padding-left: 16px; position: relative; }
+  .faq-item__a :global(li)::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.78em;
+    width: 8px;
+    height: 1px;
+    background: var(--br-teal);
+  }
+  .faq-item__a :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14.5px;
+    margin: 16px 0;
+  }
+  .faq-item__a :global(th), .faq-item__a :global(td) {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--br-line);
+  }
+  .faq-item__a :global(th) { color: var(--br-teal); font-weight: 700; }
+  .faq-item__a :global(strong) { color: var(--br-ink); }
+
+  .faq-item__price {
+    margin-top: 14px;
+    padding: 12px 16px;
+    background: var(--br-mist);
+    border-left: 3px solid var(--br-teal);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--br-teal);
+  }
+
+  .faq-item__related { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 6px 20px; }
+  .faq-item__related a {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--br-teal);
+    border-bottom: 1px solid currentColor;
+    padding-bottom: 1px;
+  }
+
   .faq-page__pending { text-align: center; padding: 24px 0; }
-  .faq-page__pending-title { font-size: 20px; font-weight: 800; color: var(--br-teal); }
-  .faq-page__pending-body { margin-top: 12px; font-size: 15px; color: var(--br-ink-sub); }
-  .faq-page__pending .bd-cta { margin-top: 28px; }
+  .faq-page__pending-title { font-size: 20px; font-weight: 800; color: var(--br-teal); margin-bottom: 24px; }
 </style>
