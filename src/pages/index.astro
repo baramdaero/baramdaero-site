@@ -34,9 +34,9 @@ const cases = (await getCollection('cases'))
 /* 서비스 카드의 앵커 id와 지그재그 방향은 문구가 아니라 레이아웃이라 여기 둔다.
    home.json의 services 순서와 짝지어 쓰며, 카드가 더 늘면 id 없이 렌더된다. */
 const SERVICE_LAYOUT = [
-  { id: 'clean', flip: false },
-  { id: 'care', flip: true },
   { id: 'install', flip: false },
+  { id: 'care', flip: true },
+  { id: 'clean', flip: false },
 ];
 
 /** CTA 헤드라인에서 강조 단어만 <em>으로 감싼다 (색 강조는 .br-h em이 처리) */
