@@ -9,6 +9,8 @@ export interface WorldviewStep {
   lines: string[];
   /** 이 구간의 종착점 — 다른 단계보다 크게 표시 */
   emphasis: boolean;
+  /** 강조 단계의 큰 글씨 아래 이어 붙는 줄 — 1~4단계와 같은 기본 본문 스타일 */
+  tail: string[];
 }
 
 export interface WorldviewData {
@@ -59,7 +61,8 @@ export function loadHeroWorldview(): WorldviewData {
       if (s?.lines !== undefined) warn(`steps[${i}] — lines가 비어 단계를 건너뜁니다.`);
       return; // 빈 단계 = 조용히 제외
     }
-    out.push({ lines, emphasis: s?.emphasis === true });
+    const tail = Array.isArray(s?.tail) ? s.tail.filter(isNonEmptyString).map((l: string) => l.trim()) : [];
+    out.push({ lines, emphasis: s?.emphasis === true, tail });
   });
   const source = isNonEmptyString(raw?.source) ? raw.source.trim() : '';
   return { steps: out, source };

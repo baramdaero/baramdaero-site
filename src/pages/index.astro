@@ -13,9 +13,8 @@ import Stats from '../components/v2/Stats.astro';
 import Process from '../components/v2/Process.astro';
 // import Reviews from '../components/v2/Reviews.astro'; // S9 — [실후기교체] 확보 후 주석 해제
 import CtaBand from '../components/v2/CtaBand.astro';
-import SituationCards from '../components/v2/SituationCards.astro';
+import NeedTriage from '../components/v2/NeedTriage.astro';
 import { loadTrust } from '../lib/trust.ts';
-import { loadSituations } from '../lib/situations.ts';
 import { loadHome } from '../lib/home.ts';
 
 // 홈 섹션 문구 — home.json 단일 소스
@@ -24,8 +23,6 @@ const home = loadHome();
 // 신뢰 지표 — trust.json 단일 소스 (하드코딩 금지)
 const trust = loadTrust();
 
-// 상황별 안내 — situations.json에 준비된 페이지만 카드로 (없으면 섹션 자체가 미노출)
-const situations = loadSituations();
 
 // 마퀴 카드 — cases 컬렉션 최신순
 const cases = (await getCollection('cases'))
@@ -87,11 +84,9 @@ const cta = home.ctaBand;
     </ServiceSplit>
   ))}
 
-  <SituationCards
-    situations={situations}
-    eyebrow={home.situations?.eyebrow}
-    title={home.situations?.heading.join('\n')}
-  />
+  {home.triage && (
+    <NeedTriage heading={home.triage.heading} cards={home.triage.cards} />
+  )}
 
   <Marquee entries={cases} />
 
