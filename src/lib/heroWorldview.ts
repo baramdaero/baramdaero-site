@@ -11,16 +11,22 @@ export interface WorldviewStep {
   emphasis: boolean;
 }
 
+export interface WorldviewData {
+  steps: WorldviewStep[];
+  /** 1단계 통계의 출처 한 줄 — 구간 하단에 작게 표시. 비면 미노출 */
+  source: string;
+}
+
 const warn = (msg: string) => console.warn(`[hero-worldview.json 경고] ${msg}`);
 const isNonEmptyString = (v: unknown): v is string => typeof v === 'string' && v.trim() !== '';
 
-export function loadHeroWorldview(): WorldviewStep[] {
+export function loadHeroWorldview(): WorldviewData {
   let rawText: string;
   try {
     rawText = readFileSync(PATH, 'utf8');
   } catch {
     warn('src/content/site/hero-worldview.json 파일을 찾을 수 없습니다 — 다크 구간 카피를 건너뜁니다.');
-    return [];
+    return { steps: [], source: '' };
   }
 
   let raw: any;
@@ -55,5 +61,6 @@ export function loadHeroWorldview(): WorldviewStep[] {
     }
     out.push({ lines, emphasis: s?.emphasis === true });
   });
-  return out;
+  const source = isNonEmptyString(raw?.source) ? raw.source.trim() : '';
+  return { steps: out, source };
 }
