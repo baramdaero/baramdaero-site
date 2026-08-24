@@ -6,15 +6,21 @@ import { SITE_CONFIG } from '../../config.js';
 interface Props {
   chatTree?: string;
   buttonLabel?: string;
+  /** 링 스윕 모션 — 홈 1곳 전용. 기본 꺼짐 (모든 CTA가 돌면 포인트가 아니다) */
+  ring?: boolean;
 }
-const { chatTree = 'menu', buttonLabel = '견적 문의' } = Astro.props;
+const { chatTree = 'menu', buttonLabel = '견적 문의', ring = false } = Astro.props;
 ---
 <section class="bd-section v2-cta">
   <div class="bd-container">
     <h2 class="br-h v2-cta__title br-reveal"><slot /></h2>
     <p class="v2-cta__sub br-reveal"><slot name="sub" /></p>
     <div class="v2-cta__row br-reveal">
-      <button type="button" class="bd-cta bd-cta--deep v2-cta__btn" data-chat-tree={chatTree}>{buttonLabel}</button>
+      <button
+        type="button"
+        class:list={['bd-cta', 'bd-cta--deep', 'v2-cta__btn', { 'v2-cta__btn--ring': ring }]}
+        data-chat-tree={chatTree}
+      >{buttonLabel}</button>
       {SITE_CONFIG.PHONE && (
         <a class="v2-cta__phone" href={`tel:${SITE_CONFIG.PHONE}`}>{SITE_CONFIG.PHONE}</a>
       )}
@@ -38,4 +44,51 @@ const { chatTree = 'menu', buttonLabel = '견적 문의' } = Astro.props;
   .v2-cta__btn { font-size: 20px; padding: 14px 34px; border-radius: 12px; }
   .v2-cta__phone { font-weight: 700; color: var(--br-ice); }
   @media (min-width: 768px) { .v2-cta__sub { font-size: 17px; } }
+
+  /* ---------- 링 스윕 (홈 전용, ring prop) ----------
+     버튼 테두리만 도는 conic 그라디언트. 본체·글자·크기·패딩은 손대지 않으므로
+     대비(teal 글자 / ice 바탕)는 그대로다.
+     ice 구간은 teal 밴드를 배경으로, teal 구간은 ice 버튼을 배경으로 읽혀
+     어느 각도에서도 1.5px 띠가 보인다.
+     가운데는 mask로 도려내 글자를 덮지 않는다 — z-index 다툼 없음. */
+  @property --br-ring-angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+  }
+
+  .v2-cta__btn--ring { --ring-w: 1.5px; position: relative; }
+
+  /* mask-composite 미지원 브라우저에선 링 자체를 렌더하지 않는다
+     (마스크가 안 먹으면 conic이 버튼을 통째로 덮는다) */
+  @supports ((mask-composite: exclude) or (-webkit-mask-composite: xor)) {
+    .v2-cta__btn--ring::before {
+      content: '';
+      position: absolute;
+      inset: calc(-1 * var(--ring-w));
+      border-radius: calc(12px + var(--ring-w));
+      padding: var(--ring-w);
+      background: conic-gradient(
+        from var(--br-ring-angle),
+        var(--br-ice),
+        var(--br-teal) 50%,
+        var(--br-ice)
+      );
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      mask-composite: exclude;
+      animation: br-ring-spin 10s linear infinite;
+      pointer-events: none;
+    }
+  }
+
+  @keyframes br-ring-spin {
+    to { --br-ring-angle: 360deg; }
+  }
+
+  /* 모션 끔 = 정지한 링. 링 자체는 남긴다 */
+  @media (prefers-reduced-motion: reduce) {
+    .v2-cta__btn--ring::before { animation: none; }
+  }
 </style>
