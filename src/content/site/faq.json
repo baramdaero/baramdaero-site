@@ -380,12 +380,7 @@
       "chat_a": "",
       "price_note": "",
       "status": "live",
-      "related": [
-        {
-          "label": "천장 단내림이 필요한 경우",
-          "href": "/guides/when-a-ceiling-drop-is-needed/"
-        }
-      ],
+      "related": [],
       "updated": "2026-08-14"
     },
     {
@@ -397,12 +392,7 @@
       "chat_a": "",
       "price_note": "",
       "status": "live",
-      "related": [
-        {
-          "label": "단배관과 다배관 차이",
-          "href": "/guides/single-pipe-vs-multi-pipe/"
-        }
-      ],
+      "related": [],
       "updated": "2026-08-14"
     },
     {
@@ -478,10 +468,6 @@
         {
           "label": "신축 입주 에어컨 안내",
           "href": "/situation/newhome/"
-        },
-        {
-          "label": "선배관 시점",
-          "href": "/guides/when-to-install-pre-piping-during-interior-work/"
         }
       ],
       "updated": "2026-08-14"
