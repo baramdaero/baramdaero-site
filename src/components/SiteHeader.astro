@@ -10,11 +10,14 @@ import markReverseUrl from '../assets/logo/baramdaero-mark-reverse.svg?url';
 
 /** 이 폭 이하는 마크 단독 강등.
  *  v3 락업(비율 4.32)은 워드마크가 락업 높이의 0.405 — 워드마크 14px 하한을 지키려면
- *  락업 높이 35px 이상이어야 한다. 그래서 헤더는 36px 고정이고, 그 폭(155px)이
- *  4개 메뉴와 부딪히는 구간부터는 높이를 낮추는 대신 마크로 강등한다.
- *  소형 패딩을 8px로 줄여 390px(아이폰 14·15)까지 가로형을 확보했다.
+ *  락업 높이 35px 이상이어야 한다. 그래서 헤더는 36px 고정이고, 높이를 낮춰
+ *  끼워넣지 않는다. 폭이 모자라면 강등이지 축소가 아니다.
+ *  389 → 319: 메뉴 라벨 축약(아래 nav)으로 메뉴 폭이 236→114px로 줄어
+ *  320px에서도 155px 락업이 35px 여유를 남긴다. 산술 하한은 293px
+ *  (8+155+8+114+8)이지만, 한글 폴백 폰트가 기기마다 넓어질 수 있어
+ *  실기기 최소폭인 320px을 경계로 둔다 — 여유 35px이 그 변동분의 완충이다.
  *  실측 표는 screenshots/VERIFY.md */
-const MARK_MAX = 389;
+const MARK_MAX = 319;
 
 interface Props {
   variant?: 'overlay' | 'solid';
@@ -22,11 +25,15 @@ interface Props {
 const { variant = 'solid' } = Astro.props;
 
 // IA v3 — 세척/설치 2트랙 분리. 브랜드이야기는 푸터로 이동.
+// 라벨은 축약형(협소 폭에서 가로형 로고 자리를 벌기 위해), name은 보조기기용 전체 명칭.
+// name을 생략하면 label이 그대로 접근성 이름이 된다 (설치처럼 축약이 없는 항목).
+// FAQ만 축약형이 전체 명칭의 부분문자열이 아니라 괄호로 함께 읽는다
+// — 음성 제어가 화면에 보이는 "FAQ"로도 잡히게 (WCAG 2.5.3 Label in Name).
 const nav = [
-  { href: '/care/', label: '세척·관리' },
+  { href: '/care/', label: '세척', name: '세척·관리' },
   { href: '/install/', label: '설치' },
-  { href: '/cases/', label: '시공사례' },
-  { href: '/faq/', label: '자주 묻는 질문' },
+  { href: '/cases/', label: '사례', name: '시공사례' },
+  { href: '/faq/', label: 'FAQ', name: '자주 묻는 질문(FAQ)' },
 ];
 const path = Astro.url.pathname;
 
@@ -54,6 +61,7 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
         <a
           href={item.href}
           class="bd-header__link"
+          aria-label={item.name}
           aria-current={isCurrent(item.href) ? 'page' : undefined}
         >{item.label}</a>
       ))}
@@ -162,13 +170,15 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   }
 
   /* 가로형이 안 들어가는 폭 — 마크 단독 강등 (파일 교체는 <picture> media가).
-     높이를 낮춰 끼워넣지 않는다: 35px 미만이면 워드마크가 14px 하한을 깬다 */
-  @media (max-width: 389px) {
+     높이를 낮춰 끼워넣지 않는다: 35px 미만이면 워드마크가 14px 하한을 깬다.
+     ⚠️ 이 319는 위 MARK_MAX와 같은 값이어야 한다. 미디어 쿼리는 CSS 변수를 못 읽어
+     define:vars로 묶을 수 없다 — 한쪽만 고치면 파일은 마크인데 크기는 가로형이 된다 */
+  @media (max-width: 319px) {
     .bd-header__logo img { height: 32px; aspect-ratio: 1 / 1; }
   }
 
   @media (max-width: 640px) {
-    /* 패딩 8px — 390px에서 가로형(155px)+메뉴가 들어가게 하는 마지막 4px (실측) */
+    /* 패딩 8px — 320px에서 가로형(155px)+축약 메뉴(114px)를 넣는 마지막 여유 (실측) */
     .bd-header__inner { gap: 10px; padding: 0 8px; height: 56px; }
     .bd-header__nav { gap: 10px; }
     .bd-header__link { font-size: 12px; padding: 12px 0; }
