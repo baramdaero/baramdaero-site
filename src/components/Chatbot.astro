@@ -1007,7 +1007,11 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     const trigger = (e.target as HTMLElement).closest('[data-chat-tree]');
     if (!trigger) return;
     const tree = (trigger as HTMLElement).dataset.chatTree ?? 'menu';
-    open(TREE_START[tree] ?? 'menu');
+    // 'menu'(기본 CtaBand·Hero·FAQ·사례 CTA)는 NODES에 없는 id다 — 홈 화면으로 열어야
+    // 하는데, 원래부터 있던 결함(1f1ee76, 홈 화면 도입 커밋)으로 'home' 대신 'menu'가
+    // 폴백에 박혀 있었다. goto()가 존재하지 않는 id에서 조용히 return해 패널만 열리고
+    // 내용이 완전히 빈 화면이 됐다 — 08-24 라이브 재현으로 확인.
+    open(TREE_START[tree] ?? 'home');
   });
 </script>
 
