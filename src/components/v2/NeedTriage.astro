@@ -1,0 +1,84 @@
+---
+// 고객 유형 3분기 — 버튼이 챗봇 흐름을 연다 (data-chat-tree, Chatbot.astro TREE_START).
+// 카드 골격·색은 기존 v2-sit 계열과 동일 값. 신규 색·장식 없음 (DESIGN.md §1·§5).
+import type { HomeTriageCard } from '../../lib/home.ts';
+
+interface Props {
+  heading: string[];
+  cards: HomeTriageCard[];
+}
+const { heading, cards } = Astro.props;
+---
+{cards.length > 0 && (
+  <section class="bd-section v2-triage">
+    <div class="bd-container">
+      <h2 class="br-h br-reveal">
+        {heading.map((line, i) => (
+          <Fragment>{i > 0 && <br />}{line}</Fragment>
+        ))}
+      </h2>
+      <ul class="v2-triage__grid">
+        {cards.map((c) => (
+          <li class="v2-triage__cell br-reveal">
+            <div class="v2-triage__card">
+              <h3>{c.title}</h3>
+              {c.body && <p>{c.body}</p>}
+              <button type="button" class="bd-cta v2-triage__cta" data-chat-tree={c.chatTree}>
+                {c.buttonLabel}
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+)}
+
+<style>
+  /* base 유지 — 뒤따르는 절차 섹션(mist)과 배경이 붙지 않게 (DESIGN.md §3 교차 리듬) */
+  .v2-triage { background: var(--br-base); }
+
+  .v2-triage__grid {
+    margin-top: 48px;
+    list-style: none;
+    display: grid;
+    gap: 12px;
+  }
+  /* 모바일 세로 스택 → 데스크톱 가로 3열 */
+  @media (min-width: 768px) {
+    .v2-triage__grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  .v2-triage__cell { display: flex; }
+
+  .v2-triage__card {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 22px;
+    background: var(--br-base);
+    border: 1px solid var(--br-line);
+    border-radius: var(--radius);
+  }
+
+  .v2-triage__card h3 {
+    font-size: 17px;
+    color: var(--br-teal);
+  }
+  .v2-triage__card p {
+    margin-top: 8px;
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--br-ink-sub);
+    word-break: keep-all;
+  }
+
+  .v2-triage__cta {
+    margin-top: 20px;
+    align-self: flex-start;
+  }
+  /* 카드 폭이 좁아지는 모바일에서는 버튼을 폭에 맞춘다 */
+  @media (max-width: 767px) {
+    .v2-triage__cta { align-self: stretch; text-align: center; }
+  }
+</style>

@@ -13,9 +13,18 @@ export interface HomeService {
   cta: HomeCta | null;
 }
 export interface HomeProcessStep { no: string; title: string; body: string }
+/** 고객 유형 3분기 카드 — 버튼이 챗봇 흐름을 연다 */
+export interface HomeTriageCard {
+  title: string;
+  body: string;
+  buttonLabel: string;
+  chatTree: string;
+}
+/** Chatbot.astro의 TREE_START 키와 일치해야 한다. 없는 키는 눌러도 흐름이 열리지 않는다. */
+const CHAT_TREES = ['install', 'clean', 'as', 'etc'] as const;
 export interface HomeData {
   services: { leadHeading: string[]; cards: HomeService[] };
-  situations: { eyebrow: string; heading: string[] } | null;
+  triage: { heading: string[]; cards: HomeTriageCard[] } | null;
   process: { eyebrow: string; heading: string[]; steps: HomeProcessStep[] } | null;
   ctaBand: {
     heading: string[];
@@ -27,7 +36,7 @@ export interface HomeData {
 
 const EMPTY: HomeData = {
   services: { leadHeading: [], cards: [] },
-  situations: null,
+  triage: null,
   process: null,
   ctaBand: null,
 };
@@ -91,17 +100,46 @@ export function loadHome(): HomeData {
     });
   });
 
-  /* ---------- situations (라벨·제목만) ---------- */
-  let situations: HomeData['situations'] = null;
-  if (raw?.situations) {
-    const heading = strArray(raw.situations.heading);
-    if (heading.length) {
-      situations = {
-        eyebrow: isNonEmptyString(raw.situations.eyebrow) ? raw.situations.eyebrow.trim() : '',
-        heading,
-      };
+  /* ---------- triage (고객 유형 3분기) ---------- */
+  let triage: HomeData['triage'] = null;
+  if (raw?.triage) {
+    const heading = strArray(raw.triage.heading);
+    const tcards: HomeTriageCard[] = [];
+    const rawTriage = Array.isArray(raw.triage.cards) ? raw.triage.cards : [];
+    if (raw.triage.cards !== undefined && !Array.isArray(raw.triage.cards)) {
+      warn('"triage.cards"는 배열([ ])이어야 합니다 — 3분기 카드를 건너뜁니다.');
+    }
+    rawTriage.forEach((c: any, i: number) => {
+      if (!isNonEmptyString(c?.title) || !isNonEmptyString(c?.button_label)) {
+        if (c?.title || c?.button_label) warn(`triage.cards[${i}] — title과 button_label이 모두 필요합니다. 카드를 건너뜁니다.`);
+        return;
+      }
+      const tree = isNonEmptyString(c?.chat_tree) ? c.chat_tree.trim() : '';
+      if (!(CHAT_TREES as readonly string[]).includes(tree)) {
+        // 없는 키로 연결하면 버튼이 조용히 죽는다(패널만 열리고 내용 없음) — 빌드에서 끊는다.
+        throw new Error(
+          [
+            '',
+            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+            `[home.json 오류] triage.cards[${i}].chat_tree 값이 잘못되어 빌드를 중단합니다.`,
+            `받은 값: ${tree === '' ? '(비어 있음)' : tree}`,
+            `허용 값: ${CHAT_TREES.join(' / ')}`,
+            '수정 위치: src/content/site/home.json',
+            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+          ].join('\n'),
+        );
+      }
+      tcards.push({
+        title: c.title.trim(),
+        body: isNonEmptyString(c?.body) ? c.body.trim() : '',
+        buttonLabel: c.button_label.trim(),
+        chatTree: tree,
+      });
+    });
+    if (heading.length && tcards.length) {
+      triage = { heading, cards: tcards };
     } else {
-      warn('"situations.heading"이 비어 기본 문구를 사용합니다.');
+      warn('"triage" — heading과 cards가 모두 필요합니다. 3분기 섹션을 건너뜁니다.');
     }
   }
 
@@ -152,5 +190,5 @@ export function loadHome(): HomeData {
     }
   }
 
-  return { services: { leadHeading, cards }, situations, process, ctaBand };
+  return { services: { leadHeading, cards }, triage, process, ctaBand };
 }

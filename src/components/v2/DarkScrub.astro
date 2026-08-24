@@ -22,6 +22,9 @@ const { steps, source } = loadHeroWorldview();
             {step.lines.map((line, j) => (
               <Fragment>{j > 0 && <br />}{line}</Fragment>
             ))}
+            {step.tail.map((line) => (
+              <span class="v2-scrub__tail">{line}</span>
+            ))}
           </p>
         ))}
       </div>
@@ -195,6 +198,17 @@ const { steps, source } = loadHeroWorldview();
     font-weight: 800;
     line-height: 1.2;
     color: var(--br-ice);
+  }
+
+  /* 강조 단계에 이어 붙는 줄 — 큰 글씨를 상속하지 않고 1~4단계 본문과 같은 값으로 되돌린다 */
+  .v2-scrub__tail {
+    display: block;
+    margin-top: 14px;
+    font-size: clamp(23px, 3.4vw, 38px);
+    font-weight: 700;
+    line-height: 1.45;
+    letter-spacing: -0.02em;
+    color: #fff;
   }
 
   /* 1단계 통계 출처 — 구간 최하단 고정, 스크롤 단계와 무관하게 항상 노출.
