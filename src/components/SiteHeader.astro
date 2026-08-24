@@ -161,6 +161,17 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   .bd-header__cta,
   .bd-header__brand { white-space: nowrap; }
 
+  /* 390~640px 간격 고정 — 641px+(margin-right:200px, PR #26)와 같은 원리다.
+     margin-right:auto가 컨테이너 남는 폭을 전부 몰아줘 157px(390)→407px(640)로
+     계속 벌어졌다(08-24 실측). 150px로 처음 고정했을 때 390px 화면끝 여백이
+     5px까지 줄어(기존 전 구간 8px 표준보다 좁음 — 한글 폴백 폰트 변동 완충이
+     없다), 145px로 낮춰 8px 여백을 되찾았다. 641px 진입 시 228px로 이어져
+     방향이 늘 같다(줄었다 늘었다 하는 역전 없음), 641px+처럼 완전히 평탄하진
+     않지만 급격한 성장은 막는다. */
+  @media (min-width: 390px) and (max-width: 640px) {
+    .bd-header__brand { margin-right: 145px; }
+  }
+
   /* 데스크톱 헤더(64px)는 여유가 있어 40px의 2/3 = 26.667px */
   @media (min-width: 641px) {
     .bd-header__logo img { height: 26.667px; }
