@@ -204,6 +204,22 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
       '연락처를 남겨주시겠어요?',
     ),
     as_smell_link: '냄새 원인 자세히 보기',
+    // 누수 전용 — 안전 안내가 첫 줄이라 공통 블록에 묶지 않는다 (묶었다가 안내가 사라진 이력)
+    as_leak: L(
+      '먼저 전원을 꺼주세요.',
+      '새는 물이 전기 부품에 닿으면',
+      '위험할 수 있습니다.',
+      '',
+      '물이 떨어지는 원인은',
+      '크게 세 가지입니다.',
+      '· 배수 배관 막힘',
+      '· 배관 경사 문제',
+      '· 결로 — 단열 상태',
+      '',
+      '원인에 따라 대응이 달라서',
+      '확인 후 안내드리겠습니다.',
+      '연락처를 남겨주시겠어요?',
+    ),
     // 누수·냉방약함·소음·기타 공통 — 증상만으로 원인을 단정하지 않는다
     as_general: L(
       '원인은 몇 가지로 나뉩니다.',
@@ -322,12 +338,17 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     'as.symptom': {
       text: COPY.as_symptom,
       options: [
-        { label: '물이 떨어져요', next: 'as.card', set: { 증상: '물이 떨어져요', 긴급: '긴급' } },
+        { label: '물이 떨어져요', next: 'as.leak', set: { 증상: '물이 떨어져요', 긴급: '긴급' } },
         { label: '시원하지 않아요', next: 'as.card', set: { 증상: '시원하지 않아요' } },
         { label: '냄새가 나요', next: 'as.smell', set: { 증상: '냄새가 나요' } },
         { label: '소음이 나요', next: 'as.card', set: { 증상: '소음이 나요' } },
         { label: '기타', next: 'as.card', set: { 증상: '기타' } },
       ],
+    },
+    // 긴급 플래그는 옵션에서 붙는다 — renderCard가 전화 우선 CTA로 받는다
+    'as.leak': {
+      text: COPY.as_leak,
+      card: true,
     },
     'as.smell': {
       text: COPY.as_smell,
