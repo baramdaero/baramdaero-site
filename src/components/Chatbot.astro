@@ -113,6 +113,8 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
       suffix?: string;
       /** text 최대 길이 */
       max?: number;
+      /** 입력 직후 붙이는 안내 한 줄 (질문 아님 — 되묻기 1개 규칙 유지) */
+      say?: string;
     };
     card?: boolean;
     etc?: boolean;
@@ -153,6 +155,8 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
   const COPY = {
     /* --- 공통 --- */
     ask_region: '지역이 어디신가요? (시·구까지면 됩니다)',
+    // 지역 입력 직후 한 줄. 그 외 지역은 접수 후 안내로 흐른다 (별도 분기 없음)
+    say_region: '수도권 전 지역에서 시공합니다.',
     ask_units: '몇 대인가요?',
 
     /* --- 트리1 세척 --- */
@@ -271,6 +275,7 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     next,
     type: 'text',
     max: 30,
+    say: COPY.say_region,
   });
 
   const NODES: Record<string, Node> = {
@@ -649,10 +654,15 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
       if (node.input) {
         const spec = node.input;
         const hint = typeof spec.placeholder === 'function' ? spec.placeholder(data) : spec.placeholder;
-        armInput(hint, spec.type ?? 'number', spec.max ?? 20, (v) => {
+        armInput(hint, spec.type ?? 'number', spec.max ?? 20, async (v) => {
           const shown = `${v}${spec.suffix ?? ''}`;
           data[spec.key] = shown;
           bubble(shown, 'user');
+          if (spec.say) {
+            const t = ++renderToken;
+            try { await typing(t); } catch { return; }
+            bubble(spec.say);
+          }
           void goto(spec.next);
         });
       }
