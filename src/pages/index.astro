@@ -104,7 +104,7 @@ const cta = home.ctaBand;
   {/* <Reviews /> — S9 후기: 실후기(동의 확보분) 교체 전 미노출 */}
 
   {cta && (
-    <CtaBand buttonLabel={cta.buttonLabel}>
+    <CtaBand buttonLabel={cta.buttonLabel} ring>
       {cta.heading.map((line, i) => (
         <Fragment>
           {i > 0 && <br />}
