@@ -1,14 +1,18 @@
 ---
 // 전역 헤더. overlay = 홈 히어로 위 투명 고정 / solid = 서브페이지 상단.
 // 로고 톤은 기존 상태 클래스(.bd-header--overlay / .is-scrolled)에만 물린다 — 스크롤 리스너 추가 없음.
-// 로고는 마크(ㅂㄷ 초성) 단독 — wide 락업은 헤더에서 쓰지 않는다.
-// 워드마크 14px 하한 규칙과 "로고를 더 작게" 요구가 정면충돌해 텍스트 없는
-// 마크로 전환했다 — 기호라 하한 자체가 없다. 브랜드명 전체는 히어로 카피와
-// 푸터가 받친다(헤더에서 텍스트가 사라지는 페이지는 있어도, 이름이 아예
-// 안 보이는 페이지는 없다). wide 락업은 푸터에서만 계속 쓴다.
+// 락업은 <picture> media로 전환: 협소 폭(≤389px)에서 wide → mark 강등.
+// 390px+는 wide(마크+"바람대로" 워드마크) — 단, 실물 크기가 커 보인다는 판단에
+// 따라 08-24 축소했다. 워드마크 14px 하한 규칙을 이번엔 의도적으로 깼다
+// (한 차례 마크 단독 전환 시도 후 되돌림 — 오독이었다. 지시는 "락업 유지, 크기만 축소").
 import { SITE_CONFIG } from '../config.js';
+import wideUrl from '../assets/logo/baramdaero-wide.svg?url';
+import wideReverseUrl from '../assets/logo/baramdaero-wide-reverse.svg?url';
 import markUrl from '../assets/logo/baramdaero-mark.svg?url';
 import markReverseUrl from '../assets/logo/baramdaero-mark-reverse.svg?url';
+
+/** 이 폭 이하는 마크 단독 강등 (변경 없음 — 320~389px는 이번 축소 대상 아님). */
+const MARK_MAX = 389;
 
 interface Props {
   variant?: 'overlay' | 'solid';
@@ -38,8 +42,14 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   <div class="bd-header__inner">
     <a href="/" class="bd-header__brand" aria-label="바람대로 홈">
       {/* alt는 빈 값 — 링크의 aria-label이 이름을 이미 읽는다 (중복 읽기 방지) */}
-      <img class="bd-header__logo bd-header__logo--ink" src={markUrl} alt="" />
-      <img class="bd-header__logo bd-header__logo--rev" src={markReverseUrl} alt="" />
+      <picture class="bd-header__logo bd-header__logo--ink">
+        <source media={`(max-width: ${MARK_MAX}px)`} srcset={markUrl} />
+        <img src={wideUrl} alt="" />
+      </picture>
+      <picture class="bd-header__logo bd-header__logo--rev">
+        <source media={`(max-width: ${MARK_MAX}px)`} srcset={markReverseUrl} />
+        <img src={wideReverseUrl} alt="" />
+      </picture>
     </a>
     <nav class="bd-header__nav" aria-label="주 메뉴">
       {nav.map((item) => (
@@ -96,9 +106,8 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     align-items: center;
     gap: 28px;
   }
-  /* flex 축소 금지 — 축소는 flex '아이템'에서 일어난다. img에만 걸면 부모 brand가
-     대신 눌려 로고 비율이 깨진다 (기존 wide 락업에서 360px 155→123px 실측 — 마크는
-     정사각이라 체감은 작지만 사슬은 그대로 건다). */
+  /* flex 축소 금지 — 축소는 flex '아이템'에서 일어난다. img에만 걸면 부모 picture/brand가
+     대신 눌려 로고 비율이 깨진다 (360px에서 155→123px 실측). 사슬 전체에 건다 */
   .bd-header__brand {
     display: flex;
     align-items: center;
@@ -106,14 +115,15 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     flex-shrink: 0;
   }
 
-  /* 로고 — 마크(1:1) 단독, 폭 구간별 3단 크기. 톤 전환은 기존 상태 클래스만 사용.
-     텍스트가 없어 워드마크 하한 자체가 없다 — wide 시절의 aspect-ratio 1472/341,
-     35px 미만 강등 로직은 전부 소거됐다. */
-  .bd-header__logo {
-    display: none;
-    height: 32px;
+  /* 로고 — 높이 고정·width auto (비율 무변경). 톤 전환은 기존 상태 클래스만 사용.
+     08-24 축소: 기존 36/40px의 2/3 — "커 보인다"는 실물 판단을 워드마크 14px
+     하한보다 우선했다(의도적으로 하한 이하로 내려간다). */
+  .bd-header__logo { display: none; flex-shrink: 0; }
+  .bd-header__logo img {
+    display: block;
+    height: 24px;
     width: auto;
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 1472 / 341; /* v3 락업 비율 — 로드 전 레이아웃 밀림 방지 */
     flex-shrink: 0;
   }
   /* 라이트 구간(서브페이지 솔리드 · 오버레이 스크롤 후) = teal 잉크 */
@@ -151,27 +161,36 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   .bd-header__cta,
   .bd-header__brand { white-space: nowrap; }
 
-  /* 폭 구간별 3단 크기 — 형태(마크 1:1)는 고정, 크기만 단계적으로 커진다.
-     기존 wide 시절의 높이(36·40px)에 시각적 무게를 맞췄다. */
-  @media (min-width: 390px) {
-    .bd-header__logo { height: 36px; }
+  /* 390~640px 간격 고정 — 641px+(margin-right:200px, PR #26)와 같은 원리다.
+     margin-right:auto가 컨테이너 남는 폭을 전부 몰아줘 157px(390)→407px(640)로
+     계속 벌어졌다(08-24 실측). 150px로 처음 고정했을 때 390px 화면끝 여백이
+     5px까지 줄어(기존 전 구간 8px 표준보다 좁음 — 한글 폴백 폰트 변동 완충이
+     없다), 145px로 낮춰 8px 여백을 되찾았다. 641px 진입 시 228px로 이어져
+     방향이 늘 같다(줄었다 늘었다 하는 역전 없음), 641px+처럼 완전히 평탄하진
+     않지만 급격한 성장은 막는다. */
+  @media (min-width: 390px) and (max-width: 640px) {
+    .bd-header__brand { margin-right: 145px; }
   }
-  @media (min-width: 641px) {
-    .bd-header__logo { height: 40px; }
 
-    /* 로고↔메뉴 간격 고정 — 마크 전환 후 margin-right:auto가 컨테이너의
-       남는 폭을 전부 이 자리에 몰아줘 768px에서 500px까지 벌어졌다
-       (와이드 락업 시절엔 로고 자체가 155px+라 체감이 덜했다).
-       320/390의 체감 간격(158·224px)과 비슷한 폭으로 고정한다.
-       --maxw(1120px)로 컨테이너 자체가 상한이 있어 더 큰 폭에서도
-       무한정 벌어지지 않는다. CTA(SHOP_URL 채워지면 렌더)는 이 뒤에
-       남는 공간에 자연스럽게 자리잡는다 — 별도 처리 불필요. */
+  /* 데스크톱 헤더(64px)는 여유가 있어 40px의 2/3 = 26.667px */
+  @media (min-width: 641px) {
+    .bd-header__logo img { height: 26.667px; }
+
+    /* 로고↔메뉴 간격 고정 — 로고 크기와 무관하게 동작한다(margin은 로고 폭을
+       참조하지 않는 절대값). wide 축소로 로고 폭이 다시 좁아져도(115px 안팎)
+       이 값을 건드릴 이유는 없다 — 재실측으로 확인할 것. */
     .bd-header__brand { margin-right: 200px; }
   }
 
+  /* 가로형이 안 들어가는 폭 — 마크 단독 강등 (파일 교체는 <picture> media가).
+     ⚠️ 이 389는 위 MARK_MAX와 같은 값이어야 한다. 미디어 쿼리는 CSS 변수를 못 읽어
+     define:vars로 묶을 수 없다 — 한쪽만 고치면 파일은 마크인데 크기는 가로형이 된다 */
+  @media (max-width: 389px) {
+    .bd-header__logo img { height: 32px; aspect-ratio: 1 / 1; }
+  }
+
   @media (max-width: 640px) {
-    /* 값은 wide 락업 시절 그대로 유지 — 마크 전환으로 로고가 훨씬 좁아져
-       실제로는 더 넉넉하다. 임의 조정 금지, 휑해 보이면 캡처로 보고 후 승인받고 고칠 것 */
+    /* 값은 이전 그대로 유지 — 임의 조정 금지, 휑해 보이면 캡처로 보고 후 승인받고 고칠 것 */
     .bd-header__inner { gap: 10px; padding: 0 8px; height: 56px; }
     .bd-header__nav { gap: 10px; }
     .bd-header__link { font-size: 12px; padding: 12px 0; }
