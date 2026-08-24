@@ -1,23 +1,14 @@
 ---
 // 전역 헤더. overlay = 홈 히어로 위 투명 고정 / solid = 서브페이지 상단.
 // 로고 톤은 기존 상태 클래스(.bd-header--overlay / .is-scrolled)에만 물린다 — 스크롤 리스너 추가 없음.
-// 락업은 <picture> media로 전환: 협소 폭에서 wide → mark 강등 (해당 파일 1개만 내려받는다).
+// 로고는 마크(ㅂㄷ 초성) 단독 — wide 락업은 헤더에서 쓰지 않는다.
+// 워드마크 14px 하한 규칙과 "로고를 더 작게" 요구가 정면충돌해 텍스트 없는
+// 마크로 전환했다 — 기호라 하한 자체가 없다. 브랜드명 전체는 히어로 카피와
+// 푸터가 받친다(헤더에서 텍스트가 사라지는 페이지는 있어도, 이름이 아예
+// 안 보이는 페이지는 없다). wide 락업은 푸터에서만 계속 쓴다.
 import { SITE_CONFIG } from '../config.js';
-import wideUrl from '../assets/logo/baramdaero-wide.svg?url';
-import wideReverseUrl from '../assets/logo/baramdaero-wide-reverse.svg?url';
 import markUrl from '../assets/logo/baramdaero-mark.svg?url';
 import markReverseUrl from '../assets/logo/baramdaero-mark-reverse.svg?url';
-
-/** 이 폭 이하는 마크 단독 강등.
- *  v3 락업(비율 4.32)은 워드마크가 락업 높이의 0.405 — 워드마크 14px 하한을 지키려면
- *  락업 높이 35px 이상이어야 한다. 그래서 헤더는 36px 고정이고, 높이를 낮춰
- *  끼워넣지 않는다. 폭이 모자라면 강등이지 축소가 아니다.
- *  389 → 319: 메뉴 라벨 축약(아래 nav)으로 메뉴 폭이 236→114px로 줄어
- *  320px에서도 155px 락업이 35px 여유를 남긴다. 산술 하한은 293px
- *  (8+155+8+114+8)이지만, 한글 폴백 폰트가 기기마다 넓어질 수 있어
- *  실기기 최소폭인 320px을 경계로 둔다 — 여유 35px이 그 변동분의 완충이다.
- *  실측 표는 screenshots/VERIFY.md */
-const MARK_MAX = 319;
 
 interface Props {
   variant?: 'overlay' | 'solid';
@@ -47,14 +38,8 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   <div class="bd-header__inner">
     <a href="/" class="bd-header__brand" aria-label="바람대로 홈">
       {/* alt는 빈 값 — 링크의 aria-label이 이름을 이미 읽는다 (중복 읽기 방지) */}
-      <picture class="bd-header__logo bd-header__logo--ink">
-        <source media={`(max-width: ${MARK_MAX}px)`} srcset={markUrl} />
-        <img src={wideUrl} alt="" />
-      </picture>
-      <picture class="bd-header__logo bd-header__logo--rev">
-        <source media={`(max-width: ${MARK_MAX}px)`} srcset={markReverseUrl} />
-        <img src={wideReverseUrl} alt="" />
-      </picture>
+      <img class="bd-header__logo bd-header__logo--ink" src={markUrl} alt="" />
+      <img class="bd-header__logo bd-header__logo--rev" src={markReverseUrl} alt="" />
     </a>
     <nav class="bd-header__nav" aria-label="주 메뉴">
       {nav.map((item) => (
@@ -111,8 +96,9 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     align-items: center;
     gap: 28px;
   }
-  /* flex 축소 금지 — 축소는 flex '아이템'에서 일어난다. img에만 걸면 부모 picture/brand가
-     대신 눌려 로고 비율이 깨진다 (360px에서 155→123px 실측). 사슬 전체에 건다 */
+  /* flex 축소 금지 — 축소는 flex '아이템'에서 일어난다. img에만 걸면 부모 brand가
+     대신 눌려 로고 비율이 깨진다 (기존 wide 락업에서 360px 155→123px 실측 — 마크는
+     정사각이라 체감은 작지만 사슬은 그대로 건다). */
   .bd-header__brand {
     display: flex;
     align-items: center;
@@ -120,13 +106,14 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     flex-shrink: 0;
   }
 
-  /* 로고 — 높이 고정·width auto (비율 무변경). 톤 전환은 기존 상태 클래스만 사용 */
-  .bd-header__logo { display: none; flex-shrink: 0; }
-  .bd-header__logo img {
-    display: block;
-    height: 36px;
+  /* 로고 — 마크(1:1) 단독, 폭 구간별 3단 크기. 톤 전환은 기존 상태 클래스만 사용.
+     텍스트가 없어 워드마크 하한 자체가 없다 — wide 시절의 aspect-ratio 1472/341,
+     35px 미만 강등 로직은 전부 소거됐다. */
+  .bd-header__logo {
+    display: none;
+    height: 32px;
     width: auto;
-    aspect-ratio: 1472 / 341; /* v3 락업 비율 — 로드 전 레이아웃 밀림 방지 */
+    aspect-ratio: 1 / 1;
     flex-shrink: 0;
   }
   /* 라이트 구간(서브페이지 솔리드 · 오버레이 스크롤 후) = teal 잉크 */
@@ -164,21 +151,18 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   .bd-header__cta,
   .bd-header__brand { white-space: nowrap; }
 
-  /* 데스크톱 헤더(64px)는 여유가 있어 40px — 워드마크 16.2px로 더 크게 */
-  @media (min-width: 641px) {
-    .bd-header__logo img { height: 40px; }
+  /* 폭 구간별 3단 크기 — 형태(마크 1:1)는 고정, 크기만 단계적으로 커진다.
+     기존 wide 시절의 높이(36·40px)에 시각적 무게를 맞췄다. */
+  @media (min-width: 390px) {
+    .bd-header__logo { height: 36px; }
   }
-
-  /* 가로형이 안 들어가는 폭 — 마크 단독 강등 (파일 교체는 <picture> media가).
-     높이를 낮춰 끼워넣지 않는다: 35px 미만이면 워드마크가 14px 하한을 깬다.
-     ⚠️ 이 319는 위 MARK_MAX와 같은 값이어야 한다. 미디어 쿼리는 CSS 변수를 못 읽어
-     define:vars로 묶을 수 없다 — 한쪽만 고치면 파일은 마크인데 크기는 가로형이 된다 */
-  @media (max-width: 319px) {
-    .bd-header__logo img { height: 32px; aspect-ratio: 1 / 1; }
+  @media (min-width: 641px) {
+    .bd-header__logo { height: 40px; }
   }
 
   @media (max-width: 640px) {
-    /* 패딩 8px — 320px에서 가로형(155px)+축약 메뉴(114px)를 넣는 마지막 여유 (실측) */
+    /* 값은 wide 락업 시절 그대로 유지 — 마크 전환으로 로고가 훨씬 좁아져
+       실제로는 더 넉넉하다. 임의 조정 금지, 휑해 보이면 캡처로 보고 후 승인받고 고칠 것 */
     .bd-header__inner { gap: 10px; padding: 0 8px; height: 56px; }
     .bd-header__nav { gap: 10px; }
     .bd-header__link { font-size: 12px; padding: 12px 0; }
