@@ -101,7 +101,8 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
   /* ---------- 상태 머신 정의 (v1 그대로 — 로직·분기·문구 변경 금지) ---------- */
   type Option = { label: string; next?: string; set?: Data; say?: string; tel?: string; sub?: boolean; consult?: boolean };
   type Node = {
-    text?: string | ((d: Data) => string);
+    /** 배열이면 순서대로 여러 말풍선으로 나뉘어 렌더된다 (말풍선 하나 = 메시지 하나) */
+    text?: string | ((d: Data) => string) | string[];
     options?: Option[];
     input?: {
       placeholder: string | ((d: Data) => string);
@@ -232,22 +233,21 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
       '연락처를 남겨주시겠어요?',
     ),
 
-    /* --- 트리3 설치 --- */
-    install_start: L(
-      '설치 상담은 이렇게 진행됩니다.',
-      '① 몇 가지 확인 — 지금',
-      '② 방문 전 금액 확정',
-      '③ 약속한 날 시공',
-      '④ 작업 사진 전달',
-      '어떤 설치인가요?',
-    ),
+    /* --- 트리3 설치 ---
+       진입 멘트는 "말풍선 하나 = 메시지 하나" — 절차 안내와 질문을 분리한다.
+       절차 자체는 홈페이지가 이미 설명했으므로 여기선 짧게, 질문은 별도 말풍선. */
+    install_start: L('몇 가지만 확인하면', '방문 전에 견적이 나옵니다.'),
+    install_type_q: '어떤 설치인가요?',
     install_space: '설치 공간이 어디인가요?',
     install_brand: '브랜드를 선택해 주세요.',
-    install_say_move: L(
-      '이전 설치는 기존 배관 상태를 봐야 해서',
-      '전화 상담이 정확합니다.',
-      '접수만 남겨주셔도 됩니다.',
-    ),
+    /* 이사·이전 설치 — 접수를 이어가지 않고 여기서 정중히 거절하고 대안으로 돌린다.
+       "안 합니다"가 아니라 "권해드리지 않습니다" — 이전은 배관 재매립이라 사실상
+       재설치이고 비용도 비슷하거나 더 든다는 사실을 근거로 든다.
+       연락처를 요구하지 않는다 — 거절 후 연락처를 받으면 "받아는 준다"는 인상이 돼
+       거절의 의미가 없어진다. */
+    install_move_1: L('시스템에어컨 이전은', '배관을 새로 매립해야 해서', '사실상 재설치가 됩니다.'),
+    install_move_2: L('비용도 새 설치와 비슷하거나', '더 들 수 있어, 이전 설치는', '권해드리지 않습니다.'),
+    install_move_3: L('옮기실 공간에 새로 설치를', '생각하신다면 도와드리겠습니다.'),
     // 위치 — 공간에 따라 아파트명 / 건물명으로 갈린다
     install_place_home: L('설치할 곳의 아파트명과 층수를', '적어주세요.'),
     install_place_shop: L('설치할 곳의 건물명과 층수를', '적어주세요.'),
@@ -374,16 +374,22 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
        유형은 원래 브랜드 뒤(install.type)에 있었는데, 첫 질문으로 올라오면서 노드가 합쳐졌다.
        뒤따르는 공간·브랜드·위치·거주상태·인테리어는 그대로다 (접수 카드 항목 보존). */
     'install.start': {
-      text: COPY.install_start,
+      text: [COPY.install_start, COPY.install_type_q],
       options: [
         { label: '신축·새 설치', next: 'install.space', set: { 분류: '설치', 유형: '신축·새 설치' } },
-        {
-          label: '이사·이전 설치',
-          next: 'install.space',
-          set: { 분류: '설치', 유형: '이사·이전 설치' },
-          say: COPY.install_say_move,
-        },
+        { label: '이사·이전 설치', next: 'install.move' },
         { label: '교체', next: 'install.space', set: { 분류: '설치', 유형: '교체' } },
+      ],
+    },
+    /* 이사·이전 설치는 접수 없이 여기서 끝난다 — 데이터를 안 모으니 분류/유형도
+       안 세팅한다(카드 자체가 안 생기므로 의미 없음). [새 설치 견적 받기]는
+       신축 분기와 같은 지점(install.space)으로 들어가되, 신축을 골랐을 때와
+       동일하게 분류·유형을 세팅해 접수 카드가 정상적으로 채워지게 한다. */
+    'install.move': {
+      text: [COPY.install_move_1, COPY.install_move_2, COPY.install_move_3],
+      options: [
+        { label: '새 설치 견적 받기', next: 'install.space', set: { 분류: '설치', 유형: '신축·새 설치' } },
+        { label: '처음으로', next: 'home', sub: true },
       ],
     },
     'install.space': {
@@ -601,10 +607,13 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
 
     try {
       if (node.text) {
-        await typing(token);
-        bubble(typeof node.text === 'function' ? node.text(data) : node.text);
+        const bubbles = Array.isArray(node.text) ? node.text : [node.text];
+        for (const t of bubbles) {
+          await typing(token);
+          bubble(typeof t === 'function' ? t(data) : t);
+          if (token !== renderToken) return;
+        }
       }
-      if (token !== renderToken) return;
 
       if (node.link) {
         const group = chipGroup();
