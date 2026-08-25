@@ -7,11 +7,13 @@ import type { StandardsData } from '../../lib/standards.ts';
 interface Props {
   baseline: StandardsData['baselineCare'];
   noExtra: StandardsData['noExtra'];
+  /** 섹션 배경. 앞뒤 섹션과 base↔mist가 교차하도록 페이지가 정한다 (신규 색 금지) */
+  tone?: 'base' | 'mist';
 }
-const { baseline, noExtra } = Astro.props;
+const { baseline, noExtra, tone = 'base' } = Astro.props;
 ---
 {baseline && (
-  <section class="bd-section v2-baseline">
+  <section class:list={['bd-section', 'v2-baseline', tone === 'mist' && 'v2-baseline--mist']}>
     <div class="bd-container">
       <span class="br-eyebrow br-reveal">가격 기준</span>
       <h2 class="br-h br-reveal">{baseline.title}</h2>
@@ -50,6 +52,7 @@ const { baseline, noExtra } = Astro.props;
 
 <style>
   .v2-baseline { background: var(--br-base); }
+  .v2-baseline--mist { background: var(--br-mist); }
 
   /* 산출 공식 — teal 라인 위 강조 한 줄 */
   .v2-baseline__formula {
