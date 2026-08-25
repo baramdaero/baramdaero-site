@@ -6,7 +6,7 @@
     "timeline": "단계별 할 일. stage=단계 이름, when=시점, todo=할 일 목록, caution=주의 한 줄(비우면 그 줄만 빠짐). stage와 todo가 있어야 그 단계가 나옵니다.",
     "prewired": "선배관 등 그 상황 특유의 확인 블록. title=제목, body_lines=설명(줄 단위), check_items=확인 목록. title과 check_items가 있어야 나옵니다.",
     "group_buy": "단지 공동구매 안내. title·body가 있어야 나오고, cta_label이 비면 버튼만 빠집니다.",
-    "faq_tags": "이 낱말이 들어간 FAQ 항목만 페이지에 모아 보여 줍니다 (원본은 faq.json). 하나도 걸리지 않으면 FAQ 섹션이 통째로 빠집니다.",
+    "faq_ids": "이 페이지에 노출할 FAQ 문항 id 목록입니다 (원본은 faq.json). 적은 순서대로 나옵니다. 비우면 FAQ 섹션이 통째로 빠집니다. ⚠️ faq.json에 없는 id를 적으면 빌드가 끊깁니다 — 오타를 조용히 넘기지 않으려는 장치입니다. 상황별 페이지마다 다른 목록을 가지면 됩니다.",
     "related": "다른 안내 페이지로 가는 링크. 아직 만들지 않은 /situation/○○/ 링크는 자동으로 숨겨지니 미리 적어 두어도 됩니다."
   },
 
@@ -92,7 +92,11 @@
       "cta_label": "단지 공동구매 문의"
     },
 
-    "faq_tags": ["신축", "입주", "선배관", "설치", "배관"],
+    "faq_ids": [
+      "faq-nitrogen",
+      "faq-vacuum",
+      "faq-tightness"
+    ],
 
     "related": [
       { "label": "설치 안내 보기", "href": "/install/" },
