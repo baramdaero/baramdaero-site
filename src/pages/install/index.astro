@@ -6,7 +6,6 @@ import PageHero from '../../components/v2/PageHero.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
 import Baseline from '../../components/v2/Baseline.astro';
 import Promise from '../../components/v2/Promise.astro';
-import { SITE_CONFIG } from '../../config.js';
 import { loadStandards } from '../../lib/standards.ts';
 import { loadSituations } from '../../lib/situations.ts';
 
@@ -34,14 +33,14 @@ const breadcrumbJsonLd = {
 ---
 <Base
   title="시스템에어컨 설치"
-  description={`시스템에어컨 신규 설치. ${SITE_CONFIG.BRANDS_INSTALL.join('·')} 취급, 도면 검토부터 실측·시공까지. 설치한 팀이 세척·정기관리까지 이어서 맡습니다.`}
+  description="시스템에어컨 신규 설치. 견적은 방문 전에 나옵니다. 설치한 기록이 세척·정기관리로 그대로 이어집니다."
   jsonLd={breadcrumbJsonLd}
 >
   <PageHero eyebrow="시스템에어컨 설치">
     에어컨은 사라지고<br />공간만 남습니다
     <Fragment slot="sub">
-      도면 검토부터 배관 경로, 실외기 위치까지 실측 후에 확정합니다.
-      취급 브랜드는 {SITE_CONFIG.BRANDS_INSTALL.join('·')}입니다.
+      견적은 방문 전에 나옵니다.<br />
+      도면과 배관 경로, 실외기 위치는 시공 전에 함께 정합니다.
     </Fragment>
   </PageHero>
 
