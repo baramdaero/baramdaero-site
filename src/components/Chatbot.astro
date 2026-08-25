@@ -666,11 +666,14 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     }
   }
 
-  /* ---------- 홈 화면 (메뉴 4칩 + pinned FAQ) ---------- */
+  /* ---------- 홈 화면 (갈래 4칩) ----------
+     pinned FAQ 칩은 뺐다(08-25). 4갈래 위에 다섯 번째 입구가 생겨 분기 의미가 흐려지고,
+     답이 결국 갈래 진입으로 되돌아가는 우회 경로였다. 견적 방법은 어느 갈래로 들어가도
+     첫 질문에서 바로 안내된다. renderFaqChips 자체는 'etc' 트리가 계속 쓴다. */
   const HOME_MENU: Array<{ label: string; next: string }> = [
     { label: '세척 견적', next: 'clean.start' },
     { label: '설치 상담', next: 'install.start' },
-    { label: '사용 중 문제', next: 'as.q1' },
+    { label: 'A/S 문의', next: 'as.q1' },
     { label: '기타 문의', next: 'etc' },
   ];
 
@@ -685,7 +688,6 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
       });
       group.appendChild(btn);
     });
-    renderFaqChips(FAQ.filter((f) => f.pinned), '자주 묻는 질문');
     scrollDown();
   }
 
