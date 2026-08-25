@@ -18,6 +18,8 @@ export interface PricingData {
   prices: PriceRow[];
   conditions: string[];
   process: ProcessStep[];
+  /** 절차 6단계 위 도입 문장 — 줄 단위. 비면 미노출 */
+  processIntro: string[];
   /** 절차 6단계 아래 근거 표기 — 줄 단위. 비면 미노출 */
   processSource: string[];
   symptoms: SymptomCard[];
@@ -26,7 +28,7 @@ export interface PricingData {
 }
 
 const EMPTY: PricingData = {
-  headline: '', intro: '', prices: [], conditions: [], process: [], processSource: [], symptoms: [], seasons: [], faqRef: false,
+  headline: '', intro: '', prices: [], conditions: [], process: [], processIntro: [], processSource: [], symptoms: [], seasons: [], faqRef: false,
 };
 
 const warn = (msg: string) => console.warn(`[pricing.json 경고] ${msg}`);
@@ -123,6 +125,9 @@ export function loadPricing(): PricingData {
     prices,
     conditions,
     process,
+    processIntro: pickArray<string>(raw.process_intro, 'process_intro', (it) =>
+      isNonEmptyString(it) ? it.trim() : null,
+    ),
     processSource: pickArray<string>(raw.process_source, 'process_source', (it) =>
       isNonEmptyString(it) ? it.trim() : null,
     ),
