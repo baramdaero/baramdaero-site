@@ -13,7 +13,7 @@ import { loadStandards } from '../../lib/standards.ts';
 
 const pricing = loadPricing();
 const standards = loadStandards();
-const { prices, conditions, process, symptoms, seasons } = pricing;
+const { prices, conditions, process, processSource, symptoms, seasons } = pricing;
 
 const headline = pricing.headline || '세척·유지관리';
 const intro = pricing.intro;
@@ -131,6 +131,16 @@ if (careFaq.length) {
             </li>
           ))}
         </ol>
+        {/* 근거 표기 — 다크 구간 EPA 출처와 같은 계열(작게·흐리게).
+            16단계는 천장형 4way 기준이라 범위 한정을 빼면 안 된다.
+            faq-clean-time과 같은 근거를 쓰므로 한쪽만 고치지 않는다. */}
+        {processSource.length > 0 && (
+          <p class="care-process__source br-reveal">
+            {processSource.map((line, i) => (
+              <Fragment>{i > 0 && <br />}{line}</Fragment>
+            ))}
+          </p>
+        )}
       </div>
     </section>
   )}
@@ -221,6 +231,16 @@ if (careFaq.length) {
 </Base>
 
 <style>
+  /* 절차 근거 표기 — 본문보다 작고 흐리게 (다크 구간 EPA 출처와 같은 계열).
+     ⚠️ opacity로 흐리게 하지 않는다 — .br-reveal 등장 애니메이션이 opacity를
+     소유해 br-in 시점에 1로 덮어쓴다(실측). 색으로 처리한다. */
+  .care-process__source {
+    margin-top: 28px;
+    font-size: 13px;
+    line-height: 1.8;
+    color: color-mix(in srgb, var(--br-ink-sub) 68%, transparent);
+  }
+
   /* 증상 카드 — 화이트 섹션 */
   .care-symptoms { background: var(--br-base); }
   .care-symptoms__grid {
