@@ -16,7 +16,8 @@ export interface HomeProcessStep { no: string; title: string; body: string }
 /** 고객 유형 3분기 카드 — 버튼이 챗봇 흐름을 연다 */
 export interface HomeTriageCard {
   title: string;
-  body: string;
+  /** 줄 단위 배열 — 한 칸이 화면 한 줄 (services.cards[].lines와 같은 규칙) */
+  body: string[];
   buttonLabel: string;
   chatTree: string;
 }
@@ -131,7 +132,7 @@ export function loadHome(): HomeData {
       }
       tcards.push({
         title: c.title.trim(),
-        body: isNonEmptyString(c?.body) ? c.body.trim() : '',
+        body: strArray(c?.body),
         buttonLabel: c.button_label.trim(),
         chatTree: tree,
       });

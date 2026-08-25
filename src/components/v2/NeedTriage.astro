@@ -22,7 +22,11 @@ const { heading, cards } = Astro.props;
           <li class="v2-triage__cell br-reveal">
             <div class="v2-triage__card">
               <h3>{c.title}</h3>
-              {c.body && <p>{c.body}</p>}
+              {c.body.length > 0 && (
+                <p>{c.body.map((line, j) => (
+                  <Fragment>{j > 0 && <br />}{line}</Fragment>
+                ))}</p>
+              )}
               <button type="button" class="bd-cta v2-triage__cta" data-chat-tree={c.chatTree}>
                 {c.buttonLabel}
               </button>
