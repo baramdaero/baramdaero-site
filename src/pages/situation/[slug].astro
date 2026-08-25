@@ -78,10 +78,10 @@ if (faq.length) {
     </section>
   )}
 
-  {/* 「바람대로가 일하는 방식」 — 견적 비교 체크리스트를 대체 */}
-  <Promise promise={standards.promise} />
+  {/* 신축·입주 맥락이라 설치 블록을 쓴다 (세척 블록 아님) */}
+  <Promise promise={standards.promiseInstall} />
 
-  <Baseline baseline={standards.baseline} noExtra={standards.noExtra} />
+  <Baseline baseline={standards.baselineInstall} noExtra={standards.noExtra} />
 
   {faq.length > 0 && (
     <section class="bd-section sit-faq">

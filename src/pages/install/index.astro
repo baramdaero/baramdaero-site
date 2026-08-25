@@ -64,10 +64,10 @@ const breadcrumbJsonLd = {
     </div>
   </section>
 
-  {/* 기준가 철학(세척과 동일 데이터) + 설치 견적 비교 체크리스트 — standards.json */}
-  <Baseline baseline={standards.baseline} noExtra={standards.noExtra} />
+  {/* 기준(우리가 정해둔 것) → 기준가 순. 기준을 먼저 보이고 금액을 뒤에 둔다 */}
+  <Promise promise={standards.promiseInstall} />
 
-  <Promise promise={standards.promise} />
+  <Baseline baseline={standards.baselineInstall} noExtra={standards.noExtra} />
 
   <section class="bd-section install-after">
     <div class="bd-container">

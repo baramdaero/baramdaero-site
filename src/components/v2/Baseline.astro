@@ -1,10 +1,11 @@
 ---
-// 기준가 철학(바람대로 기준가) + 추가비용 없음 블록 — 콘텐츠는 standards.json 단일 소스.
+// 기준가 도입부 + 추가비용 없음 블록 — 콘텐츠는 standards.json 단일 소스.
+// baseline은 페이지별(baseline_install / baseline_care)로 받는다.
 // baseline 없으면 통째로 미렌더, updated 비면 갱신일 줄만 미노출 (빈 값 = 미노출 규칙).
 import type { StandardsData } from '../../lib/standards.ts';
 
 interface Props {
-  baseline: StandardsData['baseline'];
+  baseline: StandardsData['baselineCare'];
   noExtra: StandardsData['noExtra'];
 }
 const { baseline, noExtra } = Astro.props;

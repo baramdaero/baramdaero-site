@@ -152,8 +152,10 @@ if (careFaq.length) {
     </section>
   )}
 
-  {/* 기준가 철학 — standards.json (빈 값 = 미노출) */}
-  <Baseline baseline={standards.baseline} noExtra={standards.noExtra} />
+  {/* 기준(우리가 정해둔 것) → 기준가 → 기준가 표 순 */}
+  <Promise promise={standards.promiseCare} />
+
+  <Baseline baseline={standards.baselineCare} noExtra={standards.noExtra} />
 
   <section class="bd-section care-prices">
     <div class="bd-container">
@@ -193,9 +195,6 @@ if (careFaq.length) {
       )}
     </div>
   </section>
-
-  {/* 「바람대로가 일하는 방식」 — 견적 비교 체크리스트를 대체 */}
-  <Promise promise={standards.promise} />
 
   {seasons.length > 0 && (
     <section class="bd-section care-seasons">

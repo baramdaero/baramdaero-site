@@ -9,24 +9,31 @@ export interface ChecklistItem { q: string; why: string; ours: string }
 export interface Checklist { title: string; items: ChecklistItem[] }
 export interface PromiseItem { no: string; title: string; lines: string[] }
 export interface PromiseBlock { heading: string; items: PromiseItem[] }
+export interface BaselineBlock {
+  title: string;
+  updated: string;
+  bodyLines: string[];
+  formulaLine: string;
+  policyLines: string[];
+}
+// 기준가·기준 블록은 페이지별로 나뉜다 — 설치 페이지에 세척 문구가 나오던 것을 막기 위해.
+// 공통부(updated·policy_lines·heading)는 baseline_common·promise_heading 한 곳에서만 관리한다.
 export interface StandardsData {
-  baseline: {
-    title: string;
-    updated: string;
-    bodyLines: string[];
-    formulaLine: string;
-    policyLines: string[];
-  } | null;
+  baselineInstall: BaselineBlock | null;
+  baselineCare: BaselineBlock | null;
   noExtra: { title: string; items: string[]; closing: string } | null;
-  promise: PromiseBlock | null;
+  promiseInstall: PromiseBlock | null;
+  promiseCare: PromiseBlock | null;
   careChecklist: Checklist | null;
   installChecklist: Checklist | null;
 }
 
 const EMPTY: StandardsData = {
-  baseline: null,
+  baselineInstall: null,
+  baselineCare: null,
   noExtra: null,
-  promise: null,
+  promiseInstall: null,
+  promiseCare: null,
   careChecklist: null,
   installChecklist: null,
 };
@@ -84,21 +91,24 @@ export function loadStandards(): StandardsData {
     );
   }
 
-  let baseline: StandardsData['baseline'] = null;
-  if (raw.baseline) {
-    const b = raw.baseline;
+  const common = raw.baseline_common ?? {};
+  const updated = isNonEmptyString(common.updated) ? common.updated.trim() : ''; // 빈 값 = 갱신일 줄 미노출
+  const policyLines = strArray(common.policy_lines);
+
+  function pickBaseline(b: any, name: string): BaselineBlock | null {
+    if (!b) return null;
     const bodyLines = strArray(b.body_lines);
-    if (isNonEmptyString(b.title) && bodyLines.length) {
-      baseline = {
-        title: b.title.trim(),
-        updated: isNonEmptyString(b.updated) ? b.updated.trim() : '', // 빈 값 = 갱신일 줄 미노출
-        bodyLines,
-        formulaLine: isNonEmptyString(b.formula_line) ? b.formula_line.trim() : '',
-        policyLines: strArray(b.policy_lines),
-      };
-    } else {
-      warn('"baseline" — title과 body_lines가 필요합니다. 블록을 건너뜁니다.');
+    if (!isNonEmptyString(b.title) || !bodyLines.length) {
+      warn(`"${name}" — title과 body_lines가 필요합니다. 블록을 건너뜁니다.`);
+      return null;
     }
+    return {
+      title: b.title.trim(),
+      updated,
+      bodyLines,
+      formulaLine: isNonEmptyString(b.formula_line) ? b.formula_line.trim() : '',
+      policyLines,
+    };
   }
 
   let noExtra: StandardsData['noExtra'] = null;
@@ -112,35 +122,37 @@ export function loadStandards(): StandardsData {
     }
   }
 
-  /* ---------- promise — 「바람대로가 일하는 방식」 선언 ---------- */
-  let promise: PromiseBlock | null = null;
-  if (raw.promise) {
-    const heading = isNonEmptyString(raw.promise.heading) ? raw.promise.heading.trim() : '';
+  /* ---------- promise — 「우리가 정해둔 것」 기준 선언 (페이지별) ---------- */
+  const promiseHeading = isNonEmptyString(raw.promise_heading) ? raw.promise_heading.trim() : '';
+
+  function pickPromise(rawItems: any, name: string): PromiseBlock | null {
+    if (!Array.isArray(rawItems) || !rawItems.length) return null;
     const items: PromiseItem[] = [];
-    if (Array.isArray(raw.promise.items)) {
-      raw.promise.items.forEach((it: any, i: number) => {
-        if (!isNonEmptyString(it?.title)) {
-          if (it?.title || it?.lines) warn(`promise.items[${i}] — title이 필요합니다. 항목을 건너뜁니다.`);
-          return;
-        }
-        items.push({
-          no: isNonEmptyString(it?.no) ? it.no.trim() : String(i + 1).padStart(2, '0'),
-          title: it.title.trim(),
-          lines: strArray(it?.lines),
-        });
+    rawItems.forEach((it: any, i: number) => {
+      if (!isNonEmptyString(it?.title)) {
+        if (it?.title || it?.lines) warn(`${name}[${i}] — title이 필요합니다. 항목을 건너뜁니다.`);
+        return;
+      }
+      items.push({
+        no: isNonEmptyString(it?.no) ? it.no.trim() : String(i + 1).padStart(2, '0'),
+        title: it.title.trim(),
+        lines: strArray(it?.lines),
       });
+    });
+    // 항목이 하나도 없거나 공통 heading이 비면 블록째 미노출 (빈 값 = 미노출 규칙)
+    if (!promiseHeading) {
+      warn(`"promise_heading"이 비어 ${name} 블록을 건너뜁니다.`);
+      return null;
     }
-    // 항목이 하나도 없으면 블록째 미노출 (빈 값 = 미노출 규칙)
-    if (heading && items.length) promise = { heading, items };
-    else if (raw.promise.heading || raw.promise.items) {
-      warn('"promise" — heading과 items가 모두 필요합니다. 블록을 건너뜁니다.');
-    }
+    return items.length ? { heading: promiseHeading, items } : null;
   }
 
   return {
-    baseline,
+    baselineInstall: pickBaseline(raw.baseline_install, 'baseline_install'),
+    baselineCare: pickBaseline(raw.baseline_care, 'baseline_care'),
     noExtra,
-    promise,
+    promiseInstall: pickPromise(raw.promise_install, 'promise_install'),
+    promiseCare: pickPromise(raw.promise_care, 'promise_care'),
     careChecklist: pickChecklist(raw.care_checklist, 'care_checklist'),
     installChecklist: pickChecklist(raw.install_checklist, 'install_checklist'),
   };
