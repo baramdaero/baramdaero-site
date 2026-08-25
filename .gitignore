@@ -2,3 +2,9 @@ node_modules/
 dist/
 .astro/
 .DS_Store
+
+# 시방서 파생 문서 — 공개 레포 미추적 (2026-08-25 결정)
+# 제3자(삼성전자서비스 표준시방서 2025) 실질 내용을 담아 public git 히스토리에 남기지 않는다.
+# 로컬 보관. 비공개 보관처 확정 시 이 두 줄과 함께 옮긴다.
+docs/standards/1-작업기준.md
+src/content/site/workstandard.json
