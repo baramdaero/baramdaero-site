@@ -36,6 +36,13 @@ const { baseline, noExtra, tone = 'base' } = Astro.props;
       {noExtra && (
         <div class="v2-baseline__noextra br-reveal">
           <h3>{noExtra.title}</h3>
+          {noExtra.body.length > 0 && (
+            <p class="v2-baseline__noextra-body">
+              {noExtra.body.map((line, i) => (
+                <Fragment>{i > 0 && <br />}{line}</Fragment>
+              ))}
+            </p>
+          )}
           <ul>
             {noExtra.items.map((item) => <li>{item}</li>)}
           </ul>
@@ -113,6 +120,12 @@ const { baseline, noExtra, tone = 'base' } = Astro.props;
     width: 8px;
     height: 1px;
     background: var(--br-teal);
+  }
+  .v2-baseline__noextra-body {
+    margin-bottom: 14px;
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--br-ink);
   }
   .v2-baseline__closing { margin-top: 14px; font-size: 14px; color: var(--br-ink-sub); }
 
