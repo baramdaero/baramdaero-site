@@ -79,9 +79,9 @@ if (faq.length) {
   )}
 
   {/* 신축·입주 맥락이라 설치 블록을 쓴다 (세척 블록 아님) */}
-  <Promise promise={standards.promiseInstall} />
+  <Promise promise={standards.promiseInstall} tone="base" />
 
-  <Baseline baseline={standards.baselineInstall} noExtra={standards.noExtra} />
+  <Baseline baseline={standards.baselineInstall} noExtra={standards.noExtra} tone="mist" />
 
   {faq.length > 0 && (
     <section class="bd-section sit-faq">

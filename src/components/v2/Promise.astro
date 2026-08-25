@@ -6,11 +6,13 @@ import type { PromiseBlock } from '../../lib/standards.ts';
 interface Props {
   promise: PromiseBlock | null;
   eyebrow?: string;
+  /** 섹션 배경. 앞뒤 섹션과 base↔mist가 교차하도록 페이지가 정한다 (신규 색 금지) */
+  tone?: 'mist' | 'base';
 }
-const { promise, eyebrow = '기준' } = Astro.props;
+const { promise, eyebrow = '기준', tone = 'mist' } = Astro.props;
 ---
 {promise && (
-  <section class="bd-section v2-promise">
+  <section class:list={['bd-section', 'v2-promise', tone === 'base' && 'v2-promise--base']}>
     <div class="bd-container">
       {eyebrow && <span class="br-eyebrow br-reveal">{eyebrow}</span>}
       <h2 class="br-h br-reveal">{promise.heading}</h2>
@@ -37,6 +39,7 @@ const { promise, eyebrow = '기준' } = Astro.props;
 
 <style>
   .v2-promise { background: var(--br-mist); }
+  .v2-promise--base { background: var(--br-base); }
   .v2-promise__list { margin-top: 48px; list-style: none; display: grid; max-width: 760px; }
   .v2-promise__item {
     display: grid;
