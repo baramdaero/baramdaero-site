@@ -21,7 +21,7 @@ export interface BaselineBlock {
 export interface StandardsData {
   baselineInstall: BaselineBlock | null;
   baselineCare: BaselineBlock | null;
-  noExtra: { title: string; items: string[]; closing: string } | null;
+  noExtra: { title: string; body: string[]; items: string[]; closing: string } | null;
   promiseInstall: PromiseBlock | null;
   promiseCare: PromiseBlock | null;
   careChecklist: Checklist | null;
@@ -116,7 +116,8 @@ export function loadStandards(): StandardsData {
     const n = raw.no_extra;
     const items = strArray(n.items);
     if (isNonEmptyString(n.title) && items.length) {
-      noExtra = { title: n.title.trim(), items, closing: isNonEmptyString(n.closing) ? n.closing.trim() : '' };
+      // body는 title 아래 도입 줄 — 비면 그 줄만 미노출
+      noExtra = { title: n.title.trim(), body: strArray(n.body), items, closing: isNonEmptyString(n.closing) ? n.closing.trim() : '' };
     } else {
       warn('"no_extra" — title과 items가 필요합니다. 블록을 건너뜁니다.');
     }
