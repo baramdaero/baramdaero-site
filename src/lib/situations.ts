@@ -2,6 +2,7 @@
 // (빌드 타임, standards/faq와 동일 운영 원칙: 문법 오류 → 빌드 실패 / 값 누락 → 해당 항목만 스킵).
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { loadFaqPage } from './faq.ts';
 
 const SITUATIONS_PATH = join(process.cwd(), 'src/content/site/situations.json');
 
@@ -25,7 +26,8 @@ export interface Situation {
   timeline: TimelineStage[];
   prewired: { title: string; bodyLines: string[]; checkItems: string[] } | null;
   groupBuy: { title: string; body: string; ctaLabel: string } | null;
-  faqTags: string[];
+  /** 이 페이지에 노출할 FAQ 문항 id — 적은 순서대로 렌더. 비면 FAQ 섹션 미노출 */
+  faqIds: string[];
   related: { label: string; href: string }[];
 }
 
@@ -54,6 +56,32 @@ function pickTimeline(raw: unknown, slug: string): TimelineStage[] {
     });
   });
   return out;
+}
+
+/** faq_ids 화이트리스트 — faq.json에 없는 id는 빌드를 끊는다.
+ *  값 누락은 스킵이지만 오타는 스킵이 아니다: 조용히 사라지면 누락을 못 본다
+ *  (챗봇 백지 버그와 같은 유형 — 존재하지 않는 키를 참조하고도 빌드가 통과했다). */
+let faqIdCache: Set<string> | null = null;
+function pickFaqIds(raw: unknown, slug: string): string[] {
+  const ids = strArray(raw);
+  if (!ids.length) return [];
+  faqIdCache ??= new Set(loadFaqPage().map((f) => f.id));
+  const unknown = ids.filter((id) => !faqIdCache!.has(id));
+  if (unknown.length) {
+    throw new Error(
+      [
+        '',
+        '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+        '[situations.json 오류] faq_ids에 없는 문항 id가 있어 빌드를 중단합니다.',
+        `위치: "${slug}.faq_ids"`,
+        `찾을 수 없는 id: ${unknown.join(', ')}`,
+        '확인할 것: src/content/site/faq.json 의 id 철자, 그리고 그 문항이 status "hold"가 아닌지.',
+        '(hold 문항은 페이지에 노출되지 않으므로 화이트리스트에도 넣을 수 없습니다)',
+        '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+      ].join('\n'),
+    );
+  }
+  return ids;
 }
 
 function pickSituation(slug: string, raw: any, knownSlugs: Set<string>): Situation | null {
@@ -112,7 +140,7 @@ function pickSituation(slug: string, raw: any, knownSlugs: Set<string>): Situati
     timeline: pickTimeline(raw.timeline, slug),
     prewired,
     groupBuy,
-    faqTags: strArray(raw.faq_tags),
+    faqIds: pickFaqIds(raw.faq_ids, slug),
     related,
   };
 }

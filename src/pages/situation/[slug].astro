@@ -9,21 +9,21 @@ import Promise from '../../components/v2/Promise.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
 import { loadSituations } from '../../lib/situations.ts';
 import { loadStandards } from '../../lib/standards.ts';
-import { loadFaq } from '../../lib/faq.ts';
+import { loadFaqPage, renderFaqMd } from '../../lib/faq.ts';
 
 export function getStaticPaths() {
   return loadSituations().map((situation) => ({ params: { slug: situation.slug }, props: { situation } }));
 }
 
 const { situation } = Astro.props;
-const { meta, timeline, prewired, groupBuy, faqTags, related } = situation;
+const { meta, timeline, prewired, groupBuy, faqIds, related } = situation;
 
 const standards = loadStandards();
 
-// faq_tags 중 하나라도 질문·답변에 들어간 항목만 (faq.json 스키마는 그대로 둔다)
-const faq = faqTags.length
-  ? loadFaq().filter((f) => faqTags.some((tag) => f.q.includes(tag) || f.a.includes(tag)))
-  : [];
+// faq_ids 화이트리스트 — 적은 순서대로. /faq/ 와 같은 본문(a)을 쓴다.
+// loadFaq()(챗봇용 chat_a)를 쓰면 챗봇 축약답이 화면 본문으로 찍힌다 — 08-25 실측 후 교체.
+const faqById = new Map(loadFaqPage().map((f) => [f.id, f]));
+const faq = faqIds.map((id) => faqById.get(id)!).filter(Boolean);
 
 const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? '';
 const jsonLd: object[] = [
@@ -88,14 +88,14 @@ if (faq.length) {
       <div class="bd-container">
         <span class="br-eyebrow br-reveal">자주 묻는 질문</span>
         <h2 class="br-h br-reveal">이 상황에서<br />많이 묻는 것</h2>
-        <dl class="sit-faq__list br-reveal">
-          {faq.map((f) => (
-            <div class="sit-faq__item">
-              <dt>{f.q}</dt>
-              <dd>{f.a}</dd>
-            </div>
+        <div class="sit-faq__list br-reveal">
+          {faq.map((f, i) => (
+            <details class="sit-faq__item" id={f.id} open={i === 0}>
+              <summary class="sit-faq__q">{f.q}</summary>
+              <div class="sit-faq__a" set:html={renderFaqMd(f.a)} />
+            </details>
           ))}
-        </dl>
+        </div>
         <p class="sit-faq__more br-reveal">
           <a class="sit-faq__link" href="/faq/">전체 질문 보기 <span aria-hidden="true">→</span></a>
         </p>
@@ -164,9 +164,33 @@ if (faq.length) {
 
   .sit-faq { background: var(--br-base); }
   .sit-faq__list { margin-top: 48px; display: grid; gap: 0; max-width: 760px; border-top: 2px solid var(--br-teal); }
-  .sit-faq__item { padding: 18px 4px; border-bottom: 1px solid var(--br-line); }
-  .sit-faq__item dt { font-weight: 700; font-size: 16px; margin-bottom: 6px; color: var(--br-ink); }
-  .sit-faq__item dd { font-size: 15px; color: var(--br-ink-sub); }
+  /* 아코디언 — /faq/ 의 details 패턴과 같은 결 (본문 a는 마크다운이라 길다) */
+  .sit-faq__item { border-bottom: 1px solid var(--br-line); }
+  .sit-faq__q {
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 16px;
+    line-height: 1.6;
+    padding: 18px 4px;
+    color: var(--br-ink);
+  }
+  .sit-faq__a { padding: 2px 4px 24px; font-size: 15px; line-height: 1.85; color: var(--br-ink-sub); }
+  .sit-faq__a :global(p) { margin-bottom: 14px; }
+  .sit-faq__a :global(p:last-child) { margin-bottom: 0; }
+  .sit-faq__a :global(h3) { font-size: 16px; color: var(--br-ink); margin: 22px 0 10px; }
+  .sit-faq__a :global(ul) { margin: 0 0 14px 4px; list-style: none; display: grid; gap: 8px; }
+  .sit-faq__a :global(li) { padding-left: 16px; position: relative; }
+  .sit-faq__a :global(li)::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.78em;
+    width: 8px;
+    height: 1px;
+    background: var(--br-teal);
+  }
+  .sit-faq__a :global(table) { width: 100%; border-collapse: collapse; font-size: 14.5px; margin: 16px 0; }
+  .sit-faq__a :global(strong) { color: var(--br-ink); }
   .sit-faq__more { margin-top: 24px; }
   .sit-faq__link {
     display: inline-block;
