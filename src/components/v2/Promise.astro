@@ -1,13 +1,13 @@
 ---
-// 「바람대로가 일하는 방식」 선언 블록 — 콘텐츠는 standards.json 단일 소스.
-// 견적 비교 체크리스트(CompareChecklist) 자리를 대체한다. 항목이 없으면 통째로 미렌더.
+// 「우리가 정해둔 것」 기준 블록 — 콘텐츠는 standards.json 단일 소스.
+// 페이지별로 promise_install / promise_care 중 하나를 props로 받는다. 항목이 없으면 통째로 미렌더.
 import type { PromiseBlock } from '../../lib/standards.ts';
 
 interface Props {
   promise: PromiseBlock | null;
   eyebrow?: string;
 }
-const { promise, eyebrow = '약속' } = Astro.props;
+const { promise, eyebrow = '기준' } = Astro.props;
 ---
 {promise && (
   <section class="bd-section v2-promise">
