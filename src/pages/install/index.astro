@@ -73,31 +73,28 @@ const breadcrumbJsonLd = {
     )}
   </PageHero>
 
-  {STEPS.map((st, i) => (
-    <section
-      class:list={[
-        'bd-section',
-        'install-step',
-        i === 3 ? 'install-step--deep' : (i % 2 === 0 ? 'install-step--base' : 'install-step--mist'),
-      ]}
-      data-layout-section={`install-process-${i + 1}`}
-    >
-      <div class="bd-container">
-        <StoryRow
-          slotId={`install-process-${String(i + 1).padStart(2, '0')}`}
-          slotLabel={`install-process-${String(i + 1).padStart(2, '0')}`}
-          ratio="square"
-          imageSide={i % 2 === 0 ? 'left' : 'right'}
-          tone={i === 3 ? 'deep' : 'light'}
-        >
-          <span class="br-eyebrow br-reveal">설치 절차</span>
-          <h2 class="br-h br-reveal">{i === 0 ? <Fragment>정하고 나서<br />그대로 시공합니다</Fragment> : st.title}</h2>
-          {i === 0 && <h3 class="install-step__title br-reveal">{st.title}</h3>}
-          <p class="br-body br-reveal">{st.body}</p>
-        </StoryRow>
+  {/* 절차 4단계를 한 섹션에 둔다 — 스텝마다 섹션을 쪼개면 「설치 절차」 눈썹이 네 번 반복된다.
+      리듬은 배경 줄무늬 대신 이미지 좌우 교차(지그재그)가 맡는다. */}
+  <section class="bd-section install-step install-step--mist" data-layout-section="install-process">
+    <div class="bd-container">
+      <span class="br-eyebrow br-reveal">설치 절차</span>
+      <h2 class="br-h br-reveal">정하고 나서<br />그대로 시공합니다</h2>
+      <div class="install-steps__list">
+        {STEPS.map((st, i) => (
+          <StoryRow
+            slotId={`install-process-${String(i + 1).padStart(2, '0')}`}
+            slotLabel={`install-process-${String(i + 1).padStart(2, '0')}`}
+            ratio="square"
+            imageSide={i % 2 === 0 ? 'left' : 'right'}
+            tone="light"
+          >
+            <h3 class="install-step__title br-reveal">{st.title}</h3>
+            <p class="br-body br-reveal">{st.body}</p>
+          </StoryRow>
+        ))}
       </div>
-    </section>
-  ))}
+    </div>
+  </section>
 
   <StandardsStory
     promise={standards.promiseInstall}
@@ -159,7 +156,9 @@ const breadcrumbJsonLd = {
   .install-step--base { background: var(--br-base); }
   .install-step--mist { background: var(--br-mist); }
   .install-step--deep { background: var(--br-teal-deep); }
-  .install-step__title { margin-top: 28px; color: var(--br-teal); font-size: 18px; }
+  .install-steps__list { margin-top: 56px; display: grid; gap: 64px; }
+  .install-step__title { margin-top: 0; color: var(--br-teal); font-size: clamp(22px, 3vw, 30px); }
+  @media (min-width: 768px) { .install-steps__list { gap: 88px; } }
 
   .install-after { background: var(--br-base); }
   .install-after__more { margin-top: 24px; }
