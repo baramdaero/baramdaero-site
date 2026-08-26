@@ -53,11 +53,8 @@ const breadcrumbJsonLd = {
       견적은 방문 전에 나옵니다.<br />
       도면과 배관 경로, 실외기 위치는 시공 전에 함께 정합니다.
     </Fragment>
-  </PageHero>
-
-  {PRODUCT_VIDEOS.length > 0 && (
-    <section class="bd-section install-video">
-      <div class="bd-container">
+    {PRODUCT_VIDEOS.length > 0 && (
+      <Fragment slot="extra">
         <div class="install-video__grid">
           {PRODUCT_VIDEOS.map((v) => (
             <div class="install-video__frame">
@@ -72,9 +69,9 @@ const breadcrumbJsonLd = {
           ))}
         </div>
         <p class="install-video__source">{VIDEO_SOURCE}</p>
-      </div>
-    </section>
-  )}
+      </Fragment>
+    )}
+  </PageHero>
 
   {STEPS.map((st, i) => (
     <section
@@ -139,8 +136,7 @@ const breadcrumbJsonLd = {
 
 
 <style>
-  /* 제품 영상 — 16:9 고정, 768px+ 나란히 / 그 아래 세로 스택 */
-  .install-video { background: var(--br-base); padding-top: 40px; padding-bottom: 40px; }
+  /* 제품 영상 — 히어로와 같은 섹션(extra 슬롯) 안. 16:9 고정, 768px+ 나란히 */
   .install-video__grid { display: grid; gap: 16px; }
   .install-video__frame {
     position: relative;
@@ -154,7 +150,8 @@ const breadcrumbJsonLd = {
     display: grid; place-items: center; width: 100%; height: 100%;
     color: var(--br-ice); font-weight: 700; text-align: center; padding: 20px;
   }
-  .install-video__source { margin-top: 14px; font-size: 13px; color: var(--br-ink-sub); }
+  /* 다크 히어로 위 — ink-sub는 배경에 묻힌다 */
+  .install-video__source { margin-top: 14px; font-size: 13px; color: rgba(255, 255, 255, 0.7); }
   @media (min-width: 768px) {
     .install-video__grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
   }
