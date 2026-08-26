@@ -4,8 +4,8 @@
 import Base from '../../layouts/Base.astro';
 import PageHero from '../../components/v2/PageHero.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
-import Baseline from '../../components/v2/Baseline.astro';
-import Promise from '../../components/v2/Promise.astro';
+import StandardsStory from '../../components/v2/StandardsStory.astro';
+import StoryRow from '../../components/v2/StoryRow.astro';
 import { loadStandards } from '../../lib/standards.ts';
 import { loadSituations } from '../../lib/situations.ts';
 
@@ -46,44 +46,58 @@ const breadcrumbJsonLd = {
     </Fragment>
   </PageHero>
 
-  <section class="bd-section install-steps">
+  {STEPS.map((st, i) => (
+    <section
+      class:list={[
+        'bd-section',
+        'install-step',
+        i === 3 ? 'install-step--deep' : (i % 2 === 0 ? 'install-step--base' : 'install-step--mist'),
+      ]}
+      data-layout-section={`install-process-${i + 1}`}
+    >
+      <div class="bd-container">
+        <StoryRow
+          slotId={`install-process-${String(i + 1).padStart(2, '0')}`}
+          slotLabel={`install-process-${String(i + 1).padStart(2, '0')}`}
+          ratio="square"
+          imageSide={i % 2 === 0 ? 'left' : 'right'}
+          tone={i === 3 ? 'deep' : 'light'}
+        >
+          <span class="br-eyebrow br-reveal">설치 절차</span>
+          <h2 class="br-h br-reveal">{i === 0 ? <Fragment>정하고 나서<br />그대로 시공합니다</Fragment> : st.title}</h2>
+          {i === 0 && <h3 class="install-step__title br-reveal">{st.title}</h3>}
+          <p class="br-body br-reveal">{st.body}</p>
+        </StoryRow>
+      </div>
+    </section>
+  ))}
+
+  <StandardsStory
+    promise={standards.promiseInstall}
+    baseline={standards.baselineInstall}
+    noExtra={standards.noExtra}
+    slotPrefix="install"
+    startSide="left"
+    startTone="base"
+  />
+
+  <section class="bd-section install-after" data-layout-section="install-after">
     <div class="bd-container">
-      <span class="br-eyebrow br-reveal">설치 절차</span>
-      <h2 class="br-h br-reveal">정하고 나서<br />그대로 시공합니다</h2>
-      <ol class="install-steps__list">
-        {STEPS.map((st, i) => (
-          <li class="install-steps__item br-reveal">
-            <span class="install-steps__no">{String(i + 1).padStart(2, '0')}</span>
-            <div class="install-steps__body">
-              <h3>{st.title}</h3>
-              <p>{st.body}</p>
-            </div>
-          </li>
-        ))}
-      </ol>
-    </div>
-  </section>
-
-  {/* 기준(우리가 정해둔 것) → 기준가 순. 기준을 먼저 보이고 금액을 뒤에 둔다 */}
-  <Promise promise={standards.promiseInstall} />
-
-  <Baseline baseline={standards.baselineInstall} noExtra={standards.noExtra} />
-
-  <section class="bd-section install-after">
-    <div class="bd-container">
-      <span class="br-eyebrow br-reveal">설치 이후</span>
-      <h2 class="br-h br-reveal">설치로 끝나지 않습니다</h2>
-      <p class="br-body br-reveal">설치할 때 남긴 기록이 그대로 이어집니다.<br />배관 경로와 시공 이력이 남아 있어, 분해세척과 정기 점검 때 어디를 어떻게 다뤄야 하는지 알고 갑니다.</p>
-      <p class="install-after__more br-reveal">
-        <a class="install-after__link" href="/care/">세척·정기관리 안내 보기 <span aria-hidden="true">→</span></a>
-      </p>
-      {situations.length > 0 && (
-        <ul class="install-situations br-reveal">
-          {situations.map((s) => (
-            <li><a href={`/situation/${s.slug}/`}>{s.meta.title} <span aria-hidden="true">→</span></a></li>
-          ))}
-        </ul>
-      )}
+      <StoryRow slotId="install-aftercare" slotLabel="install-aftercare" imageSide="left">
+        <span class="br-eyebrow br-reveal">설치 이후</span>
+        <h2 class="br-h br-reveal">설치로 끝나지 않습니다</h2>
+        <p class="br-body br-reveal">설치할 때 남긴 기록이 그대로 이어집니다.<br />배관 경로와 시공 이력이 남아 있어, 분해세척과 정기 점검 때 어디를 어떻게 다뤄야 하는지 알고 갑니다.</p>
+        <p class="install-after__more br-reveal">
+          <a class="install-after__link" href="/care/">세척·정기관리 안내 보기 <span aria-hidden="true">→</span></a>
+        </p>
+        {situations.length > 0 && (
+          <ul class="install-situations br-reveal">
+            {situations.map((s) => (
+              <li><a href={`/situation/${s.slug}/`}>{s.meta.title} <span aria-hidden="true">→</span></a></li>
+            ))}
+          </ul>
+        )}
+      </StoryRow>
     </div>
   </section>
 
@@ -94,33 +108,12 @@ const breadcrumbJsonLd = {
 </Base>
 
 <style>
-  .install-steps { background: var(--br-base); }
-  .install-steps__list { margin-top: 48px; list-style: none; display: grid; max-width: 760px; }
-  .install-steps__item {
-    display: grid;
-    grid-template-columns: 44px 1fr;
-    gap: 14px;
-    padding: 20px 0;
-    border-bottom: 1px solid var(--br-line);
-  }
-  .install-steps__item:last-child { border-bottom: 0; }
-  .install-steps__no {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--br-ice);
-    color: var(--br-teal);
-    font-size: 13px;
-    font-weight: 700;
-    border-radius: 999px;
-    font-variant-numeric: tabular-nums;
-  }
-  .install-steps__body h3 { font-size: 17px; margin-bottom: 6px; color: var(--br-teal); }
-  .install-steps__body p { font-size: 15px; color: var(--br-ink-sub); }
+  .install-step--base { background: var(--br-base); }
+  .install-step--mist { background: var(--br-mist); }
+  .install-step--deep { background: var(--br-teal-deep); }
+  .install-step__title { margin-top: 28px; color: var(--br-teal); font-size: 18px; }
 
-  .install-after { background: var(--br-mist); }
+  .install-after { background: var(--br-base); }
   .install-after__more { margin-top: 24px; }
   .install-after__link {
     display: inline-block;
@@ -142,4 +135,5 @@ const breadcrumbJsonLd = {
     color: var(--br-teal);
   }
   .install-situations a:hover { color: var(--br-teal-deep); }
+  :global(.v2-cta .bd-container .v2-cta__sub) { color: var(--br-base); }
 </style>

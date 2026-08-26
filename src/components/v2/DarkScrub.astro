@@ -4,15 +4,25 @@
 // 카피는 src/content/site/hero-worldview.json 단일 소스 (하드코딩 금지).
 // 배경 프레임 시퀀스는 /public/scrub/ (별도 생성 예정 — 현재 폴백). 없으면 poster 1장,
 // poster도 없으면 teal-deep 단색 위 카피만 동작한다. 전부 바닐라 (DESIGN.md §4).
+import { existsSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { loadHeroWorldview } from '../../lib/heroWorldview.ts';
 
 const { steps, source } = loadHeroWorldview();
+const scrubDir = join(process.cwd(), 'public/scrub');
+const hasPoster = existsSync(join(scrubDir, 'poster.jpg'));
+const scrubFrames = existsSync(scrubDir)
+  ? readdirSync(scrubDir)
+      .filter((name) => /^frame_\d{4}\.jpg$/.test(name))
+      .sort()
+      .map((name) => `/scrub/${name}`)
+  : [];
 ---
 {steps.length > 0 && (
-  <section class="v2-scrub" data-scrub>
+  <section class="v2-scrub" data-scrub data-scrub-frame-count={scrubFrames.length}>
     <div class="v2-scrub__sticky">
-      <img class="v2-scrub__poster" src="/scrub/poster.jpg" alt="" aria-hidden="true" data-scrub-poster />
-      <canvas class="v2-scrub__cv" data-scrub-canvas aria-hidden="true"></canvas>
+      {hasPoster && <img class="v2-scrub__poster" src="/scrub/poster.jpg" alt="" aria-hidden="true" data-scrub-poster />}
+      {scrubFrames.length > 0 && <canvas class="v2-scrub__cv" data-scrub-canvas aria-hidden="true"></canvas>}
       <div class="bd-container v2-scrub__copy">
         {steps.map((step, i) => (
           <p
@@ -30,17 +40,19 @@ const { steps, source } = loadHeroWorldview();
       </div>
       {source && <p class="v2-scrub__source bd-container">{source}</p>}
     </div>
+    {scrubFrames.length > 0 && (
+      <script type="application/json" data-scrub-manifest set:html={JSON.stringify(scrubFrames)} />
+    )}
   </section>
 )}
 
 <script>
   // 스크럽 로더 — 프레임 시퀀스가 없으면 poster 폴백, reduced-motion이면 정지 상태 (CSS가 처리).
-  const FRAME_COUNT = 120;                 // 에셋 확정 시 실제 장수로 교체
-  const frameSrc = (i: number) => `/scrub/frame_${String(i).padStart(4, '0')}.jpg`;
-
   const root = document.querySelector<HTMLElement>('[data-scrub]');
   const canvas = root?.querySelector<HTMLCanvasElement>('[data-scrub-canvas]');
   const poster = root?.querySelector<HTMLImageElement>('[data-scrub-poster]');
+  const manifest = root?.querySelector<HTMLScriptElement>('[data-scrub-manifest]');
+  const frameSources: string[] = manifest?.textContent ? JSON.parse(manifest.textContent) : [];
   const copies = root ? Array.from(root.querySelectorAll<HTMLElement>('[data-scrub-copy]')) : [];
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -51,8 +63,7 @@ const { steps, source } = loadHeroWorldview();
     else poster.addEventListener('error', () => poster.remove());
   }
 
-  if (root && canvas && copies.length && !reduced) {
-    root.classList.add('br-scrub'); // 이 시점부터만 런웨이·전환 레이아웃 (no-JS·reduced = 세로 나열)
+  if (root && canvas && copies.length && frameSources.length && !reduced) {
     const ctx = canvas.getContext('2d');
     // 모바일은 프레임 절반만 로드 (초기 로드 시 1회 판정)
     const step = window.matchMedia('(max-width: 767px)').matches ? 2 : 1;
@@ -135,13 +146,14 @@ const { steps, source } = loadHeroWorldview();
 
     // 첫 프레임 로드 성공 시에만 시퀀스 프리로드 — 실패하면 poster 폴백 (카피 전환은 유지)
     const probe = new Image();
-    probe.src = frameSrc(1);
+    probe.src = frameSources[0];
     probe.onload = () => {
+      root.classList.add('br-scrub'); // 실제 프레임이 열릴 때만 420vh 런웨이를 만든다.
       framesUsable = true;
       poster?.remove();
-      for (let i = 1; i <= FRAME_COUNT; i += step) {
+      for (let i = 0; i < frameSources.length; i += step) {
         const img = new Image();
-        img.src = frameSrc(i);
+        img.src = frameSources[i];
         img.onload = () => { lastDrawn = -1; render(); };
         frames.push(img);
       }
@@ -167,8 +179,8 @@ const { steps, source } = loadHeroWorldview();
     overflow: hidden;
     display: flex;
     align-items: center;
-    min-height: 60vh;
-    padding: 120px 0;
+    min-height: 0;
+    padding: 72px 0;
   }
   .v2-scrub__poster,
   .v2-scrub__cv {
@@ -186,7 +198,7 @@ const { steps, source } = loadHeroWorldview();
     font-weight: 700;
     line-height: 1.45;
     letter-spacing: -0.02em;
-    color: #fff;
+    color: var(--br-base);
     text-wrap: balance;
     word-break: keep-all;
   }
@@ -208,7 +220,7 @@ const { steps, source } = loadHeroWorldview();
     font-weight: 700;
     line-height: 1.45;
     letter-spacing: -0.02em;
-    color: #fff;
+    color: var(--br-base);
   }
 
   /* 1단계 통계 출처 — 구간 최하단 고정, 스크롤 단계와 무관하게 항상 노출.
@@ -220,7 +232,7 @@ const { steps, source } = loadHeroWorldview();
     right: 0;
     bottom: 20px;
     font-size: 12.5px;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--br-ice);
   }
 
   /* 스크립트 초기화 시(.br-scrub)에만 — 런웨이 + sticky 1뷰포트, 단계 전환.

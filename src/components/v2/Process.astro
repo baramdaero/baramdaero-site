@@ -1,59 +1,61 @@
 ---
-// S8 진행 절차 (bg-alt) — 스텝 타임라인. 데스크톱 가로 4열, 모바일 세로. 스텝별 stagger 리빌.
+// S8 진행 절차 (bg-alt) — 텍스트와 이미지 슬롯을 나누고, 스텝은 세로 목록으로 표시한다.
 // 문구는 전부 프롭으로 받는다 — 출처는 src/content/site/home.json (하드코딩 금지).
 import type { HomeProcessStep } from '../../lib/home.ts';
+import ImageSlot from './ImageSlot.astro';
+import { isImageSlotVisible } from '../../lib/image-slots.ts';
 
 interface Props {
   eyebrow: string;
   heading: string[];
   steps: HomeProcessStep[];
+  slotId?: string;
 }
-const { eyebrow, heading, steps } = Astro.props;
+const { eyebrow, heading, steps, slotId = 'home-process-overview' } = Astro.props;
+const hasVisual = isImageSlotVisible(slotId);
 ---
-<section class="bd-section v2-process">
-  <div class="bd-container">
-    {eyebrow && <span class="br-eyebrow br-reveal">{eyebrow}</span>}
-    <h2 class="br-h br-reveal">
-      {heading.map((line, i) => (
-        <Fragment>{i > 0 && <br />}{line}</Fragment>
-      ))}
-    </h2>
-    <ol class="v2-process__steps">
-      {steps.map((s) => (
-        <li class="v2-process__step br-reveal">
-          <span class="v2-process__no">{s.no}</span>
-          <h3 class="v2-process__title">{s.title}</h3>
-          <p class="v2-process__body">{s.body}</p>
-        </li>
-      ))}
-    </ol>
+<section class="bd-section v2-process" data-layout-section="home-process" data-image-side={hasVisual ? 'right' : undefined}>
+  <div class:list={['bd-container', 'v2-process__grid', { 'v2-process__grid--copy-only': !hasVisual }]}>
+    <div class="v2-process__copy">
+      {eyebrow && <span class="br-eyebrow br-reveal">{eyebrow}</span>}
+      <h2 class="br-h br-reveal">
+        {heading.map((line, i) => (
+          <Fragment>{i > 0 && <br />}{line}</Fragment>
+        ))}
+      </h2>
+      <ol class="v2-process__steps">
+        {steps.map((s) => (
+          <li class="v2-process__step br-reveal">
+            <span class="v2-process__no">{s.no}</span>
+            <div>
+              <h3 class="v2-process__title">{s.title}</h3>
+              <p class="v2-process__body">{s.body}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+    {hasVisual && (
+      <div class="v2-process__visual br-reveal">
+        <ImageSlot id={slotId} label={slotId} ratio="wide" />
+      </div>
+    )}
   </div>
 </section>
 
 <style>
   .v2-process { background: var(--br-mist); }
+  .v2-process__grid { display: grid; grid-template-columns: 1fr; gap: 40px; align-items: center; }
+  .v2-process__visual { order: -1; }
+  .v2-process__grid--copy-only .v2-process__copy { max-width: 760px; }
   .v2-process__steps {
-    margin-top: 48px;
+    margin-top: 36px;
     list-style: none;
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 28px;
+    gap: 20px;
   }
-  .v2-process__step { position: relative; padding-left: 56px; }
-  .v2-process__step::before {
-    content: '';
-    position: absolute;
-    left: 19px;
-    top: 44px;
-    bottom: -28px;
-    width: 2px;
-    background: var(--br-line);
-  }
-  .v2-process__step:last-child::before { display: none; }
+  .v2-process__step { display: grid; grid-template-columns: 40px 1fr; gap: 14px; }
   .v2-process__no {
-    position: absolute;
-    left: 0;
-    top: 0;
     width: 40px;
     height: 40px;
     display: flex;
@@ -66,19 +68,11 @@ const { eyebrow, heading, steps } = Astro.props;
     border-radius: 999px;
     font-variant-numeric: tabular-nums;
   }
-  .v2-process__title { font-size: 20px; color: var(--br-teal); padding-top: 6px; }
-  .v2-process__body { margin-top: 8px; font-size: 15px; line-height: 1.7; color: var(--br-ink-sub); }
+  .v2-process__title { padding-top: 2px; font-size: 18px; color: var(--br-teal); }
+  .v2-process__body { margin-top: 5px; font-size: 14px; line-height: 1.65; color: var(--br-ink); }
   @media (min-width: 768px) {
-    .v2-process__steps { grid-template-columns: repeat(4, 1fr); gap: 32px; }
-    .v2-process__step { padding-left: 0; padding-top: 60px; }
-    .v2-process__step::before {
-      left: 52px;
-      right: -32px;
-      top: 19px;
-      bottom: auto;
-      width: auto;
-      height: 2px;
-    }
-    .v2-process__title { padding-top: 0; }
+    .v2-process__grid { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 64px; }
+    .v2-process__visual { order: 2; }
+    .v2-process__grid--copy-only { grid-template-columns: minmax(0, 1fr); }
   }
 </style>

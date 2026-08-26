@@ -1,0 +1,261 @@
+---
+import type { BaselineBlock, PromiseBlock, StandardsData } from '../../lib/standards.ts';
+import StoryRow from './StoryRow.astro';
+
+interface Props {
+  promise: PromiseBlock | null;
+  baseline: BaselineBlock | null;
+  noExtra: StandardsData['noExtra'];
+  slotPrefix: string;
+  startSide?: 'left' | 'right';
+  startTone?: 'base' | 'mist';
+  pricingEyebrow?: string;
+  pricingHeading?: string;
+}
+
+const {
+  promise,
+  baseline,
+  noExtra,
+  slotPrefix,
+  startSide = 'left',
+  startTone = 'base',
+  pricingEyebrow = '',
+  pricingHeading = '',
+} = Astro.props;
+
+const hasPricing = Astro.slots.has('pricing');
+const sideAt = (index: number) => {
+  const isStart = index % 2 === 0;
+  return isStart ? startSide : (startSide === 'left' ? 'right' : 'left');
+};
+const toneAt = (index: number) => {
+  const isStart = index % 2 === 0;
+  return isStart ? startTone : (startTone === 'base' ? 'mist' : 'base');
+};
+---
+{(promise || baseline || hasPricing) && (
+  <section class="v2-standards-story" aria-label={promise?.heading || baseline?.title || pricingHeading}>
+    {promise && (
+      <article
+        class:list={['bd-section', 'v2-standards-story__message', `v2-standards-story__message--${toneAt(0)}`]}
+        data-layout-section="standard"
+      >
+        <div class="bd-container">
+          <StoryRow
+            slotId={`${slotPrefix}-standards-scope`}
+            slotLabel={`${slotPrefix}-standards-scope`}
+            imageSide={sideAt(0)}
+          >
+            <span class="br-eyebrow br-reveal">기준</span>
+            <h2 class="br-h br-reveal">{promise.heading}</h2>
+            <ol class="v2-standards-story__promise br-reveal">
+              {promise.items.map((item) => (
+                <li>
+                  <span>{item.no}</span>
+                  <div>
+                    <h3>{item.title}</h3>
+                    {item.lines.length > 0 && (
+                      <p>{item.lines.map((line, i) => <Fragment>{i > 0 && <br />}{line}</Fragment>)}</p>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </StoryRow>
+        </div>
+      </article>
+    )}
+
+    {baseline && (
+      <article
+        class:list={['bd-section', 'v2-standards-story__message', `v2-standards-story__message--${toneAt(1)}`]}
+        data-layout-section="pricing-basis"
+      >
+        <div class="bd-container">
+          <StoryRow
+            slotId={`${slotPrefix}-pricing-basis`}
+            slotLabel={`${slotPrefix}-pricing-basis`}
+            imageSide={sideAt(1)}
+          >
+            <span class="br-eyebrow br-reveal">가격 기준</span>
+            <h2 class="br-h br-reveal">{baseline.title}</h2>
+            <p class="br-body br-reveal">
+              {baseline.bodyLines.map((line, i) => <Fragment>{i > 0 && <br />}{line}</Fragment>)}
+            </p>
+            {baseline.formulaLine && <p class="v2-standards-story__formula br-reveal">{baseline.formulaLine}</p>}
+            {baseline.policyLines.length > 0 && (
+              <details class="v2-standards-story__policy-details br-reveal">
+                <summary>{baseline.policyLines[0]}</summary>
+                {baseline.policyLines.length > 1 && (
+                  <ul class="v2-standards-story__policy">
+                    {baseline.policyLines.slice(1).map((line) => <li>{line}</li>)}
+                  </ul>
+                )}
+              </details>
+            )}
+            {noExtra && (
+              <details class="v2-standards-story__details br-reveal">
+                <summary>{noExtra.title}</summary>
+                {noExtra.body.length > 0 && (
+                  <p>{noExtra.body.map((line, i) => <Fragment>{i > 0 && <br />}{line}</Fragment>)}</p>
+                )}
+                <ul>{noExtra.items.map((item) => <li>{item}</li>)}</ul>
+                {noExtra.closing && <p>{noExtra.closing}</p>}
+              </details>
+            )}
+            {baseline.updated && <p class="v2-standards-story__updated br-reveal">기준가 최종 갱신: {baseline.updated}</p>}
+            {hasPricing && (
+              <div class="v2-standards-story__pricing br-reveal">
+                {pricingEyebrow && <span class="br-eyebrow">{pricingEyebrow}</span>}
+                <details class="v2-standards-story__pricing-details">
+                  {pricingHeading && <summary>{pricingHeading}</summary>}
+                  <div class="v2-standards-story__pricing-content"><slot name="pricing" /></div>
+                </details>
+              </div>
+            )}
+          </StoryRow>
+        </div>
+      </article>
+    )}
+
+    {hasPricing && !baseline && (
+      <article
+        class:list={['bd-section', 'v2-standards-story__message', `v2-standards-story__message--${toneAt(2)}`]}
+        data-layout-section="pricing-table"
+      >
+        <div class="bd-container">
+          <StoryRow
+            slotId={`${slotPrefix}-pricing-basis`}
+            slotLabel={`${slotPrefix}-pricing-basis`}
+            imageSide={sideAt(2)}
+          >
+            {pricingEyebrow && <span class="br-eyebrow br-reveal">{pricingEyebrow}</span>}
+            {pricingHeading && <h2 class="br-h br-reveal">{pricingHeading}</h2>}
+            <slot name="pricing" />
+          </StoryRow>
+        </div>
+      </article>
+    )}
+  </section>
+)}
+
+<style>
+  .v2-standards-story__message--base { background: var(--br-base); }
+  .v2-standards-story__message--mist { background: var(--br-mist); }
+
+  .v2-standards-story__promise {
+    margin-top: 32px;
+    list-style: none;
+    display: grid;
+    gap: 18px;
+  }
+
+  .v2-standards-story__promise > li {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 14px;
+  }
+
+  .v2-standards-story__promise > li > span {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--br-ice);
+    color: var(--br-teal);
+    font-size: 13px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .v2-standards-story__promise h3 { color: var(--br-teal); font-size: 17px; }
+  .v2-standards-story__promise p { margin-top: 6px; font-size: 14px; line-height: 1.65; }
+
+  .v2-standards-story__formula {
+    margin-top: 24px;
+    padding: 14px 16px;
+    border-left: 3px solid var(--br-teal);
+    background: var(--br-ice);
+    color: var(--br-teal);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .v2-standards-story__policy-details {
+    margin-top: 20px;
+    border-top: 1px solid var(--br-teal);
+    border-bottom: 1px solid var(--br-teal);
+  }
+
+  .v2-standards-story__policy-details summary {
+    min-height: 44px;
+    padding: 12px 0;
+    cursor: pointer;
+    color: var(--br-teal);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .v2-standards-story__policy {
+    margin-bottom: 14px;
+    list-style: none;
+    display: grid;
+    gap: 7px;
+  }
+
+  .v2-standards-story__policy li {
+    position: relative;
+    padding-left: 16px;
+    font-size: 14px;
+  }
+
+  .v2-standards-story__policy li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.72em;
+    width: 8px;
+    height: 1px;
+    background: var(--br-teal);
+  }
+
+  .v2-standards-story__details {
+    margin-top: 16px;
+    border-top: 1px solid var(--br-teal);
+    border-bottom: 1px solid var(--br-teal);
+  }
+
+  .v2-standards-story__details summary {
+    min-height: 44px;
+    padding: 12px 0;
+    cursor: pointer;
+    color: var(--br-teal);
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .v2-standards-story__details p,
+  .v2-standards-story__details ul { margin: 0 0 14px; font-size: 14px; line-height: 1.7; }
+  .v2-standards-story__details ul { padding-left: 18px; }
+  .v2-standards-story__updated { margin-top: 18px; font-size: 13px; }
+
+  .v2-standards-story__pricing {
+    margin-top: 28px;
+    padding-top: 28px;
+    border-top: 1px solid var(--br-teal);
+  }
+
+  .v2-standards-story__pricing-details { margin-top: 16px; }
+  .v2-standards-story__pricing-details summary {
+    min-height: 44px;
+    cursor: pointer;
+    color: var(--br-teal);
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.45;
+  }
+  .v2-standards-story__pricing-content { padding-top: 4px; }
+</style>

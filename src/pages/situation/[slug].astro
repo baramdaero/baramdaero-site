@@ -3,10 +3,9 @@
 // 수치·가격 하드코딩 금지 (DESIGN.md §7) — 절차·확인 항목만 다룬다.
 import Base from '../../layouts/Base.astro';
 import PageHero from '../../components/v2/PageHero.astro';
-import Timeline from '../../components/v2/Timeline.astro';
-import Baseline from '../../components/v2/Baseline.astro';
-import Promise from '../../components/v2/Promise.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
+import StandardsStory from '../../components/v2/StandardsStory.astro';
+import StoryRow from '../../components/v2/StoryRow.astro';
 import { loadSituations } from '../../lib/situations.ts';
 import { loadStandards } from '../../lib/standards.ts';
 import { loadFaqPage, renderFaqMd } from '../../lib/faq.ts';
@@ -49,79 +48,138 @@ const jsonLd: object[] = [
     <Fragment slot="sub">{meta.intro}</Fragment>
   </PageHero>
 
-  <Timeline stages={timeline} />
+  {(timeline.length > 0 || prewired) && (
+    <section class="sit-journey" aria-label="진행 순서">
+      {timeline.map((st, i) => (
+        <article
+          class:list={[
+            'bd-section',
+            'sit-journey__story',
+            i === 3 ? 'sit-journey__story--deep' : (i % 2 === 0 ? 'sit-journey__story--base' : 'sit-journey__story--mist'),
+          ]}
+          data-layout-section={`newhome-timeline-${i + 1}`}
+        >
+          <div class="bd-container">
+            <StoryRow
+              slotId={`${situation.slug}-timeline-${String(i + 1).padStart(2, '0')}`}
+              slotLabel={`${situation.slug}-timeline-${String(i + 1).padStart(2, '0')}`}
+              imageSide={i % 2 === 0 ? 'left' : 'right'}
+              tone={i === 3 ? 'deep' : 'light'}
+            >
+              <span class="br-eyebrow br-reveal">진행 순서</span>
+              <h2 class="br-h br-reveal">{i === 0 ? '언제 무엇을 정하나' : st.stage}</h2>
+              {i === 0 && <h3 class="sit-journey__stage br-reveal">{st.stage}</h3>}
+              {st.when ? (
+                <details class="sit-journey__details br-reveal">
+                  <summary>{st.when}</summary>
+                  <ul class="sit-journey__todo">{st.todo.map((item) => <li>{item}</li>)}</ul>
+                  {st.caution && <p class="sit-journey__caution">{st.caution}</p>}
+                </details>
+              ) : (
+                <Fragment>
+                  <ul class="sit-journey__todo br-reveal">{st.todo.map((item) => <li>{item}</li>)}</ul>
+                  {st.caution && <p class="sit-journey__caution br-reveal">{st.caution}</p>}
+                </Fragment>
+              )}
+            </StoryRow>
+          </div>
+        </article>
+      ))}
 
-  {prewired && (
-    <section class="bd-section sit-prewired">
-      <div class="bd-container">
-        <span class="br-eyebrow br-reveal">현장 확인</span>
-        <h2 class="br-h br-reveal">{prewired.title}</h2>
-        {prewired.bodyLines.length > 0 && (
-          <p class="br-body br-reveal">
-            {prewired.bodyLines.map((line, i) => (
-              <Fragment>{i > 0 && <br />}{line}</Fragment>
+      {prewired && (
+        <article
+          class:list={['bd-section', 'sit-journey__story', timeline.length % 2 === 0 ? 'sit-journey__story--base' : 'sit-journey__story--mist']}
+          data-layout-section="newhome-prewired"
+        >
+          <div class="bd-container">
+            <StoryRow
+              slotId={`${situation.slug}-prewired`}
+              slotLabel={`${situation.slug}-prewired`}
+              imageSide={timeline.length % 2 === 0 ? 'left' : 'right'}
+            >
+              <span class="br-eyebrow br-reveal">현장 확인</span>
+              <h2 class="br-h br-reveal">{prewired.title}</h2>
+              {prewired.bodyLines.length > 0 ? (
+                <details class="sit-journey__details br-reveal">
+                  <summary>{prewired.bodyLines[0]}</summary>
+                  {prewired.bodyLines.length > 1 && (
+                    <p class="br-body">
+                      {prewired.bodyLines.slice(1).map((line, i) => <Fragment>{i > 0 && <br />}{line}</Fragment>)}
+                    </p>
+                  )}
+                  <ul class="sit-journey__todo">{prewired.checkItems.map((item) => <li>{item}</li>)}</ul>
+                </details>
+              ) : (
+                <ul class="sit-journey__todo br-reveal">{prewired.checkItems.map((item) => <li>{item}</li>)}</ul>
+              )}
+            </StoryRow>
+          </div>
+        </article>
+      )}
+    </section>
+  )}
+
+  <StandardsStory
+    promise={standards.promiseInstall}
+    baseline={standards.baselineInstall}
+    noExtra={standards.noExtra}
+    slotPrefix={situation.slug}
+    startSide="right"
+    startTone="mist"
+  />
+
+  <section class="bd-section sit-close">
+    <div class="bd-container">
+      {faq.length > 0 && (
+        <div class="sit-faq" data-layout-section="newhome-faq">
+          <span class="br-eyebrow br-reveal">자주 묻는 질문</span>
+          <h2 class="br-h br-reveal">이 상황에서<br />많이 묻는 것</h2>
+          <div class="sit-faq__list br-reveal">
+            {faq.map((f, i) => (
+              <details class="sit-faq__item" id={f.id} open={i === 0}>
+                <summary class="sit-faq__q">{f.q}</summary>
+                <div class="sit-faq__a" set:html={renderFaqMd(f.a)} />
+              </details>
             ))}
+          </div>
+          <p class="sit-faq__more br-reveal">
+            <a class="sit-faq__link" href="/faq/">전체 질문 보기 <span aria-hidden="true">→</span></a>
           </p>
-        )}
-        <ul class="sit-prewired__list br-reveal">
-          {prewired.checkItems.map((item) => <li>{item}</li>)}
-        </ul>
-      </div>
-    </section>
-  )}
-
-  {/* 신축·입주 맥락이라 설치 블록을 쓴다 (세척 블록 아님) */}
-  <Promise promise={standards.promiseInstall} tone="base" />
-
-  <Baseline baseline={standards.baselineInstall} noExtra={standards.noExtra} tone="mist" />
-
-  {faq.length > 0 && (
-    <section class="bd-section sit-faq">
-      <div class="bd-container">
-        <span class="br-eyebrow br-reveal">자주 묻는 질문</span>
-        <h2 class="br-h br-reveal">이 상황에서<br />많이 묻는 것</h2>
-        <div class="sit-faq__list br-reveal">
-          {faq.map((f, i) => (
-            <details class="sit-faq__item" id={f.id} open={i === 0}>
-              <summary class="sit-faq__q">{f.q}</summary>
-              <div class="sit-faq__a" set:html={renderFaqMd(f.a)} />
-            </details>
-          ))}
         </div>
-        <p class="sit-faq__more br-reveal">
-          <a class="sit-faq__link" href="/faq/">전체 질문 보기 <span aria-hidden="true">→</span></a>
-        </p>
-      </div>
-    </section>
-  )}
+      )}
 
-  {groupBuy && (
-    <section class="bd-section sit-group">
-      <div class="bd-container">
-        <span class="br-eyebrow br-reveal">단지 공동구매</span>
-        <h2 class="br-h br-reveal">{groupBuy.title}</h2>
-        <p class="br-body br-reveal">{groupBuy.body}</p>
-        {groupBuy.ctaLabel && (
-          <p class="sit-group__cta br-reveal">
-            <button type="button" class="bd-cta" data-chat-tree="install">{groupBuy.ctaLabel}</button>
-          </p>
-        )}
-      </div>
-    </section>
-  )}
+      {groupBuy && (
+        <div class="sit-group" data-layout-section="newhome-group-buy">
+          <StoryRow
+            slotId={`${situation.slug}-group-buy`}
+            slotLabel={`${situation.slug}-group-buy`}
+            imageSide="right"
+            tone="deep"
+          >
+            <span class="br-eyebrow br-reveal">단지 공동구매</span>
+            <h2 class="br-h br-reveal">{groupBuy.title}</h2>
+            <p class="br-body br-reveal">{groupBuy.body}</p>
+            {groupBuy.ctaLabel && (
+              <p class="sit-group__cta br-reveal">
+                <button type="button" class="bd-cta bd-cta--deep" data-chat-tree="install">{groupBuy.ctaLabel}</button>
+              </p>
+            )}
+          </StoryRow>
+        </div>
+      )}
 
-  {related.length > 0 && (
-    <section class="bd-section sit-related">
-      <div class="bd-container">
-        <span class="br-eyebrow br-reveal">함께 보기</span>
-        <ul class="sit-related__list br-reveal">
-          {related.map((r) => (
-            <li><a href={r.href}>{r.label} <span aria-hidden="true">→</span></a></li>
-          ))}
-        </ul>
-      </div>
-    </section>
-  )}
+      {related.length > 0 && (
+        <div class="sit-related">
+          <span class="br-eyebrow br-reveal">함께 보기</span>
+          <ul class="sit-related__list br-reveal">
+            {related.map((r) => (
+              <li><a href={r.href}>{r.label} <span aria-hidden="true">→</span></a></li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  </section>
 
   <CtaBand chatTree="install" buttonLabel="설치 상담 시작">
     <em>견적</em>은 방문 전에<br />나옵니다
@@ -130,21 +188,35 @@ const jsonLd: object[] = [
 </Base>
 
 <style>
-  .sit-prewired { background: var(--br-mist); }
-  .sit-prewired__list {
-    margin-top: 32px;
-    list-style: none;
-    display: grid;
-    gap: 10px;
-    max-width: 760px;
+  .sit-journey__story--base { background: var(--br-base); }
+  .sit-journey__story--mist { background: var(--br-mist); }
+  .sit-journey__story--deep { background: var(--br-teal-deep); }
+  .sit-journey__story--deep .sit-journey__details {
+    border-top-color: var(--br-ice);
+    border-bottom-color: var(--br-ice);
   }
-  .sit-prewired__list li {
-    font-size: 15px;
-    color: var(--br-ink);
-    padding-left: 16px;
-    position: relative;
+  .sit-journey__story--deep .sit-journey__details summary { color: var(--br-ice); }
+  .sit-journey__story--deep .sit-journey__todo li::before { background: var(--br-ice); }
+  .sit-journey__story--deep :global(.br-story-row__copy) p.sit-journey__caution { color: var(--br-ink); }
+  .sit-journey__stage { margin-top: 28px; color: var(--br-teal); font-size: 18px; }
+  .sit-journey__details {
+    margin-top: 22px;
+    border-top: 1px solid var(--br-teal);
+    border-bottom: 1px solid var(--br-teal);
   }
-  .sit-prewired__list li::before {
+  .sit-journey__details summary {
+    min-height: 44px;
+    padding: 12px 0;
+    cursor: pointer;
+    color: var(--br-teal);
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .sit-journey__details :global(.br-body) { margin-top: 14px; color: var(--br-ink); font-size: 14px; }
+  .sit-journey__todo { margin-top: 22px; list-style: none; display: grid; gap: 8px; }
+  .sit-journey__details .sit-journey__todo { margin-bottom: 16px; }
+  .sit-journey__todo li { position: relative; padding-left: 16px; color: var(--br-ink); font-size: 14px; line-height: 1.6; }
+  .sit-journey__todo li::before {
     content: '';
     position: absolute;
     left: 0;
@@ -153,11 +225,21 @@ const jsonLd: object[] = [
     height: 1px;
     background: var(--br-teal);
   }
+  .sit-journey__caution {
+    margin-top: 18px;
+    padding: 14px 16px;
+    border-left: 3px solid var(--br-teal);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    background: var(--br-ice);
+    color: var(--br-ink);
+    font-size: 14px;
+    line-height: 1.65;
+  }
 
-  .sit-faq { background: var(--br-base); }
-  .sit-faq__list { margin-top: 48px; display: grid; gap: 0; max-width: 760px; border-top: 2px solid var(--br-teal); }
-  /* 아코디언 — /faq/ 의 details 패턴과 같은 결 (본문 a는 마크다운이라 길다) */
-  .sit-faq__item { border-bottom: 1px solid var(--br-line); }
+  .sit-close { background: var(--br-teal-deep); }
+  .sit-close :global(.br-h) { color: var(--br-base); }
+  .sit-faq__list { margin-top: 48px; display: grid; gap: 10px; }
+  .sit-faq__item { border-radius: var(--radius); background: var(--br-base); color: var(--br-ink); }
   .sit-faq__q {
     cursor: pointer;
     font-weight: 700;
@@ -166,7 +248,7 @@ const jsonLd: object[] = [
     padding: 18px 4px;
     color: var(--br-ink);
   }
-  .sit-faq__a { padding: 2px 4px 24px; font-size: 15px; line-height: 1.85; color: var(--br-ink-sub); }
+  .sit-faq__a { padding: 2px 18px 24px; font-size: 15px; line-height: 1.85; color: var(--br-ink); }
   .sit-faq__a :global(p) { margin-bottom: 14px; }
   .sit-faq__a :global(p:last-child) { margin-bottom: 0; }
   .sit-faq__a :global(h3) { font-size: 16px; color: var(--br-ink); margin: 22px 0 10px; }
@@ -188,17 +270,17 @@ const jsonLd: object[] = [
     display: inline-block;
     font-size: 16px;
     font-weight: 700;
-    color: var(--br-teal);
-    border-bottom: 2px solid var(--br-teal);
+    color: var(--br-ice);
+    border-bottom: 2px solid var(--br-ice);
     padding-bottom: 2px;
     transition: color var(--dur-color) ease, border-color var(--dur-color) ease;
   }
-  .sit-faq__link:hover { color: var(--br-teal-deep); border-color: var(--br-ice); }
+  .sit-faq__link:hover { color: var(--br-base); border-color: var(--br-base); }
 
-  .sit-group { background: var(--br-mist); }
+  .sit-group { margin-top: 120px; }
   .sit-group__cta { margin-top: 32px; }
 
-  .sit-related { background: var(--br-base); }
+  .sit-related { margin-top: 120px; }
   .sit-related__list {
     margin-top: 24px;
     list-style: none;
@@ -211,7 +293,13 @@ const jsonLd: object[] = [
     padding: 8px 0;
     font-size: 15px;
     font-weight: 700;
-    color: var(--br-teal);
+    color: var(--br-ice);
   }
-  .sit-related__list a:hover { color: var(--br-teal-deep); }
+  .sit-related__list a:hover { color: var(--br-base); }
+  :global(.v2-cta .bd-container .v2-cta__sub) { color: var(--br-base); }
+
+  @media (max-width: 767px) {
+    .sit-group,
+    .sit-related { margin-top: 72px; }
+  }
 </style>

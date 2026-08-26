@@ -1,0 +1,47 @@
+{
+  "_설명": {
+    "이 파일은": "본문 정적 이미지 슬롯 32개의 이미지 경로와 대체 텍스트 원본입니다. 9월 촬영분이 준비되면 이 파일만 수정합니다.",
+    "src": "public/media/ 아래에 공개 동의를 확인한 이미지를 올리고 /media/파일명 형식으로 적습니다. 빈 문자열이면 프로덕션에서 슬롯과 부모 이미지 열이 함께 접힙니다.",
+    "alt": "사진이 전달하는 현장 정보를 짧게 적습니다. src를 채울 때 alt도 함께 채우세요. 장식용 사진이 아니므로 비워 둔 채 배포하지 않습니다.",
+    "새 슬롯": "페이지에 정적 data-slot 식별자를 추가할 때 같은 식별자를 slots에도 등록합니다. 누락하면 조용히 숨기지 않고 빌드가 실패합니다.",
+    "촬영 검토": "SHOW_EMPTY_SLOTS=true로 빌드하면 src가 비어 있어도 회색 슬롯과 식별자가 보입니다. 기본 프로덕션 빌드에서는 빈 슬롯을 렌더하지 않습니다.",
+    "세척 절차 예외": "care-process-01부터 care-process-06까지는 pricing.json process[].image가 원본이므로 이 레지스트리에 중복 기재하지 않습니다."
+  },
+  "slots": {
+    "home-service-install": { "src": "", "alt": "" },
+    "home-service-record": { "src": "", "alt": "" },
+    "home-service-clean": { "src": "", "alt": "" },
+    "home-triage-install": { "src": "", "alt": "" },
+    "home-triage-clean": { "src": "", "alt": "" },
+    "home-triage-as": { "src": "", "alt": "" },
+    "home-process-overview": { "src": "", "alt": "" },
+
+    "care-symptom-smell": { "src": "", "alt": "" },
+    "care-symptom-airflow": { "src": "", "alt": "" },
+    "care-symptom-outlet": { "src": "", "alt": "" },
+    "care-symptom-drip": { "src": "", "alt": "" },
+    "care-standards-scope": { "src": "", "alt": "" },
+    "care-pricing-basis": { "src": "", "alt": "" },
+    "care-season-01": { "src": "", "alt": "" },
+    "care-season-02": { "src": "", "alt": "" },
+    "care-season-03": { "src": "", "alt": "" },
+    "care-season-04": { "src": "", "alt": "" },
+
+    "install-process-01": { "src": "", "alt": "" },
+    "install-process-02": { "src": "", "alt": "" },
+    "install-process-03": { "src": "", "alt": "" },
+    "install-process-04": { "src": "", "alt": "" },
+    "install-standards-scope": { "src": "", "alt": "" },
+    "install-pricing-basis": { "src": "", "alt": "" },
+    "install-aftercare": { "src": "", "alt": "" },
+
+    "newhome-timeline-01": { "src": "", "alt": "" },
+    "newhome-timeline-02": { "src": "", "alt": "" },
+    "newhome-timeline-03": { "src": "", "alt": "" },
+    "newhome-timeline-04": { "src": "", "alt": "" },
+    "newhome-prewired": { "src": "", "alt": "" },
+    "newhome-standards-scope": { "src": "", "alt": "" },
+    "newhome-pricing-basis": { "src": "", "alt": "" },
+    "newhome-group-buy": { "src": "", "alt": "" }
+  }
+}

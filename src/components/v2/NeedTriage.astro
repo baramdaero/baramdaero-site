@@ -2,15 +2,17 @@
 // 고객 유형 3분기 — 버튼이 챗봇 흐름을 연다 (data-chat-tree, Chatbot.astro TREE_START).
 // 카드 골격·색은 기존 v2-sit 계열과 동일 값. 신규 색·장식 없음 (DESIGN.md §1·§5).
 import type { HomeTriageCard } from '../../lib/home.ts';
+import ImageSlot from './ImageSlot.astro';
 
 interface Props {
   heading: string[];
   cards: HomeTriageCard[];
+  tone?: 'light' | 'deep';
 }
-const { heading, cards } = Astro.props;
+const { heading, cards, tone = 'deep' } = Astro.props;
 ---
 {cards.length > 0 && (
-  <section class="bd-section v2-triage">
+  <section class:list={['bd-section', 'v2-triage', `v2-triage--${tone}`]} data-layout-section="home-triage">
     <div class="bd-container">
       <h2 class="br-h br-reveal">
         {heading.map((line, i) => (
@@ -21,6 +23,11 @@ const { heading, cards } = Astro.props;
         {cards.map((c) => (
           <li class="v2-triage__cell br-reveal">
             <div class="v2-triage__card">
+              <ImageSlot
+                id={`home-triage-${c.chatTree}`}
+                label={`home-triage-${c.chatTree}`}
+                ratio="card"
+              />
               <h3>{c.title}</h3>
               {c.body.length > 0 && (
                 <p>{c.body.map((line, j) => (
@@ -39,14 +46,15 @@ const { heading, cards } = Astro.props;
 )}
 
 <style>
-  /* base 유지 — 뒤따르는 절차 섹션(mist)과 배경이 붙지 않게 (DESIGN.md §3 교차 리듬) */
-  .v2-triage { background: var(--br-base); }
+  .v2-triage--light { background: var(--br-base); }
+  .v2-triage--deep { background: var(--br-teal-deep); }
+  .v2-triage--deep :global(.br-h) { color: var(--br-base); }
 
   .v2-triage__grid {
     margin-top: 48px;
     list-style: none;
     display: grid;
-    gap: 12px;
+    gap: 16px;
   }
   /* 모바일 세로 스택 → 데스크톱 가로 3열 */
   @media (min-width: 768px) {
@@ -59,11 +67,13 @@ const { heading, cards } = Astro.props;
     display: flex;
     flex-direction: column;
     width: 100%;
-    padding: 22px;
+    padding: 16px;
     background: var(--br-base);
-    border: 1px solid var(--br-line);
+    border: 1px solid var(--br-mist);
     border-radius: var(--radius);
   }
+
+  .v2-triage__card :global(.br-image-slot) { max-width: none; margin-bottom: 20px; }
 
   .v2-triage__card h3 {
     font-size: 17px;
@@ -73,7 +83,7 @@ const { heading, cards } = Astro.props;
     margin-top: 8px;
     font-size: 15px;
     line-height: 1.6;
-    color: var(--br-ink-sub);
+    color: var(--br-ink);
     word-break: keep-all;
   }
 
