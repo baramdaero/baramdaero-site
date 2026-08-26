@@ -16,6 +16,14 @@ const situations = loadSituations();
 
 // 순서는 견적(방문 없이) → 설계(시공 전) → 시공 → 시운전·기록.
 // "실측"은 견적 단계로 읽혀 CTA·히어로의 "방문 전 견적"과 부딪히므로 쓰지 않는다.
+// 제품 영상 — 삼성전자 공식 채널 임베드. 자사 시공 영상이 아니므로 출처 줄을 반드시 함께 둔다.
+// 비우면 블록째 사라진다(사이트 공통 「빈 값 = 미노출」).
+const PRODUCT_VIDEOS = [
+  { id: 'GXf1uFLc4xE', title: '삼성전자 무풍 1Way 카세트 — Frame' },
+  { id: 'BUnSZkdcpms', title: '삼성전자 무풍 1Way 카세트 — Pet' },
+];
+const VIDEO_SOURCE = '출처: 삼성전자 공식 채널';
+
 const STEPS = [
   { title: '상담·견적', body: '기종과 대수, 설치 위치를 확인해 견적을 확정합니다. 방문 없이 진행합니다.' },
   { title: '설계', body: '도면과 현장 조건을 확인해 배관 경로와 실외기 위치를 정합니다. 시공 전에 확정하고, 정해진 대로만 진행합니다.' },
@@ -45,6 +53,30 @@ const breadcrumbJsonLd = {
       도면과 배관 경로, 실외기 위치는 시공 전에 함께 정합니다.
     </Fragment>
   </PageHero>
+
+  {PRODUCT_VIDEOS.length > 0 && (
+    <section class="bd-section install-video">
+      <div class="bd-container">
+        <div class="install-video__grid">
+          {PRODUCT_VIDEOS.map((v) => (
+            <div class="install-video__frame">
+              <iframe
+                data-src={`https://www.youtube-nocookie.com/embed/${v.id}?mute=1&loop=1&playlist=${v.id}&playsinline=1&controls=1&rel=0&modestbranding=1`}
+                title={v.title}
+                loading="lazy"
+                allow="autoplay; encrypted-media; picture-in-picture"
+                allowfullscreen
+              ></iframe>
+              <noscript>
+                <a class="install-video__fallback" href={`https://youtu.be/${v.id}`} rel="noopener">{v.title}</a>
+              </noscript>
+            </div>
+          ))}
+        </div>
+        <p class="install-video__source">{VIDEO_SOURCE}</p>
+      </div>
+    </section>
+  )}
 
   {STEPS.map((st, i) => (
     <section
@@ -107,7 +139,39 @@ const breadcrumbJsonLd = {
   </CtaBand>
 </Base>
 
+<script>
+  // iframe src를 스크립트로 채운다 — 모션 최소화 설정에서 자동재생만 빼기 위해서다.
+  // (autoplay 파라미터는 로드 시점에 확정되므로 마크업에 박으면 끌 수가 없다)
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('.install-video__frame iframe[data-src]').forEach((el) => {
+    const src = el.getAttribute('data-src');
+    if (!src) return;
+    el.setAttribute('src', reduce ? src : `${src}&autoplay=1`);
+    el.removeAttribute('data-src');
+  });
+</script>
+
 <style>
+  /* 제품 영상 — 16:9 고정, 768px+ 나란히 / 그 아래 세로 스택 */
+  .install-video { background: var(--br-base); padding-top: 40px; padding-bottom: 40px; }
+  .install-video__grid { display: grid; gap: 16px; }
+  .install-video__frame {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--br-ink);
+  }
+  .install-video__frame iframe { width: 100%; height: 100%; border: 0; display: block; }
+  .install-video__fallback {
+    display: grid; place-items: center; width: 100%; height: 100%;
+    color: var(--br-ice); font-weight: 700; text-align: center; padding: 20px;
+  }
+  .install-video__source { margin-top: 14px; font-size: 13px; color: var(--br-ink-sub); }
+  @media (min-width: 768px) {
+    .install-video__grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+  }
+
   .install-step--base { background: var(--br-base); }
   .install-step--mist { background: var(--br-mist); }
   .install-step--deep { background: var(--br-teal-deep); }
