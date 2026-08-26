@@ -228,3 +228,53 @@ html.br-js .br-reveal.br-in { opacity: 1; transform: translateY(0); }
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ── 섹션 헤더 중앙 정렬 (2026-08-27) ────────────────────────────────
+   토스 실측: 히어로·인트로·다크·클로징은 중앙, 좌측은 지그재그 텍스트 열에만.
+   ⚠️ 카드·리스트 내부 본문은 좌측 유지 — 거기까지 중앙이면 읽는 줄이 매번 다른
+   지점에서 시작해 읽기가 무너진다. 되돌리려면 이 블록만 지우면 된다. */
+.br-h,
+.br-eyebrow {
+  text-align: center;
+}
+
+/* 섹션 리드문(카드 밖 본문)만 중앙 + 읽기 폭 제한 */
+.bd-section > .bd-container > .br-body,
+.v2-standards-story__message .br-body,
+.care-process > .bd-container > .br-body,
+.bd-section > .bd-container > .care-process__source {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 640px;
+}
+
+/* 지그재그 텍스트 열은 이미지가 실제로 있을 때만 좌측 — 이미지 옆에 붙는 자리라
+   중앙이면 축이 흔들린다. 사진이 없으면 그냥 글 한 덩어리라 중앙이 맞다.
+   :has()로 걸어 두면 9월 사진이 들어오는 순간 자동으로 좌측으로 돌아온다. */
+.br-story-row:has(.br-story-row__visual) .br-story-row__copy .br-h,
+.br-story-row:has(.br-story-row__visual) .br-story-row__copy .br-eyebrow,
+.br-story-row:has(.br-story-row__visual) .br-story-row__copy .br-body {
+  text-align: left;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* 시각물 없는 열의 본문도 읽기 폭 제한 — 단 카드 안은 제외.
+   카드는 이미 폭이 좁아서 여기에 max-width를 또 걸면 들여쓰기처럼 보인다(실측). */
+.br-story-row:not(:has(.br-story-row__visual)) .br-story-row__copy > .br-body {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 640px;
+}
+/* 카드 안은 예외 — 위 규칙이 클래스 4개라 특이도를 맞춰야 이긴다(실측 4:2로 짐) */
+.install-step__card .br-story-row .br-story-row__copy .br-body,
+.care-process__card .br-story-row .br-story-row__copy .br-body,
+.sit-journey__card .br-story-row .br-story-row__copy .br-body,
+.install-step__card .br-body,
+.care-process__card .br-body,
+.sit-journey__card .br-body {
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+}
