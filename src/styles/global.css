@@ -82,16 +82,40 @@ button {
 .bd-section { padding: 72px 0; }
 @media (min-width: 768px) { .bd-section { padding: 120px 0; } }
 
-/* 눈썹 라벨 — ice 칩 + teal 텍스트 */
+/* 섹션 라벨 — 알약 칩 폐기(2026-08-25). 자간 + 헤어라인으로 층위를 만든다.
+   한글은 대문자가 없어 영문 small-caps 대신 자간이 라벨 신호다.
+   ⚠️ 알약을 되살리지 말 것: 배지는 장식으로 읽히고 AI 기본값 티가 난다. */
 .br-eyebrow {
-  display: inline-block;
-  background: var(--br-ice);
-  color: var(--br-teal);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  padding: 6px 14px;
-  border-radius: 999px;
+  display: block;
+  width: 100%;
+  padding: 0 0 12px;
+  border-bottom: 1px solid var(--br-eyebrow-line, rgba(0, 78, 100, 0.18));
+  color: var(--br-eyebrow-fg, var(--br-teal));
+  font-size: 15.5px; /* 구 알약 13px × 1.2 */
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+/* 큰 라벨 — 페이지 정체를 말하는 자리(서비스 2면). 아래 .br-h 가 주장을 맡는다 */
+.br-eyebrow--lead {
+  font-size: clamp(20px, 2.6vw, 28px);
+  letter-spacing: 0.1em;
+  padding-bottom: 16px;
+}
+
+/* 어두운 섹션 — 알약 배경이 하던 대비를 색으로 만든다.
+   새로 어두운 섹션을 만들면 여기에 클래스를 추가한다(빠지면 라벨이 배경에 묻힌다). */
+.v2-phero,
+.v2-scrub,
+.v2-mq,
+.v2-triage--deep,
+.care-process__story--deep,
+.care-close,
+.install-step--deep,
+.sit-journey__story--deep,
+.sit-close {
+  --br-eyebrow-fg: var(--br-ice);
+  --br-eyebrow-line: rgba(255, 255, 255, 0.16);
 }
 
 /* 섹션 헤드라인 — 과감한 스케일, 의도적 줄바꿈 전제 */
