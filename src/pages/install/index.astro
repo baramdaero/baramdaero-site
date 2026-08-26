@@ -17,6 +17,7 @@ const situations = loadSituations();
 // 순서는 견적(방문 없이) → 설계(시공 전) → 시공 → 시운전·기록.
 // "실측"은 견적 단계로 읽혀 CTA·히어로의 "방문 전 견적"과 부딪히므로 쓰지 않는다.
 // 제품 영상 — 삼성전자 공식 채널 임베드. 자사 시공 영상이 아니므로 출처 줄을 반드시 함께 둔다.
+// 자동재생은 조건 없이 항상(무음). 모션 최소화 예외는 뺐다 — 그 설정에서 재생이 안 되는 게 문제였다.
 // 비우면 블록째 사라진다(사이트 공통 「빈 값 = 미노출」).
 const PRODUCT_VIDEOS = [
   { id: 'GXf1uFLc4xE', title: '삼성전자 무풍 1Way 카세트 — Frame' },
@@ -61,15 +62,12 @@ const breadcrumbJsonLd = {
           {PRODUCT_VIDEOS.map((v) => (
             <div class="install-video__frame">
               <iframe
-                data-src={`https://www.youtube-nocookie.com/embed/${v.id}?mute=1&loop=1&playlist=${v.id}&playsinline=1&controls=1&rel=0&modestbranding=1`}
+                src={`https://www.youtube-nocookie.com/embed/${v.id}?autoplay=1&mute=1&loop=1&playlist=${v.id}&playsinline=1&controls=1&rel=0&modestbranding=1`}
                 title={v.title}
                 loading="lazy"
                 allow="autoplay; encrypted-media; picture-in-picture"
                 allowfullscreen
               ></iframe>
-              <noscript>
-                <a class="install-video__fallback" href={`https://youtu.be/${v.id}`} rel="noopener">{v.title}</a>
-              </noscript>
             </div>
           ))}
         </div>
@@ -139,17 +137,6 @@ const breadcrumbJsonLd = {
   </CtaBand>
 </Base>
 
-<script>
-  // iframe src를 스크립트로 채운다 — 모션 최소화 설정에서 자동재생만 빼기 위해서다.
-  // (autoplay 파라미터는 로드 시점에 확정되므로 마크업에 박으면 끌 수가 없다)
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  document.querySelectorAll('.install-video__frame iframe[data-src]').forEach((el) => {
-    const src = el.getAttribute('data-src');
-    if (!src) return;
-    el.setAttribute('src', reduce ? src : `${src}&autoplay=1`);
-    el.removeAttribute('data-src');
-  });
-</script>
 
 <style>
   /* 제품 영상 — 16:9 고정, 768px+ 나란히 / 그 아래 세로 스택 */
