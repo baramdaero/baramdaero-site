@@ -385,7 +385,7 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
       text: COPY.install_brand,
       options: [
         ...SITE_CONFIG.BRANDS_INSTALL.map((b: string) => ({ label: b, next: 'install.units', set: { 브랜드: b } })),
-        { label: '상담으로 결정', next: 'install.units', set: { 브랜드: '상담으로 결정' } },
+        { label: '상담 후 결정', next: 'install.units', set: { 브랜드: '상담 후 결정' } },
       ],
     },
     'install.units': {
