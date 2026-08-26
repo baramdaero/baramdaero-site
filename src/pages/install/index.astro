@@ -81,16 +81,19 @@ const breadcrumbJsonLd = {
       <h2 class="br-h br-reveal">정하고 나서<br />그대로 시공합니다</h2>
       <div class="install-steps__list">
         {STEPS.map((st, i) => (
-          <StoryRow
-            slotId={`install-process-${String(i + 1).padStart(2, '0')}`}
-            slotLabel={`install-process-${String(i + 1).padStart(2, '0')}`}
-            ratio="square"
-            imageSide={i % 2 === 0 ? 'left' : 'right'}
-            tone="light"
-          >
-            <h3 class="install-step__title br-reveal">{st.title}</h3>
-            <p class="br-body br-reveal">{st.body}</p>
-          </StoryRow>
+          <article class="install-step__card br-reveal">
+            <StoryRow
+              slotId={`install-process-${String(i + 1).padStart(2, '0')}`}
+              slotLabel={`install-process-${String(i + 1).padStart(2, '0')}`}
+              ratio="square"
+              imageSide={i % 2 === 0 ? 'left' : 'right'}
+              tone="light"
+            >
+              <span class="install-step__no">{String(i + 1).padStart(2, '0')}</span>
+              <h3 class="install-step__title">{st.title}</h3>
+              <p class="br-body">{st.body}</p>
+            </StoryRow>
+          </article>
         ))}
       </div>
     </div>
@@ -156,9 +159,28 @@ const breadcrumbJsonLd = {
   .install-step--base { background: var(--br-base); }
   .install-step--mist { background: var(--br-mist); }
   .install-step--deep { background: var(--br-teal-deep); }
-  .install-steps__list { margin-top: 56px; display: grid; gap: 64px; }
-  .install-step__title { margin-top: 0; color: var(--br-teal); font-size: clamp(22px, 3vw, 30px); }
-  @media (min-width: 768px) { .install-steps__list { gap: 88px; } }
+  /* 회색 섹션 위에 기본색 카드 — 단계 경계를 여백이 아니라 면으로 만든다 */
+  .install-steps__list { margin-top: 48px; display: grid; gap: 16px; }
+  .install-step__card {
+    background: var(--br-base);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    border: 1px solid rgba(0, 78, 100, 0.06); /* 헤어라인 — 회색 테두리로 가두지 않는다 */
+  }
+  .install-step__no {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--br-teal);
+    opacity: 0.55;
+  }
+  .install-step__title { margin-top: 6px; color: var(--br-teal); font-size: clamp(20px, 2.4vw, 26px); }
+  .install-step__card .br-body { margin-top: 10px; }
+  @media (min-width: 768px) {
+    .install-steps__list { gap: 20px; }
+    .install-step__card { padding: 36px 32px; }
+  }
 
   .install-after { background: var(--br-base); }
   .install-after__more { margin-top: 24px; }
