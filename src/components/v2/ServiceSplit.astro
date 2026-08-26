@@ -1,20 +1,40 @@
 ---
 // S3~S5 서비스 지그재그 — 좌텍스트/우비주얼, flip 시 반전.
 // link(페이지 이동) 또는 chatTree(챗봇 트리 호출) 중 하나로 CTA를 배선한다.
+import ImageSlot from './ImageSlot.astro';
+
 interface Props {
   id: string;
   eyebrow: string;
   /** 이미지 경로 — 비면 placeholder 면 */
   image?: string;
   imageAlt?: string;
+  slotId?: string;
   linkLabel: string;
   link?: string;
   chatTree?: string;
   flip?: boolean;
+  tone?: 'base' | 'mist';
 }
-const { id, eyebrow, image = '', imageAlt = '', linkLabel, link, chatTree, flip = false } = Astro.props;
+const {
+  id,
+  eyebrow,
+  image = '',
+  imageAlt = '',
+  slotId = `home-service-${id}`,
+  linkLabel,
+  link,
+  chatTree,
+  flip = false,
+  tone = 'base',
+} = Astro.props;
 ---
-<section class="bd-section v2-svc" id={id}>
+<section
+  class:list={['bd-section', 'v2-svc', `v2-svc--${tone}`]}
+  id={id}
+  data-layout-section="home-service"
+  data-image-side={flip ? 'left' : 'right'}
+>
   <div class:list={['bd-container', 'v2-svc__grid', { 'v2-svc__grid--flip': flip }]}>
     <div class="v2-svc__txt">
       <span class="br-eyebrow br-reveal">{eyebrow}</span>
@@ -29,17 +49,14 @@ const { id, eyebrow, image = '', imageAlt = '', linkLabel, link, chatTree, flip 
       </p>
     </div>
     <div class="v2-svc__vis br-reveal">
-      {image ? (
-        <img src={image} alt={imageAlt} loading="lazy" />
-      ) : (
-        <div class="v2-svc__empty" aria-hidden="true"></div>
-      )}
+      <ImageSlot id={slotId} src={image} alt={imageAlt} label={slotId} ratio="wide" />
     </div>
   </div>
 </section>
 
 <style>
-  .v2-svc { background: var(--br-base); }
+  .v2-svc--base { background: var(--br-base); }
+  .v2-svc--mist { background: var(--br-mist); }
   .v2-svc__grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -57,16 +74,12 @@ const { id, eyebrow, image = '', imageAlt = '', linkLabel, link, chatTree, flip 
     transition: color var(--dur-color) ease, border-color var(--dur-color) ease;
   }
   .v2-svc__link:hover { color: var(--br-teal-deep); border-color: var(--br-ice); }
-  .v2-svc__vis img,
-  .v2-svc__empty {
-    aspect-ratio: 4 / 3;
-    width: 100%;
-    object-fit: cover;
-    border-radius: 16px;
-  }
-  .v2-svc__empty { background: var(--br-mist); border: 1px solid var(--br-line); }
+  .v2-svc__txt :global(.br-body) { color: var(--br-ink); }
+  .v2-svc__vis { order: -1; }
   @media (min-width: 768px) {
-    .v2-svc__grid { grid-template-columns: 1fr 1fr; gap: 64px; }
+    .v2-svc__grid { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 64px; }
+    .v2-svc__vis { order: 2; }
+    .v2-svc__grid--flip { grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); }
     .v2-svc__grid--flip .v2-svc__txt { order: 2; }
     .v2-svc__grid--flip .v2-svc__vis { order: 1; }
   }

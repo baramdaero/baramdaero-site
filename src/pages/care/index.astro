@@ -4,8 +4,9 @@
 import Base from '../../layouts/Base.astro';
 import PageHero from '../../components/v2/PageHero.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
-import Baseline from '../../components/v2/Baseline.astro';
-import Promise from '../../components/v2/Promise.astro';
+import ImageSlot from '../../components/v2/ImageSlot.astro';
+import StandardsStory from '../../components/v2/StandardsStory.astro';
+import StoryRow from '../../components/v2/StoryRow.astro';
 import { SITE_CONFIG } from '../../config.js';
 import { loadPricing } from '../../lib/pricing.ts';
 import { loadFaq } from '../../lib/faq.ts';
@@ -14,6 +15,9 @@ import { loadStandards } from '../../lib/standards.ts';
 const pricing = loadPricing();
 const standards = loadStandards();
 const { prices, conditions, process, processIntro, processSource, symptoms, seasons } = pricing;
+const visibleSymptoms = symptoms.filter((s) => s.icon !== 'drip').slice(0, 3);
+const visibleSeasons = seasons.slice(0, 3);
+const processPairs = Array.from({ length: Math.ceil(process.length / 2) }, (_, i) => process.slice(i * 2, i * 2 + 2));
 
 const headline = pricing.headline || '세척·유지관리';
 const intro = pricing.intro;
@@ -25,13 +29,11 @@ const careFaq = pricing.faqRef
 
 const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? '';
 
-// 증상 카드 아이콘 — currentColor 라인 SVG (DESIGN.md: 이모지 금지)
-const ICON_PATHS: Record<string, string> = {
-  smell: 'M7 17c0-2 1.5-2.5 1.5-4.5S7 10 7 8s1.5-2.5 1.5-4.5 M12.5 17c0-2 1.5-2.5 1.5-4.5s-1.5-2.5-1.5-4.5 1.5-2.5 1.5-4.5 M18 17c0-2 1.5-2.5 1.5-4.5S18 10 18 8s1.5-2.5 1.5-4.5',
-  wind: 'M3 8h11a3 3 0 1 0-3-3 M3 13h15a3 3 0 1 1-3 3 M3 18h7',
-  stain: 'M4 14h16l-2 4H6l-2-4Z M8 11v.01 M12 10v.01 M16 11v.01 M12 6v.01',
-  drip: 'M12 4c3 4 5 6.5 5 9a5 5 0 0 1-10 0c0-2.5 2-5 5-9Z',
-};
+const symptomSlot = (icon: string, index: number) => ({
+  smell: 'care-symptom-smell',
+  wind: 'care-symptom-airflow',
+  stain: 'care-symptom-outlet',
+}[icon] ?? `care-symptom-${String(index + 1).padStart(2, '0')}`);
 
 /* ---------- JSON-LD (v1과 동일 유지) ---------- */
 const serviceJsonLd = {
@@ -87,148 +89,169 @@ if (careFaq.length) {
     {intro && <Fragment slot="sub">{intro}</Fragment>}
   </PageHero>
 
-  {/* 세척·관리 트랙 v3 — 기존 에어컨 관리(증상) → 분해세척(절차→기준가) → 정기관리(시기) 순서 */}
-  {symptoms.length > 0 && (
-    <section class="bd-section care-symptoms">
+  {visibleSymptoms.length > 0 && (
+    <section class="bd-section care-symptoms" data-layout-section="care-symptoms">
       <div class="bd-container">
         <span class="br-eyebrow br-reveal">기존 에어컨 관리</span>
         <h2 class="br-h br-reveal">이런 증상이 있다면<br />세척 시점입니다</h2>
         <div class="care-symptoms__grid">
-          {symptoms.map((s) => (
-            <div class="care-symptoms__card br-reveal">
-              {s.icon && (
-                <svg class="care-symptoms__icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d={ICON_PATHS[s.icon]} />
-                </svg>
-              )}
-              <h3 class="care-symptoms__title">{s.title}</h3>
-              <p class="care-symptoms__body">{s.body}</p>
-              <button type="button" class="care-symptoms__cta" data-chat-tree="clean">
-                세척 견적 받기
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
-              </button>
-            </div>
-          ))}
+          {visibleSymptoms.map((s, i) => {
+            const slotId = symptomSlot(s.icon, i);
+            return (
+              <article class="care-symptoms__card br-reveal">
+                <ImageSlot id={slotId} label={slotId} ratio="card" />
+                <h3>{s.title}</h3>
+                <p>{s.body}</p>
+                <button type="button" class="care-symptoms__cta" data-chat-tree="clean">
+                  세척 견적 받기 <span aria-hidden="true">→</span>
+                </button>
+              </article>
+            );
+          })}
         </div>
       </div>
     </section>
   )}
 
-  {process.length > 0 && (
-    <section class="bd-section care-process">
-      <div class="bd-container">
-        <span class="br-eyebrow br-reveal">분해세척 절차</span>
-        <h2 class="br-h br-reveal">뜯고, 씻고,<br />기록으로 남깁니다</h2>
-        {processIntro.length > 0 && (
-          <p class="br-body br-reveal">
-            {processIntro.map((line, i) => (
-              <Fragment>{i > 0 && <br />}{line}</Fragment>
-            ))}
-          </p>
-        )}
-        <ol class="care-process__list">
-          {process.map((st) => (
-            <li class="care-process__item br-reveal">
-              <span class="care-process__no">{String(st.step).padStart(2, '0')}</span>
-              <div class="care-process__body">
-                <h3>{st.title}</h3>
-                <p>{st.body}</p>
-                {st.image && <img src={st.image} alt={`${st.title} 작업 사진`} loading="lazy" />}
-              </div>
-            </li>
-          ))}
-        </ol>
-        {/* 근거 표기 — 다크 구간 EPA 출처와 같은 계열(작게·흐리게).
-            16단계는 천장형 4way 기준이라 범위 한정을 빼면 안 된다.
-            faq-clean-time과 같은 근거를 쓰므로 한쪽만 고치지 않는다. */}
-        {processSource.length > 0 && (
-          <p class="care-process__source br-reveal">
-            {processSource.map((line, i) => (
-              <Fragment>{i > 0 && <br />}{line}</Fragment>
-            ))}
-          </p>
-        )}
-      </div>
+  {processPairs.length > 0 && (
+    <section class="care-process" aria-label="분해세척 절차">
+      {processPairs.map((pair, i) => (
+        <article
+          class:list={[
+            'bd-section',
+            'care-process__story',
+            i === 2 ? 'care-process__story--deep' : (i % 2 === 0 ? 'care-process__story--mist' : 'care-process__story--base'),
+          ]}
+          data-layout-section={`care-process-${i + 1}`}
+        >
+          <div class="bd-container">
+            <StoryRow
+              slotId={`care-process-${String(i * 2 + 1).padStart(2, '0')}`}
+              imageSide={i % 2 === 0 ? 'left' : 'right'}
+              tone={i === 2 ? 'deep' : 'light'}
+            >
+              <Fragment slot="visual">
+                <div class="care-process__visual-grid">
+                  {pair.map((st) => {
+                    const slotId = `care-process-${String(st.step).padStart(2, '0')}`;
+                    return (
+                      <ImageSlot
+                        id={slotId}
+                        src={st.image}
+                        alt={`${st.title} 작업 사진`}
+                        label={slotId}
+                        ratio="square"
+                      />
+                    );
+                  })}
+                </div>
+              </Fragment>
+              <span class="br-eyebrow br-reveal">분해세척 절차</span>
+              <h2 class="br-h br-reveal">{i === 0 ? <Fragment>뜯고, 씻고,<br />기록으로 남깁니다</Fragment> : pair[0].title}</h2>
+              {i === 0 && processIntro.length > 0 && (
+                <p class="br-body br-reveal">
+                  {processIntro.map((line, j) => <Fragment>{j > 0 && <br />}{line}</Fragment>)}
+                </p>
+              )}
+              <ol class="care-process__steps br-reveal">
+                {pair.map((st, j) => (
+                  <li>
+                    <span>{String(st.step).padStart(2, '0')}</span>
+                    <div>
+                      {(i === 0 || j > 0) && <h3>{st.title}</h3>}
+                      <p>{st.body}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+              {i === processPairs.length - 1 && processSource.length > 0 && (
+                <p class="care-process__source br-reveal">
+                  {processSource.map((line, j) => <Fragment>{j > 0 && <br />}{line}</Fragment>)}
+                </p>
+              )}
+            </StoryRow>
+          </div>
+        </article>
+      ))}
     </section>
   )}
 
-  {/* 기준(우리가 정해둔 것) → 기준가 → 기준가 표 순 */}
-  <Promise promise={standards.promiseCare} tone="base" />
-
-  <Baseline baseline={standards.baselineCare} noExtra={standards.noExtra} tone="mist" />
-
-  <section class="bd-section care-prices">
-    <div class="bd-container">
-      <span class="br-eyebrow br-reveal">기준가</span>
-      <h2 class="br-h br-reveal">견적서에 없는 돈은<br />현장에서도 없습니다</h2>
+  <StandardsStory
+    promise={standards.promiseCare}
+    baseline={standards.baselineCare}
+    noExtra={standards.noExtra}
+    slotPrefix="care"
+    startSide="right"
+    startTone="base"
+    pricingEyebrow="기준가"
+    pricingHeading="견적서에 없는 돈은 현장에서도 없습니다"
+  >
+    <Fragment slot="pricing">
       {prices.length > 0 ? (
         <Fragment>
           <div class="care-prices__wrap br-reveal">
             <table class="care-prices__table">
-              <thead>
-                <tr><th scope="col">기종</th><th scope="col">기준가</th><th scope="col">비고</th></tr>
-              </thead>
+              <thead><tr><th scope="col">기종</th><th scope="col">기준가</th><th scope="col">비고</th></tr></thead>
               <tbody>
                 {prices.map((p) => (
                   <tr>
                     <th scope="row">{p.type}</th>
-                    <td class="care-prices__value">{p.base.toLocaleString('ko-KR')}<span class="care-prices__unit">{p.unit}</span></td>
-                    <td class="care-prices__note">{p.note}</td>
+                    <td class="care-prices__value">{p.base.toLocaleString('ko-KR')}<span>{p.unit}</span></td>
+                    <td>{p.note}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          {conditions.length > 0 && (
-            <ul class="care-prices__conditions br-reveal">
-              {conditions.map((c) => <li>{c}</li>)}
-            </ul>
-          )}
+          {conditions.length > 0 && <ul class="care-prices__conditions br-reveal">{conditions.map((c) => <li>{c}</li>)}</ul>}
         </Fragment>
       ) : (
-        /* 확정가 미입력(전부 sample) — 근거 없는 숫자를 띄우는 대신 상담으로 연결 */
         <div class="care-prices__pending br-reveal">
           <p class="care-prices__pending-title">기준가는 챗봇 상담으로 안내합니다.</p>
-          <p class="care-prices__pending-body">기종과 대수만 알려주시면 바로 확인하실 수 있습니다.</p>
-          <button type="button" class="bd-cta care-prices__pending-cta" data-chat-tree="clean">세척 견적 받기</button>
+          <p>기종과 대수만 알려주시면 바로 확인하실 수 있습니다.</p>
+          <button type="button" class="bd-cta" data-chat-tree="clean">세척 견적 받기</button>
+        </div>
+      )}
+    </Fragment>
+  </StandardsStory>
+
+  <section class="bd-section care-close">
+    <div class="bd-container">
+      {visibleSeasons.length > 0 && (
+        <div class="care-seasons" data-layout-section="care-seasons">
+          <span class="br-eyebrow br-reveal">정기 관리</span>
+          <h2 class="br-h br-reveal">언제 하는 게 좋은가</h2>
+          <div class="care-seasons__grid">
+            {visibleSeasons.map((s, i) => {
+              const slotId = `care-season-${String(i + 1).padStart(2, '0')}`;
+              return (
+                <article class="care-seasons__card br-reveal">
+                  <ImageSlot id={slotId} label={slotId} ratio="card" />
+                  <h3>{s.season}</h3>
+                  <p>{s.body}</p>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {careFaq.length > 0 && (
+        <div class="care-faq" data-layout-section="care-faq">
+          <span class="br-eyebrow br-reveal">자주 묻는 질문</span>
+          <h2 class="br-h br-reveal">묻기 전에<br />먼저 답해 둡니다</h2>
+          <div class="care-faq__list br-reveal">
+            {careFaq.map((f, i) => (
+              <details class="care-faq__item" open={i === 0}>
+                <summary>{f.q}</summary>
+                <p>{f.a}</p>
+              </details>
+            ))}
+          </div>
         </div>
       )}
     </div>
   </section>
-
-  {seasons.length > 0 && (
-    <section class="bd-section care-seasons">
-      <div class="bd-container">
-        <span class="br-eyebrow br-reveal">정기 관리</span>
-        <h2 class="br-h br-reveal">언제 하는 게 좋은가</h2>
-        <div class="care-seasons__grid">
-          {seasons.map((s) => (
-            <div class="care-seasons__card br-reveal">
-              <h3>{s.season}</h3>
-              <p>{s.body}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )}
-
-  {careFaq.length > 0 && (
-    <section class="bd-section care-faq">
-      <div class="bd-container">
-        <span class="br-eyebrow br-reveal">자주 묻는 질문</span>
-        <h2 class="br-h br-reveal">묻기 전에<br />먼저 답해 둡니다</h2>
-        <dl class="care-faq__list br-reveal">
-          {careFaq.map((f) => (
-            <div class="care-faq__item">
-              <dt>{f.q}</dt>
-              <dd>{f.a}</dd>
-            </div>
-          ))}
-        </dl>
-      </div>
-    </section>
-  )}
 
   <CtaBand chatTree="clean" buttonLabel="견적 문의">
     <em>견적</em>은 방문 전에<br />나옵니다
@@ -237,174 +260,100 @@ if (careFaq.length) {
 </Base>
 
 <style>
-  /* 절차 근거 표기 — 본문보다 작고 흐리게 (다크 구간 EPA 출처와 같은 계열).
-     ⚠️ opacity로 흐리게 하지 않는다 — .br-reveal 등장 애니메이션이 opacity를
-     소유해 br-in 시점에 1로 덮어쓴다(실측). 색으로 처리한다. */
-  .care-process__source {
-    margin-top: 28px;
-    font-size: 13px;
-    line-height: 1.8;
-    color: color-mix(in srgb, var(--br-ink-sub) 68%, transparent);
-  }
-
-  /* 증상 카드 — 화이트 섹션 */
   .care-symptoms { background: var(--br-base); }
-  .care-symptoms__grid {
+  .care-symptoms__grid,
+  .care-seasons__grid {
     margin-top: 48px;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
     gap: 16px;
   }
-  .care-symptoms__card {
-    border: 1px solid var(--br-line);
-    border-radius: var(--radius);
-    background: #fff;
-    padding: 22px 20px 16px;
+
+  .care-symptoms__card,
+  .care-seasons__card {
     display: flex;
     flex-direction: column;
+    padding: 16px;
+    border: 1px solid var(--br-mist);
+    border-radius: var(--radius);
+    background: var(--br-base);
   }
-  .care-symptoms__icon { color: var(--br-teal); margin-bottom: 12px; }
-  .care-symptoms__title { font-size: 17px; margin-bottom: 8px; color: var(--br-teal); }
-  .care-symptoms__body { font-size: 14px; color: var(--br-ink-sub); flex: 1; }
+
+  .care-symptoms__card :global(.br-image-slot),
+  .care-seasons__card :global(.br-image-slot) { max-width: none; margin-bottom: 20px; }
+  .care-symptoms__card h3,
+  .care-seasons__card h3 { color: var(--br-teal); font-size: 17px; }
+  .care-symptoms__card p,
+  .care-seasons__card p { margin-top: 8px; color: var(--br-ink); font-size: 14px; line-height: 1.65; }
+
   .care-symptoms__cta {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     margin-top: 16px;
     min-height: 44px;
+    color: var(--br-teal);
     font-size: 14px;
     font-weight: 700;
-    color: var(--br-teal);
     transition: color var(--dur-color) ease, gap var(--dur-color) var(--ease-out);
   }
   .care-symptoms__cta:hover { color: var(--br-teal-deep); }
   .care-symptoms__cta:active { transform: scale(0.98); }
 
-  /* 기준가 표 — bg-alt 섹션 */
-  .care-prices { background: var(--br-base); }
-  .care-prices__wrap {
-    margin-top: 48px;
-    background: #fff;
-    border: 1px solid var(--br-line);
-    border-radius: 16px;
-    overflow-x: auto;
-  }
-  .care-prices__table { width: 100%; min-width: 480px; border-collapse: collapse; font-size: 15px; }
-  .care-prices__table th,
-  .care-prices__table td {
-    text-align: left;
-    padding: 14px 20px;
-    border-bottom: 1px solid var(--br-line);
-  }
-  .care-prices__table tr:last-child th,
-  .care-prices__table tr:last-child td { border-bottom: 0; }
-  .care-prices__table thead th {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--br-teal);
-    border-bottom: 2px solid var(--br-line);
-  }
-  .care-prices__table tbody th { font-weight: 600; }
-  .care-prices__value {
-    font-weight: 700;
-    font-size: 19px;
-    color: var(--br-teal);
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
-  .care-prices__unit { font-size: 14px; margin-left: 1px; }
-  .care-prices__note { font-size: 13.5px; color: var(--br-ink-sub); }
-  .care-prices__conditions {
-    margin-top: 16px;
-    list-style: none;
-    display: grid;
-    gap: 6px;
-  }
-  .care-prices__conditions li {
-    font-size: 13px;
-    color: var(--br-ink-sub);
-    padding-left: 14px;
-    position: relative;
-  }
-  /* 확정가 미입력 폴백 */
-  .care-prices__pending {
-    margin-top: 48px;
-    background: #fff;
-    border: 1px solid var(--br-line);
-    border-radius: 16px;
-    padding: 40px 24px;
-    text-align: center;
-  }
-  .care-prices__pending-title { font-size: 20px; font-weight: 800; color: var(--br-teal); }
-  .care-prices__pending-body { margin-top: 12px; font-size: 15px; line-height: 1.7; color: var(--br-ink-sub); }
-  .care-prices__pending-cta { margin-top: 28px; }
-
-  .care-prices__conditions li::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0.72em;
-    width: 6px;
-    height: 1px;
-    background: var(--br-ink-sub);
-  }
-
-  /* 절차 — mist 섹션 */
-  .care-process { background: var(--br-mist); }
-  .care-process__list { margin-top: 48px; list-style: none; display: grid; max-width: 760px; }
-  .care-process__item {
-    display: grid;
-    grid-template-columns: 44px 1fr;
-    gap: 14px;
-    padding: 20px 0;
-    border-bottom: 1px solid var(--br-line);
-  }
-  .care-process__item:last-child { border-bottom: 0; }
-  .care-process__no {
+  .care-process__story--base { background: var(--br-base); }
+  .care-process__story--mist { background: var(--br-mist); }
+  .care-process__story--deep { background: var(--br-teal-deep); }
+  .care-process__story--deep .care-process__steps h3 { color: var(--br-ice); }
+  .care-process__visual-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .care-process__visual-grid :global(.br-image-slot) { max-width: none; }
+  .care-process__steps { margin-top: 28px; list-style: none; display: grid; gap: 18px; }
+  .care-process__steps li { display: grid; grid-template-columns: 40px 1fr; gap: 14px; }
+  .care-process__steps li > span {
     width: 40px;
     height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
     background: var(--br-ice);
     color: var(--br-teal);
     font-size: 13px;
     font-weight: 700;
-    border-radius: 999px;
-    font-variant-numeric: tabular-nums;
   }
-  .care-process__body h3 { font-size: 17px; margin-bottom: 6px; color: var(--br-teal); }
-  .care-process__body p { font-size: 15px; color: var(--br-ink-sub); }
-  .care-process__body img { margin-top: 12px; border-radius: var(--radius); }
+  .care-process__steps h3 { color: var(--br-teal); font-size: 17px; }
+  .care-process__steps p { margin-top: 6px; color: var(--br-ink); font-size: 14px; line-height: 1.65; }
+  .care-process__source { margin-top: 24px; color: var(--br-ink); font-size: 13px; line-height: 1.75; }
 
-  /* 계절 카드 — bg-alt 섹션 */
-  .care-seasons { background: var(--br-mist); }
-  .care-seasons__grid {
-    margin-top: 48px;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-  }
-  .care-seasons__card {
-    background: #fff;
-    border: 1px solid var(--br-line);
-    border-radius: var(--radius);
-    padding: 20px 18px;
-  }
-  .care-seasons__card h3 { font-size: 16px; margin-bottom: 8px; color: var(--br-teal); }
-  .care-seasons__card p { font-size: 14px; color: var(--br-ink-sub); }
+  .care-prices__wrap { margin-top: 32px; overflow-x: auto; border: 1px solid var(--br-teal); border-radius: var(--radius); }
+  .care-prices__table { width: 100%; min-width: 480px; border-collapse: collapse; font-size: 14px; }
+  .care-prices__table th,
+  .care-prices__table td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--br-mist); }
+  .care-prices__table tr:last-child th,
+  .care-prices__table tr:last-child td { border-bottom: 0; }
+  .care-prices__table thead th { color: var(--br-teal); }
+  .care-prices__value { color: var(--br-teal); font-size: 18px; font-weight: 700; white-space: nowrap; }
+  .care-prices__value span { margin-left: 2px; font-size: 13px; }
+  .care-prices__conditions { margin-top: 16px; padding-left: 18px; color: var(--br-ink); font-size: 13px; }
+  .care-prices__pending { margin-top: 32px; padding: 24px; border: 1px solid var(--br-teal); border-radius: var(--radius); }
+  .care-prices__pending-title { color: var(--br-teal); font-size: 18px; font-weight: 800; }
+  .care-prices__pending p + p { margin-top: 10px; color: var(--br-ink); font-size: 14px; }
+  .care-prices__pending :global(.bd-cta) { margin-top: 22px; }
 
-  /* FAQ — 화이트 섹션 */
-  .care-faq { background: var(--br-base); }
-  .care-faq__list { margin-top: 48px; display: grid; gap: 0; max-width: 760px; border-top: 2px solid var(--br-teal); }
-  .care-faq__item { padding: 18px 4px; border-bottom: 1px solid var(--br-line); }
-  .care-faq__item dt { font-weight: 700; font-size: 16px; margin-bottom: 6px; color: var(--br-ink); }
-  .care-faq__item dd { font-size: 15px; color: var(--br-ink-sub); }
+  .care-close { background: var(--br-teal-deep); }
+  .care-close :global(.br-h) { color: var(--br-base); }
+  .care-seasons__grid { grid-template-columns: 1fr; }
+  .care-faq { margin-top: 120px; }
+  .care-faq__list { margin-top: 48px; display: grid; gap: 10px; }
+  .care-faq__item { border-radius: var(--radius); background: var(--br-base); color: var(--br-ink); }
+  .care-faq__item summary { min-height: 44px; padding: 16px 18px; cursor: pointer; color: var(--br-ink); font-weight: 700; }
+  .care-faq__item p { padding: 0 18px 18px; color: var(--br-ink); font-size: 15px; line-height: 1.75; }
+  :global(.v2-cta .bd-container .v2-cta__sub) { color: var(--br-base); }
 
-  @media (max-width: 900px) {
-    .care-symptoms__grid, .care-seasons__grid { grid-template-columns: repeat(2, 1fr); }
+  @media (min-width: 768px) {
+    .care-symptoms__grid,
+    .care-seasons__grid { grid-template-columns: repeat(3, 1fr); }
   }
+
   @media (max-width: 520px) {
-    .care-symptoms__grid, .care-seasons__grid { grid-template-columns: 1fr; }
+    .care-process__visual-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .care-faq { margin-top: 72px; }
   }
 </style>

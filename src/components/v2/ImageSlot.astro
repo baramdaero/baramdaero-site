@@ -1,0 +1,65 @@
+---
+interface Props {
+  id: string;
+  src?: string;
+  alt?: string;
+  label?: string;
+  ratio?: 'wide' | 'card' | 'square';
+}
+
+const {
+  id,
+  src = '',
+  alt = '',
+  label = id,
+  ratio = 'wide',
+} = Astro.props;
+---
+<figure class:list={['br-image-slot', `br-image-slot--${ratio}`]} data-slot={id}>
+  {src ? (
+    <img src={src} alt={alt} loading="lazy" />
+  ) : (
+    <div class="br-image-slot__empty">
+      <span aria-hidden="true">{label}</span>
+    </div>
+  )}
+</figure>
+
+<style>
+  .br-image-slot {
+    width: 100%;
+    max-width: 640px;
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid var(--br-teal);
+    border-radius: var(--radius);
+    background: var(--br-mist);
+  }
+
+  .br-image-slot--wide { aspect-ratio: 16 / 10; }
+  .br-image-slot--card { aspect-ratio: 4 / 3; }
+  .br-image-slot--square { aspect-ratio: 1; }
+
+  .br-image-slot img,
+  .br-image-slot__empty {
+    width: 100%;
+    height: 100%;
+  }
+
+  .br-image-slot img { object-fit: cover; }
+
+  .br-image-slot__empty {
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: var(--br-mist);
+    color: var(--br-teal);
+    text-align: center;
+  }
+
+  .br-image-slot__empty span {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+</style>

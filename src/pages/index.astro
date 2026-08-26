@@ -27,13 +27,14 @@ const trust = loadTrust();
 // 마퀴 카드 — cases 컬렉션 최신순
 const cases = (await getCollection('cases'))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const hasMarquee = cases.filter((entry) => !entry.data.sample).length >= 3;
 
 /* 서비스 카드의 앵커 id와 지그재그 방향은 문구가 아니라 레이아웃이라 여기 둔다.
    home.json의 services 순서와 짝지어 쓰며, 카드가 더 늘면 id 없이 렌더된다. */
 const SERVICE_LAYOUT = [
-  { id: 'install', flip: false },
-  { id: 'care', flip: true },
-  { id: 'clean', flip: false },
+  { id: 'install', slotId: 'home-service-install', flip: true, tone: 'base' as const },
+  { id: 'care', slotId: 'home-service-record', flip: false, tone: 'mist' as const },
+  { id: 'clean', slotId: 'home-service-clean', flip: true, tone: 'base' as const },
 ];
 
 /** CTA 헤드라인에서 강조 단어만 <em>으로 감싼다 (색 강조는 .br-h em이 처리) */
@@ -70,6 +71,8 @@ const cta = home.ctaBand;
       link={svc.cta?.href}
       linkLabel={svc.cta?.label ?? ''}
       flip={SERVICE_LAYOUT[i]?.flip ?? false}
+      slotId={SERVICE_LAYOUT[i]?.slotId}
+      tone={SERVICE_LAYOUT[i]?.tone ?? 'base'}
     >
       <Fragment slot="headline">
         {svc.heading.map((line, j) => (
@@ -85,7 +88,7 @@ const cta = home.ctaBand;
   ))}
 
   {home.triage && (
-    <NeedTriage heading={home.triage.heading} cards={home.triage.cards} />
+    <NeedTriage heading={home.triage.heading} cards={home.triage.cards} tone={hasMarquee ? 'light' : 'deep'} />
   )}
 
   <Marquee entries={cases} />
@@ -117,4 +120,5 @@ const cta = home.ctaBand;
   /* 리드 문장은 바로 아래 첫 서비스 카드와 한 덩어리로 읽혀야 해서 아래 여백만 줄인다.
      섹션 상단 여백(.bd-section)은 그대로 두어 다크 구간과의 간격은 유지된다. */
   .v2-svc-lead { background: var(--br-base); padding-bottom: 0; }
+  :global(.v2-cta .bd-container .v2-cta__sub) { color: var(--br-base); }
 </style>

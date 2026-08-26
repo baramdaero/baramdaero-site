@@ -1,0 +1,73 @@
+---
+import ImageSlot from './ImageSlot.astro';
+
+interface Props {
+  slotId: string;
+  image?: string;
+  imageAlt?: string;
+  slotLabel?: string;
+  ratio?: 'wide' | 'card' | 'square';
+  imageSide?: 'left' | 'right';
+  tone?: 'light' | 'deep';
+}
+
+const {
+  slotId,
+  image = '',
+  imageAlt = '',
+  slotLabel = slotId,
+  ratio = 'wide',
+  imageSide = 'left',
+  tone = 'light',
+} = Astro.props;
+const hasCustomVisual = Astro.slots.has('visual');
+---
+<div class:list={['br-story-row', `br-story-row--image-${imageSide}`, `br-story-row--${tone}`]} data-image-side={imageSide}>
+  <div class="br-story-row__copy">
+    <slot />
+  </div>
+  <div class="br-story-row__visual br-reveal">
+    {hasCustomVisual ? (
+      <slot name="visual" />
+    ) : (
+      <ImageSlot id={slotId} src={image} alt={imageAlt} label={slotLabel} ratio={ratio} />
+    )}
+  </div>
+</div>
+
+<style>
+  .br-story-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 40px;
+    align-items: center;
+  }
+
+  .br-story-row__copy { max-width: 520px; }
+  .br-story-row__visual { order: -1; width: 100%; }
+  .br-story-row__visual :global(.br-image-slot) { margin-inline: auto; }
+
+  .br-story-row__copy :global(.br-body),
+  .br-story-row__copy :global(p),
+  .br-story-row__copy :global(li) {
+    color: var(--br-ink);
+  }
+
+  .br-story-row--deep .br-story-row__copy :global(.br-h),
+  .br-story-row--deep .br-story-row__copy :global(.br-body),
+  .br-story-row--deep .br-story-row__copy :global(p),
+  .br-story-row--deep .br-story-row__copy :global(li) {
+    color: var(--br-base);
+  }
+
+  @media (min-width: 768px) {
+    .br-story-row { gap: 64px; }
+    .br-story-row--image-right { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); }
+    .br-story-row--image-left { grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); }
+
+    .br-story-row--image-right .br-story-row__copy { order: 1; }
+    .br-story-row--image-right .br-story-row__visual { order: 2; }
+    .br-story-row--image-left .br-story-row__visual { order: 1; }
+    .br-story-row--image-left .br-story-row__copy { order: 2; }
+  }
+</style>
