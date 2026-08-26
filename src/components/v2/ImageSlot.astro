@@ -1,4 +1,6 @@
 ---
+import { resolveImageSlot, SHOW_EMPTY_SLOTS } from '../../lib/image-slots.ts';
+
 interface Props {
   id: string;
   src?: string;
@@ -14,16 +16,28 @@ const {
   label = id,
   ratio = 'wide',
 } = Astro.props;
+
+const resolved = resolveImageSlot(id, src, alt);
+if (resolved.src && !resolved.alt) {
+  throw new Error(`[ImageSlot 오류] "${id}"에 src가 있지만 alt가 비어 있습니다. image-slots.json 또는 호출부를 확인하세요.`);
+}
+const shouldRender = resolved.src.length > 0 || SHOW_EMPTY_SLOTS;
 ---
-<figure class:list={['br-image-slot', `br-image-slot--${ratio}`]} data-slot={id}>
-  {src ? (
-    <img src={src} alt={alt} loading="lazy" />
-  ) : (
-    <div class="br-image-slot__empty">
-      <span aria-hidden="true">{label}</span>
-    </div>
-  )}
-</figure>
+{shouldRender && (
+  <figure
+    class:list={['br-image-slot', `br-image-slot--${ratio}`]}
+    data-slot={id}
+    data-slot-state={resolved.src ? 'filled' : 'empty'}
+  >
+    {resolved.src ? (
+      <img src={resolved.src} alt={resolved.alt} loading="lazy" />
+    ) : (
+      <div class="br-image-slot__empty">
+        <span aria-hidden="true">{label}</span>
+      </div>
+    )}
+  </figure>
+)}
 
 <style>
   .br-image-slot {

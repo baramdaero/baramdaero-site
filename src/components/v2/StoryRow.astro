@@ -1,5 +1,6 @@
 ---
 import ImageSlot from './ImageSlot.astro';
+import { isImageSlotVisible } from '../../lib/image-slots.ts';
 
 interface Props {
   slotId: string;
@@ -9,6 +10,8 @@ interface Props {
   ratio?: 'wide' | 'card' | 'square';
   imageSide?: 'left' | 'right';
   tone?: 'light' | 'deep';
+  /** named visual 슬롯을 쓸 때 부모가 실제 표시 여부를 알려준다. */
+  hasVisual?: boolean;
 }
 
 const {
@@ -19,20 +22,32 @@ const {
   ratio = 'wide',
   imageSide = 'left',
   tone = 'light',
+  hasVisual,
 } = Astro.props;
 const hasCustomVisual = Astro.slots.has('visual');
+const renderVisual = hasCustomVisual ? (hasVisual ?? true) : isImageSlotVisible(slotId, image);
 ---
-<div class:list={['br-story-row', `br-story-row--image-${imageSide}`, `br-story-row--${tone}`]} data-image-side={imageSide}>
+<div
+  class:list={[
+    'br-story-row',
+    `br-story-row--image-${imageSide}`,
+    `br-story-row--${tone}`,
+    { 'br-story-row--copy-only': !renderVisual },
+  ]}
+  data-image-side={renderVisual ? imageSide : undefined}
+>
   <div class="br-story-row__copy">
     <slot />
   </div>
-  <div class="br-story-row__visual br-reveal">
-    {hasCustomVisual ? (
-      <slot name="visual" />
-    ) : (
-      <ImageSlot id={slotId} src={image} alt={imageAlt} label={slotLabel} ratio={ratio} />
-    )}
-  </div>
+  {renderVisual && (
+    <div class="br-story-row__visual br-reveal">
+      {hasCustomVisual ? (
+        <slot name="visual" />
+      ) : (
+        <ImageSlot id={slotId} src={image} alt={imageAlt} label={slotLabel} ratio={ratio} />
+      )}
+    </div>
+  )}
 </div>
 
 <style>
@@ -44,6 +59,7 @@ const hasCustomVisual = Astro.slots.has('visual');
   }
 
   .br-story-row__copy { max-width: 520px; }
+  .br-story-row--copy-only .br-story-row__copy { max-width: 760px; }
   .br-story-row__visual { order: -1; width: 100%; }
   .br-story-row__visual :global(.br-image-slot) { margin-inline: auto; }
 
@@ -69,5 +85,8 @@ const hasCustomVisual = Astro.slots.has('visual');
     .br-story-row--image-right .br-story-row__visual { order: 2; }
     .br-story-row--image-left .br-story-row__visual { order: 1; }
     .br-story-row--image-left .br-story-row__copy { order: 2; }
+
+    .br-story-row--copy-only { grid-template-columns: minmax(0, 1fr); }
+    .br-story-row--copy-only .br-story-row__copy { order: 1; }
   }
 </style>

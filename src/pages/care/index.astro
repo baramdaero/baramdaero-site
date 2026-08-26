@@ -11,13 +11,19 @@ import { SITE_CONFIG } from '../../config.js';
 import { loadPricing } from '../../lib/pricing.ts';
 import { loadFaq } from '../../lib/faq.ts';
 import { loadStandards } from '../../lib/standards.ts';
+import { isImageSlotVisible } from '../../lib/image-slots.ts';
 
 const pricing = loadPricing();
 const standards = loadStandards();
 const { prices, conditions, process, processIntro, processSource, symptoms, seasons } = pricing;
-const visibleSymptoms = symptoms.filter((s) => s.icon !== 'drip').slice(0, 3);
-const visibleSeasons = seasons.slice(0, 3);
+const visibleSymptoms = symptoms.filter((s) => !s.hidden);
+const visibleSeasons = seasons
+  .map((season, index) => ({ ...season, slotId: `care-season-${String(index + 1).padStart(2, '0')}` }))
+  .filter((season) => !season.hidden);
 const processPairs = Array.from({ length: Math.ceil(process.length / 2) }, (_, i) => process.slice(i * 2, i * 2 + 2));
+const processImageCount = (pair: typeof process) => pair.filter((step) => (
+  isImageSlotVisible(`care-process-${String(step.step).padStart(2, '0')}`, step.image)
+)).length;
 
 const headline = pricing.headline || '세척·유지관리';
 const intro = pricing.intro;
@@ -33,6 +39,7 @@ const symptomSlot = (icon: string, index: number) => ({
   smell: 'care-symptom-smell',
   wind: 'care-symptom-airflow',
   stain: 'care-symptom-outlet',
+  drip: 'care-symptom-drip',
 }[icon] ?? `care-symptom-${String(index + 1).padStart(2, '0')}`);
 
 /* ---------- JSON-LD (v1과 동일 유지) ---------- */
@@ -129,9 +136,10 @@ if (careFaq.length) {
               slotId={`care-process-${String(i * 2 + 1).padStart(2, '0')}`}
               imageSide={i % 2 === 0 ? 'left' : 'right'}
               tone={i === 2 ? 'deep' : 'light'}
+              hasVisual={processImageCount(pair) > 0}
             >
               <Fragment slot="visual">
-                <div class="care-process__visual-grid">
+                <div class:list={['care-process__visual-grid', { 'care-process__visual-grid--single': processImageCount(pair) === 1 }]}>
                   {pair.map((st) => {
                     const slotId = `care-process-${String(st.step).padStart(2, '0')}`;
                     return (
@@ -222,16 +230,13 @@ if (careFaq.length) {
           <span class="br-eyebrow br-reveal">정기 관리</span>
           <h2 class="br-h br-reveal">언제 하는 게 좋은가</h2>
           <div class="care-seasons__grid">
-            {visibleSeasons.map((s, i) => {
-              const slotId = `care-season-${String(i + 1).padStart(2, '0')}`;
-              return (
-                <article class="care-seasons__card br-reveal">
-                  <ImageSlot id={slotId} label={slotId} ratio="card" />
-                  <h3>{s.season}</h3>
-                  <p>{s.body}</p>
-                </article>
-              );
-            })}
+            {visibleSeasons.map((s) => (
+              <article class="care-seasons__card br-reveal">
+                <ImageSlot id={s.slotId} label={s.slotId} ratio="card" />
+                <h3>{s.season}</h3>
+                <p>{s.body}</p>
+              </article>
+            ))}
           </div>
         </div>
       )}
@@ -304,6 +309,7 @@ if (careFaq.length) {
   .care-process__story--deep { background: var(--br-teal-deep); }
   .care-process__story--deep .care-process__steps h3 { color: var(--br-ice); }
   .care-process__visual-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .care-process__visual-grid--single { grid-template-columns: minmax(0, 1fr); }
   .care-process__visual-grid :global(.br-image-slot) { max-width: none; }
   .care-process__steps { margin-top: 28px; list-style: none; display: grid; gap: 18px; }
   .care-process__steps li { display: grid; grid-template-columns: 40px 1fr; gap: 14px; }
@@ -349,7 +355,7 @@ if (careFaq.length) {
 
   @media (min-width: 768px) {
     .care-symptoms__grid,
-    .care-seasons__grid { grid-template-columns: repeat(3, 1fr); }
+    .care-seasons__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 
   @media (max-width: 520px) {
