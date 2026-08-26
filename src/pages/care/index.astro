@@ -125,8 +125,7 @@ if (careFaq.length) {
   {process.length > 0 && (
     <section class="bd-section care-process care-process--mist" data-layout-section="care-process">
       <div class="bd-container">
-        <span class="br-eyebrow br-reveal">분해세척 절차</span>
-        <h2 class="br-h br-reveal">뜯고, 씻고,<br />기록으로 남깁니다</h2>
+        <h2 class="br-h br-reveal">분해세척 6단계</h2>
         {processIntro.length > 0 && (
           <p class="br-body br-reveal">
             {processIntro.map((line, j) => <Fragment>{j > 0 && <br />}{line}</Fragment>)}
@@ -200,7 +199,7 @@ if (careFaq.length) {
       {visibleSeasons.length > 0 && (
         <div class="care-seasons" data-layout-section="care-seasons">
           <span class="br-eyebrow br-reveal">정기 관리</span>
-          <h2 class="br-h br-reveal">언제 하는 게 좋은가</h2>
+          <h2 class="br-h br-reveal">세척 시기</h2>
           <div class="care-seasons__grid">
             {visibleSeasons.map((s) => (
               <article class="care-seasons__card br-reveal">
@@ -215,8 +214,7 @@ if (careFaq.length) {
 
       {careFaq.length > 0 && (
         <div class="care-faq" data-layout-section="care-faq">
-          <span class="br-eyebrow br-reveal">자주 묻는 질문</span>
-          <h2 class="br-h br-reveal">묻기 전에<br />먼저 답해 둡니다</h2>
+          <h2 class="br-h br-reveal">자주 묻는 질문</h2>
           <div class="care-faq__list br-reveal">
             {careFaq.map((f, i) => (
               <details class="care-faq__item" open={i === 0}>

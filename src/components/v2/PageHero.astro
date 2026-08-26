@@ -3,16 +3,19 @@
 // eyebrow는 히어로 맨 위에 붙는 '페이지 라벨'이다. 알약 배지(.br-eyebrow)를 쓰지 않는다 —
 // 배지는 장식으로 읽히고, 이 자리는 메뉴·대제목 층위라서 제목 체계에 속해야 한다 (08-25 판정).
 interface Props {
-  eyebrow: string;
+  /** 비우면 라벨 행이 통째로 빠진다 — 제목이 이미 분류를 말하는 면(/faq/)에서 쓴다 */
+  eyebrow?: string;
   /** 페이지 정체를 라벨이 맡는 면(서비스 2면)에서 크게 — /install/ /care/ */
   lead?: boolean;
 }
-const { eyebrow, lead = false } = Astro.props;
+const { eyebrow = '', lead = false } = Astro.props;
 ---
 <section class="v2-phero">
-  <div class="bd-container v2-phero__label">
-    <span class:list={['br-eyebrow', lead && 'br-eyebrow--lead']}>{eyebrow}</span>
-  </div>
+  {eyebrow && (
+    <div class="bd-container v2-phero__label">
+      <span class:list={['br-eyebrow', lead && 'br-eyebrow--lead']}>{eyebrow}</span>
+    </div>
+  )}
   <div class="bd-container v2-phero__inner">
     <h1 class="br-h v2-phero__title br-reveal"><slot /></h1>
     <p class="v2-phero__sub br-reveal"><slot name="sub" /></p>
@@ -39,11 +42,12 @@ const { eyebrow, lead = false } = Astro.props;
   .v2-phero__inner {
     width: 100%;
     flex: 1;
+    padding-top: 76px; /* 라벨 없는 면(/faq/) 기준 — 라벨이 있으면 아래에서 덮어쓴다 */
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding-top: 44px;
   }
+  .v2-phero__label + .v2-phero__inner { padding-top: 44px; }
   .v2-phero__title { color: #fff; margin-top: 0; }
   .v2-phero__sub { margin-top: 18px; font-size: 16px; line-height: 1.7; color: rgba(255, 255, 255, 0.82); max-width: 560px; }
   .v2-phero__sub:empty, .v2-phero__extra:empty { display: none; }
@@ -51,7 +55,8 @@ const { eyebrow, lead = false } = Astro.props;
 
   @media (min-width: 768px) {
     .v2-phero__label { padding-top: 88px; }
-    .v2-phero__inner { padding-top: 56px; }
+    .v2-phero__label + .v2-phero__inner { padding-top: 56px; }
+    .v2-phero:not(:has(.v2-phero__label)) .v2-phero__inner { padding-top: 88px; }
     .v2-phero__sub { font-size: 17px; }
   }
 </style>

@@ -55,8 +55,7 @@ const jsonLd: object[] = [
       {timeline.length > 0 && (
         <article class="bd-section sit-journey__story sit-journey__story--mist" data-layout-section="newhome-timeline">
           <div class="bd-container">
-            <span class="br-eyebrow br-reveal">진행 순서</span>
-            <h2 class="br-h br-reveal">언제 무엇을 정하나</h2>
+            <h2 class="br-h br-reveal">진행 순서</h2>
             <ol class="sit-journey__list">
               {timeline.map((st, i) => (
                 <li class="sit-journey__card br-reveal">
@@ -128,8 +127,7 @@ const jsonLd: object[] = [
     <div class="bd-container">
       {faq.length > 0 && (
         <div class="sit-faq" data-layout-section="newhome-faq">
-          <span class="br-eyebrow br-reveal">자주 묻는 질문</span>
-          <h2 class="br-h br-reveal">이 상황에서<br />많이 묻는 것</h2>
+          <h2 class="br-h br-reveal">자주 묻는 질문</h2>
           <div class="sit-faq__list br-reveal">
             {faq.map((f, i) => (
               <details class="sit-faq__item" id={f.id} open={i === 0}>

@@ -42,8 +42,8 @@ if (items.length) {
 }
 ---
 <Base title="자주 묻는 질문" description="비용·세척·설치·진행·사후 관리까지, 자주 받는 질문과 답변." jsonLd={jsonLd}>
-  <PageHero eyebrow="자주 묻는 질문">
-    묻기 전에<br />먼저 답해 둡니다
+  <PageHero>
+    자주 묻는 질문
   </PageHero>
 
   <section class="bd-section faq-page">
@@ -142,7 +142,8 @@ if (items.length) {
 </script>
 
 <style>
-  .faq-page .bd-container { max-width: 760px; }
+  /* 본문 너비를 히어로와 맞춘다(08-27 지시). 읽기 폭은 항목 내부에서 잡는다 */
+  .faq-page .bd-container { max-width: var(--maxw); }
 
   .faq-search { margin-bottom: 20px; }
   .faq-search__input {
