@@ -1,11 +1,15 @@
 ---
-// 서브페이지 짧은 히어로 (teal-deep, min-height 40vh) — /care/ /cases/ 공용.
+// 서브페이지 짧은 히어로 (teal-deep) — /care/ /install/ /faq/ /cases/ /situation/ 공용.
+// eyebrow는 히어로 맨 위에 붙는 '페이지 라벨'이다. 알약 배지(.br-eyebrow)를 쓰지 않는다 —
+// 배지는 장식으로 읽히고, 이 자리는 메뉴·대제목 층위라서 제목 체계에 속해야 한다 (08-25 판정).
 interface Props { eyebrow: string }
 const { eyebrow } = Astro.props;
 ---
 <section class="v2-phero">
+  <div class="bd-container v2-phero__label">
+    <span class="v2-phero__label-text">{eyebrow}</span>
+  </div>
   <div class="bd-container v2-phero__inner">
-    <span class="br-eyebrow br-reveal">{eyebrow}</span>
     <h1 class="br-h v2-phero__title br-reveal"><slot /></h1>
     <p class="v2-phero__sub br-reveal"><slot name="sub" /></p>
     <div class="v2-phero__extra br-reveal"><slot name="extra" /></div>
@@ -17,14 +21,42 @@ const { eyebrow } = Astro.props;
     background: var(--br-teal-deep);
     min-height: 40vh;
     display: flex;
-    align-items: center;
-    padding: 120px 0 72px; /* sticky 헤더 없음(overlay 아님) — 상단 여백 확보 */
+    flex-direction: column;
+    padding: 0 0 72px; /* 상단 여백은 라벨 행이 갖는다 */
     color: #fff;
   }
-  .v2-phero__inner { width: 100%; }
-  .v2-phero__title { color: #fff; }
+
+  /* 페이지 라벨 — 헤더 바로 아래 층. 헤어라인으로 제목과 갈라 놓는다 */
+  .v2-phero__label {
+    width: 100%; /* .bd-container는 width를 잡지 않는다 — 없으면 내용 폭으로 줄어 가운데 정렬된다 */
+    padding-top: 104px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  }
+  .v2-phero__label-text {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.14em; /* 한글은 대문자가 없다 — 자간으로 라벨 층위를 만든다 */
+    color: var(--br-ice);
+  }
+
+  .v2-phero__inner {
+    width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-top: 44px;
+  }
+  .v2-phero__title { color: #fff; margin-top: 0; }
   .v2-phero__sub { margin-top: 18px; font-size: 16px; line-height: 1.7; color: rgba(255, 255, 255, 0.82); max-width: 560px; }
   .v2-phero__sub:empty, .v2-phero__extra:empty { display: none; }
   .v2-phero__extra { margin-top: 28px; }
-  @media (min-width: 768px) { .v2-phero__sub { font-size: 17px; } }
+
+  @media (min-width: 768px) {
+    .v2-phero__label { padding-top: 120px; }
+    .v2-phero__inner { padding-top: 56px; }
+    .v2-phero__sub { font-size: 17px; }
+  }
 </style>
