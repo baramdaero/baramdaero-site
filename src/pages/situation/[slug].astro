@@ -50,41 +50,37 @@ const jsonLd: object[] = [
 
   {(timeline.length > 0 || prewired) && (
     <section class="sit-journey" aria-label="진행 순서">
-      {timeline.map((st, i) => (
-        <article
-          class:list={[
-            'bd-section',
-            'sit-journey__story',
-            i === 3 ? 'sit-journey__story--deep' : (i % 2 === 0 ? 'sit-journey__story--base' : 'sit-journey__story--mist'),
-          ]}
-          data-layout-section={`newhome-timeline-${i + 1}`}
-        >
+      {/* 단계마다 article을 쪼개면 눈썹이 반복되고 stage가 h2로 올라가
+          섹션 제목과 같은 층위가 된다(08-27 실측). 한 블록에 모은다. */}
+      {timeline.length > 0 && (
+        <article class="bd-section sit-journey__story sit-journey__story--mist" data-layout-section="newhome-timeline">
           <div class="bd-container">
-            <StoryRow
-              slotId={`${situation.slug}-timeline-${String(i + 1).padStart(2, '0')}`}
-              slotLabel={`${situation.slug}-timeline-${String(i + 1).padStart(2, '0')}`}
-              imageSide={i % 2 === 0 ? 'left' : 'right'}
-              tone={i === 3 ? 'deep' : 'light'}
-            >
-              <span class="br-eyebrow br-reveal">진행 순서</span>
-              <h2 class="br-h br-reveal">{i === 0 ? '언제 무엇을 정하나' : st.stage}</h2>
-              {i === 0 && <h3 class="sit-journey__stage br-reveal">{st.stage}</h3>}
-              {st.when ? (
-                <details class="sit-journey__details br-reveal">
-                  <summary>{st.when}</summary>
-                  <ul class="sit-journey__todo">{st.todo.map((item) => <li>{item}</li>)}</ul>
-                  {st.caution && <p class="sit-journey__caution">{st.caution}</p>}
-                </details>
-              ) : (
-                <Fragment>
-                  <ul class="sit-journey__todo br-reveal">{st.todo.map((item) => <li>{item}</li>)}</ul>
-                  {st.caution && <p class="sit-journey__caution br-reveal">{st.caution}</p>}
-                </Fragment>
-              )}
-            </StoryRow>
+            <span class="br-eyebrow br-reveal">진행 순서</span>
+            <h2 class="br-h br-reveal">언제 무엇을 정하나</h2>
+            <ol class="sit-journey__list">
+              {timeline.map((st, i) => (
+                <li class="sit-journey__card br-reveal">
+                  <span class="sit-journey__no">{String(i + 1).padStart(2, '0')}</span>
+                  <h3 class="sit-journey__stage">{st.stage}</h3>
+                  {/* when이 있으면 접어 둔다 — 펼쳐 두면 모바일에서 페이지가 1화면 넘게 길어진다(08-27 실측) */}
+                  {st.when ? (
+                    <details class="sit-journey__details">
+                      <summary>{st.when}</summary>
+                      <ul class="sit-journey__todo">{st.todo.map((item) => <li>{item}</li>)}</ul>
+                      {st.caution && <p class="sit-journey__caution">{st.caution}</p>}
+                    </details>
+                  ) : (
+                    <Fragment>
+                      <ul class="sit-journey__todo">{st.todo.map((item) => <li>{item}</li>)}</ul>
+                      {st.caution && <p class="sit-journey__caution">{st.caution}</p>}
+                    </Fragment>
+                  )}
+                </li>
+              ))}
+            </ol>
           </div>
         </article>
-      ))}
+      )}
 
       {prewired && (
         <article
@@ -188,6 +184,24 @@ const jsonLd: object[] = [
 </Base>
 
 <style>
+  /* 진행 순서 — 회색 섹션 위 기본색 카드 (/install/ /care/ 와 같은 패턴) */
+  .sit-journey__list { margin-top: 48px; list-style: none; display: grid; gap: 16px; }
+  .sit-journey__card {
+    background: var(--br-base);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    border: 1px solid rgba(0, 78, 100, 0.06);
+  }
+  .sit-journey__no {
+    display: block; font-size: 13px; font-weight: 700;
+    letter-spacing: 0.14em; color: var(--br-teal); opacity: 0.55;
+  }
+  .sit-journey__stage { margin-top: 6px; color: var(--br-teal); font-size: clamp(20px, 2.4vw, 26px); }
+  @media (min-width: 768px) {
+    .sit-journey__list { gap: 20px; grid-template-columns: repeat(2, 1fr); }
+    .sit-journey__card { padding: 36px 32px; }
+  }
+
   .sit-journey__story--base { background: var(--br-base); }
   .sit-journey__story--mist { background: var(--br-mist); }
   .sit-journey__story--deep { background: var(--br-teal-deep); }
