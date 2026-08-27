@@ -204,6 +204,7 @@ if (careFaq.length) {
             {visibleSeasons.map((s) => (
               <article class="care-seasons__card br-reveal">
                 <ImageSlot id={s.slotId} label={s.slotId} ratio="card" />
+                {s.months && <span class="care-seasons__months">{s.months}</span>}
                 <h3>{s.season}</h3>
                 <p>{s.body}</p>
               </article>
@@ -277,7 +278,17 @@ if (careFaq.length) {
   .care-symptoms__card :global(.br-image-slot),
   .care-seasons__card :global(.br-image-slot) { max-width: none; margin-bottom: 20px; }
   .care-symptoms__card h3,
-  .care-seasons__card h3 { color: var(--br-teal); font-size: 17px; }
+  /* 월 범위 — 제목 위 작은 표기. 비면 이 줄만 빠진다 */
+  .care-seasons__months {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    font-variant-numeric: tabular-nums;
+    color: var(--br-teal);
+    opacity: 0.6;
+  }
+  .care-seasons__card h3 { margin-top: 4px; color: var(--br-teal); font-size: 17px; }
   .care-symptoms__card p,
   .care-seasons__card p { margin-top: 8px; color: var(--br-ink); font-size: 14px; line-height: 1.65; }
 
