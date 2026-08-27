@@ -1,5 +1,9 @@
 ---
-import { resolveImageSlot, SHOW_EMPTY_SLOTS } from '../../lib/image-slots.ts';
+// 이미지 슬롯 — 사진이 없어도 자리를 잡는다(2026-08-27).
+// 빈 상태를 디버그 회색 박스가 아니라 설계된 면으로 만든다: 헤어라인 + 라인 아이콘 +
+// 「사진 준비 중」 + 모서리에 넣어야 할 파일명. 파일명을 띄우는 이유는 촬영분이 오면
+// public/media/ 에 그 이름으로 떨어뜨리기만 하면 되게 하려는 것이다(JSON 수정 불필요).
+import { resolveImageSlot } from '../../lib/image-slots.ts';
 
 interface Props {
   id: string;
@@ -9,71 +13,72 @@ interface Props {
   ratio?: 'wide' | 'card' | 'square';
 }
 
-const {
-  id,
-  src = '',
-  alt = '',
-  label = id,
-  ratio = 'wide',
-} = Astro.props;
-
+const { id, src = '', alt = '', label = id, ratio = 'wide' } = Astro.props;
 const resolved = resolveImageSlot(id, src, alt);
-if (resolved.src && !resolved.alt) {
-  throw new Error(`[ImageSlot 오류] "${id}"에 src가 있지만 alt가 비어 있습니다. image-slots.json 또는 호출부를 확인하세요.`);
-}
-const shouldRender = resolved.src.length > 0 || SHOW_EMPTY_SLOTS;
 ---
-{shouldRender && (
-  <figure
-    class:list={['br-image-slot', `br-image-slot--${ratio}`]}
-    data-slot={id}
-    data-slot-state={resolved.src ? 'filled' : 'empty'}
-  >
-    {resolved.src ? (
-      <img src={resolved.src} alt={resolved.alt} loading="lazy" />
-    ) : (
-      <div class="br-image-slot__empty">
-        <span aria-hidden="true">{label}</span>
-      </div>
-    )}
-  </figure>
-)}
+<figure
+  class:list={['br-image-slot', `br-image-slot--${ratio}`]}
+  data-slot={id}
+  data-slot-state={resolved.src ? 'filled' : 'empty'}
+>
+  {resolved.src ? (
+    <img src={resolved.src} alt={resolved.alt} loading="lazy" />
+  ) : (
+    <div class="br-image-slot__empty">
+      <svg class="br-image-slot__icon" width="26" height="26" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <circle cx="8.5" cy="10" r="1.5" />
+        <path d="M21 16l-5-5-4.5 4.5" />
+        <path d="M3 18l4-4 2.5 2.5" />
+      </svg>
+      <span class="br-image-slot__caption">사진 준비 중</span>
+      <span class="br-image-slot__mark">{label}.jpg</span>
+    </div>
+  )}
+</figure>
 
 <style>
   .br-image-slot {
     width: 100%;
-    max-width: 640px;
     margin: 0;
     overflow: hidden;
-    border: 1px solid var(--br-teal);
     border-radius: var(--radius);
-    background: var(--br-mist);
+    /* 밝은 면 기준. 어두운 섹션은 global.css 의 변수 오버라이드가 덮는다 */
+    border: 1px solid var(--br-slot-line, rgba(0, 78, 100, 0.14));
+    background: var(--br-slot-bg, rgba(0, 78, 100, 0.035));
   }
 
   .br-image-slot--wide { aspect-ratio: 16 / 10; }
   .br-image-slot--card { aspect-ratio: 4 / 3; }
   .br-image-slot--square { aspect-ratio: 1; }
 
-  .br-image-slot img,
+  .br-image-slot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
   .br-image-slot__empty {
+    position: relative;
     width: 100%;
     height: 100%;
-  }
-
-  .br-image-slot img { object-fit: cover; }
-
-  .br-image-slot__empty {
-    display: grid;
-    place-items: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
     padding: 20px;
-    background: var(--br-mist);
-    color: var(--br-teal);
-    text-align: center;
+    color: var(--br-slot-fg, rgba(0, 78, 100, 0.42));
   }
 
-  .br-image-slot__empty span {
-    font-size: 13px;
-    font-weight: 700;
+  .br-image-slot__icon { opacity: 0.7; }
+  .br-image-slot__caption { font-size: 13px; letter-spacing: 0.04em; }
+
+  /* 떨어뜨릴 파일명 — 모서리에 작게 */
+  .br-image-slot__mark {
+    position: absolute;
+    right: 12px;
+    bottom: 10px;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
     letter-spacing: 0.02em;
+    opacity: 0.55;
   }
 </style>

@@ -116,6 +116,9 @@ button {
 .sit-close {
   --br-eyebrow-fg: var(--br-ice);
   --br-eyebrow-line: rgba(255, 255, 255, 0.16);
+  --br-slot-line: rgba(255, 255, 255, 0.14);
+  --br-slot-bg: rgba(255, 255, 255, 0.04);
+  --br-slot-fg: rgba(255, 255, 255, 0.5);
 }
 
 /* 섹션 헤드라인 — 과감한 스케일, 의도적 줄바꿈 전제 */
