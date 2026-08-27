@@ -5,7 +5,7 @@
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import Hero from '../components/v2/Hero.astro';
-import DarkScrub from '../components/v2/DarkScrub.astro';
+// import DarkScrub from '../components/v2/DarkScrub.astro'; // 위 미노출 주석 참조
 // import Problem from '../components/v2/Problem.astro'; // 구 S2 — DarkScrub이 동일 메시지를 대체 (비포 사진 확보 후 재검토)
 import ServiceSplit from '../components/v2/ServiceSplit.astro';
 import Marquee from '../components/v2/Marquee.astro';
@@ -48,7 +48,12 @@ const cta = home.ctaBand;
 <Base headerVariant="overlay">
   <Hero />
 
-  <DarkScrub />
+  {/* 다크 스크럽 미노출 (2026-08-27) — 이 카피는 히어로 영상 자막으로 들어간다.
+      화면에 큰 글자로 또 쓰면 같은 말을 두 번 하는 셈이라 뺐다.
+      원본 카피는 src/content/site/hero-worldview.json 에 그대로 있고,
+      컴포넌트도 남아 있다. 영상이 준비되면 자막으로 옮기고, 되살리려면 아래 한 줄만 켜면 된다.
+      부수 효과: 프레임 에셋이 없어 비어 있던 420vh 스크롤 구간과 /scrub/ 404 2건이 함께 사라진다. */}
+  {/* <DarkScrub /> */}
 
   {/* 서비스 2트랙 (IA v3) — 세척·관리 트랙(정돈→기록) / 설치 트랙(설계).
       리드 문장이 다크 구간의 착지점을 받아 3카드로 나눈다 */}
