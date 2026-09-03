@@ -458,7 +458,7 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     const el = document.createElement('div');
     el.className = 'chat__msg chat__msg--bot chat__typing';
     el.setAttribute('aria-hidden', 'true');
-    el.innerHTML = '<span></span><span></span><span></span><span></span>';
+    el.innerHTML = '<span></span><span></span><span></span><span></span><span></span>';
     log.appendChild(el);
     scrollDown();
     await delay(800); /* 2026-09-03: 스퀘어 펄스가 한 번 수축·복귀하는 길이(200ms는 보이기 전에 사라짐) */
@@ -1138,28 +1138,39 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     border-bottom-right-radius: 4px;
   }
 
-  /* 타이핑 인디케이터 — 2×2 스퀘어 펄스 (2026-09-03, React/framer-motion 원본을 CSS로 이식)
-     원본: 16px 정사각·gap 6px, scale 1→.5→1 · opacity 1→.3→1, 1.5s 무한, i*0.2s 지연, easeInOut.
-     말풍선 안에 맞게 10px·gap 4px로 비례 축소. 색은 zinc-800 대신 팔레트 teal. */
+  /* 타이핑 인디케이터 — 회전 꼬리 점(TrailingDots) (2026-09-03, React/framer-motion 원본을 CSS로 이식)
+     원본: 40px 박스, 점 5개(8px)가 상단 중앙에서 각각 360° 회전(1.5s 무한, i*0.1s 지연, easeInOut), opacity 1-i*0.2.
+     말풍선 한 줄 높이에 맞게 28px·점 6px로 비례 축소. 명시 width/height — 이전(그리드)은 높이가 잡히지 않아 말풍선 밖으로 샜다. */
   .chat__typing {
-    display: grid;
-    grid-template-columns: repeat(2, 10px);
-    gap: 4px;
+    position: relative;
+    box-sizing: content-box; /* 전역 border-box라 padding이 28px 안으로 먹힘 — 말풍선 여백 유지 */
+    width: 28px;
+    height: 28px;
     min-height: 0;
   }
   .chat__typing span {
-    width: 10px;
-    height: 10px;
-    border-radius: 2px;
-    background: var(--br-teal);
+    position: absolute;
+    inset: 10px 14px; /* = .chat__msg padding. inset:0 은 padding 박스 기준이라 점이 말풍선 테두리에 걸쳤다 */
     animation: chat-typing 1.5s ease-in-out infinite;
   }
-  .chat__typing span:nth-child(2) { animation-delay: 0.2s; }
-  .chat__typing span:nth-child(3) { animation-delay: 0.4s; }
-  .chat__typing span:nth-child(4) { animation-delay: 0.6s; }
+  .chat__typing span::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    margin-left: -3px;
+    border-radius: 50%;
+    background: var(--br-teal);
+  }
+  .chat__typing span:nth-child(1)::before { background: var(--br-teal-deep); }
+  .chat__typing span:nth-child(2) { animation-delay: 0.1s; opacity: 0.8; }
+  .chat__typing span:nth-child(3) { animation-delay: 0.2s; opacity: 0.6; }
+  .chat__typing span:nth-child(4) { animation-delay: 0.3s; opacity: 0.4; }
+  .chat__typing span:nth-child(5) { animation-delay: 0.4s; opacity: 0.2; }
   @keyframes chat-typing {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(0.5); opacity: 0.3; }
+    to { transform: rotate(360deg); }
   }
 
   /* FAQ 구분 라벨 — 실버 마이크로라벨 */
