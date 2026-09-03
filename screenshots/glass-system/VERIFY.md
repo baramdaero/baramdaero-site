@@ -39,4 +39,4 @@
 ## 회귀
 챗봇 진입점 5·패널 열림 ✓ · 4xx/5xx 0 · overflow 0 · dist 규칙(사진0·무상0·기간0·최상급0·공포0·보증1 기존) · 카피 JSON diff 0.
 
-캡처: gl-home-1440 · gl-home-390 · gl-header-scrolled(히어로 영상 위 Heavy) · gl-fallback(투명도 최소화)
+캡처: gl-home-1440 · gl-home-390 · gl-header-hero(히어로 영상 위 Heavy) · gl-header-section(섹션 위 Heavy) · gl-fallback(투명도 최소화)
