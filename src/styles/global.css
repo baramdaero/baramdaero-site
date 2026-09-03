@@ -247,6 +247,8 @@ html.br-js .br-reveal.br-in { opacity: 1; transform: translateY(0); }
    등급은 커스텀 프로퍼티로 정의하고, 클래스와 컴포넌트가 그 값을 소비한다.
    ⚠️ 규칙
    - 본문이 올라가는 표면은 불투명도 70% 이상 (heavy 82 / medium 70). light(55)는 짧은 라벨 전용
+   - 다크 섹션(teal-deep 등) 위 유리는 **Heavy를 기본값**으로 한다. Medium은 밝은 배경 위에서만 —
+     Medium(70%)이 딥틸 위에 오면 표면이 173,187,194로 내려앉아 teal 제목 대비 4.69(턱걸이)·회청색으로 탁해진다(1차 실측)
    - 유리 위에 유리를 얹지 않는다 — blur 비용이 곱으로 는다 (검증 스크립트가 중첩 0을 센다)
    - opacity로 흐리게 하지 않는다 — .br-reveal이 opacity를 소유해 덮어쓴다. 배경 알파(color-mix)로만
    - 미지원·투명도 최소화 환경은 불투명 폴백 (아래 @supports / @media)
@@ -275,6 +277,8 @@ html.br-js .br-reveal.br-in { opacity: 1; transform: translateY(0); }
 .br-glass--heavy  { background: var(--glass-heavy-bg);  -webkit-backdrop-filter: var(--glass-heavy-fx);  backdrop-filter: var(--glass-heavy-fx); }
 .br-glass--medium { background: var(--glass-medium-bg); -webkit-backdrop-filter: var(--glass-medium-fx); backdrop-filter: var(--glass-medium-fx); }
 .br-glass--light  { background: var(--glass-light-bg);  -webkit-backdrop-filter: var(--glass-light-fx);  backdrop-filter: var(--glass-light-fx); }
+/* Dark 테두리는 스펙(ink 8%)에서 의도적으로 이탈해 white 10%를 쓴다 —
+   ink 8%는 딥틸 위에서 사실상 보이지 않아 테두리가 없는 것과 같다. 유일한 스펙 이탈. */
 .br-glass--dark {
   background: var(--glass-dark-bg);
   -webkit-backdrop-filter: var(--glass-dark-fx);
@@ -312,7 +316,7 @@ html.br-js .br-reveal.br-in { opacity: 1; transform: translateY(0); }
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(55% 45% at 12% 18%, color-mix(in srgb, var(--br-ice) 42%, transparent), transparent 70%),
+    radial-gradient(55% 45% at 12% 18%, color-mix(in srgb, var(--br-ice) 30%, transparent), transparent 70%),
     radial-gradient(45% 40% at 88% 32%, color-mix(in srgb, var(--br-teal) 9%, transparent), transparent 70%),
     radial-gradient(60% 50% at 50% 96%, color-mix(in srgb, var(--br-mist) 75%, transparent), transparent 70%);
 }
