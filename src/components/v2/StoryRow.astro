@@ -12,6 +12,8 @@ interface Props {
   tone?: 'light' | 'deep';
   /** named visual 슬롯을 쓸 때 부모가 실제 표시 여부를 알려준다. */
   hasVisual?: boolean;
+  /** 카피 블록을 Medium 유리 카드로. 호스트 섹션은 배경을 투명으로 둘 것(앰비언트가 비쳐야 유리로 읽힌다) */
+  glass?: boolean;
 }
 
 const {
@@ -23,6 +25,7 @@ const {
   imageSide = 'left',
   tone = 'light',
   hasVisual,
+  glass = false,
 } = Astro.props;
 const hasCustomVisual = Astro.slots.has('visual');
 const renderVisual = hasCustomVisual ? (hasVisual ?? true) : isImageSlotVisible(slotId, image);
@@ -36,7 +39,7 @@ const renderVisual = hasCustomVisual ? (hasVisual ?? true) : isImageSlotVisible(
   ]}
   data-image-side={renderVisual ? imageSide : undefined}
 >
-  <div class="br-story-row__copy">
+  <div class:list={['br-story-row__copy', glass && ['br-glass', 'br-glass--medium', 'br-story-row__copy--glass']]}>
     <slot />
   </div>
   {renderVisual && (
@@ -60,6 +63,9 @@ const renderVisual = hasCustomVisual ? (hasVisual ?? true) : isImageSlotVisible(
 
   .br-story-row__copy { max-width: 520px; }
   .br-story-row--copy-only .br-story-row__copy { max-width: 760px; }
+  /* 유리 카드일 땐 그리드 칸을 채운다 (홈 서비스 카드 .v2-svc__txt 와 같은 패딩) */
+  .br-story-row__copy--glass { max-width: none; padding: 32px 28px; }
+  .br-story-row--copy-only .br-story-row__copy--glass { max-width: 760px; }
   .br-story-row__visual { order: -1; width: 100%; }
   .br-story-row__visual :global(.br-image-slot) { margin-inline: auto; }
 
@@ -78,6 +84,7 @@ const renderVisual = hasCustomVisual ? (hasVisual ?? true) : isImageSlotVisible(
 
   @media (min-width: 768px) {
     .br-story-row { gap: 64px; }
+    .br-story-row__copy--glass { padding: 40px 36px; }
     .br-story-row--image-right { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); }
     .br-story-row--image-left { grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); }
 

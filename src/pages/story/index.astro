@@ -15,6 +15,7 @@ const breadcrumb = {
 <Base title="브랜드이야기" description="바람대로라는 이름의 뜻과, 우리가 일하는 방식." jsonLd={breadcrumb}>
   <section class="bd-section story">
     <div class="bd-container">
+      <div class="story__card br-glass br-glass--medium">
       <p class="bd-microlabel">Story</p>
       <h1 class="story__headline">당신의 바람대로.</h1>
 
@@ -33,12 +34,16 @@ const breadcrumb = {
 
         <p class="story__cta"><a class="bd-btn-ghost" href="/cases/">시공사례 보기</a></p>
       </div>
+      </div>
     </div>
   </section>
 </Base>
 
 <style>
+  .story { background: transparent; } /* 유리 카드 호스트 */
   .story .bd-container { max-width: 680px; }
+  .story__card { padding: 32px 28px; }
+  @media (min-width: 768px) { .story__card { padding: 48px 44px; } }
   .story__headline {
     font-size: clamp(30px, 4.6vw, 46px);
     margin: 14px 0 40px;
