@@ -314,6 +314,23 @@ html.br-js .br-reveal.br-in { opacity: 1; transform: translateY(0); }
 }
 .br-glass--dark::before { background: var(--glass-ring-on-dark); }
 
+/* ── Specular 림 (React Bits SpecularButton 이식, 2026-09-03) ────────────────
+   scripts/specular.ts 가 [data-specular] 에 --sb-angle·--sb-bright 를 갱신. 빛 방향 양쪽(0°·180°) 모서리에
+   --sb-line 색 줄무늬(shineSize 10° + fade 40°). 기본 ice, 밴드 버튼은 #fff. 원본의 baseColor 스트로크는 각 버튼의 border 가 맡는다. */
+.br-specular { --sb-angle: 45deg; --sb-bright: 0; --sb-line: var(--br-ice); } /* position 은 각 버튼이 갖는다 — 런처는 fixed 라 여기서 relative 를 주면 덮어쓴다(챗봇 스타일은 전역·동일 특이도) */
+.br-specular::after {
+  content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: conic-gradient(from calc(var(--sb-angle) - 50deg),
+    transparent 0deg, var(--sb-line) 50deg, transparent 100deg,
+    transparent 180deg, var(--sb-line) 230deg, transparent 280deg, transparent 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: var(--sb-bright);
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--sb-line) 70%, transparent));
+}
+
 /* ── 엣지 글로우 (React Bits BorderGlow 이식, 2026-09-03) ──────────────────
    [data-glow] 카드에 scripts/border-glow.ts 가 레이어 2장을 넣고 --edge-proximity(0~100)·--cursor-angle 을 갱신한다.
    ① __border: 커서 쪽 테두리만 팔레트 메시(ice·white·teal)로 물든다 — 링 마스크 ∩ 원뿔 마스크
