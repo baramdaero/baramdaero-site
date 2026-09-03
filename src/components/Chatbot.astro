@@ -458,7 +458,7 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     const el = document.createElement('div');
     el.className = 'chat__msg chat__msg--bot chat__typing';
     el.setAttribute('aria-hidden', 'true');
-    el.innerHTML = '<span></span><span></span><span></span>';
+    el.innerHTML = '<span></span><span></span><span></span><span></span>';
     log.appendChild(el);
     scrollDown();
     await delay(200);
@@ -1129,20 +1129,28 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     border-bottom-right-radius: 4px;
   }
 
-  /* 타이핑 인디케이터 */
-  .chat__typing { display: inline-flex; gap: 4px; align-items: center; min-height: 20px; }
-  .chat__typing span {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--ink-soft);
-    animation: chat-typing 900ms ease-in-out infinite;
+  /* 타이핑 인디케이터 — 2×2 스퀘어 펄스 (2026-09-03, React/framer-motion 원본을 CSS로 이식)
+     원본: 16px 정사각·gap 6px, scale 1→.5→1 · opacity 1→.3→1, 1.5s 무한, i*0.2s 지연, easeInOut.
+     말풍선 안에 맞게 10px·gap 4px로 비례 축소. 색은 zinc-800 대신 팔레트 teal. */
+  .chat__typing {
+    display: grid;
+    grid-template-columns: repeat(2, 10px);
+    gap: 4px;
+    min-height: 0;
   }
-  .chat__typing span:nth-child(2) { animation-delay: 150ms; }
-  .chat__typing span:nth-child(3) { animation-delay: 300ms; }
+  .chat__typing span {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    background: var(--br-teal);
+    animation: chat-typing 1.5s ease-in-out infinite;
+  }
+  .chat__typing span:nth-child(2) { animation-delay: 0.2s; }
+  .chat__typing span:nth-child(3) { animation-delay: 0.4s; }
+  .chat__typing span:nth-child(4) { animation-delay: 0.6s; }
   @keyframes chat-typing {
-    0%, 60%, 100% { opacity: 0.35; transform: translateY(0); }
-    30% { opacity: 1; transform: translateY(-2px); }
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(0.5); opacity: 0.3; }
   }
 
   /* FAQ 구분 라벨 — 실버 마이크로라벨 */
