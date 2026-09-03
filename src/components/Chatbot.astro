@@ -458,7 +458,7 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     const el = document.createElement('div');
     el.className = 'chat__msg chat__msg--bot chat__typing';
     el.setAttribute('aria-hidden', 'true');
-    el.innerHTML = '<span></span><span></span><span></span>';
+    el.innerHTML = '<span></span><span></span><span></span><span></span>';
     log.appendChild(el);
     scrollDown();
     await delay(200);
@@ -1110,32 +1110,47 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
     @starting-style { opacity: 0; transform: translateY(6px); }
   }
+  /* 말풍선 유리(2026-09-03): 패널이 이미 Heavy blur라 말풍선엔 backdrop-filter를 다시 걸지 않는다(유리 중첩 금지).
+     반투명 면 + 백색 림 + 상단 하이라이트만으로 패널의 블러가 비쳐 유리로 읽힌다. 알파는 본문 하한 70% 준수. */
   .chat__msg--bot {
     align-self: flex-start;
-    background: #f4f3f3;
+    background: color-mix(in srgb, #fff 72%, transparent);
+    border: 1px solid var(--glass-line);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 90%, transparent), 0 6px 18px color-mix(in srgb, var(--br-teal) 8%, transparent);
     border-bottom-left-radius: 4px;
   }
   .chat__msg--user {
     align-self: flex-end;
-    background: var(--copper);
+    /* 흰 글자 AA(4.5) 확보 위해 Dark 등급(68%)보다 진한 86% — 밝은 히어로/패널 위 최악 케이스 실측 */
+    background: color-mix(in srgb, var(--br-teal-deep) 86%, transparent);
     color: #fff;
+    border: 1px solid var(--glass-line-on-dark);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 22%, transparent), 0 6px 18px color-mix(in srgb, var(--br-teal-deep) 24%, transparent);
     border-bottom-right-radius: 4px;
   }
 
-  /* 타이핑 인디케이터 */
-  .chat__typing { display: inline-flex; gap: 4px; align-items: center; min-height: 20px; }
-  .chat__typing span {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--ink-soft);
-    animation: chat-typing 900ms ease-in-out infinite;
+  /* 타이핑 인디케이터 — 2×2 스퀘어 펄스 (2026-09-03, React/framer-motion 원본을 CSS로 이식)
+     원본: 16px 정사각·gap 6px, scale 1→.5→1 · opacity 1→.3→1, 1.5s 무한, i*0.2s 지연, easeInOut.
+     말풍선 안에 맞게 10px·gap 4px로 비례 축소. 색은 zinc-800 대신 팔레트 teal. */
+  .chat__typing {
+    display: grid;
+    grid-template-columns: repeat(2, 10px);
+    gap: 4px;
+    min-height: 0;
   }
-  .chat__typing span:nth-child(2) { animation-delay: 150ms; }
-  .chat__typing span:nth-child(3) { animation-delay: 300ms; }
+  .chat__typing span {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    background: var(--br-teal);
+    animation: chat-typing 1.5s ease-in-out infinite;
+  }
+  .chat__typing span:nth-child(2) { animation-delay: 0.2s; }
+  .chat__typing span:nth-child(3) { animation-delay: 0.4s; }
+  .chat__typing span:nth-child(4) { animation-delay: 0.6s; }
   @keyframes chat-typing {
-    0%, 60%, 100% { opacity: 0.35; transform: translateY(0); }
-    30% { opacity: 1; transform: translateY(-2px); }
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(0.5); opacity: 0.3; }
   }
 
   /* FAQ 구분 라벨 — 실버 마이크로라벨 */
