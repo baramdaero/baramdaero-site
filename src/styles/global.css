@@ -270,8 +270,12 @@ html.br-js .br-reveal.br-in { opacity: 1; transform: translateY(0); }
   --glass-line-on-dark: color-mix(in srgb, #fff 18%, transparent);
   /* 2차(2026-08-28) 강도 상향: 알파는 본문 하한(70%) 위에서만 낮추고, 블러·채도·상단 하이라이트로 유리감을 올린다.
      inset 1px 백색 하이라이트가 글래스모피즘의 '두께' 신호다 — opacity가 아니라 그림자로 넣는다 */
-  --glass-shadow: inset 0 1px 0 color-mix(in srgb, #fff 85%, transparent), inset 0 0 0 1px color-mix(in srgb, #fff 18%, transparent), 0 18px 50px color-mix(in srgb, var(--br-teal) 14%, transparent);
-  --glass-shadow-dark: inset 0 1px 0 color-mix(in srgb, #fff 16%, transparent), 0 18px 50px color-mix(in srgb, var(--br-teal-deep) 40%, transparent);
+  /* 4차(2026-09-03) 방향광: 좌상단에서 빛이 온다. 위·왼쪽 모서리는 희게, 아래·오른쪽은 teal로 어두워지고 그림자도 teal로 물든다
+     (uiverse 계열 소프트 UI의 문법을 유리에 얹음 — 균일한 1px 백색 림은 '반투명'은 되지만 '만져지는 면'이 안 됐다) */
+  --glass-ring: linear-gradient(135deg, color-mix(in srgb, #fff 96%, transparent) 0%, color-mix(in srgb, #fff 40%, transparent) 48%, color-mix(in srgb, var(--br-teal) 34%, transparent) 100%);
+  --glass-ring-on-dark: linear-gradient(135deg, color-mix(in srgb, #fff 55%, transparent) 0%, color-mix(in srgb, #fff 12%, transparent) 50%, color-mix(in srgb, var(--br-teal-deep) 80%, transparent) 100%);
+  --glass-shadow: inset 0 1px 0 color-mix(in srgb, #fff 90%, transparent), inset 0 -1px 0 color-mix(in srgb, var(--br-teal) 10%, transparent), 6px 8px 22px color-mix(in srgb, var(--br-teal) 12%, transparent), 0 24px 56px color-mix(in srgb, var(--br-teal) 16%, transparent);
+  --glass-shadow-dark: inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent), 6px 8px 22px color-mix(in srgb, var(--br-teal-deep) 30%, transparent), 0 24px 56px color-mix(in srgb, var(--br-teal-deep) 40%, transparent);
 
   --glass-heavy-bg:   color-mix(in srgb, var(--br-base) 74%, transparent);
   --glass-heavy-fx:   blur(36px) saturate(140%);
@@ -285,10 +289,26 @@ html.br-js .br-reveal.br-in { opacity: 1; transform: translateY(0); }
 }
 
 .br-glass {
-  border: 1px solid var(--glass-line);
+  position: relative; /* 링 pseudo 기준 */
+  border: 1px solid transparent; /* 링은 ::before 가 그린다 — 폭 유지용 투명 보더 */
   border-radius: var(--radius);
   box-shadow: var(--glass-shadow);
 }
+/* 2톤 링: 그라디언트 보더는 radius를 못 타서(border-image) 마스크로 1px 링만 남긴다. 클릭 통과. */
+.br-glass::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--glass-ring);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.br-glass--dark::before { background: var(--glass-ring-on-dark); }
 .br-glass--heavy  { background: var(--glass-heavy-bg);  -webkit-backdrop-filter: var(--glass-heavy-fx);  backdrop-filter: var(--glass-heavy-fx); }
 .br-glass--medium { background: var(--glass-medium-bg); -webkit-backdrop-filter: var(--glass-medium-fx); backdrop-filter: var(--glass-medium-fx); }
 .br-glass--light  { background: var(--glass-light-bg);  -webkit-backdrop-filter: var(--glass-light-fx);  backdrop-filter: var(--glass-light-fx); }
@@ -301,7 +321,7 @@ html.br-js .br-reveal.br-in { opacity: 1; transform: translateY(0); }
   background: var(--glass-dark-bg);
   -webkit-backdrop-filter: var(--glass-dark-fx);
   backdrop-filter: var(--glass-dark-fx);
-  border-color: var(--glass-line-on-dark);
+  border-color: transparent; /* 링은 ::before (--glass-ring-on-dark) */
   box-shadow: var(--glass-shadow-dark);
 }
 
