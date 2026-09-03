@@ -34,7 +34,7 @@ const breadcrumb = {
     <Fragment slot="sub">작업 전·후 상태를 사진과 기록으로 남깁니다. 실측값이 없는 수치는 쓰지 않습니다.</Fragment>
   </PageHero>
 
-  <section class="bd-section">
+  <section class="bd-section cases">
     <div class="bd-container">
       {entries.length > 0 ? (
         <Fragment>
@@ -79,7 +79,7 @@ const breadcrumb = {
           <p class="case-empty" data-case-empty hidden>조건에 맞는 사례가 아직 없습니다.</p>
         </Fragment>
       ) : (
-        <div class="case-pending br-reveal">
+        <div class="case-pending br-glass br-glass--medium br-reveal">
           <p class="case-pending__title">시공 기록을 준비 중입니다.</p>
           <p class="case-pending__body">작업 전·후 사진과 현장 기록이 정리되는 대로 올립니다.<br />지금 필요한 상담은 챗봇으로 바로 접수하실 수 있습니다.</p>
           <button type="button" class="bd-cta case-pending__cta" data-chat-tree="menu">상담 접수하기</button>
@@ -172,10 +172,9 @@ const breadcrumb = {
   .case-empty { color: var(--br-ink-sub); padding: 40px 0; }
 
   /* 실사례 0건 폴백 — 빈 그리드 대신 안내 + 챗봇 접수 */
+  .cases { background: transparent; } /* 유리 카드 호스트 */
   .case-pending {
-    border: 1px solid var(--br-line);
-    border-radius: 16px;
-    background: var(--br-mist);
+    /* 배경·테두리·radius·그림자는 .br-glass--medium 이 맡는다 */
     padding: 48px 24px;
     text-align: center;
   }

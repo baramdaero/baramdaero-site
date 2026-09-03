@@ -76,12 +76,13 @@ if (qa.length) {
       <h1 class="post__title">{heading}</h1>
 
       {answer && (
-        <div class="post__answer">
+        <div class="post__answer br-glass br-glass--medium">
           <p class="post__answer-label">결론부터</p>
           <p class="post__answer-body">{answer}</p>
         </div>
       )}
 
+      <div class="post__card br-glass br-glass--flat">
       <div class="post__body">
         <Content />
       </div>
@@ -147,6 +148,7 @@ if (qa.length) {
         </section>
       )}
 
+      </div>
       {updated && <p class="post__updated">최종 확인: {dateLabel(updated)}</p>}
 
       <p class="post__back"><a class="bd-btn-ghost" href="/blog/">목록으로</a></p>
@@ -155,14 +157,16 @@ if (qa.length) {
 </Base>
 
 <style>
+  .post { background: transparent; } /* 유리 카드 호스트 */
   .post .bd-container { max-width: 680px; }
+  .post__card { padding: 28px 24px; }
+  @media (min-width: 768px) { .post__card { padding: 40px 36px; } }
   .post__date { font-size: 13px; color: var(--br-ink-sub); }
   .post__title { font-size: clamp(24px, 3.4vw, 34px); margin: 10px 0 18px; color: var(--br-teal); }
 
   /* 결론 블록 — 본문보다 먼저 답을 준다 */
   .post__answer {
-    background: var(--br-mist);
-    border-radius: var(--radius);
+    /* 배경·테두리·radius는 .br-glass--medium 이 맡는다 */
     padding: 20px 22px;
     margin: 24px 0 32px;
   }

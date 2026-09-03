@@ -109,7 +109,7 @@ const breadcrumbJsonLd = {
 
   <section class="bd-section install-after" data-layout-section="install-after">
     <div class="bd-container">
-      <StoryRow slotId="install-aftercare" slotLabel="install-aftercare" imageSide="left">
+      <StoryRow slotId="install-aftercare" slotLabel="install-aftercare" imageSide="left" glass>
         <span class="br-eyebrow br-reveal">설치 이후</span>
         <h2 class="br-h br-reveal">설치로 끝나지 않습니다</h2>
         <p class="br-body br-reveal">설치할 때 남긴 기록이 그대로 이어집니다.<br />배관 경로와 시공 이력이 남아 있어, 분해세척과 정기 점검 때 어디를 어떻게 다뤄야 하는지 알고 갑니다.</p>
@@ -180,7 +180,7 @@ const breadcrumbJsonLd = {
     .install-step__card { padding: 36px 32px; }
   }
 
-  .install-after { background: var(--br-base); }
+  .install-after { background: transparent; } /* 유리 카드 호스트 */
   .install-after__more { margin-top: 24px; }
   .install-after__link {
     display: inline-block;

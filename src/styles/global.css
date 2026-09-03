@@ -279,6 +279,7 @@ html.br-js .br-reveal.br-in { opacity: 1; transform: translateY(0); }
   --glass-medium-fx:  blur(26px) saturate(135%);
   --glass-light-bg:   color-mix(in srgb, var(--br-base) 55%, transparent);
   --glass-light-fx:   blur(14px) saturate(120%);
+  --glass-flat-bg:    color-mix(in srgb, var(--br-base) 84%, transparent); /* blur 없는 유리 — 긴 본문용 */
   --glass-dark-bg:    color-mix(in srgb, var(--br-teal-deep) 68%, transparent);
   --glass-dark-fx:    blur(32px) saturate(140%);
 }
@@ -291,6 +292,9 @@ html.br-js .br-reveal.br-in { opacity: 1; transform: translateY(0); }
 .br-glass--heavy  { background: var(--glass-heavy-bg);  -webkit-backdrop-filter: var(--glass-heavy-fx);  backdrop-filter: var(--glass-heavy-fx); }
 .br-glass--medium { background: var(--glass-medium-bg); -webkit-backdrop-filter: var(--glass-medium-fx); backdrop-filter: var(--glass-medium-fx); }
 .br-glass--light  { background: var(--glass-light-bg);  -webkit-backdrop-filter: var(--glass-light-fx);  backdrop-filter: var(--glass-light-fx); }
+/* Flat — backdrop-filter 없음. 블로그 포스트처럼 큰 면적에 blur를 걸면 스크롤 비용이 커서 반투명 면+림만으로 유리 문법을 잇는다.
+   blur가 없으므로 안에 유리 카드가 와도 '중첩'이 아니다 (chat__panel::before 와 같은 논리) */
+.br-glass--flat   { background: var(--glass-flat-bg); }
 /* Dark 테두리는 스펙(ink 8%)에서 의도적으로 이탈해 white 10%를 쓴다 —
    ink 8%는 딥틸 위에서 사실상 보이지 않아 테두리가 없는 것과 같다. 유일한 스펙 이탈. */
 .br-glass--dark {
@@ -307,6 +311,7 @@ html.br-js .br-reveal.br-in { opacity: 1; transform: translateY(0); }
     --glass-heavy-bg: var(--br-base);
     --glass-medium-bg: var(--br-base);
     --glass-light-bg: var(--br-mist);
+    --glass-flat-bg: var(--br-base);
     --glass-dark-bg: var(--br-teal-deep);
   }
 }
@@ -316,6 +321,7 @@ html.br-js .br-reveal.br-in { opacity: 1; transform: translateY(0); }
     --glass-heavy-bg: var(--br-base);
     --glass-medium-bg: var(--br-base);
     --glass-light-bg: var(--br-mist);
+    --glass-flat-bg: var(--br-base);
     --glass-dark-bg: var(--br-teal-deep);
     --glass-heavy-fx: none; --glass-medium-fx: none; --glass-light-fx: none; --glass-dark-fx: none;
   }

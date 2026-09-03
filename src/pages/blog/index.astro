@@ -46,7 +46,7 @@ const breadcrumb = {
             <ul class="blog__list">
               {posts.map((post) => (
                 <li>
-                  <a class="blog__item" href={`/blog/${post.id}/`}>
+                  <a class="blog__item br-glass br-glass--medium" href={`/blog/${post.id}/`}>
                     <span class="blog__meta">
                       {post.data.topic && <span class="blog__topic-tag">{post.data.topic}</span>}
                       <span class="blog__date">{post.data.date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
@@ -67,7 +67,7 @@ const breadcrumb = {
               <ul class="blog__list">
                 {g.posts.map((post) => (
                   <li>
-                    <a class="blog__item" href={`/blog/${post.id}/`}>
+                    <a class="blog__item br-glass br-glass--medium" href={`/blog/${post.id}/`}>
                       <span class="blog__date">{post.data.date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                       <span class="blog__title">{post.data.question || post.data.title}</span>
                       <span class="blog__desc">{post.data.description}</span>
@@ -86,6 +86,7 @@ const breadcrumb = {
 </Base>
 
 <style>
+  .blog { background: transparent; } /* 유리 카드 호스트 */
   .blog .bd-container { max-width: 760px; }
   .blog__pending { color: var(--br-ink-sub); padding: 32px 0; }
 
@@ -107,16 +108,16 @@ const breadcrumb = {
   .blog__group-title { font-size: 19px; color: var(--br-teal); padding-bottom: 8px; border-bottom: 2px solid var(--br-teal); }
   #all { scroll-margin-top: 80px; }
 
-  .blog__list { list-style: none; }
+  .blog__list { list-style: none; display: grid; gap: 12px; }
+  /* 배경·테두리·radius·그림자는 .br-glass--medium 이 맡는다 */
   .blog__item {
     display: grid;
     gap: 6px;
-    padding: 22px 4px;
-    border-bottom: 1px solid var(--br-line);
-    transition: background-color var(--dur-color) ease;
+    padding: 22px 20px;
+    transition: transform 160ms var(--ease-out);
   }
   @media (hover: hover) and (pointer: fine) {
-    .blog__item:hover { background: var(--br-mist); }
+    .blog__item:hover { transform: translateY(-2px); }
   }
   .blog__meta { display: flex; align-items: center; gap: 10px; }
   .blog__topic-tag {
