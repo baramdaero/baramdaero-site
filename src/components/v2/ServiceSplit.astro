@@ -38,7 +38,7 @@ const hasVisual = isImageSlotVisible(slotId, image);
   data-image-side={hasVisual ? (flip ? 'left' : 'right') : undefined}
 >
   <div class:list={['bd-container', 'v2-svc__grid', { 'v2-svc__grid--flip': flip, 'v2-svc__grid--copy-only': !hasVisual }]}>
-    <div class="v2-svc__txt">
+    <div class="v2-svc__txt br-glass br-glass--medium">
       <span class="br-eyebrow br-reveal">{eyebrow}</span>
       <h2 class="br-h br-reveal"><slot name="headline" /></h2>
       <p class="br-body br-reveal"><slot name="body" /></p>
@@ -59,8 +59,12 @@ const hasVisual = isImageSlotVisible(slotId, image);
 </section>
 
 <style>
-  .v2-svc--base { background: var(--br-base); }
-  .v2-svc--mist { background: var(--br-mist); }
+  /* 글래스 1차: 섹션은 투명 — 앰비언트가 비쳐야 유리가 유리로 보인다.
+     면(카드 역할)은 .v2-svc__txt 의 Medium 패널이 맡는다. tone 클래스는 유지(확장 대비) */
+  .v2-svc--base { background: transparent; }
+  .v2-svc--mist { background: transparent; }
+  .v2-svc__txt { padding: 32px 28px; }
+  @media (min-width: 768px) { .v2-svc__txt { padding: 40px 36px; } }
   .v2-svc__grid {
     display: grid;
     grid-template-columns: 1fr;

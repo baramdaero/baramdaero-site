@@ -29,7 +29,14 @@ const { chatTree = 'menu', buttonLabel = '견적 문의', ring = false } = Astro
 </section>
 
 <style>
-  .v2-cta { background: var(--br-teal); text-align: center; }
+  /* 유리 Dark (글래스 1차). 풀폭 밴드라 radius·그림자 없이 등급 값만 소비 */
+  .v2-cta {
+    background: var(--glass-dark-bg);
+    -webkit-backdrop-filter: var(--glass-dark-fx);
+    backdrop-filter: var(--glass-dark-fx);
+    border-top: 1px solid var(--glass-line-on-dark);
+    text-align: center;
+  }
   .v2-cta__title { color: #fff; margin-top: 0; }
   .v2-cta__sub { margin-top: 18px; font-size: 16px; line-height: 1.7; color: rgba(255, 255, 255, 0.82); }
   .v2-cta__row {
