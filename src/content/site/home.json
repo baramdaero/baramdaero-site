@@ -133,10 +133,10 @@
   },
   "cta_band": {
     "heading": [
-      "기록은 여기서부터 시작됩니다"
+      "당신의 바람은 여기서부터 시작됩니다."
     ],
-    "heading_emphasis": "기록",
-    "body": "문의는 1분이면 충분합니다.",
+    "heading_emphasis": "바람",
+    "body": "질문 세 개면 견적이 나옵니다.",
     "button_label": "견적 문의"
   }
 }
