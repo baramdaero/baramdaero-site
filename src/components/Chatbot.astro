@@ -487,12 +487,14 @@ const TEASER = [
     btn.type = 'button';
     btn.className = `chat__chip chat__chip--${kind}`;
     btn.textContent = label;
+    if (kind !== 'primary') { btn.classList.add('br-specular'); btn.dataset.specular = ''; }
     return btn;
   }
 
   function telChip(label: string, tel: string, primary = false): HTMLAnchorElement {
     const a = document.createElement('a');
-    a.className = primary ? 'chat__chip chat__chip--primary' : 'chat__chip chat__chip--tel';
+    a.className = primary ? 'chat__chip chat__chip--primary' : 'chat__chip chat__chip--tel br-specular';
+    if (!primary) a.dataset.specular = '';
     a.href = `tel:${tel}`;
     a.textContent = label;
     return a;
@@ -501,7 +503,8 @@ const TEASER = [
   /** FAQ 앵커 링크 칩 — 같은 탭 이동 (챗봇을 닫고 본문을 읽는 흐름) */
   function linkChip(label: string, href: string): HTMLAnchorElement {
     const a = document.createElement('a');
-    a.className = 'chat__chip chat__chip--link';
+    a.className = 'chat__chip chat__chip--link br-specular';
+    a.dataset.specular = '';
     a.href = href;
     a.textContent = label;
     return a;
@@ -1281,27 +1284,31 @@ const TEASER = [
     gap: 6px;
     padding: 2px 0 4px;
   }
+  /* 칩 — 밴드 CTA 와 같은 SpecularButton 기법(2026-09-04): 투명 바탕 + 얇은 teal 스트로크 + 커서 쪽 모서리에 켜지는 teal 라인.
+     밝은 패널 위라 라인 색은 teal(흰 라인은 묻힌다). 선택된 칩은 teal 채움으로 '답'이 됨. primary 칩은 채움 유지. */
   .chat__chip {
+    --sb-line: var(--br-teal);
+    position: relative;
     font-size: 13.5px;
     font-weight: 500;
     padding: 10px 14px;
     min-height: 40px;
-    border: 1px solid var(--glass-line);
+    border: 1px solid color-mix(in srgb, var(--br-teal) 32%, transparent);
     border-radius: 999px;
-    background: color-mix(in srgb, #fff 62%, transparent);
-    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 90%, transparent);
+    background: transparent;
     color: var(--ink);
     text-align: left;
-    transition: border-color var(--dur-color) ease, color var(--dur-color) ease, transform 160ms var(--ease-out), opacity var(--dur-color) ease;
+    transition: border-color var(--dur-color) ease, background-color var(--dur-color) ease, color var(--dur-color) ease, transform 160ms var(--ease-out), opacity var(--dur-color) ease;
   }
   .chat__chip:active:not(:disabled) { transform: scale(0.96); }
   @media (hover: hover) and (pointer: fine) {
-    .chat__chip:hover:not(:disabled) { border-color: var(--copper); color: var(--copper-deep); }
+    .chat__chip:hover:not(:disabled) { background: color-mix(in srgb, var(--br-teal) 7%, transparent); border-color: color-mix(in srgb, var(--br-teal) 55%, transparent); color: var(--copper-deep); }
   }
   @media (pointer: coarse) {
     .chat__chip { min-height: 44px; padding: 11px 16px; }
   }
   .chat__chip--sub { border-color: transparent; color: var(--ink-soft); font-size: 13px; }
+  .chat__chip--sub::after { display: none; } /* 보조 칩은 링 없음 */
   .chat__chip--tel,
   .chat__chip--link { text-decoration: none; display: inline-flex; align-items: center; }
   .chat__chip--primary {
@@ -1318,7 +1325,8 @@ const TEASER = [
   }
   /* 비활성 보존 — 선택 후에도 문맥으로 남긴다 */
   .chat__chips.is-settled .chat__chip { opacity: 0.5; cursor: default; }
-  .chat__chips.is-settled .chat__chip.is-chosen { opacity: 1; border-color: var(--copper); color: var(--copper-deep); }
+  .chat__chips.is-settled .chat__chip.is-chosen { opacity: 1; background: var(--br-teal); border-color: var(--br-teal); color: #fff; }
+  .chat__chips.is-settled .chat__chip::after { display: none; } /* 지나간 그룹은 링 정지 */
 
   /* ---------- 접수카드 ---------- */
   .chat__card {
