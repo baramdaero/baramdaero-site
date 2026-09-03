@@ -241,3 +241,83 @@ html.br-js .br-reveal.br-in { opacity: 1; transform: translateY(0); }
   padding-top: 20px;
   border-top: 1px solid var(--br-eyebrow-line, rgba(0, 78, 100, 0.18));
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   글래스 시스템 1차 (2026-08-27) — 팔레트 v3 토큰만 쓴다. 신규 색 금지.
+   등급은 커스텀 프로퍼티로 정의하고, 클래스와 컴포넌트가 그 값을 소비한다.
+   ⚠️ 규칙
+   - 본문이 올라가는 표면은 불투명도 70% 이상 (heavy 82 / medium 70). light(55)는 짧은 라벨 전용
+   - 다크 섹션(teal-deep 등) 위 유리는 **Heavy를 기본값**으로 한다. Medium은 밝은 배경 위에서만 —
+     Medium(70%)이 딥틸 위에 오면 표면이 173,187,194로 내려앉아 teal 제목 대비 4.69(턱걸이)·회청색으로 탁해진다(1차 실측)
+   - 유리 위에 유리를 얹지 않는다 — blur 비용이 곱으로 는다 (검증 스크립트가 중첩 0을 센다)
+   - opacity로 흐리게 하지 않는다 — .br-reveal이 opacity를 소유해 덮어쓴다. 배경 알파(color-mix)로만
+   - 미지원·투명도 최소화 환경은 불투명 폴백 (아래 @supports / @media)
+   ══════════════════════════════════════════════════════════════════ */
+:root {
+  --glass-line: color-mix(in srgb, var(--br-ink) 8%, transparent);
+  --glass-line-on-dark: color-mix(in srgb, #fff 10%, transparent);
+  --glass-shadow: 0 10px 30px color-mix(in srgb, var(--br-teal) 7%, transparent);
+  --glass-shadow-dark: 0 10px 30px color-mix(in srgb, var(--br-teal-deep) 28%, transparent);
+
+  --glass-heavy-bg:   color-mix(in srgb, var(--br-base) 82%, transparent);
+  --glass-heavy-fx:   blur(20px) saturate(120%);
+  --glass-medium-bg:  color-mix(in srgb, var(--br-base) 70%, transparent);
+  --glass-medium-fx:  blur(12px) saturate(115%);
+  --glass-light-bg:   color-mix(in srgb, var(--br-base) 55%, transparent);
+  --glass-light-fx:   blur(6px) saturate(110%);
+  --glass-dark-bg:    color-mix(in srgb, var(--br-teal-deep) 76%, transparent);
+  --glass-dark-fx:    blur(16px) saturate(120%);
+}
+
+.br-glass {
+  border: 1px solid var(--glass-line);
+  border-radius: var(--radius);
+  box-shadow: var(--glass-shadow);
+}
+.br-glass--heavy  { background: var(--glass-heavy-bg);  -webkit-backdrop-filter: var(--glass-heavy-fx);  backdrop-filter: var(--glass-heavy-fx); }
+.br-glass--medium { background: var(--glass-medium-bg); -webkit-backdrop-filter: var(--glass-medium-fx); backdrop-filter: var(--glass-medium-fx); }
+.br-glass--light  { background: var(--glass-light-bg);  -webkit-backdrop-filter: var(--glass-light-fx);  backdrop-filter: var(--glass-light-fx); }
+/* Dark 테두리는 스펙(ink 8%)에서 의도적으로 이탈해 white 10%를 쓴다 —
+   ink 8%는 딥틸 위에서 사실상 보이지 않아 테두리가 없는 것과 같다. 유일한 스펙 이탈. */
+.br-glass--dark {
+  background: var(--glass-dark-bg);
+  -webkit-backdrop-filter: var(--glass-dark-fx);
+  backdrop-filter: var(--glass-dark-fx);
+  border-color: var(--glass-line-on-dark);
+  box-shadow: var(--glass-shadow-dark);
+}
+
+/* 폴백 ① backdrop-filter 미지원 → 불투명. (블러 없는 반투명은 뒤 내용이 그대로 비쳐 읽기가 깨진다) */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --glass-heavy-bg: var(--br-base);
+    --glass-medium-bg: var(--br-base);
+    --glass-light-bg: var(--br-mist);
+    --glass-dark-bg: var(--br-teal-deep);
+  }
+}
+/* 폴백 ② 사용자가 투명도 최소화를 켠 경우 → 같은 불투명 값 */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-heavy-bg: var(--br-base);
+    --glass-medium-bg: var(--br-base);
+    --glass-light-bg: var(--br-mist);
+    --glass-dark-bg: var(--br-teal-deep);
+    --glass-heavy-fx: none; --glass-medium-fx: none; --glass-light-fx: none; --glass-dark-fx: none;
+  }
+}
+
+/* ── 앰비언트 배경 — 유리 뒤에 비칠 것을 깐다 (본문 이미지 0장) ──
+   body 배경(base) 위, 본문 아래. 불투명 배경을 가진 섹션(다크 구간·mist/base 섹션)은
+   자연히 이 레이어를 덮는다. 애니메이션 없음(모바일 배터리). 눈에 띄면 실패라 아주 옅게. */
+.br-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(55% 45% at 12% 18%, color-mix(in srgb, var(--br-ice) 30%, transparent), transparent 70%),
+    radial-gradient(45% 40% at 88% 32%, color-mix(in srgb, var(--br-teal) 9%, transparent), transparent 70%),
+    radial-gradient(60% 50% at 50% 96%, color-mix(in srgb, var(--br-mist) 75%, transparent), transparent 70%);
+}
+

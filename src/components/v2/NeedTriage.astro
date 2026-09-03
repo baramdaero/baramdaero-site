@@ -22,7 +22,7 @@ const { heading, cards, tone = 'deep' } = Astro.props;
       <ul class="v2-triage__grid">
         {cards.map((c) => (
           <li class="v2-triage__cell br-reveal">
-            <div class="v2-triage__card">
+            <div class="v2-triage__card br-glass br-glass--heavy">
               <ImageSlot
                 id={`home-triage-${c.chatTree}`}
                 label={`home-triage-${c.chatTree}`}
@@ -46,7 +46,7 @@ const { heading, cards, tone = 'deep' } = Astro.props;
 )}
 
 <style>
-  .v2-triage--light { background: var(--br-base); }
+  .v2-triage--light { background: transparent; } /* 앰비언트가 비치도록 */
   .v2-triage--deep { background: var(--br-teal-deep); }
   .v2-triage--deep :global(.br-h) { color: var(--br-base); }
 
@@ -68,9 +68,7 @@ const { heading, cards, tone = 'deep' } = Astro.props;
     flex-direction: column;
     width: 100%;
     padding: 16px;
-    background: var(--br-base);
-    border: 1px solid var(--br-mist);
-    border-radius: var(--radius);
+    /* 배경·테두리·radius는 .br-glass--heavy 가 맡는다 — 이 섹션은 딥틸(deep) 위라 Heavy가 기본 (global.css 규칙) */
   }
 
   .v2-triage__card :global(.br-image-slot) { max-width: none; margin-bottom: 20px; }

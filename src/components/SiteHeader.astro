@@ -91,11 +91,12 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     transition: background-color var(--dur-color) ease, color var(--dur-color) ease;
   }
   /* 히어로를 지나면 흰 바탕 위 백색 텍스트가 사라지는 문제 — 스크롤 시 솔리드 전환 */
+  /* 유리 Heavy — 스크롤로 히어로 영상 위에 걸리는 자리라 효과가 가장 크다 (글래스 1차) */
   .bd-header--overlay.is-scrolled {
-    background: color-mix(in srgb, var(--br-base) 92%, transparent);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--br-line);
+    background: var(--glass-heavy-bg);
+    -webkit-backdrop-filter: var(--glass-heavy-fx);
+    backdrop-filter: var(--glass-heavy-fx);
+    border-bottom: 1px solid var(--glass-line);
     color: var(--br-ink);
   }
   .bd-header--solid {
