@@ -22,7 +22,7 @@ const { heading, cards, tone = 'deep' } = Astro.props;
       <ul class="v2-triage__grid">
         {cards.map((c) => (
           <li class="v2-triage__cell br-reveal">
-            <div class="v2-triage__card br-glass br-glass--heavy">
+            <div class="v2-triage__card br-glass br-glass--heavy" data-glow>
               <ImageSlot
                 id={`home-triage-${c.chatTree}`}
                 label={`home-triage-${c.chatTree}`}

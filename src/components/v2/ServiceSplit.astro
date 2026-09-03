@@ -38,7 +38,7 @@ const hasVisual = isImageSlotVisible(slotId, image);
   data-image-side={hasVisual ? (flip ? 'left' : 'right') : undefined}
 >
   <div class:list={['bd-container', 'v2-svc__grid', { 'v2-svc__grid--flip': flip, 'v2-svc__grid--copy-only': !hasVisual }]}>
-    <div class="v2-svc__txt br-glass br-glass--medium">
+    <div class="v2-svc__txt br-glass br-glass--medium" data-glow>
       <span class="br-eyebrow br-reveal">{eyebrow}</span>
       <h2 class="br-h br-reveal"><slot name="headline" /></h2>
       <p class="br-body br-reveal"><slot name="body" /></p>

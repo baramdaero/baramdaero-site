@@ -105,7 +105,7 @@ if (careFaq.length) {
           {visibleSymptoms.map((s, i) => {
             const slotId = symptomSlot(s.icon, i);
             return (
-              <article class="care-symptoms__card br-glass br-glass--medium br-reveal">
+              <article class="care-symptoms__card br-glass br-glass--medium br-reveal" data-glow>
                 <ImageSlot id={slotId} label={slotId} ratio="card" />
                 <h3>{s.title}</h3>
                 <p>{s.body}</p>
