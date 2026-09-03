@@ -347,13 +347,14 @@ html.br-js .br-reveal.br-in { opacity: 1; transform: translateY(0); }
   z-index: -1;
   pointer-events: none;
   /* 3차(2026-08-28): 워시가 아니라 '형체'다. 유리는 뒤에 윤곽 있는 것이 있을 때만 유리로 보인다(레퍼런스 전부 크롬 링·구·네온 블롭).
-     알파를 올리고 그라디언트 스톱을 당겨 블롭 가장자리가 생기게 한다. 팔레트 v3 토큰만. 애니메이션 없음. */
+     알파를 올리고 그라디언트 스톱을 당겨 블롭 가장자리가 생기게 한다. 팔레트 v3 토큰만. 애니메이션 없음.
+     4차(2026-09-03): teal(#004e64)·mist(#e0e5e9) 블롭이 base 위에서 회색으로 섞여 '얼룩'으로 읽혔다(라이브 캡처).
+     형체(스톱 비율)는 그대로 두고 색만 ice 단일 계열로. teal은 8% 한 곳만(깊이감), mist 0. */
   background:
-    radial-gradient(38% 30% at 14% 16%, color-mix(in srgb, var(--br-ice) 92%, transparent) 0%, color-mix(in srgb, var(--br-ice) 60%, transparent) 38%, transparent 62%),
-    radial-gradient(30% 26% at 86% 22%, color-mix(in srgb, var(--br-teal) 42%, transparent) 0%, color-mix(in srgb, var(--br-teal) 18%, transparent) 40%, transparent 64%),
-    radial-gradient(26% 22% at 68% 58%, color-mix(in srgb, var(--br-ice) 78%, transparent) 0%, transparent 60%),
-    radial-gradient(34% 28% at 22% 74%, color-mix(in srgb, var(--br-teal) 30%, transparent) 0%, color-mix(in srgb, var(--br-teal) 10%, transparent) 42%, transparent 66%),
-    radial-gradient(22% 20% at 50% 40%, color-mix(in srgb, var(--br-mist) 100%, transparent) 0%, transparent 58%),
-    radial-gradient(60% 46% at 50% 98%, color-mix(in srgb, var(--br-mist) 90%, transparent), transparent 66%);
+    radial-gradient(44% 36% at 14% 16%, color-mix(in srgb, var(--br-ice) 95%, transparent) 0%, color-mix(in srgb, var(--br-ice) 55%, transparent) 46%, transparent 74%),
+    radial-gradient(36% 32% at 86% 22%, color-mix(in srgb, var(--br-ice) 85%, transparent) 0%, color-mix(in srgb, var(--br-ice) 40%, transparent) 46%, transparent 74%),
+    radial-gradient(30% 26% at 68% 58%, color-mix(in srgb, var(--br-ice) 80%, transparent) 0%, transparent 70%),
+    radial-gradient(40% 32% at 22% 76%, color-mix(in srgb, var(--br-ice) 70%, transparent) 0%, color-mix(in srgb, var(--br-teal) 8%, transparent) 50%, transparent 74%),
+    radial-gradient(60% 46% at 50% 98%, color-mix(in srgb, var(--br-ice) 45%, transparent), transparent 70%);
 }
 
