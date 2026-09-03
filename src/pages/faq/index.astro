@@ -75,7 +75,7 @@ if (items.length) {
               <h2 class="faq-cat__title">{s.cat}</h2>
               {s.items.map((f, fi) => (
                 <details
-                  class="faq-item"
+                  class="faq-item br-glass br-glass--medium"
                   id={f.id}
                   open={si === 0 && fi === 0}
                   data-faq-item
@@ -143,6 +143,7 @@ if (items.length) {
 
 <style>
   /* 본문 너비를 히어로와 맞춘다(08-27 지시). 읽기 폭은 항목 내부에서 잡는다 */
+  .faq-page { background: transparent; } /* 유리 카드 호스트 */
   .faq-page .bd-container { max-width: var(--maxw); }
 
   .faq-search { margin-bottom: 20px; }
@@ -187,7 +188,7 @@ if (items.length) {
     border-bottom: 2px solid var(--br-teal);
   }
 
-  .faq-item { border-bottom: 1px solid var(--br-line); }
+  .faq-item { margin-bottom: 12px; padding: 4px 16px; } /* 하단 선 목록 → 유리 카드 */
   .faq-item__q {
     cursor: pointer;
     font-weight: 700;

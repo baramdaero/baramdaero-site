@@ -102,10 +102,10 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   .bd-header--solid {
     position: sticky;
     top: 0;
-    background: color-mix(in srgb, var(--bg) 92%, transparent);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--line);
+    background: var(--glass-heavy-bg);
+    -webkit-backdrop-filter: var(--glass-heavy-fx);
+    backdrop-filter: var(--glass-heavy-fx);
+    border-bottom: 1px solid var(--glass-line);
     color: var(--ink);
   }
   /* 좌(로고) · 중(메뉴) · 우(액션 슬롯) 3영역.

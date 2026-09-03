@@ -105,7 +105,7 @@ if (careFaq.length) {
           {visibleSymptoms.map((s, i) => {
             const slotId = symptomSlot(s.icon, i);
             return (
-              <article class="care-symptoms__card br-reveal">
+              <article class="care-symptoms__card br-glass br-glass--medium br-reveal">
                 <ImageSlot id={slotId} label={slotId} ratio="card" />
                 <h3>{s.title}</h3>
                 <p>{s.body}</p>
@@ -135,7 +135,7 @@ if (careFaq.length) {
           {process.map((st) => {
             const slotId = `care-process-${String(st.step).padStart(2, '0')}`;
             return (
-              <li class="care-process__card br-reveal">
+              <li class="care-process__card br-glass br-glass--medium br-reveal">
                 {isImageSlotVisible(slotId, st.image) && (
                   <ImageSlot id={slotId} src={st.image} alt={`${st.title} 작업 사진`} label={slotId} ratio="square" />
                 )}
@@ -202,7 +202,7 @@ if (careFaq.length) {
           <h2 class="br-h br-reveal">세척 시기</h2>
           <div class="care-seasons__grid">
             {visibleSeasons.map((s) => (
-              <article class="care-seasons__card br-reveal">
+              <article class="care-seasons__card br-glass br-glass--heavy br-reveal">
                 <ImageSlot id={s.slotId} label={s.slotId} ratio="card" />
                 {s.months && <span class="care-seasons__months">{s.months}</span>}
                 <h3>{s.season}</h3>
@@ -218,7 +218,7 @@ if (careFaq.length) {
           <h2 class="br-h br-reveal">자주 묻는 질문</h2>
           <div class="care-faq__list br-reveal">
             {careFaq.map((f, i) => (
-              <details class="care-faq__item" open={i === 0}>
+              <details class="care-faq__item br-glass br-glass--heavy" open={i === 0}>
                 <summary>{f.q}</summary>
                 <p>{f.a}</p>
               </details>
@@ -237,13 +237,11 @@ if (careFaq.length) {
 
 <style>
   /* 절차 — 회색 섹션 위 기본색 카드 (/install/ 과 같은 패턴) */
-  .care-process--mist { background: var(--br-mist); }
+  .care-process--mist { background: transparent; } /* 유리 카드 호스트 — 투명해야 앰비언트가 비친다 */
   .care-process__list { margin-top: 48px; list-style: none; display: grid; gap: 16px; }
   .care-process__card {
-    background: var(--br-base);
-    border-radius: var(--radius);
     padding: 28px 24px;
-    border: 1px solid rgba(0, 78, 100, 0.06);
+    /* 배경·테두리·radius·그림자는 .br-glass--medium 이 맡는다 */
   }
   .care-process__no {
     display: block; font-size: 13px; font-weight: 700;
@@ -257,7 +255,7 @@ if (careFaq.length) {
     .care-process__card { padding: 36px 32px; }
   }
 
-  .care-symptoms { background: var(--br-base); }
+  .care-symptoms { background: transparent; } /* 유리 카드 호스트 */
   .care-symptoms__grid,
   .care-seasons__grid {
     margin-top: 48px;
@@ -270,9 +268,7 @@ if (careFaq.length) {
     display: flex;
     flex-direction: column;
     padding: 16px;
-    border: 1px solid var(--br-mist);
-    border-radius: var(--radius);
-    background: var(--br-base);
+    /* 증상(Medium, 밝은 호스트) / 세척시기(Heavy, 딥 호스트) — 면은 .br-glass 등급이 맡는다 */
   }
 
   .care-symptoms__card :global(.br-image-slot),
@@ -350,7 +346,7 @@ if (careFaq.length) {
   .care-seasons__grid { grid-template-columns: 1fr; }
   .care-faq { margin-top: 120px; }
   .care-faq__list { margin-top: 48px; display: grid; gap: 10px; }
-  .care-faq__item { border-radius: var(--radius); background: var(--br-base); color: var(--br-ink); }
+  .care-faq__item { color: var(--br-ink); } /* 면은 .br-glass--heavy (딥 위) */
   .care-faq__item summary { min-height: 44px; padding: 16px 18px; cursor: pointer; color: var(--br-ink); font-weight: 700; }
   .care-faq__item p { padding: 0 18px 18px; color: var(--br-ink); font-size: 15px; line-height: 1.75; }
   :global(.v2-cta .bd-container .v2-cta__sub) { color: var(--br-base); }

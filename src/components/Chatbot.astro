@@ -1050,8 +1050,12 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     height: min(640px, calc(100dvh - 120px));
     display: flex;
     flex-direction: column;
-    background: #fff;
-    border: 1px solid var(--line);
+    /* 유리 Heavy — 콘텐츠 위에 뜨는 고정 표면이라 유리가 가장 자연스러운 자리. 내부에 유리 없음(중첩 0) */
+    background: var(--glass-heavy-bg);
+    -webkit-backdrop-filter: var(--glass-heavy-fx);
+    backdrop-filter: var(--glass-heavy-fx);
+    border: 1px solid var(--glass-line);
+    box-shadow: var(--glass-shadow);
     border-radius: 16px;
     box-shadow: 0 4px 10px rgba(33, 30, 26, 0.08), 0 24px 60px rgba(33, 30, 26, 0.22);
     overflow: hidden;

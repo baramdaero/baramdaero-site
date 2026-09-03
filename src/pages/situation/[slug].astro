@@ -58,7 +58,7 @@ const jsonLd: object[] = [
             <h2 class="br-h br-reveal">진행 순서</h2>
             <ol class="sit-journey__list">
               {timeline.map((st, i) => (
-                <li class="sit-journey__card br-reveal">
+                <li class="sit-journey__card br-glass br-glass--medium br-reveal">
                   <span class="sit-journey__no">{String(i + 1).padStart(2, '0')}</span>
                   <h3 class="sit-journey__stage">{st.stage}</h3>
                   {/* when이 있으면 접어 둔다 — 펼쳐 두면 모바일에서 페이지가 1화면 넘게 길어진다(08-27 실측) */}
@@ -130,7 +130,7 @@ const jsonLd: object[] = [
           <h2 class="br-h br-reveal">자주 묻는 질문</h2>
           <div class="sit-faq__list br-reveal">
             {faq.map((f, i) => (
-              <details class="sit-faq__item" id={f.id} open={i === 0}>
+              <details class="sit-faq__item br-glass br-glass--heavy" id={f.id} open={i === 0}>
                 <summary class="sit-faq__q">{f.q}</summary>
                 <div class="sit-faq__a" set:html={renderFaqMd(f.a)} />
               </details>
@@ -185,10 +185,8 @@ const jsonLd: object[] = [
   /* 진행 순서 — 회색 섹션 위 기본색 카드 (/install/ /care/ 와 같은 패턴) */
   .sit-journey__list { margin-top: 48px; list-style: none; display: grid; gap: 16px; }
   .sit-journey__card {
-    background: var(--br-base);
-    border-radius: var(--radius);
     padding: 28px 24px;
-    border: 1px solid rgba(0, 78, 100, 0.06);
+    /* 면은 .br-glass--medium */
   }
   .sit-journey__no {
     display: block; font-size: 13px; font-weight: 700;
@@ -200,8 +198,8 @@ const jsonLd: object[] = [
     .sit-journey__card { padding: 36px 32px; }
   }
 
-  .sit-journey__story--base { background: var(--br-base); }
-  .sit-journey__story--mist { background: var(--br-mist); }
+  .sit-journey__story--base { background: transparent; } /* 유리 카드 호스트 */
+  .sit-journey__story--mist { background: transparent; }
   .sit-journey__story--deep { background: var(--br-teal-deep); }
   .sit-journey__story--deep .sit-journey__details {
     border-top-color: var(--br-ice);
@@ -251,7 +249,7 @@ const jsonLd: object[] = [
   .sit-close { background: var(--br-teal-deep); }
   .sit-close :global(.br-h) { color: var(--br-base); }
   .sit-faq__list { margin-top: 48px; display: grid; gap: 10px; }
-  .sit-faq__item { border-radius: var(--radius); background: var(--br-base); color: var(--br-ink); }
+  .sit-faq__item { color: var(--br-ink); } /* 면은 .br-glass--heavy (딥 위) */
   .sit-faq__q {
     cursor: pointer;
     font-weight: 700;
