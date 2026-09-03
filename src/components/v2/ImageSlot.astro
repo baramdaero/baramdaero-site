@@ -65,7 +65,8 @@ const resolved = resolveImageSlot(id, src, alt);
     justify-content: center;
     gap: 10px;
     padding: 20px;
-    color: var(--br-slot-fg, rgba(0, 78, 100, 0.42));
+    /* 캡션은 보이는 텍스트다 — AA(4.5) 이상. teal 알파 0.78 ≈ base 위 4.9:1 */
+    color: var(--br-slot-fg, rgba(0, 78, 100, 0.78));
   }
 
   .br-image-slot__icon { opacity: 0.7; }

@@ -80,7 +80,7 @@ const breadcrumbJsonLd = {
       <h2 class="br-h br-reveal">설치 4단계</h2>
       <div class="install-steps__list">
         {STEPS.map((st, i) => (
-          <article class="install-step__card br-reveal">
+          <article class="install-step__card br-glass br-glass--medium br-reveal">
             <StoryRow
               slotId={`install-process-${String(i + 1).padStart(2, '0')}`}
               slotLabel={`install-process-${String(i + 1).padStart(2, '0')}`}
@@ -155,16 +155,15 @@ const breadcrumbJsonLd = {
     .install-video__grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
   }
 
-  .install-step--base { background: var(--br-base); }
-  .install-step--mist { background: var(--br-mist); }
+  /* 유리 카드 호스트 — 투명해야 앰비언트가 비친다 */
+  .install-step--base { background: transparent; }
+  .install-step--mist { background: transparent; }
   .install-step--deep { background: var(--br-teal-deep); }
   /* 회색 섹션 위에 기본색 카드 — 단계 경계를 여백이 아니라 면으로 만든다 */
   .install-steps__list { margin-top: 48px; display: grid; gap: 16px; }
   .install-step__card {
-    background: var(--br-base);
-    border-radius: var(--radius);
     padding: 28px 24px;
-    border: 1px solid rgba(0, 78, 100, 0.06); /* 헤어라인 — 회색 테두리로 가두지 않는다 */
+    /* 배경·테두리·radius·그림자는 .br-glass--medium 이 맡는다 */
   }
   .install-step__no {
     display: block;

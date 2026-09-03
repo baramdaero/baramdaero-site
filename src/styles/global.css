@@ -120,6 +120,17 @@ button {
   --br-slot-bg: rgba(255, 255, 255, 0.04);
   --br-slot-fg: rgba(255, 255, 255, 0.5);
 }
+/* 슬롯이 유리 카드 '안'에 있으면 카드 표면 기준으로 되돌린다 — heavy/medium 카드는 딥 섹션 위에서도 밝은 면이라
+   섹션 기준 흰 글자(위 규칙)가 그대로 오면 캡션이 사라진다(2차 실측 1.30:1). 카드 규칙이 섹션 규칙을 이긴다. */
+.br-glass--heavy .br-image-slot,
+.br-glass--medium .br-image-slot,
+.br-glass--light .br-image-slot {
+  --br-slot-line: rgba(0, 78, 100, 0.14);
+  --br-slot-bg: rgba(0, 78, 100, 0.035);
+  /* 캡션은 solid teal — Heavy 카드가 딥 섹션 위에 오면 표면이 192,202,208로 내려앉아 알파 78%로는 3.7:1(2차 실측).
+     solid이면 Heavy-on-deep 5.7 / base 8.75. 흐림은 크기·자간이 맡는다 */
+  --br-slot-fg: var(--br-teal);
+}
 
 /* 섹션 헤드라인 — 과감한 스케일, 의도적 줄바꿈 전제 */
 .br-h {
@@ -256,17 +267,19 @@ html.br-js .br-reveal.br-in { opacity: 1; transform: translateY(0); }
 :root {
   --glass-line: color-mix(in srgb, var(--br-ink) 8%, transparent);
   --glass-line-on-dark: color-mix(in srgb, #fff 10%, transparent);
-  --glass-shadow: 0 10px 30px color-mix(in srgb, var(--br-teal) 7%, transparent);
-  --glass-shadow-dark: 0 10px 30px color-mix(in srgb, var(--br-teal-deep) 28%, transparent);
+  /* 2차(2026-08-28) 강도 상향: 알파는 본문 하한(70%) 위에서만 낮추고, 블러·채도·상단 하이라이트로 유리감을 올린다.
+     inset 1px 백색 하이라이트가 글래스모피즘의 '두께' 신호다 — opacity가 아니라 그림자로 넣는다 */
+  --glass-shadow: inset 0 1px 0 color-mix(in srgb, #fff 55%, transparent), 0 14px 40px color-mix(in srgb, var(--br-teal) 9%, transparent);
+  --glass-shadow-dark: inset 0 1px 0 color-mix(in srgb, #fff 9%, transparent), 0 14px 40px color-mix(in srgb, var(--br-teal-deep) 32%, transparent);
 
-  --glass-heavy-bg:   color-mix(in srgb, var(--br-base) 82%, transparent);
-  --glass-heavy-fx:   blur(20px) saturate(120%);
+  --glass-heavy-bg:   color-mix(in srgb, var(--br-base) 78%, transparent);
+  --glass-heavy-fx:   blur(28px) saturate(130%);
   --glass-medium-bg:  color-mix(in srgb, var(--br-base) 70%, transparent);
-  --glass-medium-fx:  blur(12px) saturate(115%);
+  --glass-medium-fx:  blur(18px) saturate(125%);
   --glass-light-bg:   color-mix(in srgb, var(--br-base) 55%, transparent);
-  --glass-light-fx:   blur(6px) saturate(110%);
-  --glass-dark-bg:    color-mix(in srgb, var(--br-teal-deep) 76%, transparent);
-  --glass-dark-fx:    blur(16px) saturate(120%);
+  --glass-light-fx:   blur(10px) saturate(115%);
+  --glass-dark-bg:    color-mix(in srgb, var(--br-teal-deep) 72%, transparent);
+  --glass-dark-fx:    blur(24px) saturate(130%);
 }
 
 .br-glass {
@@ -310,14 +323,17 @@ html.br-js .br-reveal.br-in { opacity: 1; transform: translateY(0); }
 /* ── 앰비언트 배경 — 유리 뒤에 비칠 것을 깐다 (본문 이미지 0장) ──
    body 배경(base) 위, 본문 아래. 불투명 배경을 가진 섹션(다크 구간·mist/base 섹션)은
    자연히 이 레이어를 덮는다. 애니메이션 없음(모바일 배터리). 눈에 띄면 실패라 아주 옅게. */
+/* 2차: 유리가 전 페이지로 가면서 뒤에 비칠 것이 더 필요해 세기를 올렸다(ice 30→48%, teal 9→14%, 블롭 4개).
+   거터 편차 상한 24/255. 애니메이션은 여전히 없음. */
 .br-ambient {
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(55% 45% at 12% 18%, color-mix(in srgb, var(--br-ice) 30%, transparent), transparent 70%),
-    radial-gradient(45% 40% at 88% 32%, color-mix(in srgb, var(--br-teal) 9%, transparent), transparent 70%),
-    radial-gradient(60% 50% at 50% 96%, color-mix(in srgb, var(--br-mist) 75%, transparent), transparent 70%);
+    radial-gradient(55% 45% at 12% 18%, color-mix(in srgb, var(--br-ice) 48%, transparent), transparent 70%),
+    radial-gradient(45% 40% at 88% 32%, color-mix(in srgb, var(--br-teal) 14%, transparent), transparent 70%),
+    radial-gradient(40% 35% at 30% 70%, color-mix(in srgb, var(--br-ice) 34%, transparent), transparent 70%),
+    radial-gradient(60% 50% at 50% 96%, color-mix(in srgb, var(--br-mist) 80%, transparent), transparent 70%);
 }
 
