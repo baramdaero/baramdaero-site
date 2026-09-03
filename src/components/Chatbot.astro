@@ -449,7 +449,7 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     return el;
   }
 
-  /** 봇 말풍선 앞 타이핑 인디케이터 200ms — reduced-motion 시 생략 */
+  /** 봇 말풍선 앞 타이핑 인디케이터 800ms — reduced-motion 시 생략 */
   async function typing(token: number) {
     if (reducedMotion.matches) return;
     // 개발 전용 검증 훅 — 헤드리스 팬은 백그라운드 타이머 스로틀링으로 200ms가 수 초로 늘어난다.
@@ -461,7 +461,7 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     el.innerHTML = '<span></span><span></span><span></span><span></span>';
     log.appendChild(el);
     scrollDown();
-    await delay(200);
+    await delay(800); /* 2026-09-03: 스퀘어 펄스가 한 번 수축·복귀하는 길이(200ms는 보이기 전에 사라짐) */
     el.remove();
     if (token !== renderToken) throw new Error('stale');
   }
@@ -1057,13 +1057,22 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     border: 1px solid var(--glass-line);
     box-shadow: var(--glass-shadow);
     border-radius: 16px;
-    box-shadow: 0 4px 10px rgba(33, 30, 26, 0.08), 0 24px 60px rgba(33, 30, 26, 0.22);
     overflow: hidden;
+    isolation: isolate;
     opacity: 0;
     transform: translateY(8px);
     transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
   }
   .chat__panel.is-open { opacity: 1; transform: translateY(0); }
+  /* 패널 내부 앰비언트(2026-09-03): 말풍선·칩이 반투명이어도 뒤에 형체가 없으면 유리로 안 읽힌다(모바일은 전체화면이라 특히).
+     딥 섹션과 같은 방식 — ::before 에 ice/teal 블롭. blur 없음(중첩 아님). */
+  .chat__panel::before {
+    content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background:
+      radial-gradient(60% 34% at 12% 22%, color-mix(in srgb, var(--br-ice) 85%, transparent) 0%, color-mix(in srgb, var(--br-ice) 40%, transparent) 46%, transparent 74%),
+      radial-gradient(50% 30% at 90% 58%, color-mix(in srgb, var(--br-ice) 70%, transparent) 0%, transparent 70%),
+      radial-gradient(44% 26% at 30% 92%, color-mix(in srgb, var(--br-teal) 14%, transparent) 0%, transparent 70%);
+  }
 
   /* ---------- 헤더 ---------- */
   .chat__head {
@@ -1114,7 +1123,7 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
      반투명 면 + 백색 림 + 상단 하이라이트만으로 패널의 블러가 비쳐 유리로 읽힌다. 알파는 본문 하한 70% 준수. */
   .chat__msg--bot {
     align-self: flex-start;
-    background: color-mix(in srgb, #fff 72%, transparent);
+    background: color-mix(in srgb, #fff 64%, transparent);
     border: 1px solid var(--glass-line);
     box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 90%, transparent), 0 6px 18px color-mix(in srgb, var(--br-teal) 8%, transparent);
     border-bottom-left-radius: 4px;
@@ -1175,9 +1184,10 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     font-weight: 500;
     padding: 10px 14px;
     min-height: 40px;
-    border: 1px solid var(--line);
+    border: 1px solid var(--glass-line);
     border-radius: 999px;
-    background: #fff;
+    background: color-mix(in srgb, #fff 62%, transparent);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 90%, transparent);
     color: var(--ink);
     text-align: left;
     transition: border-color var(--dur-color) ease, color var(--dur-color) ease, transform 160ms var(--ease-out), opacity var(--dur-color) ease;
@@ -1211,7 +1221,7 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
   /* ---------- 접수카드 ---------- */
   .chat__card {
     align-self: stretch;
-    background: #fff;
+    background: color-mix(in srgb, #fff 78%, transparent);
     border: 1px solid var(--silver);
     border-radius: 12px;
     padding: 14px 16px;
@@ -1256,7 +1266,7 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
   .chat__cta:active:not(:disabled) { transform: scale(0.98); }
   .chat__cta--primary { background: var(--copper); color: #fff; border: 1px solid var(--copper); }
   .chat__cta--primary:hover:not(:disabled) { background: var(--copper-deep); border-color: var(--copper-deep); }
-  .chat__cta--ghost { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+  .chat__cta--ghost { background: color-mix(in srgb, #fff 62%, transparent); color: var(--ink); border: 1px solid var(--line); }
   @media (hover: hover) and (pointer: fine) {
     .chat__cta--ghost:hover { border-color: var(--ink-soft); }
   }
@@ -1298,9 +1308,9 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     font: inherit;
     font-size: 14px;
     padding: 11px 14px;
-    border: 1px solid var(--line);
+    border: 1px solid var(--glass-line);
     border-radius: 999px;
-    background: #fff;
+    background: color-mix(in srgb, #fff 66%, transparent);
     color: var(--ink);
     min-width: 0;
   }
