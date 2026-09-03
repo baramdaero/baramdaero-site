@@ -265,21 +265,22 @@ html.br-js .br-reveal.br-in { opacity: 1; transform: translateY(0); }
    - 미지원·투명도 최소화 환경은 불투명 폴백 (아래 @supports / @media)
    ══════════════════════════════════════════════════════════════════ */
 :root {
-  --glass-line: color-mix(in srgb, var(--br-ink) 8%, transparent);
-  --glass-line-on-dark: color-mix(in srgb, #fff 10%, transparent);
+  /* 3차: 유리 엣지는 밝은 선이다 — 모든 레퍼런스가 1px 라이트 테두리로 판을 배경에서 뗀다 */
+  --glass-line: color-mix(in srgb, #fff 72%, transparent);
+  --glass-line-on-dark: color-mix(in srgb, #fff 18%, transparent);
   /* 2차(2026-08-28) 강도 상향: 알파는 본문 하한(70%) 위에서만 낮추고, 블러·채도·상단 하이라이트로 유리감을 올린다.
      inset 1px 백색 하이라이트가 글래스모피즘의 '두께' 신호다 — opacity가 아니라 그림자로 넣는다 */
-  --glass-shadow: inset 0 1px 0 color-mix(in srgb, #fff 55%, transparent), 0 14px 40px color-mix(in srgb, var(--br-teal) 9%, transparent);
-  --glass-shadow-dark: inset 0 1px 0 color-mix(in srgb, #fff 9%, transparent), 0 14px 40px color-mix(in srgb, var(--br-teal-deep) 32%, transparent);
+  --glass-shadow: inset 0 1px 0 color-mix(in srgb, #fff 85%, transparent), inset 0 0 0 1px color-mix(in srgb, #fff 18%, transparent), 0 18px 50px color-mix(in srgb, var(--br-teal) 14%, transparent);
+  --glass-shadow-dark: inset 0 1px 0 color-mix(in srgb, #fff 16%, transparent), 0 18px 50px color-mix(in srgb, var(--br-teal-deep) 40%, transparent);
 
-  --glass-heavy-bg:   color-mix(in srgb, var(--br-base) 78%, transparent);
-  --glass-heavy-fx:   blur(28px) saturate(130%);
+  --glass-heavy-bg:   color-mix(in srgb, var(--br-base) 74%, transparent);
+  --glass-heavy-fx:   blur(36px) saturate(140%);
   --glass-medium-bg:  color-mix(in srgb, var(--br-base) 70%, transparent);
-  --glass-medium-fx:  blur(18px) saturate(125%);
+  --glass-medium-fx:  blur(26px) saturate(135%);
   --glass-light-bg:   color-mix(in srgb, var(--br-base) 55%, transparent);
-  --glass-light-fx:   blur(10px) saturate(115%);
-  --glass-dark-bg:    color-mix(in srgb, var(--br-teal-deep) 72%, transparent);
-  --glass-dark-fx:    blur(24px) saturate(130%);
+  --glass-light-fx:   blur(14px) saturate(120%);
+  --glass-dark-bg:    color-mix(in srgb, var(--br-teal-deep) 68%, transparent);
+  --glass-dark-fx:    blur(32px) saturate(140%);
 }
 
 .br-glass {
@@ -330,10 +331,14 @@ html.br-js .br-reveal.br-in { opacity: 1; transform: translateY(0); }
   inset: 0;
   z-index: -1;
   pointer-events: none;
+  /* 3차(2026-08-28): 워시가 아니라 '형체'다. 유리는 뒤에 윤곽 있는 것이 있을 때만 유리로 보인다(레퍼런스 전부 크롬 링·구·네온 블롭).
+     알파를 올리고 그라디언트 스톱을 당겨 블롭 가장자리가 생기게 한다. 팔레트 v3 토큰만. 애니메이션 없음. */
   background:
-    radial-gradient(55% 45% at 12% 18%, color-mix(in srgb, var(--br-ice) 48%, transparent), transparent 70%),
-    radial-gradient(45% 40% at 88% 32%, color-mix(in srgb, var(--br-teal) 14%, transparent), transparent 70%),
-    radial-gradient(40% 35% at 30% 70%, color-mix(in srgb, var(--br-ice) 34%, transparent), transparent 70%),
-    radial-gradient(60% 50% at 50% 96%, color-mix(in srgb, var(--br-mist) 80%, transparent), transparent 70%);
+    radial-gradient(38% 30% at 14% 16%, color-mix(in srgb, var(--br-ice) 92%, transparent) 0%, color-mix(in srgb, var(--br-ice) 60%, transparent) 38%, transparent 62%),
+    radial-gradient(30% 26% at 86% 22%, color-mix(in srgb, var(--br-teal) 42%, transparent) 0%, color-mix(in srgb, var(--br-teal) 18%, transparent) 40%, transparent 64%),
+    radial-gradient(26% 22% at 68% 58%, color-mix(in srgb, var(--br-ice) 78%, transparent) 0%, transparent 60%),
+    radial-gradient(34% 28% at 22% 74%, color-mix(in srgb, var(--br-teal) 30%, transparent) 0%, color-mix(in srgb, var(--br-teal) 10%, transparent) 42%, transparent 66%),
+    radial-gradient(22% 20% at 50% 40%, color-mix(in srgb, var(--br-mist) 100%, transparent) 0%, transparent 58%),
+    radial-gradient(60% 46% at 50% 98%, color-mix(in srgb, var(--br-mist) 90%, transparent), transparent 66%);
 }
 
