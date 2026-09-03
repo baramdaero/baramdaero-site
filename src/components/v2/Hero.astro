@@ -1,5 +1,5 @@
 ---
-// S1 히어로 — 풀블리드 92vh, 기존 hero-loop.mp4 + teal-deep 오버레이, CTA는 챗봇 호출.
+// S1 히어로 — 풀블리드 92vh, 기존 hero-loop.mp4 + teal-deep 오버레이. CTA 버튼은 뺐다(2026-09-04, 페이지에 견적 문의가 너무 많음 — 런처·티저·밴드로 충분).
 // 대안 헤드라인 (미사용분 보존):
 //   a) "에어컨, 이제 게으르게 관리하세요."
 //   b) "숨 쉬는 공기까지가 시공입니다."
@@ -28,9 +28,6 @@ import { SITE_CONFIG } from '../../config.js';
   <div class="bd-container v2-hero__inner">
     <h1 class="v2-hero__title br-reveal">에어컨 생각,<br />오늘이 마지막입니다.</h1>
     <p class="v2-hero__sub br-reveal">당신의 바람은, 당신의 바람대로 불어옵니다.</p>
-    <div class="v2-hero__cta br-reveal">
-      <button type="button" class="bd-cta bd-cta--deep" data-chat-tree="menu">견적 문의</button>
-    </div>
   </div>
 
   <div class="v2-hero__hint" aria-hidden="true">
@@ -85,7 +82,6 @@ import { SITE_CONFIG } from '../../config.js';
     line-height: 1.7;
     color: rgba(255, 255, 255, 0.88);
   }
-  .v2-hero__cta { margin-top: 36px; }
   .v2-hero__hint {
     position: absolute;
     left: 50%;
