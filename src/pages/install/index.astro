@@ -80,7 +80,7 @@ const breadcrumbJsonLd = {
       <h2 class="br-h br-reveal">설치 4단계</h2>
       <div class="install-steps__list">
         {STEPS.map((st, i) => (
-          <article class="install-step__card br-glass br-glass--medium br-reveal">
+          <article class="install-step__card br-glass br-glass--medium br-reveal" data-glow>
             <StoryRow
               slotId={`install-process-${String(i + 1).padStart(2, '0')}`}
               slotLabel={`install-process-${String(i + 1).padStart(2, '0')}`}

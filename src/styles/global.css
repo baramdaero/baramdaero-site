@@ -313,6 +313,82 @@ html.br-js .br-reveal.br-in { opacity: 1; transform: translateY(0); }
   pointer-events: none;
 }
 .br-glass--dark::before { background: var(--glass-ring-on-dark); }
+
+/* ── 엣지 글로우 (React Bits BorderGlow 이식, 2026-09-03) ──────────────────
+   [data-glow] 카드에 scripts/border-glow.ts 가 레이어 2장을 넣고 --edge-proximity(0~100)·--cursor-angle 을 갱신한다.
+   ① __border: 커서 쪽 테두리만 팔레트 메시(ice·white·teal)로 물든다 — 링 마스크 ∩ 원뿔 마스크
+   ② __light : 같은 각도로 바깥에 ice 빛. plus-lighter 로 유리 위에 얹힌다.
+   호버 밖에선 opacity 0 (0.75s 로 꺼짐). 색은 팔레트 v3 토큰만. 애니메이션 없음(포인터 구동). */
+.br-glow {
+  --edge-proximity: 0;
+  --cursor-angle: 45deg;
+  --edge-sensitivity: 30;
+  --color-sensitivity: 50;
+  --cone-spread: 25;
+  --glow-pad: 40px;
+  /* 밝은 유리(Medium/Light)엔 ice 빛이 흰 면에 묻힌다(실측 픽셀 차 5/255) → teal 글로우·normal 블렌드.
+     딥 위 Heavy/Dark 는 ice·plus-lighter. */
+  --glow-c: var(--br-teal);
+  --glow-blend: normal;
+  --glow-mesh-a: var(--br-teal);
+  --glow-mesh-b: color-mix(in srgb, var(--br-teal) 55%, var(--br-ice));
+  --glow-mesh-c: var(--br-ice);
+}
+.br-glass--heavy.br-glow, .br-glass--dark.br-glow {
+  --glow-c: var(--br-ice);
+  --glow-blend: plus-lighter;
+  --glow-mesh-a: var(--br-ice);
+  --glow-mesh-b: #fff;
+  --glow-mesh-c: color-mix(in srgb, var(--br-teal) 45%, var(--br-ice));
+}
+.br-glow__border, .br-glow__light {
+  position: absolute; border-radius: inherit; pointer-events: none;
+  transition: opacity 0.25s ease-out;
+}
+.br-glow:not(:hover) .br-glow__border, .br-glow:not(:hover) .br-glow__light { opacity: 0 !important; transition: opacity 0.75s ease-in-out; }
+.br-glow__border {
+  inset: -1px; padding: 1px; z-index: 1;
+  background:
+    radial-gradient(at 80% 55%, var(--glow-mesh-a) 0px, transparent 50%),
+    radial-gradient(at 69% 34%, var(--glow-mesh-b) 0px, transparent 50%),
+    radial-gradient(at 8% 6%, var(--glow-mesh-c) 0px, transparent 50%),
+    radial-gradient(at 41% 38%, var(--glow-mesh-a) 0px, transparent 50%),
+    radial-gradient(at 86% 85%, var(--glow-mesh-b) 0px, transparent 50%),
+    radial-gradient(at 82% 18%, var(--glow-mesh-c) 0px, transparent 50%),
+    linear-gradient(var(--glow-mesh-a) 0 100%);
+  opacity: calc((var(--edge-proximity) - var(--color-sensitivity)) / (100 - var(--color-sensitivity)));
+  -webkit-mask:
+    conic-gradient(from var(--cursor-angle) at center, #000 calc(var(--cone-spread) * 1%), transparent calc((var(--cone-spread) + 15) * 1%), transparent calc((100 - var(--cone-spread) - 15) * 1%), #000 calc((100 - var(--cone-spread)) * 1%)),
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: source-in, xor;
+  mask:
+    conic-gradient(from var(--cursor-angle) at center, #000 calc(var(--cone-spread) * 1%), transparent calc((var(--cone-spread) + 15) * 1%), transparent calc((100 - var(--cone-spread) - 15) * 1%), #000 calc((100 - var(--cone-spread)) * 1%)),
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: intersect, exclude;
+}
+.br-glow__light {
+  inset: calc(var(--glow-pad) * -1); z-index: 1;
+  -webkit-mask: conic-gradient(from var(--cursor-angle) at center, #000 2.5%, transparent 10%, transparent 90%, #000 97.5%);
+  mask: conic-gradient(from var(--cursor-angle) at center, #000 2.5%, transparent 10%, transparent 90%, #000 97.5%);
+  opacity: calc((var(--edge-proximity) - var(--edge-sensitivity)) / (100 - var(--edge-sensitivity)));
+  mix-blend-mode: var(--glow-blend);
+}
+.br-glow__light::before {
+  content: ""; position: absolute; inset: var(--glow-pad); border-radius: inherit;
+  box-shadow:
+    inset 0 0 0 1px var(--glow-c),
+    inset 0 0 6px 0 color-mix(in srgb, var(--glow-c) 40%, transparent),
+    inset 0 0 15px 0 color-mix(in srgb, var(--glow-c) 30%, transparent),
+    inset 0 0 25px 2px color-mix(in srgb, var(--glow-c) 20%, transparent),
+    0 0 1px 0 color-mix(in srgb, var(--glow-c) 60%, transparent),
+    0 0 6px 0 color-mix(in srgb, var(--glow-c) 40%, transparent),
+    0 0 15px 0 color-mix(in srgb, var(--glow-c) 30%, transparent),
+    0 0 25px 2px color-mix(in srgb, var(--glow-c) 20%, transparent),
+    0 0 50px 2px color-mix(in srgb, var(--glow-c) 10%, transparent);
+}
+/* 카드 내용은 글로우 레이어 아래에 깔리면 안 된다 — 레이어는 클릭 통과, 시각만 위 */
 .br-glass--heavy  { background: var(--glass-heavy-bg);  -webkit-backdrop-filter: var(--glass-heavy-fx);  backdrop-filter: var(--glass-heavy-fx); }
 .br-glass--medium { background: var(--glass-medium-bg); -webkit-backdrop-filter: var(--glass-medium-fx); backdrop-filter: var(--glass-medium-fx); }
 .br-glass--light  { background: var(--glass-light-bg);  -webkit-backdrop-filter: var(--glass-light-fx);  backdrop-filter: var(--glass-light-fx); }
