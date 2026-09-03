@@ -37,6 +37,10 @@
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
+/* hidden 속성은 어떤 display 선언보다 이긴다 (2026-09-03).
+   .chat__panel { display:flex } 가 UA [hidden] 을 덮어 닫힌 챗봇 패널(opacity 0)이 데스크톱 우측 380×640 영역의
+   클릭을 전부 가로채고 있었다(elementFromPoint 실측). 토글은 전부 hidden 속성 기준이라 전역 한 줄이 근본 처방. */
+[hidden] { display: none !important; }
 
 html {
   -webkit-font-smoothing: antialiased;
