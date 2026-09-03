@@ -7,7 +7,7 @@ import Base from '../layouts/Base.astro';
 import Hero from '../components/v2/Hero.astro';
 // import DarkScrub from '../components/v2/DarkScrub.astro'; // 위 미노출 주석 참조
 // import Problem from '../components/v2/Problem.astro'; // 구 S2 — DarkScrub이 동일 메시지를 대체 (비포 사진 확보 후 재검토)
-import FeatureRow from '../components/v2/FeatureRow.astro';
+import ServiceSplit from '../components/v2/ServiceSplit.astro';
 import Marquee from '../components/v2/Marquee.astro';
 import Stats from '../components/v2/Stats.astro';
 import Process from '../components/v2/Process.astro';
@@ -69,11 +69,28 @@ const cta = home.ctaBand;
     </section>
   )}
 
-  {/* 미리보기(feat/feature-row): 지그재그 3섹션 → 토스식 카드 행 1섹션. 데이터·카피 동일 */}
-  <FeatureRow cards={home.services.cards.map((svc, i) => ({
-    eyebrow: svc.eyebrow, heading: svc.heading, lines: svc.lines, cta: svc.cta,
-    chatTree: SERVICE_LAYOUT[i]?.id, slotId: SERVICE_LAYOUT[i]?.slotId ?? `home-service-${i + 1}`,
-  }))} />
+  {home.services.cards.map((svc, i) => (
+    <ServiceSplit
+      id={SERVICE_LAYOUT[i]?.id}
+      eyebrow={svc.eyebrow}
+      link={svc.cta?.href}
+      linkLabel={svc.cta?.label ?? ''}
+      flip={SERVICE_LAYOUT[i]?.flip ?? false}
+      slotId={SERVICE_LAYOUT[i]?.slotId}
+      tone={SERVICE_LAYOUT[i]?.tone ?? 'base'}
+    >
+      <Fragment slot="headline">
+        {svc.heading.map((line, j) => (
+          <Fragment>{j > 0 && <br />}{line}</Fragment>
+        ))}
+      </Fragment>
+      <Fragment slot="body">
+        {svc.lines.map((line, j) => (
+          <Fragment>{j > 0 && <br />}{line}</Fragment>
+        ))}
+      </Fragment>
+    </ServiceSplit>
+  ))}
 
   {home.triage && (
     <NeedTriage heading={home.triage.heading} cards={home.triage.cards} tone={hasMarquee ? 'light' : 'deep'} />
