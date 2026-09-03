@@ -36,7 +36,6 @@ const TEASER = [
         <path d="M6 6l12 12M18 6L6 18" />
       </svg>
     </span>
-    <span class="chat__fab-label">견적 문의</span>
   </button>
   <div class="chat__teaser" data-chat-teaser hidden>
     {TEASER.map((t) => (
@@ -1086,7 +1085,7 @@ const TEASER = [
 <!-- is:global — 말풍선·칩·카드가 JS로 동적 생성되어 스코프 속성이 붙지 않는다. chat__ 네임스페이스로 충돌 방지. -->
 <style is:global>
   /* ---------- 런처 ---------- */
-  /* 런처 — 라벨 있는 필 (2026-09-03). 원형 아이콘만으로는 뭘 하는 버튼인지 안 읽혔다.
+  /* 런처 — 아이콘 스쿼클 (2026-09-03). 라벨 필도 시도했으나 티저 문구가 위에 있어 로고만 남김.
      Specular 림: React Bits SpecularButton(WebGL) 을 CSS conic 링 + JS 각도 보간으로 이식.
      --sb-angle(빛 방향)·--sb-bright(포인터 근접도) 를 스크립트가 갱신, hover 기기 전용. */
   .chat__fab {
@@ -1096,15 +1095,14 @@ const TEASER = [
     right: 20px;
     bottom: 20px;
     z-index: 60;
-    height: 52px;
-    padding: 0 18px 0 14px;
-    border-radius: 999px;
+    width: 56px;
+    height: 56px;
+    border-radius: 18px; /* 원형 → 스쿼클 (SpecularButton 기본 radius) */
     border: 1px solid color-mix(in srgb, #fff 12%, transparent); /* 원본 baseColor 스트로크 */
     background: var(--br-teal-deep);
     color: #fff;
-    display: inline-flex;
-    align-items: center;
-    gap: 9px;
+    display: grid;
+    place-items: center;
     box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent), 0 2px 6px rgba(0, 41, 58, 0.18), 0 10px 26px rgba(0, 41, 58, 0.28);
     transition: background-color var(--dur-color) ease, transform 200ms var(--ease-out);
   }
@@ -1126,9 +1124,6 @@ const TEASER = [
     opacity: var(--sb-bright);
     filter: drop-shadow(0 0 4px color-mix(in srgb, var(--br-ice) 70%, transparent));
   }
-  .chat__fab-label { font-size: 15px; font-weight: 700; letter-spacing: 0.01em; white-space: nowrap; }
-  .chat.is-open .chat__fab-label { display: none; }
-  .chat.is-open .chat__fab { padding: 0 14px; }
   .chat__fab-ico { display: grid; width: 22px; height: 22px; }
   /* 아이콘 크로스페이드 — 열림 시 말풍선 → X */
   .chat__fab-icon {
@@ -1145,17 +1140,20 @@ const TEASER = [
   .chat__teaser-item {
     font: inherit; font-size: 14px; font-weight: 600; color: #fff; white-space: nowrap;
     padding: 10px 14px; border-radius: 999px;
-    background: color-mix(in srgb, var(--br-teal-deep) 86%, transparent);
     border: 1px solid var(--glass-line-on-dark);
     box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 22%, transparent), 0 6px 18px color-mix(in srgb, var(--br-teal-deep) 24%, transparent);
     opacity: 0; transform: translateX(16px);
     transition: opacity 240ms ease, transform 240ms var(--ease-out);
   }
+  /* 세 줄 색 분리 — 런처(teal-deep)와도 다르게: teal / ice / 백색 유리. 팔레트 v3 토큰만 */
+  .chat__teaser-item:nth-child(1) { background: color-mix(in srgb, var(--br-teal) 92%, transparent); color: #fff; }
+  .chat__teaser-item:nth-child(2) { background: color-mix(in srgb, var(--br-ice) 94%, transparent); color: var(--br-teal-deep); border-color: color-mix(in srgb, #fff 70%, transparent); }
+  .chat__teaser-item:nth-child(3) { background: color-mix(in srgb, #fff 96%, transparent); color: var(--br-teal-deep); border-color: var(--glass-line); }
   .chat__teaser.is-on .chat__teaser-item { opacity: 1; transform: none; }
   .chat__teaser.is-on .chat__teaser-item:nth-child(2) { transition-delay: 140ms; }
   .chat__teaser.is-on .chat__teaser-item:nth-child(3) { transition-delay: 280ms; }
   @media (hover: hover) and (pointer: fine) {
-    .chat__teaser-item:hover { background: var(--br-teal); }
+    .chat__teaser-item:hover { transform: translateX(-2px); }
   }
   .chat__fab-icon--close { opacity: 0; transform: scale(0.25) rotate(-45deg); }
   .chat.is-open .chat__fab-icon--bubble { opacity: 0; transform: scale(0.25); }
