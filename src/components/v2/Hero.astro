@@ -50,6 +50,8 @@ import { SITE_CONFIG } from '../../config.js';
 <style>
   .v2-hero {
     position: relative;
+    /* 스태킹 컨텍스트 고정 — 없으면 media(z -2)·ovl(z -1)이 루트로 빠져 .br-ambient(z -1)가 영상과 스크림 사이에 끼어 얼룩으로 비친다(2026-09-03 라이브 캡처) */
+    isolation: isolate;
     min-height: 92vh;
     min-height: 92svh;
     display: flex;
