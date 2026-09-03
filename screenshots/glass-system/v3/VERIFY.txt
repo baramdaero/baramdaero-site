@@ -1,13 +1,16 @@
 ■ 전 라우트 유리 표면 대비 (실측 합성 픽셀)
+  ✓  8.75:1 /                   v2-svc__txt.br-glass--medium                   rgb(247,249,250) "설치 — 설계" 
+  ✓  8.51:1 /                   v2-svc__txt.br-glass--medium                   rgb(243,246,248) "관리 — 기록" 
+  ✓  8.75:1 /                   v2-svc__txt.br-glass--medium                   rgb(247,249,250) "세척 — 지킴" 
   ✓  5.13:1 /                   v2-triage__card.br-glass--heavy                rgb(182,195,203) "설치가 필요합니다" 
   ✓  5.13:1 /                   v2-triage__card.br-glass--heavy ▸캡션            rgb(182,195,203) "사진 준비 중" 
-  ✓  5.12:1 /                   v2-triage__card.br-glass--heavy                rgb(182,195,202) "세척이 필요합니다" 
-  ✓  5.12:1 /                   v2-triage__card.br-glass--heavy ▸캡션            rgb(182,195,202) "사진 준비 중" 
-  ✓  5.42:1 /                   v2-triage__card.br-glass--heavy                rgb(185,201,208) "문제가 생겼습니다" 
-  ✓  5.42:1 /                   v2-triage__card.br-glass--heavy ▸캡션            rgb(185,201,208) "사진 준비 중" 
+  ✓  5.08:1 /                   v2-triage__card.br-glass--heavy                rgb(182,194,202) "세척이 필요합니다" 
+  ✓  5.08:1 /                   v2-triage__card.br-glass--heavy ▸캡션            rgb(182,194,202) "사진 준비 중" 
+  ✓  5.38:1 /                   v2-triage__card.br-glass--heavy                rgb(185,200,207) "문제가 생겼습니다" 
+  ✓  5.38:1 /                   v2-triage__card.br-glass--heavy ▸캡션            rgb(185,200,207) "사진 준비 중" 
   ✓  5.71:1 /                   v2-cta                                         rgb(77,107,118) "기록은 여기서부터 시작됩니" 
   ✓  9.74:1 /                   bd-header(scrolled)                            rgb(194,198,197) "메뉴" 
-  ✓ 15.77:1 /                   chat__panel(Heavy)                             rgb(246,248,249) "패널" 
+  ✓ 15.74:1 /                   chat__panel(Heavy)                             rgb(245,248,249) "패널" 
   ✓  8.45:1 /install/           install-step__card.br-glass--medium            rgb(243,245,247) "01" 
   ✓  8.45:1 /install/           install-step__card.br-glass--medium ▸캡션        rgb(243,245,247) "사진 준비 중" 
   ✓  8.45:1 /install/           install-step__card.br-glass--medium            rgb(243,245,247) "02" 
@@ -17,7 +20,7 @@
   ✓  8.53:1 /install/           install-step__card.br-glass--medium            rgb(244,246,248) "04" 
   ✓  8.53:1 /install/           install-step__card.br-glass--medium ▸캡션        rgb(244,246,248) "사진 준비 중" 
   ✓  5.69:1 /install/           v2-cta                                         rgb(78,107,119) "견적은 방문 전에나옵니다" 
-  ✓ 11.77:1 /install/           bd-header(scrolled)                            rgb(216,216,214) "메뉴" 
+  ✓ 11.71:1 /install/           bd-header(scrolled)                            rgb(214,216,213) "메뉴" 
   ✓ 15.78:1 /install/           chat__panel(Heavy)                             rgb(246,248,250) "패널" 
   ✓  8.27:1 /care/              care-symptoms__card.br-glass--medium           rgb(239,243,245) "냄새" 
   ✓  8.27:1 /care/              care-symptoms__card.br-glass--medium ▸캡션       rgb(239,243,245) "사진 준비 중" 
@@ -107,15 +110,15 @@
   ✓  5.69:1 /cases/             v2-cta                                         rgb(78,107,119) "다음 현장이우리 집이어도 " 
   ✓ 15.08:1 /cases/             bd-header(scrolled)                            rgb(240,243,246) "메뉴" 
   ✓ 11.13:1 /cases/             chat__panel(Heavy)                             rgb(201,212,218) "패널" 
-  표면 108개 · 최저 5.12:1 · 4.5 미달 0건
+  표면 111개 · 최저 5.08:1 · 4.5 미달 0건
 ■ 페이지별 레이어/중첩/챗봇/overflow
-  /                   레이어  6 중첩 0 · 진입점 5 패널 true · ov false · 에러 1
+  /                   레이어  9 중첩 0 · 진입점 5 패널 true · ov false · 에러 1
   /install/           레이어  7 중첩 0 · 진입점 1 패널 true · ov false · 에러 1
   /care/              레이어 20 중첩 0 · 진입점 6 패널 true · ov false · 에러 1
   /situation/newhome/ 레이어 10 중첩 0 · 진입점 2 패널 true · ov false · 에러 1
   /faq/               레이어 41 중첩 0 · 진입점 1 패널 true · ov false · 에러 1
   /cases/             레이어  3 중첩 0 · 진입점 2 패널 true · ov false · 에러 1
-■ 앰비언트 거터 편차 최대 34/255 (상한 24) 샘플 34,0,3,4,0,0
+■ 앰비언트 거터 편차 최대 34/255 (상한 24) 샘플 34,0,0,4,0,0
 ■ 390 /          ov false
 ■ 390 /care/     ov false
 ■ 390 /install/  ov false
