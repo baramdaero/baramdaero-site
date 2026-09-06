@@ -24,6 +24,13 @@
   --maxw: 1120px;
   --radius: 12px;
 
+  /* 섹션·패널 리듬 토큰 (2026-09-07). 섹션 간격은 한 곳에서만 정한다 — 컴포넌트가 이 값을 소비한다.
+     데스크톱 160px는 앞뒤 섹션이 만나면 320px가 되어 카드와 다음 섹션이 서로 남처럼 떨어져 보였다(900px 캡처).
+     패널 패딩/간격은 사진+본문을 한 유리 판에 넣는 카드(서비스·스토리·절차)가 공유한다. */
+  --section-pad: 72px;
+  --panel-pad: 24px;
+  --panel-gap: 24px;
+
   /* ---- 레거시 별칭 (v1 컴포넌트·챗봇 호환용 — 신규 코드에서 사용 금지) ---- */
   --bg: var(--br-base);
   --bg-soft: var(--br-mist);
@@ -85,9 +92,15 @@ button {
 /* 공통 유틸 */
 .bd-container { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
 
-/* 섹션 수직 리듬 — 모바일 72px / 데스크톱 120px */
-.bd-section { padding: 88px 0; }
-@media (min-width: 768px) { .bd-section { padding: 160px 0; } }
+/* 섹션 수직 리듬 — 모바일 72px / 768px+ 96→120px(뷰포트 비례) / 1024px+ 120px.
+   값은 :root --section-pad 한 곳에서만 바꾼다. */
+@media (min-width: 768px) {
+  :root { --section-pad: clamp(96px, 12.5vw, 120px); --panel-pad: 32px; --panel-gap: 32px; }
+}
+@media (min-width: 1024px) {
+  :root { --panel-pad: 40px; --panel-gap: 40px; }
+}
+.bd-section { padding: var(--section-pad) 0; }
 
 /* 섹션 라벨 — 알약 칩 폐기(2026-08-25). 자간 + 헤어라인으로 층위를 만든다.
    한글은 대문자가 없어 영문 small-caps 대신 자간이 라벨 신호다.

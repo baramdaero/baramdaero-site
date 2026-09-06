@@ -37,43 +37,74 @@ const hasVisual = isImageSlotVisible(slotId, image);
   data-layout-section="home-service"
   data-image-side={hasVisual ? (flip ? 'left' : 'right') : undefined}
 >
-  <div class:list={['bd-container', 'v2-svc__grid', { 'v2-svc__grid--flip': flip, 'v2-svc__grid--copy-only': !hasVisual }]}>
-    <div class="v2-svc__txt br-glass br-glass--medium" data-glow>
-      <span class="br-eyebrow br-reveal">{eyebrow}</span>
-      <h2 class="br-h br-reveal"><slot name="headline" /></h2>
-      <p class="br-body br-reveal"><slot name="body" /></p>
-      <p class="v2-svc__more br-reveal">
-        {link ? (
-          <a class="v2-svc__link" href={link}>{linkLabel} <span aria-hidden="true">→</span></a>
-        ) : (
-          <button disabled aria-describedby="chat-unavailable" type="button" class="v2-svc__link" data-chat-tree={chatTree}>{linkLabel} <span aria-hidden="true">→</span></button>
-        )}
-      </p>
-    </div>
-    {hasVisual && (
-      <div class="v2-svc__vis br-reveal">
-        <ImageSlot id={slotId} src={image} alt={imageAlt} label={slotId} ratio="wide" />
+  <div class="bd-container">
+    <div
+      class:list={['v2-svc__card', 'br-glass', 'br-glass--medium', { 'v2-svc__card--flip': flip, 'v2-svc__card--copy-only': !hasVisual }]}
+      data-glow
+    >
+      <div class="v2-svc__txt">
+        <span class="br-eyebrow br-reveal">{eyebrow}</span>
+        <h2 class="br-h br-reveal"><slot name="headline" /></h2>
+        <p class="br-body br-reveal"><slot name="body" /></p>
+        <p class="v2-svc__more br-reveal">
+          {link ? (
+            <a class="v2-svc__link" href={link}>{linkLabel} <span aria-hidden="true">→</span></a>
+          ) : (
+            <button disabled aria-describedby="chat-unavailable" type="button" class="v2-svc__link" data-chat-tree={chatTree}>{linkLabel} <span aria-hidden="true">→</span></button>
+          )}
+        </p>
       </div>
-    )}
+      {hasVisual && (
+        <div class="v2-svc__vis br-reveal">
+          <ImageSlot id={slotId} src={image} alt={imageAlt} label={slotId} ratio="wide" />
+        </div>
+      )}
+    </div>
   </div>
 </section>
 
 <style>
-  /* 글래스 1차: 섹션은 투명 — 앰비언트가 비쳐야 유리가 유리로 보인다.
-     면(카드 역할)은 .v2-svc__txt 의 Medium 패널이 맡는다. tone 클래스는 유지(확장 대비) */
+  /* 글래스 1차: 섹션은 투명 — 앰비언트가 비쳐야 유리가 유리로 보인다. tone 클래스는 유지(확장 대비)
+     2026-09-07 구성 재편: 사진과 본문을 '한 장의 유리 판'에 넣는다.
+     이전엔 유리 카드(410×414~442)와 사진(410×256)이 같은 폭·같은 윗선으로만 나란히 놓여
+     아래쪽이 비는 두 개의 남남 표면으로 읽혔다. 사진 비율(16:10)은 그대로 두고(천장 에어컨·워터마크 보존)
+     - 모바일: 사진이 카드 윗면에 붙고(위 모서리만 라운드) 본문이 아래 — 미디어 카드
+     - 768px+: 카드 안에서 좌우 2열, 사진은 안쪽 액자로 세로 중앙 — 높이 차이는 한 판 안의 여백이 된다 */
   .v2-svc--base { background: transparent; }
   .v2-svc--mist { background: transparent; }
-  .v2-svc { padding-block: 56px; }
+
+  /* 섹션 리듬: 리드 제목 → 카드 4장은 한 묶음. 카드 사이는 섹션 간격이 아니라 카드 간격.
+     마지막 카드만 다음 섹션과 섹션 간격을 둔다(:has 미지원 브라우저는 카드 사이가 섹션 간격으로 벌어질 뿐 깨지지 않는다). */
+  .v2-svc { --svc-gap: 24px; padding-block: var(--section-pad); }
+  :global(.v2-svc-lead) + .v2-svc,
   .v2-svc + .v2-svc { padding-top: 0; }
-  .v2-svc__txt { padding: 32px 28px; }
-  @media (min-width: 768px) { .v2-svc__txt { padding: 40px 36px; } }
-  .v2-svc__grid {
+  .v2-svc:has(+ .v2-svc) { padding-bottom: var(--svc-gap); }
+
+  .v2-svc__card {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 24px;
-    align-items: start;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: center;
   }
-  .v2-svc__more { margin-top: 16px; }
+  .v2-svc__txt { padding: 24px 24px 24px; }
+  .v2-svc__vis { order: -1; }
+  /* 모바일: 사진을 카드 윗면에 붙인다 — 링(1px) 안쪽이라 반지름을 1px 줄이고 옆·위 테두리는 링에 맡긴다 */
+  .v2-svc__vis :global(.br-image-slot) {
+    --slot-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
+    --slot-border-width: 0 0 1px;
+  }
+
+  /* 카드 안 위계 — 전역 .br-h(최대 46px)는 단독 섹션 제목용. 반폭 열에서는 36px까지만.
+     390px 26px / 768px 29px / 900px 31.5px / 1024px 34px / 1280px+ 36px */
+  .v2-svc__txt :global(.br-h) {
+    margin-top: 18px;
+    font-size: clamp(26px, 0.9rem + 1.9vw, 36px);
+    line-height: 1.25;
+  }
+  .v2-svc__txt :global(.br-body) { margin-top: 16px; }
+  /* home.json 의 lines 는 '한 칸 = 한 문장'으로 흐르게 한다. 반폭 열(≤500px)에는 35자 문장이 한 줄에 들어가지
+     않아 강제 줄바꿈이 2줄+1줄의 들쭉날쭉한 짝을 만들었다(900px 캡처). 문장 사이 공백은 index.astro 가 넣는다. */
+  .v2-svc__txt :global(.br-body br) { display: none; }
+  .v2-svc__more { margin: 10px 0 -8px; } /* 링크 터치영역 44px 의 아래 공기를 카드 패딩에서 되돌린다 */
   .v2-svc__link {
     display: inline-flex;
     align-items: center;
@@ -91,15 +122,25 @@ const hasVisual = isImageSlotVisible(slotId, image);
     .v2-svc__link:hover { color: var(--br-teal-deep); text-decoration-color: var(--br-ice); }
   }
   .v2-svc__txt :global(.br-body) { color: var(--br-ink); }
-  .v2-svc__grid--copy-only .v2-svc__txt { max-width: 760px; }
-  .v2-svc__vis { order: -1; }
+  .v2-svc__card--copy-only { max-width: 760px; }
+
   @media (min-width: 768px) {
-    .v2-svc { padding-block: 88px; }
-    .v2-svc__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px; }
+    .v2-svc { --svc-gap: 40px; }
+    .v2-svc__card {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--panel-gap);
+      padding: var(--panel-pad);
+    }
+    .v2-svc__txt { padding: 0; }
     .v2-svc__vis { order: 2; }
-    .v2-svc__grid--flip .v2-svc__txt { order: 2; }
-    .v2-svc__grid--flip .v2-svc__vis { order: 1; }
-    .v2-svc__grid--copy-only { grid-template-columns: minmax(0, 1fr); }
-    .v2-svc__grid--copy-only .v2-svc__txt { order: 1; }
+    /* 안쪽 액자: 카드 반지름보다 작게, 테두리 복원 */
+    .v2-svc__vis :global(.br-image-slot) {
+      --slot-radius: calc(var(--radius) - 4px);
+      --slot-border-width: 1px;
+    }
+    .v2-svc__card--flip .v2-svc__txt { order: 2; }
+    .v2-svc__card--flip .v2-svc__vis { order: 1; }
+    .v2-svc__card--copy-only { grid-template-columns: minmax(0, 1fr); }
+    .v2-svc__card--copy-only .v2-svc__txt { order: 1; }
   }
 </style>

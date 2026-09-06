@@ -43,9 +43,12 @@ const resolved = resolveImageSlot(id, src, alt);
     width: 100%;
     margin: 0;
     overflow: hidden;
-    border-radius: var(--radius);
+    /* 유리 카드 '안'에 들어갈 때 부모가 모서리·테두리를 조정한다(모바일은 카드 윗면에 붙여 위 모서리만 둥글게,
+       데스크톱은 안쪽 액자라 작은 라운드). 비율(크롭)은 건드리지 않는다 — 천장 에어컨·워터마크가 잘리면 안 된다. */
+    border-radius: var(--slot-radius, var(--radius));
     /* 밝은 면 기준. 어두운 섹션은 global.css 의 변수 오버라이드가 덮는다 */
     border: 1px solid var(--br-slot-line, rgba(0, 78, 100, 0.14));
+    border-width: var(--slot-border-width, 1px);
     background: var(--br-slot-bg, rgba(0, 78, 100, 0.035));
   }
 
