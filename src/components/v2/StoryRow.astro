@@ -57,8 +57,8 @@ const renderVisual = hasCustomVisual ? (hasVisual ?? true) : isImageSlotVisible(
   .br-story-row {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 40px;
-    align-items: center;
+    gap: 24px;
+    align-items: start;
   }
 
   .br-story-row__copy { max-width: 520px; }
@@ -83,10 +83,10 @@ const renderVisual = hasCustomVisual ? (hasVisual ?? true) : isImageSlotVisible(
   }
 
   @media (min-width: 768px) {
-    .br-story-row { gap: 64px; }
+    .br-story-row { gap: 40px; }
     .br-story-row__copy--glass { padding: 40px 36px; }
-    .br-story-row--image-right { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); }
-    .br-story-row--image-left { grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); }
+    .br-story-row--image-right,
+    .br-story-row--image-left { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
     .br-story-row--image-right .br-story-row__copy { order: 1; }
     .br-story-row--image-right .br-story-row__visual { order: 2; }

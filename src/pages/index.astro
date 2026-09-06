@@ -125,8 +125,11 @@ const cta = home.ctaBand;
 </Base>
 
 <style>
-  /* 리드 문장은 바로 아래 첫 서비스 카드와 한 덩어리로 읽혀야 해서 아래 여백만 줄인다.
-     섹션 상단 여백(.bd-section)은 그대로 두어 다크 구간과의 간격은 유지된다. */
-  .v2-svc-lead { background: var(--br-base); padding-bottom: 0; }
+  /* 제목과 첫 사진을 묶고, 연속 서비스 사이에는 한쪽 여백만 둔다. */
+  .v2-svc-lead { background: transparent; padding-bottom: 32px; }
+  .v2-svc-lead + :global(.v2-svc) { padding-top: 0; }
+  @media (min-width: 768px) {
+    .v2-svc-lead { padding-bottom: 48px; }
+  }
   :global(.v2-cta .bd-container .v2-cta__sub) { color: var(--br-base); }
 </style>
