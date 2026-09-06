@@ -37,6 +37,10 @@
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
+/* hidden 속성은 어떤 display 선언보다 이긴다 (2026-09-03).
+   .chat__panel { display:flex } 가 UA [hidden] 을 덮어 닫힌 챗봇 패널(opacity 0)이 데스크톱 우측 380×640 영역의
+   클릭을 전부 가로채고 있었다(elementFromPoint 실측). 토글은 전부 hidden 속성 기준이라 전역 한 줄이 근본 처방. */
+[hidden] { display: none !important; }
 
 html {
   -webkit-font-smoothing: antialiased;
@@ -53,6 +57,9 @@ body {
   letter-spacing: -0.005em;
   word-break: keep-all;
 }
+
+/* 카드 바깥 글로우가 좁은 화면의 가로 스크롤을 만들지 않게 뷰포트 끝에서 자른다. */
+main { overflow-x: clip; }
 
 img, video { max-width: 100%; height: auto; display: block; }
 
@@ -79,27 +86,67 @@ button {
 .bd-container { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
 
 /* 섹션 수직 리듬 — 모바일 72px / 데스크톱 120px */
-.bd-section { padding: 72px 0; }
-@media (min-width: 768px) { .bd-section { padding: 120px 0; } }
+.bd-section { padding: 88px 0; }
+@media (min-width: 768px) { .bd-section { padding: 160px 0; } }
 
-/* 눈썹 라벨 — ice 칩 + teal 텍스트 */
+/* 섹션 라벨 — 알약 칩 폐기(2026-08-25). 자간 + 헤어라인으로 층위를 만든다.
+   한글은 대문자가 없어 영문 small-caps 대신 자간이 라벨 신호다.
+   ⚠️ 알약을 되살리지 말 것: 배지는 장식으로 읽히고 AI 기본값 티가 난다. */
 .br-eyebrow {
-  display: inline-block;
-  background: var(--br-ice);
-  color: var(--br-teal);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  padding: 6px 14px;
-  border-radius: 999px;
+  display: block;
+  width: 100%;
+  padding: 0 0 12px;
+  border-bottom: 1px solid var(--br-eyebrow-line, rgba(0, 78, 100, 0.18));
+  color: var(--br-eyebrow-fg, var(--br-teal));
+  font-size: 15.5px; /* 구 알약 13px × 1.2 */
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+/* 큰 라벨 — 페이지 정체를 말하는 자리(서비스 2면). 아래 .br-h 가 주장을 맡는다 */
+.br-eyebrow--lead {
+  font-size: clamp(20px, 2.6vw, 28px);
+  letter-spacing: 0.1em;
+  padding-bottom: 16px;
+}
+
+/* 어두운 섹션 — 알약 배경이 하던 대비를 색으로 만든다.
+   새로 어두운 섹션을 만들면 여기에 클래스를 추가한다(빠지면 라벨이 배경에 묻힌다). */
+.v2-phero,
+.v2-scrub,
+.v2-mq,
+.v2-triage--deep,
+.care-process__story--deep,
+.care-close,
+.install-step--deep,
+.sit-journey__story--deep,
+.sit-close {
+  --br-eyebrow-fg: var(--br-ice);
+  --br-eyebrow-line: rgba(255, 255, 255, 0.16);
+  --br-slot-line: rgba(255, 255, 255, 0.14);
+  --br-slot-bg: rgba(255, 255, 255, 0.04);
+  --br-slot-fg: rgba(255, 255, 255, 0.5);
+}
+/* 슬롯이 유리 카드 '안'에 있으면 카드 표면 기준으로 되돌린다 — heavy/medium 카드는 딥 섹션 위에서도 밝은 면이라
+   섹션 기준 흰 글자(위 규칙)가 그대로 오면 캡션이 사라진다(2차 실측 1.30:1). 카드 규칙이 섹션 규칙을 이긴다. */
+.br-glass--heavy .br-image-slot,
+.br-glass--medium .br-image-slot,
+.br-glass--light .br-image-slot {
+  --br-slot-line: rgba(0, 78, 100, 0.14);
+  --br-slot-bg: rgba(0, 78, 100, 0.035);
+  /* 캡션은 solid teal — Heavy 카드가 딥 섹션 위에 오면 표면이 192,202,208로 내려앉아 알파 78%로는 3.7:1(2차 실측).
+     solid이면 Heavy-on-deep 5.7 / base 8.75. 흐림은 크기·자간이 맡는다 */
+  --br-slot-fg: var(--br-teal);
 }
 
 /* 섹션 헤드라인 — 과감한 스케일, 의도적 줄바꿈 전제 */
 .br-h {
   margin-top: 20px;
-  font-size: clamp(32px, 6vw, 64px);
-  font-weight: 800;
-  line-height: 1.15;
+  /* 토스 실측 46px/59.8px w700 기준으로 낮춤(08-27). 구 64px는 시각물이 없는 화면에서
+     제목만 커져 소리가 커진다. 이미지가 들어오면 다시 볼 것. */
+  font-size: clamp(28px, 3.6vw, 46px);
+  font-weight: 700;
+  line-height: 1.3;
   letter-spacing: -0.02em;
   color: var(--br-teal);
 }
@@ -107,11 +154,11 @@ button {
 
 .br-body {
   margin-top: 20px;
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.7;
   color: var(--br-ink-sub);
 }
-@media (min-width: 768px) { .br-body { font-size: 17px; } }
+@media (min-width: 768px) { .br-body { font-size: 16px; } }
 
 /* 구 마이크로라벨 (v1 페이지 호환) — 색만 신 체계 */
 .bd-microlabel {
@@ -201,4 +248,238 @@ html.br-js .br-reveal.br-in { opacity: 1; transform: translateY(0); }
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* 눈썹 없이 시작하는 섹션 제목 — 위에 헤어라인을 둔다 (2026-08-27).
+   눈썹이 있는 섹션은 눈썹의 아래 선이 시작점을 표시한다. 눈썹을 뺀 블록
+   (자주 묻는 질문·설치 4단계·분해세척 6단계·작업 기준)만 그 앵커가 없어
+   제목이 허공에서 시작하는 것처럼 보였다 — 라벨을 되살리지 않고 선만 맞춘다. */
+.br-h:not(.br-eyebrow + .br-h):not(.v2-phero__title) {
+  margin-top: 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--br-eyebrow-line, rgba(0, 78, 100, 0.18));
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   글래스 시스템 1차 (2026-08-27) — 팔레트 v3 토큰만 쓴다. 신규 색 금지.
+   등급은 커스텀 프로퍼티로 정의하고, 클래스와 컴포넌트가 그 값을 소비한다.
+   ⚠️ 규칙
+   - 본문이 올라가는 표면은 불투명도 70% 이상 (heavy 82 / medium 70). light(55)는 짧은 라벨 전용
+   - 다크 섹션(teal-deep 등) 위 유리는 **Heavy를 기본값**으로 한다. Medium은 밝은 배경 위에서만 —
+     Medium(70%)이 딥틸 위에 오면 표면이 173,187,194로 내려앉아 teal 제목 대비 4.69(턱걸이)·회청색으로 탁해진다(1차 실측)
+   - 유리 위에 유리를 얹지 않는다 — blur 비용이 곱으로 는다 (검증 스크립트가 중첩 0을 센다)
+   - opacity로 흐리게 하지 않는다 — .br-reveal이 opacity를 소유해 덮어쓴다. 배경 알파(color-mix)로만
+   - 미지원·투명도 최소화 환경은 불투명 폴백 (아래 @supports / @media)
+   ══════════════════════════════════════════════════════════════════ */
+:root {
+  /* 3차: 유리 엣지는 밝은 선이다 — 모든 레퍼런스가 1px 라이트 테두리로 판을 배경에서 뗀다 */
+  --glass-line: color-mix(in srgb, #fff 72%, transparent);
+  --glass-line-on-dark: color-mix(in srgb, #fff 18%, transparent);
+  /* 2차(2026-08-28) 강도 상향: 알파는 본문 하한(70%) 위에서만 낮추고, 블러·채도·상단 하이라이트로 유리감을 올린다.
+     inset 1px 백색 하이라이트가 글래스모피즘의 '두께' 신호다 — opacity가 아니라 그림자로 넣는다 */
+  /* 4차(2026-09-03) 방향광: 좌상단에서 빛이 온다. 위·왼쪽 모서리는 희게, 아래·오른쪽은 teal로 어두워지고 그림자도 teal로 물든다
+     (uiverse 계열 소프트 UI의 문법을 유리에 얹음 — 균일한 1px 백색 림은 '반투명'은 되지만 '만져지는 면'이 안 됐다) */
+  --glass-ring: linear-gradient(135deg, color-mix(in srgb, #fff 96%, transparent) 0%, color-mix(in srgb, #fff 40%, transparent) 48%, color-mix(in srgb, var(--br-teal) 34%, transparent) 100%);
+  --glass-ring-on-dark: linear-gradient(135deg, color-mix(in srgb, #fff 55%, transparent) 0%, color-mix(in srgb, #fff 12%, transparent) 50%, color-mix(in srgb, var(--br-teal-deep) 80%, transparent) 100%);
+  --glass-shadow: inset 0 1px 0 color-mix(in srgb, #fff 90%, transparent), inset 0 -1px 0 color-mix(in srgb, var(--br-teal) 10%, transparent), 6px 8px 22px color-mix(in srgb, var(--br-teal) 12%, transparent), 0 24px 56px color-mix(in srgb, var(--br-teal) 16%, transparent);
+  --glass-shadow-dark: inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent), 6px 8px 22px color-mix(in srgb, var(--br-teal-deep) 30%, transparent), 0 24px 56px color-mix(in srgb, var(--br-teal-deep) 40%, transparent);
+
+  --glass-heavy-bg:   color-mix(in srgb, var(--br-base) 74%, transparent);
+  --glass-heavy-fx:   blur(36px) saturate(140%);
+  --glass-medium-bg:  color-mix(in srgb, var(--br-base) 70%, transparent);
+  --glass-medium-fx:  blur(26px) saturate(135%);
+  --glass-light-bg:   color-mix(in srgb, var(--br-base) 55%, transparent);
+  --glass-light-fx:   blur(14px) saturate(120%);
+  --glass-flat-bg:    color-mix(in srgb, var(--br-base) 84%, transparent); /* blur 없는 유리 — 긴 본문용 */
+  --glass-dark-bg:    color-mix(in srgb, var(--br-teal-deep) 68%, transparent);
+  --glass-dark-fx:    blur(32px) saturate(140%);
+}
+
+.br-glass {
+  position: relative; /* 링 pseudo 기준 */
+  border: 1px solid transparent; /* 링은 ::before 가 그린다 — 폭 유지용 투명 보더 */
+  border-radius: var(--radius);
+  box-shadow: var(--glass-shadow);
+}
+/* 2톤 링: 그라디언트 보더는 radius를 못 타서(border-image) 마스크로 1px 링만 남긴다. 클릭 통과. */
+.br-glass::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--glass-ring);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.br-glass--dark::before { background: var(--glass-ring-on-dark); }
+
+/* ── Specular 림 (React Bits SpecularButton 이식, 2026-09-03) ────────────────
+   scripts/specular.ts 가 [data-specular] 에 --sb-angle·--sb-bright 를 갱신. 빛 방향 양쪽(0°·180°) 모서리에
+   --sb-line 색 줄무늬(shineSize 10° + fade 40°). 기본 ice, 밴드 버튼은 #fff. 원본의 baseColor 스트로크는 각 버튼의 border 가 맡는다. */
+.br-specular { --sb-angle: 45deg; --sb-bright: 0; --sb-line: var(--br-ice); } /* position 은 각 버튼이 갖는다 — 런처는 fixed 라 여기서 relative 를 주면 덮어쓴다(챗봇 스타일은 전역·동일 특이도) */
+.br-specular::after {
+  content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: conic-gradient(from calc(var(--sb-angle) - 50deg),
+    transparent 0deg, var(--sb-line) 50deg, transparent 100deg,
+    transparent 180deg, var(--sb-line) 230deg, transparent 280deg, transparent 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: var(--sb-bright);
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--sb-line) 70%, transparent));
+}
+
+/* ── 엣지 글로우 (React Bits BorderGlow 이식, 2026-09-03) ──────────────────
+   [data-glow] 카드에 scripts/border-glow.ts 가 레이어 2장을 넣고 --edge-proximity(0~100)·--cursor-angle 을 갱신한다.
+   ① __border: 커서 쪽 테두리만 팔레트 메시(ice·white·teal)로 물든다 — 링 마스크 ∩ 원뿔 마스크
+   ② __light : 같은 각도로 바깥에 ice 빛. plus-lighter 로 유리 위에 얹힌다.
+   호버 밖에선 opacity 0 (0.75s 로 꺼짐). 색은 팔레트 v3 토큰만. 애니메이션 없음(포인터 구동). */
+.br-glow {
+  --edge-proximity: 0;
+  --cursor-angle: 45deg;
+  --edge-sensitivity: 30;
+  --color-sensitivity: 50;
+  --cone-spread: 25;
+  --glow-pad: 40px;
+  /* 밝은 유리(Medium/Light)엔 ice 빛이 흰 면에 묻힌다(실측 픽셀 차 5/255) → teal 글로우·normal 블렌드.
+     딥 위 Heavy/Dark 는 ice·plus-lighter. */
+  --glow-c: var(--br-teal);
+  --glow-blend: normal;
+  --glow-mesh-a: var(--br-teal);
+  --glow-mesh-b: color-mix(in srgb, var(--br-teal) 55%, var(--br-ice));
+  --glow-mesh-c: var(--br-ice);
+}
+.br-glass--heavy.br-glow, .br-glass--dark.br-glow {
+  --glow-c: var(--br-ice);
+  --glow-blend: plus-lighter;
+  --glow-mesh-a: var(--br-ice);
+  --glow-mesh-b: #fff;
+  --glow-mesh-c: color-mix(in srgb, var(--br-teal) 45%, var(--br-ice));
+}
+.br-glow__border, .br-glow__light {
+  position: absolute; border-radius: inherit; pointer-events: none;
+  transition: opacity 0.25s ease-out;
+}
+.br-glow:not(:hover) .br-glow__border, .br-glow:not(:hover) .br-glow__light { opacity: 0 !important; transition: opacity 0.75s ease-in-out; }
+.br-glow__border {
+  inset: -1px; padding: 1px; z-index: 1;
+  background:
+    radial-gradient(at 80% 55%, var(--glow-mesh-a) 0px, transparent 50%),
+    radial-gradient(at 69% 34%, var(--glow-mesh-b) 0px, transparent 50%),
+    radial-gradient(at 8% 6%, var(--glow-mesh-c) 0px, transparent 50%),
+    radial-gradient(at 41% 38%, var(--glow-mesh-a) 0px, transparent 50%),
+    radial-gradient(at 86% 85%, var(--glow-mesh-b) 0px, transparent 50%),
+    radial-gradient(at 82% 18%, var(--glow-mesh-c) 0px, transparent 50%),
+    linear-gradient(var(--glow-mesh-a) 0 100%);
+  opacity: calc((var(--edge-proximity) - var(--color-sensitivity)) / (100 - var(--color-sensitivity)));
+  -webkit-mask:
+    conic-gradient(from var(--cursor-angle) at center, #000 calc(var(--cone-spread) * 1%), transparent calc((var(--cone-spread) + 15) * 1%), transparent calc((100 - var(--cone-spread) - 15) * 1%), #000 calc((100 - var(--cone-spread)) * 1%)),
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: source-in, xor;
+  mask:
+    conic-gradient(from var(--cursor-angle) at center, #000 calc(var(--cone-spread) * 1%), transparent calc((var(--cone-spread) + 15) * 1%), transparent calc((100 - var(--cone-spread) - 15) * 1%), #000 calc((100 - var(--cone-spread)) * 1%)),
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: intersect, exclude;
+}
+.br-glow__light {
+  inset: calc(var(--glow-pad) * -1); z-index: 1;
+  -webkit-mask: conic-gradient(from var(--cursor-angle) at center, #000 2.5%, transparent 10%, transparent 90%, #000 97.5%);
+  mask: conic-gradient(from var(--cursor-angle) at center, #000 2.5%, transparent 10%, transparent 90%, #000 97.5%);
+  opacity: calc((var(--edge-proximity) - var(--edge-sensitivity)) / (100 - var(--edge-sensitivity)));
+  mix-blend-mode: var(--glow-blend);
+}
+.br-glow__light::before {
+  content: ""; position: absolute; inset: var(--glow-pad); border-radius: inherit;
+  box-shadow:
+    inset 0 0 0 1px var(--glow-c),
+    inset 0 0 6px 0 color-mix(in srgb, var(--glow-c) 40%, transparent),
+    inset 0 0 15px 0 color-mix(in srgb, var(--glow-c) 30%, transparent),
+    inset 0 0 25px 2px color-mix(in srgb, var(--glow-c) 20%, transparent),
+    0 0 1px 0 color-mix(in srgb, var(--glow-c) 60%, transparent),
+    0 0 6px 0 color-mix(in srgb, var(--glow-c) 40%, transparent),
+    0 0 15px 0 color-mix(in srgb, var(--glow-c) 30%, transparent),
+    0 0 25px 2px color-mix(in srgb, var(--glow-c) 20%, transparent),
+    0 0 50px 2px color-mix(in srgb, var(--glow-c) 10%, transparent);
+}
+/* 카드 내용은 글로우 레이어 아래에 깔리면 안 된다 — 레이어는 클릭 통과, 시각만 위 */
+.br-glass--heavy  { background: var(--glass-heavy-bg);  -webkit-backdrop-filter: var(--glass-heavy-fx);  backdrop-filter: var(--glass-heavy-fx); }
+.br-glass--medium { background: var(--glass-medium-bg); -webkit-backdrop-filter: var(--glass-medium-fx); backdrop-filter: var(--glass-medium-fx); }
+.br-glass--light  { background: var(--glass-light-bg);  -webkit-backdrop-filter: var(--glass-light-fx);  backdrop-filter: var(--glass-light-fx); }
+/* Flat — backdrop-filter 없음. 블로그 포스트처럼 큰 면적에 blur를 걸면 스크롤 비용이 커서 반투명 면+림만으로 유리 문법을 잇는다.
+   blur가 없으므로 안에 유리 카드가 와도 '중첩'이 아니다 (chat__panel::before 와 같은 논리) */
+.br-glass--flat   { background: var(--glass-flat-bg); }
+/* Dark 테두리는 스펙(ink 8%)에서 의도적으로 이탈해 white 10%를 쓴다 —
+   ink 8%는 딥틸 위에서 사실상 보이지 않아 테두리가 없는 것과 같다. 유일한 스펙 이탈. */
+.br-glass--dark {
+  background: var(--glass-dark-bg);
+  -webkit-backdrop-filter: var(--glass-dark-fx);
+  backdrop-filter: var(--glass-dark-fx);
+  border-color: transparent; /* 링은 ::before (--glass-ring-on-dark) */
+  box-shadow: var(--glass-shadow-dark);
+}
+
+/* 폴백 ① backdrop-filter 미지원 → 불투명. (블러 없는 반투명은 뒤 내용이 그대로 비쳐 읽기가 깨진다) */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --glass-heavy-bg: var(--br-base);
+    --glass-medium-bg: var(--br-base);
+    --glass-light-bg: var(--br-mist);
+    --glass-flat-bg: var(--br-base);
+    --glass-dark-bg: var(--br-teal-deep);
+  }
+}
+/* 폴백 ② 사용자가 투명도 최소화를 켠 경우 → 같은 불투명 값 */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-heavy-bg: var(--br-base);
+    --glass-medium-bg: var(--br-base);
+    --glass-light-bg: var(--br-mist);
+    --glass-flat-bg: var(--br-base);
+    --glass-dark-bg: var(--br-teal-deep);
+    --glass-heavy-fx: none; --glass-medium-fx: none; --glass-light-fx: none; --glass-dark-fx: none;
+  }
+}
+
+/* ── 다크 섹션 앰비언트 (3차) ─────────────────────────────────────
+   딥 섹션은 불투명 단색이라 그 위 Heavy 유리 뒤에 굴절시킬 것이 없었다(회청 슬랩 — 3차 크롭).
+   레퍼런스는 어두운 배경 '안'에 형체를 두고 유리를 올린다. 같은 방식: 섹션 자체 ::before 에
+   ice/teal 블롭 2개. position:relative 는 섹션이 갖고, 콘텐츠는 z-index로 위에.
+   애니메이션 없음 · 팔레트 v3 토큰만 · 카드는 여전히 유리 1겹(중첩 아님: ::before 는 blur가 없다) */
+.care-close, .sit-close, .v2-triage--deep { position: relative; isolation: isolate; }
+.care-close::before, .sit-close::before, .v2-triage--deep::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(34% 40% at 18% 30%, color-mix(in srgb, var(--br-teal) 78%, transparent) 0%, color-mix(in srgb, var(--br-teal) 30%, transparent) 42%, transparent 66%),
+    radial-gradient(26% 34% at 82% 68%, color-mix(in srgb, var(--br-ice) 34%, transparent) 0%, color-mix(in srgb, var(--br-ice) 10%, transparent) 40%, transparent 64%),
+    radial-gradient(22% 28% at 58% 18%, color-mix(in srgb, var(--br-teal) 46%, transparent) 0%, transparent 60%);
+}
+.care-close > *, .sit-close > *, .v2-triage--deep > * { position: relative; z-index: 0; }
+
+/* ── 앰비언트 배경 — 유리 뒤에 비칠 것을 깐다 (본문 이미지 0장) ──
+   body 배경(base) 위, 본문 아래. 불투명 배경을 가진 섹션(다크 구간·mist/base 섹션)은
+   자연히 이 레이어를 덮는다. 애니메이션 없음(모바일 배터리). 눈에 띄면 실패라 아주 옅게. */
+/* 2차: 유리가 전 페이지로 가면서 뒤에 비칠 것이 더 필요해 세기를 올렸다(ice 30→48%, teal 9→14%, 블롭 4개).
+   거터 편차 상한 24/255. 애니메이션은 여전히 없음. */
+.br-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  /* 3차(2026-08-28): 워시가 아니라 '형체'다. 유리는 뒤에 윤곽 있는 것이 있을 때만 유리로 보인다(레퍼런스 전부 크롬 링·구·네온 블롭).
+     알파를 올리고 그라디언트 스톱을 당겨 블롭 가장자리가 생기게 한다. 팔레트 v3 토큰만. 애니메이션 없음.
+     4차(2026-09-03): teal(#004e64)·mist(#e0e5e9) 블롭이 base 위에서 회색으로 섞여 '얼룩'으로 읽혔다(라이브 캡처).
+     형체(스톱 비율)는 그대로 두고 색만 ice 단일 계열로. teal은 8% 한 곳만(깊이감), mist 0. */
+  background:
+    radial-gradient(44% 36% at 14% 16%, color-mix(in srgb, var(--br-ice) 95%, transparent) 0%, color-mix(in srgb, var(--br-ice) 55%, transparent) 46%, transparent 74%),
+    radial-gradient(36% 32% at 86% 22%, color-mix(in srgb, var(--br-ice) 85%, transparent) 0%, color-mix(in srgb, var(--br-ice) 40%, transparent) 46%, transparent 74%),
+    radial-gradient(30% 26% at 68% 58%, color-mix(in srgb, var(--br-ice) 80%, transparent) 0%, transparent 70%),
+    radial-gradient(40% 32% at 22% 76%, color-mix(in srgb, var(--br-ice) 70%, transparent) 0%, color-mix(in srgb, var(--br-teal) 8%, transparent) 50%, transparent 74%),
+    radial-gradient(60% 46% at 50% 98%, color-mix(in srgb, var(--br-ice) 45%, transparent), transparent 70%);
 }

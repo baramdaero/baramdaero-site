@@ -90,10 +90,10 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     position: fixed;
     top: 0;
     left: 0;
-    background: color-mix(in srgb, var(--br-base) 92%, transparent);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--br-line);
+    background: var(--glass-heavy-bg);
+    -webkit-backdrop-filter: var(--glass-heavy-fx);
+    backdrop-filter: var(--glass-heavy-fx);
+    border-bottom: 1px solid var(--glass-line);
     color: var(--br-ink);
     transition: background-color var(--dur-color) ease, color var(--dur-color) ease;
   }
@@ -109,10 +109,10 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   .bd-header--solid {
     position: sticky;
     top: 0;
-    background: color-mix(in srgb, var(--bg) 92%, transparent);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--line);
+    background: var(--glass-heavy-bg);
+    -webkit-backdrop-filter: var(--glass-heavy-fx);
+    backdrop-filter: var(--glass-heavy-fx);
+    border-bottom: 1px solid var(--glass-line);
     color: var(--ink);
   }
   /* 로고와 메뉴 사이의 남는 폭은 auto로 배분한다. 메뉴가 늘어도 화면 밖으로 밀지 않는다. */

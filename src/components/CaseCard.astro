@@ -30,10 +30,13 @@ const dateLabel = date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'lo
 <style>
   .bd-case-card {
     display: block;
-    border: 1px solid var(--line);
+    border: 1px solid var(--glass-line);
     border-radius: var(--radius);
     overflow: hidden;
-    background: #fff;
+    background: var(--glass-medium-bg);
+    -webkit-backdrop-filter: var(--glass-medium-fx);
+    backdrop-filter: var(--glass-medium-fx);
+    box-shadow: var(--glass-shadow);
     transition: border-color var(--dur-color) ease, transform 160ms var(--ease-out);
   }
   .bd-case-card:active { transform: scale(0.98); }

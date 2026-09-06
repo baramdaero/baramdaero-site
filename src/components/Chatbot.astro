@@ -9,6 +9,13 @@ import { loadFaq } from '../lib/faq.ts';
 // FAQ — 빌드 타임에 faq.json을 한글 검증·정제해 클라이언트로 주입 (아래 application/json 스크립트)
 const faqItems = loadFaq();
 const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
+// 런처 위 선택 문구(티저) — 세션당 1회, 1.5s 뒤 등장해 12s 유지. 누르면 해당 흐름으로 바로 진입.
+// 한 줄 25자 상한(챗봇 카피 규칙). 키는 TREE_START(install/clean/as/etc)와 일치해야 한다.
+const TEASER = [
+  { tree: 'install', text: '설치 견적 받고 싶어요' },
+  { tree: 'clean', text: '분해세척 견적 받고 싶어요' },
+  { tree: 'as', text: '쓰던 에어컨에 문제가 있어요' },
+];
 ---
 <div class="chat" data-chat-root>
   <p id="chat-unavailable" class="chat__unavailable" role="status">
@@ -17,19 +24,28 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
   <script type="application/json" data-chat-faq set:html={faqJson} />
   <button disabled aria-describedby="chat-unavailable"
     type="button"
-    class="chat__fab"
+    class="chat__fab br-specular"
     data-chat-fab
+    data-specular
     aria-haspopup="dialog"
     aria-expanded="false"
     aria-label="문의 챗봇 열기"
   >
-    <svg class="chat__fab-icon chat__fab-icon--bubble" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M21 12a8.5 8.5 0 0 1-8.5 8.5c-1.3 0-2.6-.3-3.7-.8L4 21l1.4-4.5A8.5 8.5 0 1 1 21 12Z" />
-    </svg>
-    <svg class="chat__fab-icon chat__fab-icon--close" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-      <path d="M6 6l12 12M18 6L6 18" />
-    </svg>
+    <span class="chat__fab-ico" aria-hidden="true">
+      <svg class="chat__fab-icon chat__fab-icon--bubble" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12a8.5 8.5 0 0 1-8.5 8.5c-1.3 0-2.6-.3-3.7-.8L4 21l1.4-4.5A8.5 8.5 0 1 1 21 12Z" />
+      </svg>
+      <svg class="chat__fab-icon chat__fab-icon--close" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+        <path d="M6 6l12 12M18 6L6 18" />
+      </svg>
+    </span>
+    <span class="chat__fab-label">문의</span>
   </button>
+  <div class="chat__teaser" data-chat-teaser hidden>
+    {TEASER.map((t) => (
+      <button disabled aria-describedby="chat-unavailable" type="button" class="chat__teaser-item" data-chat-tree={t.tree}>{t.text}</button>
+    ))}
+  </div>
 
   <section class="chat__panel" data-chat-panel role="dialog" aria-modal="true" aria-label="바람대로 문의 챗봇" hidden>
     <header class="chat__head">
@@ -394,7 +410,7 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
       text: COPY.install_brand,
       options: [
         ...SITE_CONFIG.BRANDS_INSTALL.map((b: string) => ({ label: b, next: 'install.units', set: { 브랜드: b } })),
-        { label: '상담으로 결정', next: 'install.units', set: { 브랜드: '상담으로 결정' } },
+        { label: '상담 후 결정', next: 'install.units', set: { 브랜드: '상담 후 결정' } },
       ],
     },
     'install.units': {
@@ -466,7 +482,7 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     return el;
   }
 
-  /** 봇 말풍선 앞 타이핑 인디케이터 200ms — reduced-motion 시 생략 */
+  /** 봇 말풍선 앞 타이핑 인디케이터 800ms — reduced-motion 시 생략 */
   async function typing(token: number) {
     if (reducedMotion.matches) return;
     // 개발 전용 검증 훅 — 헤드리스 팬은 백그라운드 타이머 스로틀링으로 200ms가 수 초로 늘어난다.
@@ -475,10 +491,10 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     const el = document.createElement('div');
     el.className = 'chat__msg chat__msg--bot chat__typing';
     el.setAttribute('aria-hidden', 'true');
-    el.innerHTML = '<span></span><span></span><span></span>';
+    el.innerHTML = '<span></span>';
     log.appendChild(el);
     scrollDown();
-    await delay(200);
+    await delay(800); /* 2026-09-03: 스퀘어 펄스가 한 번 수축·복귀하는 길이(200ms는 보이기 전에 사라짐) */
     el.remove();
     if (token !== renderToken) throw new Error('stale');
   }
@@ -488,12 +504,14 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     btn.type = 'button';
     btn.className = `chat__chip chat__chip--${kind}`;
     btn.textContent = label;
+    if (kind !== 'primary') { btn.classList.add('br-specular'); btn.dataset.specular = ''; }
     return btn;
   }
 
   function telChip(label: string, tel: string, primary = false): HTMLAnchorElement {
     const a = document.createElement('a');
-    a.className = primary ? 'chat__chip chat__chip--primary' : 'chat__chip chat__chip--tel';
+    a.className = primary ? 'chat__chip chat__chip--primary' : 'chat__chip chat__chip--tel br-specular';
+    if (!primary) a.dataset.specular = '';
     a.href = `tel:${tel}`;
     a.textContent = label;
     return a;
@@ -502,7 +520,8 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
   /** FAQ 앵커 링크 칩 — 같은 탭 이동 (챗봇을 닫고 본문을 읽는 흐름) */
   function linkChip(label: string, href: string): HTMLAnchorElement {
     const a = document.createElement('a');
-    a.className = 'chat__chip chat__chip--link';
+    a.className = 'chat__chip chat__chip--link br-specular';
+    a.dataset.specular = '';
     a.href = href;
     a.textContent = label;
     return a;
@@ -968,6 +987,7 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     renderToken += 1;
     log.innerHTML = '';
     disarmInput();
+    hideTeaser();
     panel.hidden = false;
     // rAF 대신 동기 리플로우 — 백그라운드 탭(rAF 정지)에서도 열림 상태가 즉시 적용된다
     void panel.offsetHeight;
@@ -1002,6 +1022,26 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
   }
 
   fab.addEventListener('click', () => (openState ? close() : open()));
+
+  /* ---------- 티저 — 세션당 1회, 1.5s 뒤 등장 · 12s 유지 ---------- */
+  const teaser = root.querySelector<HTMLElement>('[data-chat-teaser]');
+  function hideTeaser() {
+    if (!teaser || teaser.hidden) return;
+    teaser.classList.remove('is-on');
+    setTimeout(() => { teaser.hidden = true; }, 300);
+  }
+  let teaserSeen = true;
+  try { teaserSeen = sessionStorage.getItem('bd_teaser') === '1'; } catch { /* 비공개 모드 등 — 표시 안 함 */ }
+  if (teaser && !teaserSeen) {
+    try { sessionStorage.setItem('bd_teaser', '1'); } catch { /* 무시 */ }
+    setTimeout(() => {
+      if (openState) return;
+      teaser.hidden = false;
+      void teaser.offsetHeight;
+      teaser.classList.add('is-on');
+      setTimeout(hideTeaser, 12000);
+    }, 1500);
+  }
   root.querySelector('[data-chat-close]')?.addEventListener('click', close);
   backBtn.addEventListener('click', goBack);
   resetBtn.addEventListener('click', reset);
@@ -1052,30 +1092,64 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
   [data-chat-tree]:disabled, [data-chat-fab]:disabled { cursor: not-allowed; }
 
   /* ---------- 런처 ---------- */
+  /* 런처 — 로고+「문의」 스쿼클 필 (2026-09-04).
+     Specular 림: React Bits SpecularButton(WebGL) 을 CSS conic 링 + JS 각도 보간으로 이식.
+     --sb-angle(빛 방향)·--sb-bright(포인터 근접도) 를 스크립트가 갱신, hover 기기 전용. */
   .chat__fab {
     position: fixed;
     right: 20px;
     bottom: 20px;
     z-index: 60;
-    width: 56px;
     height: 56px;
-    border-radius: 50%;
-    background: var(--copper);
+    padding: 0 18px 0 15px;
+    border-radius: 18px; /* 원형 → 스쿼클 (SpecularButton 기본 radius) */
+    border: 1px solid color-mix(in srgb, #fff 12%, transparent); /* 원본 baseColor 스트로크 */
+    background: var(--br-teal-deep);
     color: #fff;
-    display: grid;
-    place-items: center;
-    box-shadow: 0 2px 6px rgba(33, 30, 26, 0.12), 0 10px 26px rgba(33, 30, 26, 0.18);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent), 0 2px 6px rgba(0, 41, 58, 0.18), 0 10px 26px rgba(0, 41, 58, 0.28);
     transition: background-color var(--dur-color) ease, transform 200ms var(--ease-out);
   }
   .chat__fab:active { transform: scale(0.96); }
   @media (hover: hover) and (pointer: fine) {
-    .chat__fab:hover { background: var(--copper-deep); transform: scale(1.05); }
+    .chat__fab:hover { background: var(--br-teal); transform: scale(1.04); }
     .chat__fab:hover:active { transform: scale(0.96); }
   }
+  .chat__fab-label { font-size: 15px; font-weight: 700; letter-spacing: 0.01em; }
+  .chat.is-open .chat__fab-label { display: none; }
+  .chat.is-open .chat__fab { padding: 0 17px; }
+  .chat__fab-ico { display: grid; width: 22px; height: 22px; }
   /* 아이콘 크로스페이드 — 열림 시 말풍선 → X */
   .chat__fab-icon {
     grid-area: 1 / 1;
     transition: opacity 200ms cubic-bezier(0.2, 0, 0, 1), transform 200ms cubic-bezier(0.2, 0, 0, 1);
+  }
+  /* 티저 — 런처 위 선택 문구 3개. 오른쪽에서 순차 등장, 12s 뒤 사라짐 (스크립트) */
+  .chat__teaser {
+    position: fixed; right: 20px; bottom: 84px; z-index: 59;
+    display: grid; gap: 8px; justify-items: end;
+    max-width: calc(100vw - 40px);
+  }
+  .chat__teaser[hidden] { display: none; } /* display:grid 가 UA [hidden] 을 덮지 않게 */
+  .chat__teaser-item {
+    font: inherit; font-size: 14px; font-weight: 600; color: #fff; white-space: nowrap;
+    padding: 10px 14px; border-radius: 999px;
+    border: 1px solid var(--glass-line-on-dark);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 22%, transparent), 0 6px 18px color-mix(in srgb, var(--br-teal-deep) 24%, transparent);
+    opacity: 0; transform: translateX(16px);
+    transition: opacity 240ms ease, transform 240ms var(--ease-out);
+  }
+  /* 세 줄 색 분리 — 런처(teal-deep)와도 다르게: teal / ice / 백색 유리. 팔레트 v3 토큰만 */
+  .chat__teaser-item:nth-child(1) { background: color-mix(in srgb, var(--br-teal) 92%, transparent); color: #fff; }
+  .chat__teaser-item:nth-child(2) { background: color-mix(in srgb, var(--br-ice) 94%, transparent); color: var(--br-teal-deep); border-color: color-mix(in srgb, #fff 70%, transparent); }
+  .chat__teaser-item:nth-child(3) { background: color-mix(in srgb, #fff 96%, transparent); color: var(--br-teal-deep); border-color: var(--glass-line); }
+  .chat__teaser.is-on .chat__teaser-item { opacity: 1; transform: none; }
+  .chat__teaser.is-on .chat__teaser-item:nth-child(2) { transition-delay: 140ms; }
+  .chat__teaser.is-on .chat__teaser-item:nth-child(3) { transition-delay: 280ms; }
+  @media (hover: hover) and (pointer: fine) {
+    .chat__teaser-item:hover { transform: translateX(-2px); }
   }
   .chat__fab-icon--close { opacity: 0; transform: scale(0.25) rotate(-45deg); }
   .chat.is-open .chat__fab-icon--bubble { opacity: 0; transform: scale(0.25); }
@@ -1091,16 +1165,31 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     height: min(640px, calc(100dvh - 120px));
     display: flex;
     flex-direction: column;
-    background: #fff;
-    border: 1px solid var(--line);
+    /* 유리 Heavy — 콘텐츠 위에 뜨는 고정 표면이라 유리가 가장 자연스러운 자리. 내부에 유리 없음(중첩 0) */
+    background: var(--glass-heavy-bg);
+    -webkit-backdrop-filter: var(--glass-heavy-fx);
+    backdrop-filter: var(--glass-heavy-fx);
+    border: 1px solid var(--glass-line);
+    box-shadow: var(--glass-shadow);
     border-radius: 16px;
-    box-shadow: 0 4px 10px rgba(33, 30, 26, 0.08), 0 24px 60px rgba(33, 30, 26, 0.22);
     overflow: hidden;
+    isolation: isolate;
     opacity: 0;
     transform: translateY(8px);
     transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
   }
   .chat__panel.is-open { opacity: 1; transform: translateY(0); }
+  /* display:flex 가 UA [hidden] 을 덮어 닫힌 패널(opacity 0)이 우측 380×640 클릭을 가로채던 버그 — 로컬 가드 */
+  .chat__panel[hidden] { display: none; }
+  /* 패널 내부 앰비언트(2026-09-03): 말풍선·칩이 반투명이어도 뒤에 형체가 없으면 유리로 안 읽힌다(모바일은 전체화면이라 특히).
+     딥 섹션과 같은 방식 — ::before 에 ice/teal 블롭. blur 없음(중첩 아님). */
+  .chat__panel::before {
+    content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background:
+      radial-gradient(60% 34% at 12% 22%, color-mix(in srgb, var(--br-ice) 85%, transparent) 0%, color-mix(in srgb, var(--br-ice) 40%, transparent) 46%, transparent 74%),
+      radial-gradient(50% 30% at 90% 58%, color-mix(in srgb, var(--br-ice) 70%, transparent) 0%, transparent 70%),
+      radial-gradient(44% 26% at 30% 92%, color-mix(in srgb, var(--br-teal) 14%, transparent) 0%, transparent 70%);
+  }
 
   /* ---------- 헤더 ---------- */
   .chat__head {
@@ -1147,32 +1236,76 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
     @starting-style { opacity: 0; transform: translateY(6px); }
   }
+  /* 말풍선 유리(2026-09-03): 패널이 이미 Heavy blur라 말풍선엔 backdrop-filter를 다시 걸지 않는다(유리 중첩 금지).
+     반투명 면 + 백색 림 + 상단 하이라이트만으로 패널의 블러가 비쳐 유리로 읽힌다. 알파는 본문 하한 70% 준수. */
   .chat__msg--bot {
     align-self: flex-start;
-    background: #f4f3f3;
+    background: color-mix(in srgb, #fff 64%, transparent);
+    border: 1px solid var(--glass-line);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 90%, transparent), 0 6px 18px color-mix(in srgb, var(--br-teal) 8%, transparent);
     border-bottom-left-radius: 4px;
   }
   .chat__msg--user {
     align-self: flex-end;
-    background: var(--copper);
+    /* 흰 글자 AA(4.5) 확보 위해 Dark 등급(68%)보다 진한 86% — 밝은 히어로/패널 위 최악 케이스 실측 */
+    background: color-mix(in srgb, var(--br-teal-deep) 86%, transparent);
     color: #fff;
+    border: 1px solid var(--glass-line-on-dark);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 22%, transparent), 0 6px 18px color-mix(in srgb, var(--br-teal-deep) 24%, transparent);
     border-bottom-right-radius: 4px;
   }
 
-  /* 타이핑 인디케이터 */
-  .chat__typing { display: inline-flex; gap: 4px; align-items: center; min-height: 20px; }
-  .chat__typing span {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--ink-soft);
-    animation: chat-typing 900ms ease-in-out infinite;
+  /* 타이핑 인디케이터 — 박스 점프(bxSpin) (2026-09-03, css-loaders 계열 순수 CSS 원본을 --size 로 축소 이식)
+     원본: 48px 박스가 18px 아래로 튀며 90° 구르고(0.5s), 밑에 그림자가 늘었다 준다. 총 높이 65×size.
+     말풍선 한 줄 높이(22px)에 맞춰 --size: .34px (박스 16px). 색: 박스 teal, 그림자 teal-deep 25%.
+     회전 요소 1개 + 그림자 1개 — 다이아몬드와 같은 비용. 말풍선 58×44 유지. */
+  .chat__typing {
+    box-sizing: content-box; /* 전역 border-box — padding은 .chat__msg 것을 그대로 */
+    width: 28px;
+    height: 22px;
+    min-height: 0;
+    display: grid;
+    place-items: start center;
   }
-  .chat__typing span:nth-child(2) { animation-delay: 150ms; }
-  .chat__typing span:nth-child(3) { animation-delay: 300ms; }
-  @keyframes chat-typing {
-    0%, 60%, 100% { opacity: 0.35; transform: translateY(0); }
-    30% { opacity: 1; transform: translateY(-2px); }
+  .chat__typing span {
+    --size: 0.34px;
+    position: relative;
+    width: calc(48 * var(--size));
+    height: calc(48 * var(--size));
+  }
+  .chat__typing span::before {
+    content: "";
+    position: absolute;
+    top: calc(60 * var(--size));
+    left: 0;
+    width: calc(48 * var(--size));
+    height: calc(5 * var(--size));
+    border-radius: 50%;
+    background: var(--br-teal-deep);
+    opacity: 0.25;
+    animation: chat-typing-shadow 0.5s linear infinite;
+  }
+  .chat__typing span::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: calc(4 * var(--size));
+    background: var(--br-teal);
+    animation: chat-typing-spin 0.5s linear infinite;
+  }
+  @keyframes chat-typing-spin {
+    17%  { border-bottom-right-radius: calc(3 * var(--size)); }
+    25%  { transform: translateY(calc(9 * var(--size))) rotate(22.5deg); }
+    50%  { transform: translateY(calc(18 * var(--size))) scale(1, 0.9) rotate(45deg); border-bottom-right-radius: calc(40 * var(--size)); }
+    75%  { transform: translateY(calc(9 * var(--size))) rotate(67.5deg); }
+    100% { transform: translateY(0) rotate(90deg); }
+  }
+  @keyframes chat-typing-shadow {
+    0%, 100% { transform: scale(1, 1); }
+    50%      { transform: scale(1.2, 1); }
   }
 
   /* FAQ 구분 라벨 — 실버 마이크로라벨 */
@@ -1192,26 +1325,31 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     gap: 6px;
     padding: 2px 0 4px;
   }
+  /* 칩 — 밴드 CTA 와 같은 SpecularButton 기법(2026-09-04): 투명 바탕 + 얇은 teal 스트로크 + 커서 쪽 모서리에 켜지는 teal 라인.
+     밝은 패널 위라 라인 색은 teal(흰 라인은 묻힌다). 선택된 칩은 teal 채움으로 '답'이 됨. primary 칩은 채움 유지. */
   .chat__chip {
+    --sb-line: var(--br-teal);
+    position: relative;
     font-size: 13.5px;
     font-weight: 500;
     padding: 10px 14px;
     min-height: 40px;
-    border: 1px solid var(--line);
+    border: 1px solid color-mix(in srgb, var(--br-teal) 32%, transparent);
     border-radius: 999px;
-    background: #fff;
+    background: transparent;
     color: var(--ink);
     text-align: left;
-    transition: border-color var(--dur-color) ease, color var(--dur-color) ease, transform 160ms var(--ease-out), opacity var(--dur-color) ease;
+    transition: border-color var(--dur-color) ease, background-color var(--dur-color) ease, color var(--dur-color) ease, transform 160ms var(--ease-out), opacity var(--dur-color) ease;
   }
   .chat__chip:active:not(:disabled) { transform: scale(0.96); }
   @media (hover: hover) and (pointer: fine) {
-    .chat__chip:hover:not(:disabled) { border-color: var(--copper); color: var(--copper-deep); }
+    .chat__chip:hover:not(:disabled) { background: color-mix(in srgb, var(--br-teal) 7%, transparent); border-color: color-mix(in srgb, var(--br-teal) 55%, transparent); color: var(--copper-deep); }
   }
   @media (pointer: coarse) {
     .chat__chip { min-height: 44px; padding: 11px 16px; }
   }
   .chat__chip--sub { border-color: transparent; color: var(--ink-soft); font-size: 13px; }
+  .chat__chip--sub::after { display: none; } /* 보조 칩은 링 없음 */
   .chat__chip--tel,
   .chat__chip--link { text-decoration: none; display: inline-flex; align-items: center; }
   .chat__chip--primary {
@@ -1228,12 +1366,13 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
   }
   /* 비활성 보존 — 선택 후에도 문맥으로 남긴다 */
   .chat__chips.is-settled .chat__chip { opacity: 0.5; cursor: default; }
-  .chat__chips.is-settled .chat__chip.is-chosen { opacity: 1; border-color: var(--copper); color: var(--copper-deep); }
+  .chat__chips.is-settled .chat__chip.is-chosen { opacity: 1; background: var(--br-teal); border-color: var(--br-teal); color: #fff; }
+  .chat__chips.is-settled .chat__chip::after { display: none; } /* 지나간 그룹은 링 정지 */
 
   /* ---------- 접수카드 ---------- */
   .chat__card {
     align-self: stretch;
-    background: #fff;
+    background: color-mix(in srgb, #fff 78%, transparent);
     border: 1px solid var(--silver);
     border-radius: 12px;
     padding: 14px 16px;
@@ -1278,7 +1417,7 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
   .chat__cta:active:not(:disabled) { transform: scale(0.98); }
   .chat__cta--primary { background: var(--copper); color: #fff; border: 1px solid var(--copper); }
   .chat__cta--primary:hover:not(:disabled) { background: var(--copper-deep); border-color: var(--copper-deep); }
-  .chat__cta--ghost { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+  .chat__cta--ghost { background: color-mix(in srgb, #fff 62%, transparent); color: var(--ink); border: 1px solid var(--line); }
   @media (hover: hover) and (pointer: fine) {
     .chat__cta--ghost:hover { border-color: var(--ink-soft); }
   }
@@ -1320,9 +1459,9 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     font: inherit;
     font-size: 14px;
     padding: 11px 14px;
-    border: 1px solid var(--line);
+    border: 1px solid var(--glass-line);
     border-radius: 999px;
-    background: #fff;
+    background: color-mix(in srgb, #fff 66%, transparent);
     color: var(--ink);
     min-width: 0;
   }

@@ -91,7 +91,7 @@ if (careFaq.length) {
 }
 ---
 <Base title={SITE_CONFIG.CARE_SEO_TITLE} description={SITE_CONFIG.CARE_SEO_DESCRIPTION} jsonLd={jsonLd}>
-  <PageHero eyebrow="분해 세척">
+  <PageHero eyebrow="분해 세척" lead>
     {headline}
     {intro && <Fragment slot="sub">{intro}</Fragment>}
   </PageHero>
@@ -105,7 +105,7 @@ if (careFaq.length) {
           {visibleSymptoms.map((s, i) => {
             const slotId = symptomSlot(s.icon, i);
             return (
-              <article class="care-symptoms__card br-reveal">
+              <article class="care-symptoms__card br-glass br-glass--medium br-reveal" data-glow>
                 <ImageSlot id={slotId} label={slotId} ratio="card" />
                 <h3>{s.title}</h3>
                 <p>{s.body}</p>
@@ -120,67 +120,38 @@ if (careFaq.length) {
     </section>
   )}
 
-  {processPairs.length > 0 && (
-    <section class="care-process" aria-label="분해세척 절차">
-      {processPairs.map((pair, i) => (
-        <article
-          class:list={[
-            'bd-section',
-            'care-process__story',
-            i === 2 ? 'care-process__story--deep' : (i % 2 === 0 ? 'care-process__story--mist' : 'care-process__story--base'),
-          ]}
-          data-layout-section={`care-process-${i + 1}`}
-        >
-          <div class="bd-container">
-            <StoryRow
-              slotId={`care-process-${String(i * 2 + 1).padStart(2, '0')}`}
-              imageSide={i % 2 === 0 ? 'left' : 'right'}
-              tone={i === 2 ? 'deep' : 'light'}
-              hasVisual={processImageCount(pair) > 0}
-            >
-              <Fragment slot="visual">
-                <div class:list={['care-process__visual-grid', { 'care-process__visual-grid--single': processImageCount(pair) === 1 }]}>
-                  {pair.map((st) => {
-                    const slotId = `care-process-${String(st.step).padStart(2, '0')}`;
-                    return (
-                      <ImageSlot
-                        id={slotId}
-                        src={st.image}
-                        alt={`${st.title} 작업 사진`}
-                        label={slotId}
-                        ratio="square"
-                      />
-                    );
-                  })}
-                </div>
-              </Fragment>
-              <span class="br-eyebrow br-reveal">분해세척 절차</span>
-              <h2 class="br-h br-reveal">{i === 0 ? <Fragment>뜯고, 씻고,<br />기록으로 남깁니다</Fragment> : pair[0].title}</h2>
-              {i === 0 && processIntro.length > 0 && (
-                <p class="br-body br-reveal">
-                  {processIntro.map((line, j) => <Fragment>{j > 0 && <br />}{line}</Fragment>)}
-                </p>
-              )}
-              <ol class="care-process__steps br-reveal">
-                {pair.map((st, j) => (
-                  <li>
-                    <span>{String(st.step).padStart(2, '0')}</span>
-                    <div>
-                      {(i === 0 || j > 0) && <h3>{st.title}</h3>}
-                      <p>{st.body}</p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-              {i === processPairs.length - 1 && processSource.length > 0 && (
-                <p class="care-process__source br-reveal">
-                  {processSource.map((line, j) => <Fragment>{j > 0 && <br />}{line}</Fragment>)}
-                </p>
-              )}
-            </StoryRow>
-          </div>
-        </article>
-      ))}
+  {/* 6단계를 한 섹션에 둔다 — 페어로 쪼개면 눈썹이 3번 반복되고
+      pair[0]의 제목이 h2로 올라가 6단계가 3개 섹션으로 읽힌다(08-27 실측). */}
+  {process.length > 0 && (
+    <section class="bd-section care-process care-process--mist" data-layout-section="care-process">
+      <div class="bd-container">
+        <h2 class="br-h br-reveal">분해세척 6단계</h2>
+        {processIntro.length > 0 && (
+          <p class="br-body br-reveal">
+            {processIntro.map((line, j) => <Fragment>{j > 0 && <br />}{line}</Fragment>)}
+          </p>
+        )}
+        <ol class="care-process__list">
+          {process.map((st) => {
+            const slotId = `care-process-${String(st.step).padStart(2, '0')}`;
+            return (
+              <li class="care-process__card br-glass br-glass--medium br-reveal">
+                {isImageSlotVisible(slotId, st.image) && (
+                  <ImageSlot id={slotId} src={st.image} alt={`${st.title} 작업 사진`} label={slotId} ratio="square" />
+                )}
+                <span class="care-process__no">{String(st.step).padStart(2, '0')}</span>
+                <h3 class="care-process__title">{st.title}</h3>
+                <p class="br-body">{st.body}</p>
+              </li>
+            );
+          })}
+        </ol>
+        {processSource.length > 0 && (
+          <p class="care-process__source br-reveal">
+            {processSource.map((line, j) => <Fragment>{j > 0 && <br />}{line}</Fragment>)}
+          </p>
+        )}
+      </div>
     </section>
   )}
 
@@ -228,11 +199,12 @@ if (careFaq.length) {
       {visibleSeasons.length > 0 && (
         <div class="care-seasons" data-layout-section="care-seasons">
           <span class="br-eyebrow br-reveal">정기 관리</span>
-          <h2 class="br-h br-reveal">언제 하는 게 좋은가</h2>
+          <h2 class="br-h br-reveal">세척 시기</h2>
           <div class="care-seasons__grid">
             {visibleSeasons.map((s) => (
-              <article class="care-seasons__card br-reveal">
+              <article class="care-seasons__card br-glass br-glass--heavy br-reveal">
                 <ImageSlot id={s.slotId} label={s.slotId} ratio="card" />
+                {s.months && <span class="care-seasons__months">{s.months}</span>}
                 <h3>{s.season}</h3>
                 <p>{s.body}</p>
               </article>
@@ -243,11 +215,10 @@ if (careFaq.length) {
 
       {careFaq.length > 0 && (
         <div class="care-faq" data-layout-section="care-faq">
-          <span class="br-eyebrow br-reveal">자주 묻는 질문</span>
-          <h2 class="br-h br-reveal">묻기 전에<br />먼저 답해 둡니다</h2>
+          <h2 class="br-h br-reveal">자주 묻는 질문</h2>
           <div class="care-faq__list br-reveal">
             {careFaq.map((f, i) => (
-              <details class="care-faq__item" open={i === 0}>
+              <details class="care-faq__item br-glass br-glass--heavy" open={i === 0}>
                 <summary>{f.q}</summary>
                 <p>{f.a}</p>
               </details>
@@ -265,7 +236,26 @@ if (careFaq.length) {
 </Base>
 
 <style>
-  .care-symptoms { background: var(--br-base); }
+  /* 절차 — 회색 섹션 위 기본색 카드 (/install/ 과 같은 패턴) */
+  .care-process--mist { background: transparent; } /* 유리 카드 호스트 — 투명해야 앰비언트가 비친다 */
+  .care-process__list { margin-top: 48px; list-style: none; display: grid; gap: 16px; }
+  .care-process__card {
+    padding: 28px 24px;
+    /* 배경·테두리·radius·그림자는 .br-glass--medium 이 맡는다 */
+  }
+  .care-process__no {
+    display: block; font-size: 13px; font-weight: 700;
+    letter-spacing: 0.14em; color: var(--br-teal); opacity: 0.55;
+  }
+  .care-process__title { margin-top: 6px; color: var(--br-teal); font-size: clamp(20px, 2.4vw, 26px); }
+  .care-process__card .br-body { margin-top: 10px; }
+  .care-process__card :global(.br-image-slot) { margin-bottom: 20px; max-width: 100%; }
+  @media (min-width: 768px) {
+    .care-process__list { gap: 20px; grid-template-columns: repeat(2, 1fr); }
+    .care-process__card { padding: 36px 32px; }
+  }
+
+  .care-symptoms { background: transparent; } /* 유리 카드 호스트 */
   .care-symptoms__grid,
   .care-seasons__grid {
     margin-top: 48px;
@@ -278,15 +268,23 @@ if (careFaq.length) {
     display: flex;
     flex-direction: column;
     padding: 16px;
-    border: 1px solid var(--br-mist);
-    border-radius: var(--radius);
-    background: var(--br-base);
+    /* 증상(Medium, 밝은 호스트) / 세척시기(Heavy, 딥 호스트) — 면은 .br-glass 등급이 맡는다 */
   }
 
   .care-symptoms__card :global(.br-image-slot),
   .care-seasons__card :global(.br-image-slot) { max-width: none; margin-bottom: 20px; }
   .care-symptoms__card h3,
-  .care-seasons__card h3 { color: var(--br-teal); font-size: 17px; }
+  /* 월 범위 — 제목 위 작은 표기. 비면 이 줄만 빠진다 */
+  .care-seasons__months {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    font-variant-numeric: tabular-nums;
+    color: var(--br-teal);
+    opacity: 0.6;
+  }
+  .care-seasons__card h3 { margin-top: 4px; color: var(--br-teal); font-size: 17px; }
   .care-symptoms__card p,
   .care-seasons__card p { margin-top: 8px; color: var(--br-ink); font-size: 14px; line-height: 1.65; }
 
@@ -348,7 +346,7 @@ if (careFaq.length) {
   .care-seasons__grid { grid-template-columns: 1fr; }
   .care-faq { margin-top: 120px; }
   .care-faq__list { margin-top: 48px; display: grid; gap: 10px; }
-  .care-faq__item { border-radius: var(--radius); background: var(--br-base); color: var(--br-ink); }
+  .care-faq__item { color: var(--br-ink); } /* 면은 .br-glass--heavy (딥 위) */
   .care-faq__item summary { min-height: 44px; padding: 16px 18px; cursor: pointer; color: var(--br-ink); font-weight: 700; }
   .care-faq__item p { padding: 0 18px 18px; color: var(--br-ink); font-size: 15px; line-height: 1.75; }
   :global(.v2-cta .bd-container .v2-cta__sub) { color: var(--br-base); }

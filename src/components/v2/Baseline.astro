@@ -100,9 +100,13 @@ const { baseline, noExtra, tone = 'base' } = Astro.props;
   .v2-baseline__noextra {
     margin-top: 40px;
     max-width: 760px;
-    border: 1px solid var(--br-line);
+    border: 1px solid var(--glass-line);
     border-radius: var(--radius);
     padding: 24px 22px;
+    background: var(--glass-medium-bg);
+    -webkit-backdrop-filter: var(--glass-medium-fx);
+    backdrop-filter: var(--glass-medium-fx);
+    box-shadow: var(--glass-shadow);
   }
   .v2-baseline__noextra h3 { font-size: 17px; color: var(--br-teal); margin-bottom: 12px; }
   .v2-baseline__noextra ul { list-style: none; display: grid; gap: 6px; }

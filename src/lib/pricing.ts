@@ -11,7 +11,7 @@ export const SYMPTOM_ICONS = ['smell', 'wind', 'stain', 'drip'] as const;
 export interface PriceRow { type: string; base: number; unit: string; note: string }
 export interface ProcessStep { step: number; title: string; body: string; image: string }
 export interface SymptomCard { icon: (typeof SYMPTOM_ICONS)[number] | ''; title: string; body: string; hidden: boolean }
-export interface SeasonCard { season: string; body: string; hidden: boolean }
+export interface SeasonCard { months: string; season: string; body: string; hidden: boolean }
 export interface PricingData {
   headline: string;
   intro: string;
@@ -122,7 +122,11 @@ export function loadPricing(): PricingData {
     if (it.hidden !== undefined && typeof it.hidden !== 'boolean') {
       warn(`seasons[${i}] — hidden은 true 또는 false여야 합니다. false로 처리합니다.`);
     }
-    return { season: it.season.trim(), body: it.body.trim(), hidden: it.hidden === true };
+    // months는 선택 — 비면 월 표기 줄만 빠진다 (빈 값 = 미노출)
+    return {
+      months: isNonEmptyString(it?.months) ? it.months.trim() : '',
+      season: it.season.trim(), body: it.body.trim(), hidden: it.hidden === true,
+    };
   });
 
   return {

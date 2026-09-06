@@ -42,8 +42,8 @@ if (items.length) {
 }
 ---
 <Base title="자주 묻는 질문" description="비용·세척·설치·진행·사후 관리까지, 자주 받는 질문과 답변." jsonLd={jsonLd}>
-  <PageHero eyebrow="자주 묻는 질문">
-    묻기 전에<br />먼저 답해 둡니다
+  <PageHero>
+    자주 묻는 질문
   </PageHero>
 
   <section class="bd-section faq-page">
@@ -75,7 +75,7 @@ if (items.length) {
               <h2 class="faq-cat__title">{s.cat}</h2>
               {s.items.map((f, fi) => (
                 <details
-                  class="faq-item"
+                  class="faq-item br-glass br-glass--medium"
                   id={f.id}
                   open={si === 0 && fi === 0}
                   data-faq-item
@@ -142,7 +142,9 @@ if (items.length) {
 </script>
 
 <style>
-  .faq-page .bd-container { max-width: 760px; }
+  /* 본문 너비를 히어로와 맞춘다(08-27 지시). 읽기 폭은 항목 내부에서 잡는다 */
+  .faq-page { background: transparent; } /* 유리 카드 호스트 */
+  .faq-page .bd-container { max-width: var(--maxw); }
 
   .faq-search { margin-bottom: 20px; }
   .faq-search__input {
@@ -186,7 +188,7 @@ if (items.length) {
     border-bottom: 2px solid var(--br-teal);
   }
 
-  .faq-item { border-bottom: 1px solid var(--br-line); }
+  .faq-item { margin-bottom: 12px; padding: 4px 16px; } /* 하단 선 목록 → 유리 카드 */
   .faq-item__q {
     cursor: pointer;
     font-weight: 700;
