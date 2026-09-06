@@ -12,7 +12,8 @@ interface Props {
   tone?: 'light' | 'deep';
   /** named visual 슬롯을 쓸 때 부모가 실제 표시 여부를 알려준다. */
   hasVisual?: boolean;
-  /** 카피 블록을 Medium 유리 카드로. 호스트 섹션은 배경을 투명으로 둘 것(앰비언트가 비쳐야 유리로 읽힌다) */
+  /** 행 전체(사진+카피)를 Medium 유리 카드 한 장으로. 호스트 섹션은 배경을 투명으로 둘 것(앰비언트가 비쳐야 유리로 읽힌다)
+   *  2026-09-07: 이전엔 카피만 유리였고 사진이 옆에 따로 떠서 높이가 다른 두 표면으로 읽혔다. 홈 서비스 카드와 같은 문법. */
   glass?: boolean;
 }
 
@@ -36,10 +37,11 @@ const renderVisual = hasCustomVisual ? (hasVisual ?? true) : isImageSlotVisible(
     `br-story-row--image-${imageSide}`,
     `br-story-row--${tone}`,
     { 'br-story-row--copy-only': !renderVisual },
+    glass && ['br-story-row--glass', 'br-glass', 'br-glass--medium'],
   ]}
   data-image-side={renderVisual ? imageSide : undefined}
 >
-  <div class:list={['br-story-row__copy', glass && ['br-glass', 'br-glass--medium', 'br-story-row__copy--glass']]}>
+  <div class="br-story-row__copy">
     <slot />
   </div>
   {renderVisual && (
@@ -63,11 +65,24 @@ const renderVisual = hasCustomVisual ? (hasVisual ?? true) : isImageSlotVisible(
 
   .br-story-row__copy { max-width: 520px; }
   .br-story-row--copy-only .br-story-row__copy { max-width: 760px; }
-  /* 유리 카드일 땐 그리드 칸을 채운다 (홈 서비스 카드 .v2-svc__txt 와 같은 패딩) */
-  .br-story-row__copy--glass { max-width: none; padding: 32px 28px; }
-  .br-story-row--copy-only .br-story-row__copy--glass { max-width: 760px; }
   .br-story-row__visual { order: -1; width: 100%; }
   .br-story-row__visual :global(.br-image-slot) { margin-inline: auto; }
+
+  /* ── 유리 한 장(glass) — 홈 서비스 카드(ServiceSplit)와 같은 패널 문법 ──
+     모바일: 사진이 카드 윗면에 붙고(위 모서리만 라운드) 카피가 아래.
+     768px+: 카드 안 2열, 사진은 안쪽 액자. 카피가 길고 <details>로 늘어날 수 있어 사진은 위 정렬(가운데면 펼칠 때 튄다). */
+  .br-story-row--glass { gap: 0; }
+  .br-story-row--glass .br-story-row__copy { max-width: none; padding: 24px 24px 28px; }
+  .br-story-row--glass.br-story-row--copy-only { max-width: 760px; }
+  .br-story-row--glass .br-story-row__visual :global(.br-image-slot) {
+    --slot-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
+    --slot-border-width: 0 0 1px;
+  }
+  /* 카드 안 제목은 반폭 열 기준 36px까지 — 단독 섹션 제목(전역 .br-h 46px)보다 한 단계 아래 */
+  .br-story-row--glass .br-story-row__copy :global(.br-h) {
+    font-size: clamp(26px, 0.9rem + 1.9vw, 36px);
+    line-height: 1.25;
+  }
 
   .br-story-row__copy :global(.br-body),
   .br-story-row__copy :global(p),
@@ -84,7 +99,12 @@ const renderVisual = hasCustomVisual ? (hasVisual ?? true) : isImageSlotVisible(
 
   @media (min-width: 768px) {
     .br-story-row { gap: 40px; }
-    .br-story-row__copy--glass { padding: 40px 36px; }
+    .br-story-row--glass { gap: var(--panel-gap); padding: var(--panel-pad); }
+    .br-story-row--glass .br-story-row__copy { padding: 0; }
+    .br-story-row--glass .br-story-row__visual :global(.br-image-slot) {
+      --slot-radius: calc(var(--radius) - 4px);
+      --slot-border-width: 1px;
+    }
     .br-story-row--image-right,
     .br-story-row--image-left { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 

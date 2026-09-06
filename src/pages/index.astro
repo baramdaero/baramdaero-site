@@ -86,8 +86,10 @@ const cta = home.ctaBand;
         ))}
       </Fragment>
       <Fragment slot="body">
+        {/* lines 한 칸 = 한 문장. 카드 안에서는 <br>을 숨기고 문장을 흘리므로(ServiceSplit) 문장 사이 공백을 함께 넣는다.
+            <br>이 보이는 환경(CSS 미적용)에서는 줄머리 공백이 접혀 사라진다. */}
         {svc.lines.map((line, j) => (
-          <Fragment>{j > 0 && <br />}{line}</Fragment>
+          <Fragment>{j > 0 && <br />}{j > 0 && ' '}{line}</Fragment>
         ))}
       </Fragment>
     </ServiceSplit>
@@ -125,11 +127,12 @@ const cta = home.ctaBand;
 </Base>
 
 <style>
-  /* 제목과 첫 사진을 묶고, 연속 서비스 사이에는 한쪽 여백만 둔다. */
-  .v2-svc-lead { background: transparent; padding-bottom: 32px; }
+  /* 리드 제목과 첫 카드를 묶는다 — 아래 여백은 카드 사이 간격(ServiceSplit --svc-gap 24/40)과 같은 값.
+     카드 사이 간격과 마지막 카드 뒤 섹션 간격은 ServiceSplit 이 갖는다. */
+  .v2-svc-lead { background: transparent; padding-bottom: 24px; }
   .v2-svc-lead + :global(.v2-svc) { padding-top: 0; }
   @media (min-width: 768px) {
-    .v2-svc-lead { padding-bottom: 48px; }
+    .v2-svc-lead { padding-bottom: 40px; }
   }
   :global(.v2-cta .bd-container .v2-cta__sub) { color: var(--br-base); }
 </style>
