@@ -11,8 +11,11 @@ const faqItems = loadFaq();
 const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
 ---
 <div class="chat" data-chat-root>
+  <p id="chat-unavailable" class="chat__unavailable" role="status">
+    문의 기능을 준비하고 있어요. 계속 이 안내가 보이면 새로고침해 주세요.
+  </p>
   <script type="application/json" data-chat-faq set:html={faqJson} />
-  <button
+  <button disabled aria-describedby="chat-unavailable"
     type="button"
     class="chat__fab"
     data-chat-fab
@@ -107,7 +110,7 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     input?: {
       placeholder: string | ((d: Data) => string);
       key: string;
-      next: string;
+      next: string | ((d: Data) => string);
       /** number = 숫자만 (대수), text = 자유 입력 (아파트명·층수). 기본 number */
       type?: 'number' | 'text';
       /** number 값 뒤에 붙일 단위 — 저장·말풍선 공통 */
@@ -246,6 +249,7 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     install_place_hint_home: '예: 바람아파트 101동 15층',
     install_place_hint_shop: '예: 바람빌딩 3층',
     install_live: L('지금 살고 계신 곳인가요,', '입주 예정인 곳인가요?'),
+    install_operating: '현재 공간 상태를 알려주세요.',
     install_say_movein: L(
       '신축·입주 예정 단지는',
       '공동구매를 진행합니다.',
@@ -378,7 +382,12 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
       text: COPY.install_space,
       options: [
         { label: '아파트·주택', next: 'install.brand', set: { 공간: '아파트·주택' } },
-        { label: '상가·사무실', next: 'install.brand', set: { 공간: '상가·사무실' } },
+        { label: '카페', next: 'install.brand', set: { 공간: '카페' } },
+        { label: '매장·상가', next: 'install.brand', set: { 공간: '매장·상가' } },
+        { label: '사무실', next: 'install.brand', set: { 공간: '사무실' } },
+        { label: '학원·교육시설', next: 'install.brand', set: { 공간: '학원·교육시설' } },
+        { label: '관공서·공공시설', next: 'install.brand', set: { 공간: '관공서·공공시설' } },
+        { label: '대형빌딩', next: 'install.brand', set: { 공간: '대형빌딩' } },
       ],
     },
     'install.brand': {
@@ -393,14 +402,22 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
       input: { placeholder: '예: 1', key: '대수', next: 'install.place', type: 'number', suffix: '대' },
     },
     'install.place': {
-      text: (d) => (d.공간 === '상가·사무실' ? COPY.install_place_shop : COPY.install_place_home),
+      text: (d) => (d.공간 === '아파트·주택' ? COPY.install_place_home : COPY.install_place_shop),
       input: {
-        placeholder: (d) => (d.공간 === '상가·사무실' ? COPY.install_place_hint_shop : COPY.install_place_hint_home),
+        placeholder: (d) => (d.공간 === '아파트·주택' ? COPY.install_place_hint_home : COPY.install_place_hint_shop),
         key: '위치',
-        next: 'install.live',
+        next: (d) => d.공간 === '아파트·주택' ? 'install.live' : 'install.operating',
         type: 'text',
         max: 40,
       },
+    },
+    'install.operating': {
+      text: COPY.install_operating,
+      options: [
+        { label: '운영 중', next: 'install.end', set: { 운영상태: '운영 중' } },
+        { label: '개업·입주 준비 중', next: 'install.end', set: { 운영상태: '개업·입주 준비 중' } },
+        { label: '공사 중', next: 'install.end', set: { 운영상태: '공사 중' } },
+      ],
     },
     'install.live': {
       text: COPY.install_live,
@@ -654,7 +671,7 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
             try { await typing(t); } catch { return; }
             bubble(spec.say);
           }
-          void goto(spec.next);
+          void goto(typeof spec.next === 'function' ? spec.next(data) : spec.next);
         });
       }
 
@@ -752,6 +769,7 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     push('대수', data.대수);
     push('위치', data.위치);
     push('거주 상태', data.거주상태);
+    push('운영 상태', data.운영상태);
     push('인테리어', data.인테리어);
     push('지역', data.지역);
     push('증상', data.증상);
@@ -1006,10 +1024,33 @@ const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
     // 내용이 완전히 빈 화면이 됐다 — 08-24 라이브 재현으로 확인.
     open(TREE_START[tree] ?? 'home');
   });
+  // 실제 이벤트 연결이 끝난 뒤에만 문의 버튼을 활성화한다.
+  document.querySelectorAll<HTMLButtonElement>('[data-chat-tree], [data-chat-fab]').forEach((button) => {
+    button.disabled = false;
+    button.removeAttribute('aria-describedby');
+  });
+  document.getElementById('chat-unavailable')!.hidden = true;
 </script>
 
 <!-- is:global — 말풍선·칩·카드가 JS로 동적 생성되어 스코프 속성이 붙지 않는다. chat__ 네임스페이스로 충돌 방지. -->
 <style is:global>
+  .chat__unavailable {
+    position: fixed;
+    right: 20px;
+    bottom: 88px;
+    z-index: 50;
+    max-width: min(280px, calc(100vw - 40px));
+    margin: 0;
+    padding: 12px 16px;
+    border: 1px solid var(--br-line);
+    border-radius: var(--radius);
+    background: var(--br-base);
+    color: var(--br-ink);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  [data-chat-tree]:disabled, [data-chat-fab]:disabled { cursor: not-allowed; }
+
   /* ---------- 런처 ---------- */
   .chat__fab {
     position: fixed;

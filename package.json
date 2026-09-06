@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "test:motion": "node scripts/check-motion.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",

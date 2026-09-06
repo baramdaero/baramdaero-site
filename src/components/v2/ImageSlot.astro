@@ -29,18 +29,22 @@ const shouldRender = resolved.src.length > 0 || SHOW_EMPTY_SLOTS;
     data-slot={id}
     data-slot-state={resolved.src ? 'filled' : 'empty'}
   >
-    {resolved.src ? (
-      <img src={resolved.src} alt={resolved.alt} loading="lazy" />
-    ) : (
-      <div class="br-image-slot__empty">
-        <span aria-hidden="true">{label}</span>
-      </div>
-    )}
+    <div class="br-image-slot__frame">
+      {resolved.src ? (
+        <img src={resolved.src} alt={resolved.alt} loading="lazy" decoding="async" />
+      ) : (
+        <div class="br-image-slot__empty">
+          <span aria-hidden="true">{label}</span>
+        </div>
+      )}
+    </div>
+    {resolved.src && resolved.caption && <figcaption>{resolved.caption}</figcaption>}
   </figure>
 )}
 
 <style>
   .br-image-slot {
+    position: relative;
     width: 100%;
     max-width: 640px;
     margin: 0;
@@ -50,9 +54,9 @@ const shouldRender = resolved.src.length > 0 || SHOW_EMPTY_SLOTS;
     background: var(--br-mist);
   }
 
-  .br-image-slot--wide { aspect-ratio: 16 / 10; }
-  .br-image-slot--card { aspect-ratio: 4 / 3; }
-  .br-image-slot--square { aspect-ratio: 1; }
+  .br-image-slot--wide .br-image-slot__frame { aspect-ratio: 16 / 10; }
+  .br-image-slot--card .br-image-slot__frame { aspect-ratio: 4 / 3; }
+  .br-image-slot--square .br-image-slot__frame { aspect-ratio: 1; }
 
   .br-image-slot img,
   .br-image-slot__empty {
@@ -60,7 +64,19 @@ const shouldRender = resolved.src.length > 0 || SHOW_EMPTY_SLOTS;
     height: 100%;
   }
 
-  .br-image-slot img { object-fit: cover; }
+  .br-image-slot img { display: block; object-fit: cover; }
+  .br-image-slot figcaption {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    max-width: calc(100% - 16px);
+    padding: 3px 6px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--br-teal-deep) 92%, transparent);
+    color: var(--br-base);
+    font-size: 10px;
+    line-height: 1.4;
+  }
 
   .br-image-slot__empty {
     display: grid;
