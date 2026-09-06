@@ -36,12 +36,10 @@ const resolved = resolveImageSlot(id, src, alt);
       <span class="br-image-slot__mark">{label}.jpg</span>
     </div>
   )}
-  {resolved.src && resolved.caption && <figcaption>{resolved.caption}</figcaption>}
 </figure>
 
 <style>
   .br-image-slot {
-    position: relative;
     width: 100%;
     margin: 0;
     overflow: hidden;
@@ -56,19 +54,6 @@ const resolved = resolveImageSlot(id, src, alt);
   .br-image-slot--square { aspect-ratio: 1; }
 
   .br-image-slot img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-  .br-image-slot figcaption {
-    position: absolute;
-    left: 8px;
-    bottom: 8px;
-    max-width: calc(100% - 16px);
-    padding: 3px 6px;
-    border-radius: 4px;
-    background: color-mix(in srgb, var(--br-teal-deep) 92%, transparent);
-    color: var(--br-base);
-    font-size: 10px;
-    line-height: 1.4;
-  }
 
   .br-image-slot__empty {
     position: relative;

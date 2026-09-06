@@ -63,15 +63,17 @@ const hasVisual = isImageSlotVisible(slotId, image);
      면(카드 역할)은 .v2-svc__txt 의 Medium 패널이 맡는다. tone 클래스는 유지(확장 대비) */
   .v2-svc--base { background: transparent; }
   .v2-svc--mist { background: transparent; }
+  .v2-svc { padding-block: 56px; }
+  .v2-svc + .v2-svc { padding-top: 0; }
   .v2-svc__txt { padding: 32px 28px; }
   @media (min-width: 768px) { .v2-svc__txt { padding: 40px 36px; } }
   .v2-svc__grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 40px;
-    align-items: center;
+    gap: 24px;
+    align-items: start;
   }
-  .v2-svc__more { margin-top: 24px; }
+  .v2-svc__more { margin-top: 16px; }
   .v2-svc__link {
     display: inline-flex;
     align-items: center;
@@ -92,9 +94,9 @@ const hasVisual = isImageSlotVisible(slotId, image);
   .v2-svc__grid--copy-only .v2-svc__txt { max-width: 760px; }
   .v2-svc__vis { order: -1; }
   @media (min-width: 768px) {
-    .v2-svc__grid { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 64px; }
+    .v2-svc { padding-block: 88px; }
+    .v2-svc__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px; }
     .v2-svc__vis { order: 2; }
-    .v2-svc__grid--flip { grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); }
     .v2-svc__grid--flip .v2-svc__txt { order: 2; }
     .v2-svc__grid--flip .v2-svc__vis { order: 1; }
     .v2-svc__grid--copy-only { grid-template-columns: minmax(0, 1fr); }

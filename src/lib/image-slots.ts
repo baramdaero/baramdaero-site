@@ -7,7 +7,6 @@ const PUBLIC_MEDIA_DIR = realpathSync(resolve(process.cwd(), 'public/media'));
 export interface ImageSlotEntry {
   src: string;
   alt: string;
-  caption?: string;
 }
 
 interface ImageSlotRegistry {
@@ -86,12 +85,9 @@ function loadImageSlotRegistry(): ImageSlotRegistry {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) {
       throw new Error(`[image-slots.json 오류] slots.${id}는 src·alt 객체여야 합니다.`);
     }
-    const entry = value as { src?: unknown; alt?: unknown; caption?: unknown };
+    const entry = value as { src?: unknown; alt?: unknown };
     if (typeof entry.src !== 'string' || typeof entry.alt !== 'string') {
       throw new Error(`[image-slots.json 오류] slots.${id}의 src와 alt는 문자열이어야 합니다.`);
-    }
-    if (entry.caption !== undefined && typeof entry.caption !== 'string') {
-      throw new Error(`[image-slots.json 오류] slots.${id}의 caption은 문자열이어야 합니다.`);
     }
 
     const src = cleanString(entry.src);
@@ -100,7 +96,7 @@ function loadImageSlotRegistry(): ImageSlotRegistry {
       throw new Error(`[image-slots.json 오류] slots.${id}에 alt만 있습니다. src와 함께 채우세요.`);
     }
     validateImagePath(id, src);
-    slots[id] = { src, alt, caption: cleanString(entry.caption) };
+    slots[id] = { src, alt };
   });
 
   cachedRegistry = { slots };
@@ -124,7 +120,7 @@ export function resolveImageSlot(id: string, src = '', alt = ''): ImageSlotEntry
     missingAlt.add(id);
     console.warn(`[이미지 슬롯 경고] "${id}" 사진에 alt가 없습니다. image-slots.json 의 slots.${id}.alt 를 채우세요.`);
   }
-  const resolved = { src: chosen, alt: chosenAlt, caption: registered.caption };
+  const resolved = { src: chosen, alt: chosenAlt };
   validateImagePath(id, resolved.src);
   return resolved;
 }
