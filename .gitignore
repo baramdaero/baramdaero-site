@@ -8,3 +8,8 @@ dist/
 # 로컬 보관. 비공개 보관처 확정 시 이 두 줄과 함께 옮긴다.
 docs/standards/1-작업기준.md
 src/content/site/workstandard.json
+
+# 로컬 개발 도구 설정 (개발자 환경별 상이, 저장소 비포함)
+.claude/
+.agents/
+skills-lock.json

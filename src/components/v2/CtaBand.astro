@@ -16,7 +16,7 @@ const { chatTree = 'menu', buttonLabel = '견적 문의', ring = false } = Astro
     <h2 class="br-h v2-cta__title br-reveal"><slot /></h2>
     <p class="v2-cta__sub br-reveal"><slot name="sub" /></p>
     <div class="v2-cta__row br-reveal">
-      <button
+      <button disabled aria-describedby="chat-unavailable"
         type="button"
         class:list={['bd-cta', 'v2-cta__btn', 'br-specular', { 'v2-cta__btn--ring': ring }]}
         data-chat-tree={chatTree}

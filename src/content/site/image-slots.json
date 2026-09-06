@@ -1,14 +1,17 @@
 {
   "_설명": {
-    "이 파일은": "본문 정적 이미지 슬롯 32개의 이미지 경로와 대체 텍스트 원본입니다. 9월 촬영분이 준비되면 이 파일만 수정합니다.",
+    "이 파일은": "본문 정적 이미지 슬롯 34개의 이미지 경로와 대체 텍스트 원본입니다. 9월 촬영분이 준비되면 이 파일만 수정합니다.",
     "src": "public/media/ 아래에 공개 동의를 확인한 이미지를 올리고 /media/파일명 형식으로 적습니다. 빈 문자열이면 프로덕션에서 슬롯과 부모 이미지 열이 함께 접힙니다.",
     "alt": "사진이 전달하는 현장 정보를 짧게 적습니다. src를 채울 때 alt도 함께 채우세요. 장식용 사진이 아니므로 비워 둔 채 배포하지 않습니다.",
+    "caption": "이미지 안쪽 하단에 작게 표시할 설명입니다. AI 생성 공간 예시에는 생성 사실과 실제 시공사례가 아니라는 점을 적습니다. 작업 기록·시공사례 슬롯을 생성 이미지로 대체하지 않습니다.",
     "새 슬롯": "페이지에 정적 data-slot 식별자를 추가할 때 같은 식별자를 slots에도 등록합니다. 누락하면 조용히 숨기지 않고 빌드가 실패합니다.",
     "촬영 검토": "SHOW_EMPTY_SLOTS=true로 빌드하면 src가 비어 있어도 회색 슬롯과 식별자가 보입니다. 기본 프로덕션 빌드에서는 빈 슬롯을 렌더하지 않습니다.",
     "세척 절차 예외": "care-process-01부터 care-process-06까지는 pricing.json process[].image가 원본이므로 이 레지스트리에 중복 기재하지 않습니다."
   },
   "slots": {
-    "home-service-install": { "src": "", "alt": "" },
+    "home-service-install": { "src": "/media/home-install-ai.webp", "alt": "창가와 평행하게 설치된 일방향 천장형 에어컨이 있는 거실의 AI 이미지", "caption": "AI로 만든 공간 예시입니다. 실제 시공사례가 아닙니다." },
+    "commercial-building": { "src": "/media/commercial-building-ai.webp", "alt": "사방향 천장형 에어컨이 설치된 사무실의 AI 이미지", "caption": "AI로 만든 공간 예시입니다. 실제 시공사례가 아닙니다." },
+    "commercial-cafe": { "src": "/media/commercial-cafe-ai.webp", "alt": "사방향 천장형 에어컨이 설치된 카페의 AI 이미지", "caption": "AI로 만든 공간 예시입니다. 실제 시공사례가 아닙니다." },
     "home-service-record": { "src": "", "alt": "" },
     "home-service-clean": { "src": "", "alt": "" },
     "home-triage-install": { "src": "", "alt": "" },

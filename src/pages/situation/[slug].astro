@@ -155,7 +155,7 @@ const jsonLd: object[] = [
             <p class="br-body br-reveal">{groupBuy.body}</p>
             {groupBuy.ctaLabel && (
               <p class="sit-group__cta br-reveal">
-                <button type="button" class="bd-cta bd-cta--deep" data-chat-tree="install">{groupBuy.ctaLabel}</button>
+                <button disabled aria-describedby="chat-unavailable" type="button" class="bd-cta bd-cta--deep" data-chat-tree="install">{groupBuy.ctaLabel}</button>
               </p>
             )}
           </StoryRow>

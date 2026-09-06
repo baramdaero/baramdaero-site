@@ -46,7 +46,7 @@ const hasVisual = isImageSlotVisible(slotId, image);
         {link ? (
           <a class="v2-svc__link" href={link}>{linkLabel} <span aria-hidden="true">→</span></a>
         ) : (
-          <button type="button" class="v2-svc__link" data-chat-tree={chatTree}>{linkLabel} <span aria-hidden="true">→</span></button>
+          <button disabled aria-describedby="chat-unavailable" type="button" class="v2-svc__link" data-chat-tree={chatTree}>{linkLabel} <span aria-hidden="true">→</span></button>
         )}
       </p>
     </div>
@@ -73,15 +73,21 @@ const hasVisual = isImageSlotVisible(slotId, image);
   }
   .v2-svc__more { margin-top: 24px; }
   .v2-svc__link {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    min-height: 44px;
     font-size: 16px;
     font-weight: 700;
     color: var(--br-teal);
-    border-bottom: 2px solid var(--br-teal);
-    padding-bottom: 2px;
-    transition: color var(--dur-color) ease, border-color var(--dur-color) ease;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+    transition: color var(--dur-color) ease, text-decoration-color var(--dur-color) ease;
   }
-  .v2-svc__link:hover { color: var(--br-teal-deep); border-color: var(--br-ice); }
+  @media (hover: hover) {
+    .v2-svc__link:hover { color: var(--br-teal-deep); text-decoration-color: var(--br-ice); }
+  }
   .v2-svc__txt :global(.br-body) { color: var(--br-ink); }
   .v2-svc__grid--copy-only .v2-svc__txt { max-width: 760px; }
   .v2-svc__vis { order: -1; }
