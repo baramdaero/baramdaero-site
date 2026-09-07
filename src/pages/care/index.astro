@@ -17,7 +17,9 @@ const pricing = loadPricing();
 const standards = loadStandards();
 const { prices, conditions, process, processIntro, processSource, symptoms, seasons } = pricing;
 const visibleSymptoms = symptoms.filter((s) => !s.hidden);
-const visibleSeasons = seasons.filter((season) => !season.hidden);
+const visibleSeasons = seasons
+  .map((season, index) => ({ ...season, slotId: `care-season-${String(index + 1).padStart(2, '0')}` }))
+  .filter((season) => !season.hidden);
 const processPairs = Array.from({ length: Math.ceil(process.length / 2) }, (_, i) => process.slice(i * 2, i * 2 + 2));
 const processImageCount = (pair: typeof process) => pair.filter((step) => (
   isImageSlotVisible(`care-process-${String(step.step).padStart(2, '0')}`, step.image)
@@ -196,17 +198,16 @@ if (careFaq.length) {
     <div class="bd-container">
       {visibleSeasons.length > 0 && (
         <div class="care-seasons" data-layout-section="care-seasons">
-          <span class="br-eyebrow br-reveal">사용 상태별 안내</span>
-          <h2 class="br-h br-reveal">세척, 언제 하면 좋을까요?</h2>
+          <span class="br-eyebrow br-reveal">계절별 관리</span>
+          <h2 class="br-h br-reveal">세척 시기</h2>
           <div class="care-seasons__grid">
             {visibleSeasons.map((s) => (
               <article class="care-seasons__card br-glass br-glass--heavy br-reveal">
-                <svg class="care-seasons__icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <rect x="4" y="5" width="16" height="16" rx="2" />
-                  <path d="M8 3v4m8-4v4M4 10h16m-12 5 3 3 5-5" />
-                </svg>
-                {s.months && <span class="care-seasons__months">{s.months}</span>}
-                <h3>{s.season}</h3>
+                <div class="care-seasons__heading">
+                  {s.months && <span class="care-seasons__months">{s.months}</span>}
+                  <h3>{s.season}</h3>
+                </div>
+                <ImageSlot id={s.slotId} label={s.slotId} ratio="card" />
                 <p>{s.body}</p>
               </article>
             ))}
@@ -273,8 +274,9 @@ if (careFaq.length) {
   }
 
   .care-symptoms__card :global(.br-image-slot) { max-width: none; margin-bottom: 20px; }
-  .care-seasons__card { padding: 28px; }
-  .care-seasons__icon { color: var(--br-teal); margin-bottom: 20px; }
+  .care-seasons__card { display: grid; grid-template-columns: minmax(0, 1fr) 88px; gap: 16px; align-content: start; padding: 24px; }
+  .care-seasons__card :global(.br-image-slot) { width: 88px; align-self: start; margin: 0; }
+  .care-seasons__card p { grid-column: 1 / -1; }
   .care-symptoms__card h3,
   /* 월 범위 — 제목 위 작은 표기. 비면 이 줄만 빠진다 */
   .care-seasons__months {
@@ -286,7 +288,7 @@ if (careFaq.length) {
     color: var(--br-teal);
     opacity: 0.6;
   }
-  .care-seasons__card h3 { margin-top: 4px; color: var(--br-teal); font-size: 17px; }
+  .care-seasons__card h3 { margin-top: 8px; color: var(--br-teal); font-size: 20px; line-height: 1.45; }
   .care-symptoms__card p,
   .care-seasons__card p { margin-top: 8px; color: var(--br-ink); font-size: 14px; line-height: 1.65; }
 
@@ -355,10 +357,13 @@ if (careFaq.length) {
 
   @media (min-width: 768px) {
     .care-symptoms__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .care-seasons__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .care-seasons__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 
   @media (max-width: 520px) {
+    .care-seasons__card { grid-template-columns: minmax(0, 1fr) 64px; padding: 20px; gap: 12px; }
+    .care-seasons__card :global(.br-image-slot) { width: 64px; }
+    .care-seasons__card h3 { font-size: 18px; }
     .care-process__visual-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .care-faq { margin-top: 72px; }
   }
