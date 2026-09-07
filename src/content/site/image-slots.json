@@ -8,12 +8,12 @@
     "세척 절차 예외": "care-process-01부터 care-process-06까지는 pricing.json process[].image가 원본이므로 이 레지스트리에 중복 기재하지 않습니다."
   },
   "slots": {
-    "home-service-install": { "src": "/media/home-install-ai.webp", "alt": "창가와 평행하게 설치된 일방향 천장형 에어컨이 있는 거실의 AI 이미지" },
+    "home-service-install": { "src": "/media/home-install-ai.webp", "alt": "창가 천장형 에어컨과 소파, TV장, 방문이 있는 넓은 거실의 AI 이미지" },
     "commercial-building": { "src": "/media/commercial-building-ai.webp", "alt": "사방향 천장형 에어컨이 설치된 사무실의 AI 이미지" },
     "commercial-cafe": { "src": "/media/commercial-cafe-ai.webp", "alt": "사방향 천장형 에어컨이 설치된 카페의 AI 이미지" },
     "home-service-record": { "src": "", "alt": "" },
     "home-service-clean": { "src": "", "alt": "" },
-    "home-triage-install": { "src": "", "alt": "" },
+    "home-triage-install": { "src": "/media/home-install-ai.webp", "alt": "창가 천장형 에어컨과 소파, TV장, 방문이 있는 넓은 거실의 AI 이미지" },
     "home-triage-clean": { "src": "", "alt": "" },
     "home-triage-as": { "src": "", "alt": "" },
     "home-process-overview": { "src": "", "alt": "" },
@@ -24,13 +24,13 @@
     "care-symptom-drip": { "src": "", "alt": "" },
     "care-standards-scope": { "src": "", "alt": "" },
     "care-pricing-basis": { "src": "", "alt": "" },
-    "care-season-01": { "src": "", "alt": "" },
-    "care-season-02": { "src": "", "alt": "" },
-    "care-season-03": { "src": "", "alt": "" },
-    "care-season-04": { "src": "", "alt": "" },
+    "care-season-01": { "src": "/media/care-spring-ai.webp", "alt": "꽃 한 송이와 연녹색 쿠션이 있는 봄 창가의 AI 이미지" },
+    "care-season-02": { "src": "/media/care-summer-ai.webp", "alt": "얼음물 유리잔과 옅은 파란색 쿠션이 있는 여름 창가의 AI 이미지" },
+    "care-season-03": { "src": "/media/care-autumn-ai.webp", "alt": "책 한 권과 황토색 쿠션이 있는 가을 창가의 AI 이미지" },
+    "care-season-04": { "src": "/media/care-winter-ai.webp", "alt": "담요와 울 쿠션이 있는 겨울 창가의 AI 이미지" },
 
-    "install-process-01": { "src": "", "alt": "" },
-    "install-process-02": { "src": "", "alt": "" },
+    "install-process-01": { "src": "/media/install-consult-ai.webp", "alt": "바람대로 모바일 설치 상담 화면을 담은 휴대폰 연출 이미지" },
+    "install-process-02": { "src": "/media/install-planning-ai.webp", "alt": "고객과 전문가가 천장 설치 위치를 논의하는 AI 이미지" },
     "install-process-03": { "src": "", "alt": "" },
     "install-process-04": { "src": "", "alt": "" },
     "install-standards-scope": { "src": "", "alt": "" },
@@ -44,6 +44,6 @@
     "newhome-prewired": { "src": "", "alt": "" },
     "newhome-standards-scope": { "src": "", "alt": "" },
     "newhome-pricing-basis": { "src": "", "alt": "" },
-    "newhome-group-buy": { "src": "", "alt": "" }
+    "newhome-group-buy": { "src": "/media/newhome-complex-ai.webp", "alt": "고층 아파트와 잎이 있는 조경수로 구성된 신축 단지의 AI 이미지" }
   }
 }
