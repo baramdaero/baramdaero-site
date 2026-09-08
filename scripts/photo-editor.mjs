@@ -95,7 +95,7 @@ export async function start(root,port=4318) {
   }
   function readBody(req) {return new Promise((resolve,reject)=>{const chunks=[];let n=0,done=false;const fail=e=>{if(done)return;done=true;req.resume();reject(e);};req.on('data',c=>{if(done)return;n+=c.length;if(n>MAX_BYTES)return fail(err(413,'20MB 이하의 사진을 선택하세요.'));chunks.push(c);});req.on('end',()=>{if(!done){done=true;resolve(Buffer.concat(chunks));}});req.on('error',()=>fail(err(400,'업로드가 끊겼습니다.')));req.on('aborted',()=>fail(err(400,'업로드가 중단됐습니다.')));});}
   const server=createServer(async(req,res)=>{
-    const send=(status,body,type='application/json; charset=utf-8')=>{res.writeHead(status,{'content-type':type,'cache-control':'no-store','x-content-type-options':'nosniff','x-frame-options':'DENY'});res.end(typeof body==='string'||Buffer.isBuffer(body)?body:JSON.stringify(body));};
+    const send=(status,body,type='application/json; charset=utf-8')=>{if(!req.readableEnded)req.resume();res.writeHead(status,{'content-type':type,'cache-control':'no-store','x-content-type-options':'nosniff','x-frame-options':'DENY'});res.end(typeof body==='string'||Buffer.isBuffer(body)?body:JSON.stringify(body));};
     try {
       const origin='http://127.0.0.1:'+server.address().port;
       if(req.headers.host!=='127.0.0.1:'+server.address().port||req.headers.origin&&req.headers.origin!==origin)return send(403,{error:'허용되지 않은 출처입니다.'});
