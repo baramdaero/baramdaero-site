@@ -13,3 +13,6 @@ src/content/site/workstandard.json
 .claude/
 .agents/
 skills-lock.json
+
+# Local photo replacement backups
+.photo-editor-backups/
