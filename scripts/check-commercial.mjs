@@ -27,14 +27,14 @@ const registry = JSON.parse(readFileSync('src/content/site/image-slots.json', 'u
 for (const id of ['home-service-install', 'commercial-building', 'commercial-cafe']) {
   const entry = registry.slots[id];
   assert.ok(entry.alt.trim());
-  assert.match(entry.alt, /AI 이미지/);
+  assert.doesNotMatch(entry.alt, /AI/);
   assert.ok(statSync(`public${entry.src}`).size < 200_000, `${id}: web image under 200kB`);
 }
 
 const page = readFileSync('dist/commercial/index.html', 'utf8');
 const home = readFileSync('dist/index.html', 'utf8');
 assert.match(home, /id="commercial"/);
-assert.match(home, /home-install-ai\.webp/);
+assert.match(home, /home-service-install\.webp/);
 assert.match(page, /<link rel="canonical" href="https:\/\/baramdaero.com\/commercial\/"/);
 assert.doesNotMatch(page, /AI로 만든 공간 예시입니다/);
 assert.doesNotMatch(home, /AI로 만든 공간 예시입니다/);
