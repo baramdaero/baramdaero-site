@@ -1,0 +1,1480 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>/* ?embed = 사이트 히어로 iframe 용. 이 클래스가 없으면 아래 embed 분기는 전부 꺼져 있다 */document.documentElement.lang = 'ko';
+if (/[?&]embed(=|&|$)/.test(location.search)) { document.documentElement.classList.add('embed'); document.documentElement.dataset.theme = 'light'; }
+else document.write('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">');</script>
+<title>84㎡ 4베이 시스템에어컨 하우스</title>
+<meta name="description" content="일반형 84㎡ 판상형 4Bay 아파트에 시스템에어컨 5대를 배치한 인터랙티브 3D 구성도">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<style>
+:root {
+  --ground: #F7F9FA;
+  --stage: #EAEFF2;
+  --grid: rgb(0 78 100 / .07);
+  --paper: #FFFFFF;
+  --panel: rgb(255 255 255 / .9);
+  --ink: #0B2027;
+  --ink-soft: #40545C;
+  --ink-faint: #66777F;
+  --line: #D6DEE3;
+  --mist: #E0E5E9;
+  --accent: #004E64;
+  --accent-deep: #00293A;
+  --accent-ink: #FFFFFF;
+  --ice: #BFE9F2;
+  --ice-soft: #E6F6FA;
+  --pass: #1B634C;
+  --pass-bg: #E2F0EA;
+  --warn: #7A5200;
+  --warn-bg: #FBEFD6;
+  --focus: #004E64;
+  --shadow: 0 10px 30px rgb(11 32 39 / .10);
+  --sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #07161B;
+    --stage: #0B1E24;
+    --grid: rgb(191 233 242 / .05);
+    --paper: #0E232A;
+    --panel: rgb(11 31 38 / .9);
+    --ink: #E3EDF0;
+    --ink-soft: #A9BDC4;
+    --ink-faint: #82979F;
+    --line: #22404A;
+    --mist: #173039;
+    --accent: #8ED2E1;
+    --accent-deep: #BFE9F2;
+    --accent-ink: #00293A;
+    --ice-soft: #12343D;
+    --pass: #8AD5B4;
+    --pass-bg: #12342A;
+    --warn: #EBC46F;
+    --warn-bg: #362A10;
+    --focus: #BFE9F2;
+    --shadow: 0 10px 30px rgb(0 0 0 / .45);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #07161B;
+  --stage: #0B1E24;
+  --grid: rgb(191 233 242 / .05);
+  --paper: #0E232A;
+  --panel: rgb(11 31 38 / .9);
+  --ink: #E3EDF0;
+  --ink-soft: #A9BDC4;
+  --ink-faint: #82979F;
+  --line: #22404A;
+  --mist: #173039;
+  --accent: #8ED2E1;
+  --accent-deep: #BFE9F2;
+  --accent-ink: #00293A;
+  --ice-soft: #12343D;
+  --pass: #8AD5B4;
+  --pass-bg: #12342A;
+  --warn: #EBC46F;
+  --warn-bg: #362A10;
+  --focus: #BFE9F2;
+  --shadow: 0 10px 30px rgb(0 0 0 / .45);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  padding-inline: 16px;
+  padding-block: 16px 24px;
+  background: var(--ground);
+  color: var(--ink);
+  font: 400 14px/1.55 var(--sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.num, .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+
+/* ---------- stage ---------- */
+.stage {
+  position: relative;
+  height: calc(100svh - 40px);
+  min-height: 520px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  background:
+    linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 28px 28px,
+    var(--stage);
+}
+#c { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; transition: opacity .25s; }
+
+.topbar {
+  position: absolute; inset: 0 0 auto 0;
+  display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px 16px;
+  padding: 14px 16px;
+  pointer-events: none;
+}
+.topbar > * { pointer-events: auto; }
+.brand { display: grid; gap: 2px; border: 1px solid transparent; border-radius: 6px; transition: background .3s; }
+.stage.in-room .brand { background: var(--panel); border-color: var(--line); padding: 6px 12px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.eyebrow { font-size: 11.5px; letter-spacing: .06em; color: var(--ink-faint); margin: 0; }
+.brand h1 { font-size: 20px; font-weight: 600; letter-spacing: -.01em; line-height: 1.25; }
+.brand h1 .num { font-weight: 500; }
+.tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.btn, .seg button {
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 36px; padding: 0 12px;
+  border: 1px solid var(--line); border-radius: 6px;
+  background: var(--panel); color: var(--ink);
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+.btn:hover, .seg button:hover { border-color: var(--ink-faint); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+.btn.primary:hover { background: var(--accent-deep); }
+.btn[aria-pressed]::before {
+  content: ""; width: 10px; height: 10px; border-radius: 2px;
+  border: 1.5px solid currentColor; opacity: .7;
+}
+.btn[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--ice-soft); }
+.btn[aria-pressed="true"]::before { background: currentColor; opacity: 1; }
+.seg { display: inline-flex; }
+.seg button { border-radius: 0; }
+.seg button + button { margin-left: -1px; }
+.seg button:first-child { border-radius: 6px 0 0 6px; }
+.seg button:last-child { border-radius: 0 6px 6px 0; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--ground); border-color: var(--ink); position: relative; }
+
+/* ---------- sheets ---------- */
+.sheet {
+  position: absolute;
+  display: flex; flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--line); border-radius: 8px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  overflow: hidden;
+}
+.grab {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: 100%; min-height: 44px; padding: 10px 14px;
+  background: none; border: 0; border-bottom: 1px solid var(--line);
+  text-align: left; cursor: pointer;
+}
+.grab .t { font-weight: 600; font-size: 13px; }
+.grab .chev { width: 9px; height: 9px; border-right: 1.5px solid var(--ink-soft); border-bottom: 1.5px solid var(--ink-soft); transform: rotate(45deg); transition: transform .2s; flex: none; }
+.sheet[data-collapsed] .grab .chev { transform: rotate(-135deg); }
+.sheet[data-collapsed] .grab { border-bottom-color: transparent; }
+.sheet[data-collapsed] .sheet-body { display: none; }
+.sheet-body { overflow-y: auto; overscroll-behavior: contain; padding: 12px 14px 16px; display: flex; flex-direction: column; gap: 16px; }
+.sheet-body > * { flex-shrink: 0; }
+.sheet h2.group { font-size: 11.5px; font-weight: 500; letter-spacing: .06em; color: var(--ink-faint); margin-bottom: 6px; }
+
+.facts { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; margin: 0; }
+.facts div { background: var(--paper); padding: 8px 10px; display: grid; gap: 1px; }
+.facts dt { font-size: 11.5px; color: var(--ink-faint); }
+.facts dd { margin: 0; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 14px; font-weight: 500; }
+.facts dd small { font-size: 11.5px; color: var(--ink-soft); font-weight: 400; }
+
+.rooms { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.room-btn {
+  width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 0 10px; align-items: baseline;
+  padding: 8px 10px; border: 1px solid transparent; border-radius: 6px;
+  background: none; text-align: left; cursor: pointer;
+}
+.room-btn:hover, .room-btn.is-hover { background: var(--mist); }
+.room-btn[aria-current="true"] { background: var(--ice-soft); border-color: var(--accent); }
+.room-btn .n { font-weight: 600; }
+.room-btn .a { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13px; color: var(--ink-soft); }
+.room-btn .u { grid-column: 1 / -1; font-size: 12.5px; color: var(--ink-soft); display: flex; align-items: center; gap: 6px; }
+.room-btn .u::before { content: ""; width: 14px; height: 6px; border-radius: 2px; background: var(--ice); border: 1px solid var(--accent); flex: none; }
+.room-btn.ou .u::before { width: 9px; height: 9px; border-radius: 1px; background: var(--mist); border-color: var(--ink-soft); }
+
+details.others summary { cursor: pointer; font-size: 12.5px; color: var(--ink-soft); padding: 4px 0; }
+.others ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 2px; }
+.others li { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--ink-soft); padding: 3px 10px; }
+.others li .num { color: var(--ink-faint); }
+
+.legend { display: grid; gap: 6px; font-size: 12.5px; color: var(--ink-soft); }
+.legend div { display: flex; align-items: center; gap: 8px; }
+.legend i { width: 22px; border-radius: 3px; flex: none; }
+
+/* detail */
+.d-head { display: grid; gap: 4px; }
+.d-head h2 { font-size: 22px; font-weight: 600; letter-spacing: -.01em; }
+.d-head .eyebrow { color: var(--accent); }
+.d-head p.view { margin: 0; color: var(--ink-soft); font-size: 13px; }
+.views { margin-top: 6px; }
+.unit { display: grid; gap: 10px; border-top: 1px solid var(--line); padding-top: 14px; }
+.unit h3 { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 16px; font-weight: 600; }
+.unit h3 .num { font-size: 20px; color: var(--accent); font-weight: 500; white-space: nowrap; }
+.unit h3 .num small { font-size: 13px; }
+.dims { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 13px; }
+.dims dt { color: var(--ink-faint); }
+.dims dd { margin: 0; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.dims dd.txt { font-family: var(--sans); }
+.diagram { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 8px; }
+.diagram svg { display: block; width: 100%; height: auto; }
+.diagram figcaption { font-size: 11.5px; color: var(--ink-faint); padding: 4px 2px 0; }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.checks li { display: grid; grid-template-columns: 40px 1fr; gap: 8px; align-items: baseline; font-size: 12.5px; line-height: 1.45; }
+.badge { font-size: 11px; font-weight: 600; text-align: center; border-radius: 4px; padding: 1px 0; }
+.pass .badge { color: var(--pass); background: var(--pass-bg); }
+.warn .badge, .fail .badge { color: var(--warn); background: var(--warn-bg); }
+.basis { font-size: 12px; color: var(--ink-faint); margin: 0; }
+.basis a { color: var(--accent); }
+.pipes { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.pipes th, .pipes td { text-align: left; padding: 4px 0; border-bottom: 1px solid var(--line); }
+.pipes th { font-weight: 500; color: var(--ink-faint); }
+.pipes td.num { text-align: right; }
+.sub { font-size: 12.5px; font-weight: 600; margin: 4px 0 -4px; }
+
+.hint {
+  position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%);
+  margin: 0; padding: 6px 12px; border-radius: 6px;
+  background: var(--panel); border: 1px solid var(--line);
+  font-size: 12.5px; color: var(--ink-soft); white-space: nowrap; pointer-events: none;
+}
+.north {
+  position: absolute; right: 16px; bottom: 16px; width: 44px; height: 44px;
+  display: grid; place-items: center; pointer-events: none;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 50%;
+}
+.north svg { width: 30px; height: 30px; overflow: visible; }
+
+/* 3D labels */
+.lbl {
+  position: absolute; left: 0; top: 0;
+  display: grid; gap: 0; justify-items: center;
+  padding: 3px 8px 4px; border-radius: 4px;
+  background: var(--panel); border: 1px solid var(--line);
+  font-size: 12px; line-height: 1.3; white-space: nowrap;
+  pointer-events: auto; cursor: pointer; will-change: transform;
+}
+.lbl b { font-weight: 600; }
+.lbl .num { font-size: 11px; color: var(--ink-soft); }
+.lbl .kw { font-size: 11px; color: var(--accent); font-family: var(--mono); }
+.lbl.is-hover { border-color: var(--accent); background: var(--ice-soft); }
+.lbl.minor { background: none; border: 0; padding: 0; color: var(--ink-soft); pointer-events: none; font-size: 11px; text-shadow: 0 0 3px var(--stage), 0 0 2px var(--stage), 0 0 1px var(--stage); }
+.lbl.minor b { font-weight: 500; }
+.labels.off { opacity: 0; }
+.labels.off .lbl { pointer-events: none; }
+
+/* ---------- notes ---------- */
+.notes { max-width: 1120px; margin: 20px auto 0; }
+.notes > details > summary {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 16px;
+  cursor: pointer; padding: 14px 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper);
+  list-style: none;
+}
+.notes > details > summary::-webkit-details-marker { display: none; }
+.notes > details > summary .t { font-weight: 600; font-size: 15px; display: flex; gap: 10px; align-items: center; }
+.notes > details > summary .t::before { content: ""; width: 8px; height: 8px; border-right: 1.5px solid var(--ink-soft); border-bottom: 1.5px solid var(--ink-soft); transform: rotate(-45deg); transition: transform .2s; }
+.notes > details[open] > summary .t::before { transform: rotate(45deg); }
+.notes > details > summary .m { font-size: 12.5px; color: var(--ink-faint); }
+.notes-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; padding: 20px 4px 8px; }
+.notes h3 { font-size: 13px; font-weight: 600; margin: 18px 0 8px; }
+.notes h3:first-child { margin-top: 0; }
+.notes p, .notes li { font-size: 13px; color: var(--ink-soft); max-width: 65ch; }
+.notes p { margin: 0 0 8px; }
+.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.notes p a, .notes li a, .sheet a { color: var(--accent); text-underline-offset: 2px; }
+.src { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.src li { display: grid; grid-template-columns: 40px 1fr; gap: 8px; padding: 4px 6px; border-radius: 4px; }
+.src li:target { background: var(--ice-soft); }
+.src .sid { font-family: var(--mono); font-size: 12px; color: var(--ink-faint); }
+.src a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; overflow-wrap: anywhere; }
+.src .internal { font-size: 11.5px; color: var(--ink-faint); margin-left: 6px; }
+
+@media (min-width: 761px) {
+  .sheet.list { top: 84px; left: 16px; width: 300px; max-height: calc(100% - 100px); }
+  .sheet.detail { top: 84px; right: 16px; width: 364px; max-height: calc(100% - 100px); }
+  .stage.in-room .north { right: 396px; }
+}
+@media (max-width: 760px) {
+  body { padding-block: 12px 20px; }
+  .stage { height: calc(100svh - 72px); min-height: 560px; }
+  .topbar { padding: 12px; }
+  .brand .eyebrow { display: none; }
+  .brand h1 { font-size: 16px; }
+  .btn, .seg button { min-height: 38px; padding: 0 10px; font-size: 12.5px; }
+  .sheet { left: 8px; right: 8px; bottom: 8px; max-height: 40%; }
+  .lbl { font-size: 11px; padding: 2px 6px 3px; }
+  .lbl .num, .lbl .kw { display: none; }
+  .sheet.detail { max-height: 42%; }
+  .hint { display: none; }
+  .north { top: 108px; bottom: auto; right: 12px; width: 38px; height: 38px; }
+  .lbl.minor { display: none; }
+  .notes-grid { grid-template-columns: 1fr; gap: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before { transition: none !important; }
+}
+/* ---------- embed (?embed): 사이트 히어로 iframe. 캔버스만 남기고 배경은 부모에 맡긴다 ---------- */
+html.embed, html.embed body { background: transparent !important; }
+html.embed body { margin: 0; padding: 0; overflow: hidden; }
+html.embed .stage { position: fixed; inset: 0; height: auto; min-height: 0; border: 0; border-radius: 0; background: none; }
+html.embed .topbar, html.embed .sheet, html.embed .hint, html.embed .north, html.embed .notes, html.embed .labels { display: none !important; }
+</style>
+
+<main>
+  <section class="stage" id="stage" aria-label="3D 집 구성도">
+    <canvas id="c" role="img" aria-label="지붕을 걷어낸 84㎡ 4베이 아파트 3D 모형. 방마다 천장형 1Way 실내기가 있고 실외기실에 실외기가 있습니다."></canvas>
+    <div class="labels" id="labels" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <div class="brand">
+        <p class="eyebrow">바람대로 · 일반형 참고 평면 · 시스템에어컨 배치</p>
+        <h1>84㎡ 4베이 시스템에어컨 하우스</h1>
+      </div>
+      <div class="tools" role="toolbar" aria-label="표시 설정">
+        <button type="button" id="btnHome" class="btn primary" hidden>전체 보기</button>
+        <button type="button" id="btnPipes" class="btn" aria-pressed="true">천장 속 배관</button>
+        <div class="seg" role="group" aria-label="햇빛">
+          <button type="button" id="btnDawn" aria-pressed="false">해 뜰 무렵</button>
+          <button type="button" id="btnDay" aria-pressed="true">낮</button>
+        </div>
+      </div>
+    </header>
+
+    <aside class="sheet list" id="listSheet" aria-label="공간 목록">
+      <button type="button" class="grab" id="listGrab" aria-expanded="true" aria-controls="listBody">
+        <span class="t">공간 목록</span><span class="chev" aria-hidden="true"></span>
+      </button>
+      <div class="sheet-body" id="listBody">
+        <dl class="facts" id="facts"></dl>
+        <nav aria-label="실내기 설치 공간">
+          <h2 class="group">실내기 설치 공간 · 누르면 방 안 시점</h2>
+          <ul class="rooms" id="acRooms"></ul>
+        </nav>
+        <nav aria-label="실외기">
+          <h2 class="group">실외기</h2>
+          <ul class="rooms" id="ouRooms"></ul>
+        </nav>
+        <details class="others">
+          <summary id="othersSum">기타 공간</summary>
+          <ul id="otherRooms"></ul>
+        </details>
+        <div>
+          <h2 class="group">천장 속 배관 (실외기 → 실내기 1:1)</h2>
+          <div class="legend">
+            <div><i style="height:6px;background:#2E7F91"></i>냉매배관 (액관·가스관 1쌍)</div>
+            <div><i style="height:3px;background:#6A767D"></i>통신선</div>
+            <div><i style="height:5px;background:#8EC6D3"></i>드레인 (배수)</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <aside class="sheet detail" id="detailSheet" hidden aria-label="선택한 공간">
+      <button type="button" class="grab" id="detailGrab" aria-expanded="true" aria-controls="detailBody">
+        <span class="t" id="detailGrabT">공간 정보</span><span class="chev" aria-hidden="true"></span>
+      </button>
+      <div class="sheet-body" id="detailBody" aria-live="polite"></div>
+    </aside>
+
+    <p class="hint" id="hint">방 바닥을 누르면 그 방 안 시점으로 이동 · 드래그 회전 · 휠 확대</p>
+    <div class="north" aria-hidden="true">
+      <svg viewBox="-15 -15 30 30"><g id="northG"><path d="M0 -12 L5 4 L0 1 L-5 4 Z" fill="currentColor" style="color:var(--accent)"></path><text x="0" y="14" text-anchor="middle" font-size="9" font-weight="600" font-family="IBM Plex Mono, monospace" fill="currentColor" style="color:var(--ink-soft)">N</text></g></svg>
+    </div>
+  </section>
+
+  <section class="notes" aria-label="출처">
+    <details id="notes">
+      <summary><span class="t">일반형 참고 평면·수치 출처</span><span class="m" id="notesMeta"></span></summary>
+      <div class="notes-grid">
+        <div id="notesLeft"></div>
+        <div>
+          <h3>출처</h3>
+          <ol class="src" id="srcList"></ol>
+        </div>
+      </div>
+    </details>
+  </section>
+</main>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/controls/OrbitControls.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const PLAN = {"schema":"baramdaero.home3d.plan/1","title":"일반형 84㎡ 판상형 4Bay 신축 아파트(시스템에어컨 5대)","generic_note":"","units":"mm","coordinate_system":"원점=평면 좌하단 외벽 중심선, +x 동, +y 북, +z 위(마감 바닥 0). 전면(남) 창은 y=0. 벽은 중심선 기준","orientation":"","envelope":{"footprint_polygon":[[0,0],[14700,0],[14700,8700],[6200,8700],[6200,7400],[0,7400]],"front_width":14700,"depth_center_right":8700,"depth_left":7400,"front_bays_x":[0,3100,6200,10900,14700],"basis":""},"ceiling":{"default_mm":2300,"ceiling_void_mm":250,"finish":"석고보드 평천장(도장)","basis":""},"area_rule":{"target_exclusive_m2":84.0,"tolerance_m2":3.0,"method":"","exterior_inset_mm":125,"excluded_classes":["발코니","실외기실","다용도실(발코니)"],"note":""},"rooms":[{"id":"bed3","name_ko":"침실3","polygon":[[0,0],[3100,0],[3100,3700],[0,3700]],"ceiling_mm":2300,"floor_finish":"강마루","area_m2":11.47,"area_class":"전용","expansion_polygon":[[0,0],[3100,0],[3100,1500],[0,1500]],"expansion_m2":4.65,"exclusive_m2_centerline":6.82,"front_bay":1,"basis":""},{"id":"bed2","name_ko":"침실2","polygon":[[3100,0],[6200,0],[6200,3700],[3100,3700]],"ceiling_mm":2300,"floor_finish":"강마루","area_m2":11.47,"area_class":"전용","expansion_polygon":[[3100,0],[6200,0],[6200,1500],[3100,1500]],"expansion_m2":4.65,"exclusive_m2_centerline":6.82,"front_bay":2,"basis":""},{"id":"living","name_ko":"거실","polygon":[[6200,0],[10900,0],[10900,5500],[6200,5500]],"ceiling_mm":2300,"floor_finish":"강마루","area_m2":25.85,"area_class":"전용","expansion_polygon":[[6200,0],[10900,0],[10900,1500],[6200,1500]],"expansion_m2":7.05,"exclusive_m2_centerline":18.8,"front_bay":3,"basis":"","coffer":{"polygon":[[6900,1800],[10200,1800],[10200,4900],[6900,4900]],"ceiling_mm":2400,"step_mm":100,"basis":""}},{"id":"kitchen","name_ko":"주방/식당","polygon":[[6200,5500],[10900,5500],[10900,8700],[6200,8700]],"ceiling_mm":2300,"floor_finish":"강마루(조리대 앞 타일 추정)","area_m2":15.04,"area_class":"전용","exclusive_m2_centerline":15.04,"basis":""},{"id":"master","name_ko":"안방(침실1)","polygon":[[10900,1700],[14700,1700],[14700,5300],[10900,5300]],"ceiling_mm":2300,"floor_finish":"강마루","area_m2":13.68,"area_class":"전용","exclusive_m2_centerline":13.68,"front_bay":4,"basis":""},{"id":"balcony","name_ko":"안방 앞 발코니(비확장)","polygon":[[10900,0],[13200,0],[13200,1700],[10900,1700]],"ceiling_mm":2300,"floor_finish":"타일","area_m2":3.91,"area_class":"발코니","exclusive_m2_centerline":0,"basis":"","finished_ceiling":false},{"id":"ou_room","name_ko":"실외기실(하향식 피난구)","polygon":[[13200,0],[14700,0],[14700,1700],[13200,1700]],"ceiling_mm":2300,"floor_finish":"타일(방수)","area_m2":2.55,"area_class":"실외기실","exclusive_m2_centerline":0,"basis":"","finished_ceiling":false},{"id":"entry","name_ko":"현관","polygon":[[0,3700],[1700,3700],[1700,5000],[0,5000]],"ceiling_mm":2300,"floor_finish":"타일","area_m2":2.21,"area_class":"전용","exclusive_m2_centerline":2.21,"basis":""},{"id":"hall","name_ko":"복도","polygon":[[1700,3700],[6200,3700],[6200,5000],[1700,5000]],"ceiling_mm":2300,"floor_finish":"강마루","area_m2":5.85,"area_class":"전용","exclusive_m2_centerline":5.85,"basis":""},{"id":"entry_storage","name_ko":"현관창고","polygon":[[0,5000],[1700,5000],[1700,7400],[0,7400]],"ceiling_mm":2300,"floor_finish":"타일","area_m2":4.08,"area_class":"전용","exclusive_m2_centerline":4.08,"basis":""},{"id":"bath1","name_ko":"욕실1(공용)","polygon":[[1700,5000],[3300,5000],[3300,7400],[1700,7400]],"ceiling_mm":2200,"floor_finish":"타일","area_m2":3.84,"area_class":"전용","exclusive_m2_centerline":3.84,"basis":""},{"id":"utility","name_ko":"다용도실","polygon":[[3300,5000],[6200,5000],[6200,7400],[3300,7400]],"ceiling_mm":2300,"floor_finish":"타일","area_m2":6.96,"area_class":"다용도실(발코니)","exclusive_m2_centerline":0,"basis":"","finished_ceiling":false},{"id":"bath2","name_ko":"욕실2(부부)","polygon":[[10900,5300],[12800,5300],[12800,7300],[10900,7300]],"ceiling_mm":2200,"floor_finish":"타일","area_m2":3.8,"area_class":"전용","exclusive_m2_centerline":3.8,"basis":""},{"id":"pantry","name_ko":"주방팬트리","polygon":[[10900,7300],[12800,7300],[12800,8700],[10900,8700]],"ceiling_mm":2300,"floor_finish":"강마루","area_m2":2.66,"area_class":"전용","exclusive_m2_centerline":2.66,"basis":""},{"id":"powder","name_ko":"파우더룸","polygon":[[12800,5300],[14700,5300],[14700,6500],[12800,6500]],"ceiling_mm":2300,"floor_finish":"강마루","area_m2":2.28,"area_class":"전용","exclusive_m2_centerline":2.28,"basis":""},{"id":"dress","name_ko":"드레스룸","polygon":[[12800,6500],[14700,6500],[14700,8700],[12800,8700]],"ceiling_mm":2300,"floor_finish":"강마루","area_m2":4.18,"area_class":"전용","exclusive_m2_centerline":4.18,"basis":""}],"walls":[{"id":"E1","a":[0,0],"b":[14700,0],"thickness":250,"exterior":true,"kind":"exterior","basis":""},{"id":"E2","a":[14700,0],"b":[14700,8700],"thickness":250,"exterior":true,"kind":"exterior","basis":""},{"id":"E3","a":[14700,8700],"b":[6200,8700],"thickness":250,"exterior":true,"kind":"exterior","basis":""},{"id":"E4","a":[6200,8700],"b":[6200,7400],"thickness":250,"exterior":true,"kind":"exterior","basis":""},{"id":"E5","a":[6200,7400],"b":[0,7400],"thickness":250,"exterior":true,"kind":"exterior","basis":""},{"id":"E6","a":[0,7400],"b":[0,0],"thickness":250,"exterior":true,"kind":"exterior","basis":""},{"id":"I1","a":[3100,0],"b":[3100,3700],"thickness":200,"exterior":false,"kind":"interior_rc","basis":""},{"id":"I2","a":[6200,0],"b":[6200,3700],"thickness":200,"exterior":false,"kind":"interior_rc","basis":""},{"id":"I3","a":[0,3700],"b":[6200,3700],"thickness":200,"exterior":false,"kind":"interior_rc","basis":""},{"id":"I4a","a":[0,5000],"b":[3300,5000],"thickness":200,"exterior":false,"kind":"interior_rc","basis":""},{"id":"I4b","a":[3300,5000],"b":[6200,5000],"thickness":200,"exterior":false,"kind":"envelope","basis":""},{"id":"I5","a":[1700,5000],"b":[1700,7400],"thickness":100,"exterior":false,"kind":"partition","basis":""},{"id":"I6","a":[3300,5000],"b":[3300,7400],"thickness":200,"exterior":false,"kind":"envelope","basis":""},{"id":"I7","a":[6200,5000],"b":[6200,7400],"thickness":200,"exterior":false,"kind":"envelope","basis":""},{"id":"I8","a":[10900,0],"b":[10900,1700],"thickness":200,"exterior":false,"kind":"envelope","basis":""},{"id":"I9","a":[10900,1700],"b":[10900,8700],"thickness":200,"exterior":false,"kind":"interior_rc","basis":""},{"id":"I10","a":[10900,1700],"b":[14700,1700],"thickness":250,"exterior":false,"kind":"envelope","basis":""},{"id":"I11","a":[13200,0],"b":[13200,1700],"thickness":200,"exterior":false,"kind":"interior_rc","basis":""},{"id":"I12","a":[10900,5300],"b":[14700,5300],"thickness":200,"exterior":false,"kind":"interior_rc","basis":""},{"id":"I13","a":[12800,5300],"b":[12800,8700],"thickness":100,"exterior":false,"kind":"partition","basis":""},{"id":"I14","a":[10900,7300],"b":[12800,7300],"thickness":100,"exterior":false,"kind":"partition","basis":""},{"id":"I15","a":[12800,6500],"b":[14700,6500],"thickness":100,"exterior":false,"kind":"partition","basis":""}],"openings":[{"id":"W_bed3","type":"window","room":"bed3","wall":"E1","at":[1562.5,0],"width":2000,"height":1500,"sill":600,"basis":""},{"id":"W_bed2","type":"window","room":"bed2","wall":"E1","at":[4650,0],"width":2000,"height":1500,"sill":600,"basis":""},{"id":"W_living","type":"window","room":"living","wall":"E1","at":[8550,0],"width":3600,"height":2100,"sill":0,"basis":""},{"id":"W_master","type":"window","room":"master","wall":"I10","at":[12050,1700],"width":1900,"height":2100,"sill":0,"basis":""},{"id":"W_balcony","type":"window","room":"balcony","wall":"E1","at":[12050,0],"width":1900,"height":2000,"sill":100,"basis":""},{"id":"W_ou","type":"window","room":"ou_room","wall":"E1","at":[13937.5,0],"width":1100,"height":2000,"sill":100,"basis":"","subtype":"gallery_louver"},{"id":"W_kitchen","type":"window","room":"kitchen","wall":"E3","at":[8550,8700],"width":1500,"height":1000,"sill":1100,"basis":""},{"id":"W_utility","type":"window","room":"utility","wall":"E5","at":[4750,7400],"width":1500,"height":1000,"sill":1100,"basis":""},{"id":"W_dress","type":"window","room":"dress","wall":"E3","at":[13712.5,8700],"width":1000,"height":1000,"sill":1100,"basis":""},{"id":"D_entry","type":"door","room":"entry","wall":"E6","at":[0,4350],"width":1000,"height":2100,"sill":0,"basis":""},{"id":"D_bed3","type":"door","room":"bed3","wall":"I3","at":[2500,3700],"width":900,"height":2100,"sill":0,"basis":""},{"id":"D_bed2","type":"door","room":"bed2","wall":"I3","at":[5500,3700],"width":900,"height":2100,"sill":0,"basis":""},{"id":"D_storage","type":"door","room":"entry_storage","wall":"I4a","at":[850,5000],"width":800,"height":2100,"sill":0,"basis":""},{"id":"D_bath1","type":"door","room":"bath1","wall":"I4a","at":[2500,5000],"width":800,"height":2100,"sill":0,"basis":""},{"id":"D_utility","type":"door","room":"utility","wall":"I7","at":[6200,6100],"width":800,"height":2100,"sill":0,"basis":""},{"id":"D_master","type":"door","room":"master","wall":"I9","at":[10900,4500],"width":900,"height":2100,"sill":0,"basis":""},{"id":"D_powder","type":"door","room":"powder","wall":"I12","at":[13700,5300],"width":900,"height":2100,"sill":0,"basis":""},{"id":"D_bath2","type":"door","room":"bath2","wall":"I13","at":[12800,5900],"width":800,"height":2100,"sill":0,"basis":""},{"id":"D_dress","type":"opening","room":"dress","wall":"I15","at":[13700,6500],"width":900,"height":2100,"sill":0,"basis":""},{"id":"D_pantry","type":"door","room":"pantry","wall":"I9","at":[10900,8000],"width":800,"height":2100,"sill":0,"basis":""},{"id":"D_ou","type":"door","room":"ou_room","wall":"I11","at":[13200,850],"width":700,"height":2100,"sill":0,"basis":""},{"id":"O_entry_hall","type":"opening","room":"entry","wall":null,"a":[1700,3700],"b":[1700,5000],"width":1300.0,"height":2300,"sill":0,"basis":""},{"id":"O_hall_living","type":"opening","room":"hall","wall":null,"a":[6200,3700],"b":[6200,5000],"width":1300.0,"height":2300,"sill":0,"basis":""},{"id":"O_living_kitchen","type":"opening","room":"living","wall":null,"a":[6200,5500],"b":[10900,5500],"width":4700.0,"height":2300,"sill":0,"basis":""}],"curtain_boxes":[{"id":"CB_bed3","room":"bed3","window":"W_bed3","polygon":[[125,125],[3000,125],[3000,275],[125,275]],"width":2875,"depth":150,"recess_mm":150,"basis":""},{"id":"CB_bed2","room":"bed2","window":"W_bed2","polygon":[[3200,125],[6100,125],[6100,275],[3200,275]],"width":2900,"depth":150,"recess_mm":150,"basis":""},{"id":"CB_living","room":"living","window":"W_living","polygon":[[6300,125],[10800,125],[10800,275],[6300,275]],"width":4500,"depth":150,"recess_mm":150,"basis":""},{"id":"CB_master","room":"master","window":"W_master","polygon":[[11000,1825],[14575,1825],[14575,1975],[11000,1975]],"width":3575,"depth":150,"recess_mm":150,"basis":""}],"furniture_hint":[{"room":"living","name_ko":"3인 소파(서측 벽, 동쪽 TV 향함)","center":[6775,2800],"size":[950,2400,800],"z0":0,"basis":""},{"room":"living","name_ko":"거실 테이블","center":[7900,2800],"size":[600,1200,400],"z0":0,"basis":""},{"room":"living","name_ko":"TV장","center":[10600,2900],"size":[400,2000,500],"z0":0,"basis":""},{"room":"living","name_ko":"러그","center":[8300,2800],"size":[2400,3000,10],"z0":0,"basis":""},{"room":"kitchen","name_ko":"식탁 1600x900","center":[8550,6450],"size":[1600,900,750],"z0":0,"basis":""},{"room":"kitchen","name_ko":"후면 조리대(개수대, 창 아래)","center":[8200,8275],"size":[3800,600,900],"z0":0,"basis":""},{"room":"kitchen","name_ko":"서측 조리대(ㄱ자)","center":[6600,7287.5],"size":[600,1375,900],"z0":0,"basis":""},{"room":"kitchen","name_ko":"쿡탑","center":[6600,7300],"size":[600,600,50],"z0":900,"heat":true,"basis":""},{"room":"kitchen","name_ko":"레인지후드","center":[6600,7300],"size":[600,600,450],"z0":1850,"heat":true,"ceiling_attached":true,"basis":""},{"room":"kitchen","name_ko":"상부장 좌","center":[7050,8400],"size":[1500,350,800],"z0":1500,"ceiling_attached":true,"basis":""},{"room":"kitchen","name_ko":"상부장 우","center":[9700,8400],"size":[800,350,800],"z0":1500,"ceiling_attached":true,"basis":""},{"room":"kitchen","name_ko":"냉장고장","center":[10450,6400],"size":[700,900,1850],"z0":0,"basis":""},{"room":"master","name_ko":"퀸 침대(머리 북측 벽)","center":[13000,4150],"size":[1600,2100,450],"z0":0,"basis":""},{"room":"master","name_ko":"협탁 좌","center":[11950,4950],"size":[450,400,550],"z0":0,"basis":""},{"room":"master","name_ko":"협탁 우","center":[14050,4950],"size":[450,400,550],"z0":0,"basis":""},{"room":"bed2","name_ko":"슈퍼싱글 침대(서측 벽)","center":[3750,2600],"size":[1100,2000,450],"z0":0,"basis":""},{"room":"bed2","name_ko":"책상(동측 벽)","center":[5800,2200],"size":[600,1200,750],"z0":0,"basis":""},{"room":"bed3","name_ko":"슈퍼싱글 침대(서측 벽)","center":[675,2600],"size":[1100,2000,450],"z0":0,"basis":""},{"room":"bed3","name_ko":"책상(동측 벽)","center":[2700,2200],"size":[600,1200,750],"z0":0,"basis":""},{"room":"entry","name_ko":"신발장","center":[850,3875],"size":[1500,350,2300],"z0":0,"ceiling_attached":true,"basis":""}],"ac_rules":{"window_gap_mm":[300,600],"window_gap_manual_min_mm":150,"discharge_clear_mm":1500,"side_end_clear_mm":150,"window_center_tol_mm":50,"coffer_margin_min_mm":300,"heat_source_min_mm":1000,"panel_to_room_width":[0.3,0.4],"manual_min_install_height_mm":2500,"protrusion_mm":35,"basis":"","term_conflict":""},"ac_units":[{"id":"AC_living","room":"living","model":"1way_large","size_mm":[1410,500,35],"body_h_mm":138,"ceiling_opening_mm":[1380,470],"capacity_kw":6.0,"center":[8550,875.0],"mount_z_mm":2300,"rotation_deg":90,"rotation_convention":"","orientation":"","ref_window":"W_living","placement_rule":"window","basis":"","asset":"../ac3d/models/windfree_1way.blend","pyeong":15,"model_code":"0601","spec_model":"AJ060BN1PBC1"},{"id":"AC_master","room":"master","model":"1way","size_mm":[1198,500,35],"body_h_mm":135,"ceiling_opening_mm":[1150,440],"capacity_kw":3.2,"center":[12050,2575.0],"mount_z_mm":2300,"rotation_deg":90,"rotation_convention":"","orientation":"","ref_window":"W_master","placement_rule":"window","basis":"","asset":"../ac3d/models/windfree_1way.blend","pyeong":8,"model_code":"0321","spec_model":"AJ032BN1PBC1"},{"id":"AC_bed2","room":"bed2","model":"1way_small","size_mm":[960,420,35],"body_h_mm":135,"ceiling_opening_mm":[860,380],"capacity_kw":2.0,"center":[4650,835.0],"mount_z_mm":2300,"rotation_deg":90,"rotation_convention":"","orientation":"","ref_window":"W_bed2","placement_rule":"window","basis":"","asset":"../ac3d/models/windfree_1way.blend","pyeong":5,"model_code":"0201","spec_model":"AJ020BN1PBC2"},{"id":"AC_bed3","room":"bed3","model":"1way_small","size_mm":[960,420,35],"body_h_mm":135,"ceiling_opening_mm":[860,380],"capacity_kw":2.0,"center":[1562.5,835.0],"mount_z_mm":2300,"rotation_deg":90,"rotation_convention":"","orientation":"","ref_window":"W_bed3","placement_rule":"window","basis":"","asset":"../ac3d/models/windfree_1way.blend","pyeong":5,"model_code":"0201","spec_model":"AJ020BN1PBC2"},{"id":"AC_kitchen","room":"kitchen","model":"1way","size_mm":[1198,500,35],"body_h_mm":135,"ceiling_opening_mm":[1150,440],"capacity_kw":2.3,"center":[8550,6450],"mount_z_mm":2300,"rotation_deg":270,"rotation_convention":"","orientation":"","ref_window":"W_kitchen","placement_rule":"dining","basis":"","asset":"../ac3d/models/windfree_1way.blend","pyeong":6,"model_code":"0231","spec_model":"AJ023BN1PBC1"}],"outdoor_unit":{"id":"OU_1","room":"ou_room","position":[13850,390,0],"size_mm":[940,330,998],"capacity_kw":14.5,"hp":5,"model":"DVM Home 다배관 AJ050RXH5BC1 5HP","ports":5,"port":[14400,390,400],"basis":"","hatch":{"type":"하향식 피난구","center":[13750,1175],"size_mm":[700,700],"basis":""},"pipe_limits":{"per_branch_max_mm":45000,"basic_included_mm":15000,"basis":""},"spec_model":"AJ050RXH5BC1"},"drain_points":[{"id":"DP_balcony","room":"balcony","xy":[11050,1450],"basis":""},{"id":"DP_ou","room":"ou_room","xy":[14300,1450],"basis":""},{"id":"DP_utility","room":"utility","xy":[6000,5200],"basis":""}],"piping":[{"id":"ref_AC_master","kind":"refrigerant","from":"OU_1","to":"AC_master","polyline":[[14400,390,400],[14450,390,400],[14450,390,2500],[14450,1700,2500],[14450,2575,2500],[12714,2575,2500]],"spec":"액관·가스관 1쌍(다배관, 분기관 없음)","basis":""},{"id":"com_AC_master","kind":"comm","from":"OU_1","to":"AC_master","polyline":[[14400,390,400],[14450,390,400],[14450,390,2520],[14450,1700,2520],[14450,2575,2520],[12714,2575,2520]],"spec":"통신선 0.75~1.5㎟(냉매배관과 동행)","basis":""},{"id":"ref_AC_living","kind":"refrigerant","from":"OU_1","to":"AC_living","polyline":[[14400,390,400],[14450,390,400],[14450,390,2500],[14450,1700,2500],[14450,3000,2500],[10600,3000,2500],[10600,1450,2500],[9320,1450,2500],[9320,875,2500]],"spec":"액관·가스관 1쌍(다배관, 분기관 없음)","basis":""},{"id":"com_AC_living","kind":"comm","from":"OU_1","to":"AC_living","polyline":[[14400,390,400],[14450,390,400],[14450,390,2520],[14450,1700,2520],[14450,3000,2520],[10600,3000,2520],[10600,1450,2520],[9320,1450,2520],[9320,875,2520]],"spec":"통신선 0.75~1.5㎟(냉매배관과 동행)","basis":""},{"id":"ref_AC_kitchen","kind":"refrigerant","from":"OU_1","to":"AC_kitchen","polyline":[[14400,390,400],[14450,390,400],[14450,390,2500],[14450,1700,2500],[14450,3000,2500],[10600,3000,2500],[10600,5200,2500],[10600,6450,2500],[9215,6450,2500]],"spec":"액관·가스관 1쌍(다배관, 분기관 없음)","basis":""},{"id":"com_AC_kitchen","kind":"comm","from":"OU_1","to":"AC_kitchen","polyline":[[14400,390,400],[14450,390,400],[14450,390,2520],[14450,1700,2520],[14450,3000,2520],[10600,3000,2520],[10600,5200,2520],[10600,6450,2520],[9215,6450,2520]],"spec":"통신선 0.75~1.5㎟(냉매배관과 동행)","basis":""},{"id":"ref_AC_bed2","kind":"refrigerant","from":"OU_1","to":"AC_bed2","polyline":[[14400,390,400],[14450,390,400],[14450,390,2500],[14450,1700,2500],[14450,3000,2500],[10600,3000,2500],[10600,5200,2500],[6600,5200,2500],[6600,4350,2500],[5300,4350,2500],[5300,3700,2500],[5300,835,2500],[5190,835,2500]],"spec":"액관·가스관 1쌍(다배관, 분기관 없음)","basis":""},{"id":"com_AC_bed2","kind":"comm","from":"OU_1","to":"AC_bed2","polyline":[[14400,390,400],[14450,390,400],[14450,390,2520],[14450,1700,2520],[14450,3000,2520],[10600,3000,2520],[10600,5200,2520],[6600,5200,2520],[6600,4350,2520],[5300,4350,2520],[5300,3700,2520],[5300,835,2520],[5190,835,2520]],"spec":"통신선 0.75~1.5㎟(냉매배관과 동행)","basis":""},{"id":"ref_AC_bed3","kind":"refrigerant","from":"OU_1","to":"AC_bed3","polyline":[[14400,390,400],[14450,390,400],[14450,390,2500],[14450,1700,2500],[14450,3000,2500],[10600,3000,2500],[10600,5200,2500],[6600,5200,2500],[6600,4350,2500],[2600,4350,2500],[2600,3700,2500],[2600,835,2500],[2100,835,2500]],"spec":"액관·가스관 1쌍(다배관, 분기관 없음)","basis":""},{"id":"com_AC_bed3","kind":"comm","from":"OU_1","to":"AC_bed3","polyline":[[14400,390,400],[14450,390,400],[14450,390,2520],[14450,1700,2520],[14450,3000,2520],[10600,3000,2520],[10600,5200,2520],[6600,5200,2520],[6600,4350,2520],[2600,4350,2520],[2600,3700,2520],[2600,835,2520],[2100,835,2520]],"spec":"통신선 0.75~1.5㎟(냉매배관과 동행)","basis":""},{"id":"drn_AC_living","kind":"drain","from":"AC_living","to":"DP_balcony","polyline":[[9320,875,2450.0],[9320,1450,2443.6],[11050,1450,2424.3],[11050,1450,50]],"slope":"1/90","spec":"VP20(주거용 1Way 배수 OD26·ID20, S35)","basis":""},{"id":"drn_AC_master","kind":"drain","from":"AC_master","to":"DP_ou","polyline":[[12714,2475,2530.0],[14300,2475,2512.3],[14300,1450,2500.9],[14300,1450,50]],"slope":"1/90","spec":"VP20(주거용 1Way 배수 OD26·ID20, S35)","basis":""},{"id":"drn_AC_kitchen","kind":"drain","from":"AC_kitchen","to":"DP_utility","polyline":[[9215,6450,2450.0],[9215,6000,2445.0],[6000,6000,2409.2],[6000,5200,2400.3],[6000,5200,50]],"slope":"1/90","spec":"VP20(주거용 1Way 배수 OD26·ID20, S35)","basis":""},{"id":"drn_AC_bed2","kind":"drain","from":"AC_bed2","to":"DP_utility","polyline":[[5190,835,2450.0],[5300,835,2448.7],[5300,3700,2416.9],[5300,5200,2400.2],[6000,5200,2392.5],[6000,5200,50]],"slope":"1/90","spec":"VP20(주거용 1Way 배수 OD26·ID20, S35)","basis":""},{"id":"drn_AC_bed3","kind":"drain","from":"AC_bed3","to":"DP_utility","polyline":[[2100,835,2450.0],[2600,835,2444.4],[2600,4350,2405.3],[3700,4350,2393.1],[3700,5200,2383.7],[6000,5200,2358.1],[6000,5200,50]],"slope":"1/90","spec":"VP20(주거용 1Way 배수 OD26·ID20, S35)","basis":""}],"views":[{"room":"living","name_ko":"거실 - 식탁 쪽에서 남측 창과 대형 1Way","camera":[8550,5100,1200],"target":[8550,875,1487],"fov_deg":70,"fov_axis":"horizontal","aspect":"16:9","note":""},{"room":"living","name_ko":"거실 - 복도 입구 모서리에서 대각(소파·창·1Way)","camera":[6650,5250,1150],"target":[9500,875,1406],"fov_deg":65,"fov_axis":"horizontal","aspect":"16:9","note":""},{"room":"master","name_ko":"안방 - 문 쪽 모서리에서 발코니 내창과 1Way","camera":[11300,5000,1150],"target":[12500,1975,1652],"fov_deg":80,"fov_axis":"horizontal","aspect":"16:9","note":""},{"room":"bed2","name_ko":"침실2 - 문 옆에서 창과 1Way","camera":[5600,3450,1150],"target":[4650,275,1642],"fov_deg":80,"fov_axis":"horizontal","aspect":"16:9","note":""},{"room":"bed3","name_ko":"침실3 - 침대 머리 쪽에서 창과 1Way","camera":[500,3300,1200],"target":[1562.5,275,1716],"fov_deg":75,"fov_axis":"horizontal","aspect":"16:9","note":""},{"room":"kitchen","name_ko":"주방 - 거실에서 북측 주방창과 식탁 위 1Way","camera":[8550,2600,1050],"target":[8550,8575,1349],"fov_deg":70,"fov_axis":"horizontal","aspect":"16:9","note":""},{"id":"living_ac","room":"living","kind":"ac_closeup","name_ko":"거실 - 당긴 구도, 대형 1Way가 주인공(창·우물천장은 배경)","camera":[9250,4050,1450],"target":[8550,875,2150],"fov_deg":42,"fov_axis":"horizontal","aspect":"16:9","camera_mode":"수평 카메라 + 세로 렌즈 시프트(target 높이 = 시프트, 집 구성도 렌더 규약 기본)","lens_shift_y":0.28,"focal_mm_ff36":46.9,"note":""}],"sources":[{"id":"S1","title":"","url":""},{"id":"S2","title":"","url":""},{"id":"S3","title":"","url":""},{"id":"S4","title":"","url":""},{"id":"S5","title":"","url":""},{"id":"S6","title":"","url":""},{"id":"S7","title":"","url":""},{"id":"S8","title":"","url":""},{"id":"S9","title":"","url":""},{"id":"S10","title":"","url":""},{"id":"S11","title":"","url":""},{"id":"S12","title":"","url":""},{"id":"S13","title":"","url":""},{"id":"S14","title":"","url":""},{"id":"S15","title":"","url":""},{"id":"S16","title":"","url":""},{"id":"S17","title":"","url":""},{"id":"S18","title":"","url":""},{"id":"S19","title":"","url":""},{"id":"S20","title":"","url":""},{"id":"S21","title":"","url":""},{"id":"S22","title":"","url":""},{"id":"S23","title":"","url":""},{"id":"S24","title":"","url":""},{"id":"S25","title":"","url":""},{"id":"S26","title":"","url":""},{"id":"S27","title":"","url":""},{"id":"S28","title":"","url":""},{"id":"S29","title":"","url":""},{"id":"S30","title":"","url":""},{"id":"S31","title":"","url":""},{"id":"S32","title":"","url":""},{"id":"S33","title":"","url":""},{"id":"S34","title":"","url":""},{"id":"L1","title":"","url":""},{"id":"M1","title":"","url":""},{"id":"M2","title":"","url":""},{"id":"M3","title":"","url":""},{"id":"S35","title":"","url":""},{"id":"P1","title":"","url":""},{"id":"P2","title":"","url":""},{"id":"S36","title":"","url":""},{"id":"S37","title":"","url":""}],"assumptions":[],"decisions_pending":[],"load_rule":{"m2_per_pyeong":3.3058,"lineup_pyeong_by_kw":{"1way":{"7.2":18,"6.0":15,"5.2":13,"4.0":10,"3.2":8,"2.3":6,"2.0":5}},"lineup_model_code":{"1way":{"7.2":"0721","6.0":"0601","5.2":"0521","4.0":"0401","3.2":"0321","2.3":"0231","2.0":"0201"}},"lineup_basis":"","method":""},"load_total":{"by_unit":[{"unit":"AC_living","room":"living","area_m2":25.85,"pyeong_room":7.82,"capacity_kw":6.0,"pyeong_unit":15,"multiplier":1.92},{"unit":"AC_master","room":"master","area_m2":13.68,"pyeong_room":4.14,"capacity_kw":3.2,"pyeong_unit":8,"multiplier":1.93},{"unit":"AC_bed2","room":"bed2","area_m2":11.47,"pyeong_room":3.47,"capacity_kw":2.0,"pyeong_unit":5,"multiplier":1.44},{"unit":"AC_bed3","room":"bed3","area_m2":11.47,"pyeong_room":3.47,"capacity_kw":2.0,"pyeong_unit":5,"multiplier":1.44},{"unit":"AC_kitchen","room":"kitchen","area_m2":15.04,"pyeong_room":4.55,"capacity_kw":2.3,"pyeong_unit":6,"multiplier":1.32}],"indoor_sum_kw":15.5,"indoor_sum_pyeong":39,"conditioned_area_m2":77.51,"conditioned_pyeong":23.45,"multiplier_overall":1.66,"outdoor_kw":14.5,"connection_ratio":1.069,"basis":""}};
+const CHECKS = {"units":{"AC_living":[["PASS","긴 변 ∥ 창 벽(W_living)"],["PASS","토출(플랩)이 창 반대쪽=방 쪽 (rot 90°, 180° 뒤집힘 아님)"],["PASS","창 중앙 정렬 오차 0mm ≤ 50"],["PASS","창 쪽 끝~CB_living 면 350mm ∈ 300~600 (설명서 흡입 쪽 ≥150)"],["PASS","토출 앞 개방 7450mm(첫 장애물 E3) ≥ 1500"],["PASS","+x 끝~I8 1545mm ≥ 150"],["PASS","-x 끝~I2 1545mm ≥ 150"],["PASS","패널이 해당 실 천장 안"],["PASS","우물천장 밖, 단까지 675mm ≥ 300(추정)"],["PASS","패널 길이/실 안목 폭 1410/4500 = 31% ∈ 30%~40% (추정 비율)"],["WARN","천장 2300 vs 설명서 설치 높이 ≥2500 (아파트 옵션 시공 관행과 불일치)"],["PASS","본체 높이 138 ≤ 천장 속 250(추정)"]],"AC_master":[["PASS","긴 변 ∥ 창 벽(W_master)"],["PASS","토출(플랩)이 창 반대쪽=방 쪽 (rot 90°, 180° 뒤집힘 아님)"],["PASS","창 중앙 정렬 오차 0mm ≤ 50"],["PASS","창 쪽 끝~CB_master 면 350mm ∈ 300~600 (설명서 흡입 쪽 ≥150)"],["PASS","토출 앞 개방 2375mm(첫 장애물 I12) ≥ 1500"],["PASS","+x 끝~E2 1926mm ≥ 150"],["PASS","-x 끝~I9 451mm ≥ 150"],["PASS","패널이 해당 실 천장 안"],["PASS","패널 길이/실 안목 폭 1198/3575 = 34% ∈ 30%~40% (추정 비율)"],["WARN","천장 2300 vs 설명서 설치 높이 ≥2500 (아파트 옵션 시공 관행과 불일치)"],["PASS","본체 높이 135 ≤ 천장 속 250(추정)"]],"AC_bed2":[["PASS","긴 변 ∥ 창 벽(W_bed2)"],["PASS","토출(플랩)이 창 반대쪽=방 쪽 (rot 90°, 180° 뒤집힘 아님)"],["PASS","창 중앙 정렬 오차 0mm ≤ 50"],["PASS","창 쪽 끝~CB_bed2 면 350mm ∈ 300~600 (설명서 흡입 쪽 ≥150)"],["PASS","토출 앞 개방 2555mm(첫 장애물 I3) ≥ 1500"],["PASS","+x 끝~I2 970mm ≥ 150"],["PASS","-x 끝~I1 970mm ≥ 150"],["PASS","패널이 해당 실 천장 안"],["PASS","패널 길이/실 안목 폭 960/2900 = 33% ∈ 30%~40% (추정 비율)"],["WARN","천장 2300 vs 설명서 설치 높이 ≥2500 (아파트 옵션 시공 관행과 불일치)"],["PASS","본체 높이 135 ≤ 천장 속 250(추정)"]],"AC_bed3":[["PASS","긴 변 ∥ 창 벽(W_bed3)"],["PASS","토출(플랩)이 창 반대쪽=방 쪽 (rot 90°, 180° 뒤집힘 아님)"],["PASS","창 중앙 정렬 오차 0mm ≤ 50"],["PASS","창 쪽 끝~CB_bed3 면 350mm ∈ 300~600 (설명서 흡입 쪽 ≥150)"],["PASS","토출 앞 개방 2555mm(첫 장애물 I3) ≥ 1500"],["PASS","+x 끝~I1 958mm ≥ 150"],["PASS","-x 끝~E6 958mm ≥ 150"],["PASS","패널이 해당 실 천장 안"],["PASS","패널 길이/실 안목 폭 960/2875 = 33% ∈ 30%~40% (추정 비율)"],["WARN","천장 2300 vs 설명서 설치 높이 ≥2500 (아파트 옵션 시공 관행과 불일치)"],["PASS","본체 높이 135 ≤ 천장 속 250(추정)"]],"AC_kitchen":[["PASS","긴 변 ∥ 창 벽(W_kitchen)"],["PASS","토출(플랩)이 창 반대쪽=방 쪽 (rot 270°, 180° 뒤집힘 아님)"],["PASS","흡입 쪽~E3 1875mm ≥ 150 (식탁 기준 배치, 창 간격 규칙 대상 아님)"],["PASS","쿡탑까지 1093mm ≥ 1000(추정)"],["PASS","레인지후드까지 1093mm ≥ 1000(추정)"],["PASS","토출 앞 개방 5925mm(첫 장애물 CB_living) ≥ 1500"],["PASS","+x 끝~I9 1651mm ≥ 150"],["PASS","-x 끝~I7 1651mm ≥ 150"],["PASS","패널이 해당 실 천장 안"],["WARN","패널 길이/실 안목 폭 1198/4500 = 27% ∈ 30%~40% (추정 비율)"],["WARN","천장 2300 vs 설명서 설치 높이 ≥2500 (아파트 옵션 시공 관행과 불일치)"],["PASS","본체 높이 135 ≤ 천장 속 250(추정)"]]},"pipes":{"ref_AC_master":{"kind":"refrigerant","m":6.1,"to":"AC_master"},"com_AC_master":{"kind":"comm","m":6.1,"to":"AC_master"},"ref_AC_living":{"kind":"refrigerant","m":12.0,"to":"AC_living"},"com_AC_living":{"kind":"comm","m":12.0,"to":"AC_living"},"ref_AC_kitchen":{"kind":"refrigerant","m":13.4,"to":"AC_kitchen"},"com_AC_kitchen":{"kind":"comm","m":13.5,"to":"AC_kitchen"},"ref_AC_bed2":{"kind":"refrigerant","m":20.6,"to":"AC_bed2"},"com_AC_bed2":{"kind":"comm","m":20.6,"to":"AC_bed2"},"ref_AC_bed3":{"kind":"refrigerant","m":23.7,"to":"AC_bed3"},"com_AC_bed3":{"kind":"comm","m":23.7,"to":"AC_bed3"},"drn_AC_living":{"kind":"drain","m":4.7,"to":"DP_balcony"},"drn_AC_master":{"kind":"drain","m":5.1,"to":"DP_ou"},"drn_AC_kitchen":{"kind":"drain","m":6.8,"to":"DP_utility"},"drn_AC_bed2":{"kind":"drain","m":7.5,"to":"DP_utility"},"drn_AC_bed3":{"kind":"drain","m":10.6,"to":"DP_utility"}},"area":84.05,"total":"실내기 합 15.5kW / 실외기 14.5kW = 107% (조합 50~130% 일반값, 추정)","summary":"PASS 112  WARN 6  INFO 3  FAIL 0"};
+const TEX_1WAY = "data:image/jpeg;base64,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";
+
+/* ============ helpers ============ */
+const DEG = Math.PI / 180;
+const mm = v => v / 1000;
+// plan (x east, y north, z up, mm) -> three (x, y up, -z north, m)
+const V = (x, y, z = 0) => new THREE.Vector3(x / 1000, z / 1000, -y / 1000);
+const bbox = poly => {
+  const xs = poly.map(p => p[0]), ys = poly.map(p => p[1]);
+  return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
+};
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const n0 = v => Number(v).toLocaleString('ko-KR');
+const n2 = v => Number(v).toFixed(2);
+const lerp = THREE.MathUtils.lerp;
+const clamp = THREE.MathUtils.clamp;
+// ---- 카메라 전환(멀미 방지, 2026-09-17) ----
+// sine in-out: 최고 속도가 평균의 π/2 배(이전 cubic 은 3배)
+const ease = t => (1 - Math.cos(Math.PI * t)) / 2;
+// 이전 방식(직선 이동 + 과녁 점 lerp)은 과녁이 카메라 앞을 스칠 때 화면이 초당 수백~수천 도로 휙 돌았다.
+// 방→방: 방위각·앙각으로 고르게 돈다. 전체↔방: 방 시점 뒤·위(back·up × 이동 거리)를 지나는 곡선으로 드나들어 방 안에서 뒤돌지 않는다
+const yawPitch = v => [Math.atan2(v.x, v.z), Math.atan2(v.y, Math.hypot(v.x, v.z))];
+const wrapPi = a => Math.atan2(Math.sin(a), Math.cos(a));
+// 방→방 시간: 최고 각속도(π/2 × 회전각 / 시간)가 degps 를 넘지 않게 min~max 안에서. 전체↔방은 far
+const CAM = { min: 1400, max: 2400, degps: 120, far: 2200, back: .25, up: .35, drop: .1 };
+const camMs = turnDeg => clamp(Math.PI / 2 * turnDeg / CAM.degps * 1000, CAM.min, CAM.max);
+let lookDist = 4; // 마지막 도착 시점의 과녁 거리: 방→전체 곡선에서 시선이 출발하는 점
+const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+const state = { mode: 'house', room: null, view: 0, pipes: true, k: 0, hover: null, autoCollapsed: false };
+// ---- embed: 부모(히어로)가 덮는 영역·요청 렌더 ----
+const EMBED = document.documentElement.classList.contains('embed');
+const INTRO_MS = 3000; // 첫 화면 인트로(에어컨에서 전체로 당겨 나옴). 방 이동(CAM.max)보다 느리게
+// inset: 전체 보기(l,r,t,b)와 방 시점(rt,rb)에서 부모 UI 가 덮는 픽셀. occNow = 마지막으로 투영에 건 값(전환 중 보간 출발점)
+let inset = { l: 0, r: 0, t: 0, b: 0, rt: 0, rb: 0 }, frameQueued = false, readySent = false, occNow = null, introPending = false;
+// embed 는 멈춰 있을 때 그리지 않는다: 위에 backdrop-filter 유리가 얹혀 매 프레임 그리면 GPU 가 계속 돈다
+function invalidate() { if (!frameQueued) { frameQueued = true; requestAnimationFrame(tick); } } // 단독 페이지도 멈춰 있으면 그리지 않는다
+const post = m => { if (EMBED && parent !== window) parent.postMessage({ ns: 'bd3d', viewer: 'house', ...m }, '*'); };
+// 히어로에 보이는 이름은 괄호·보조 명칭을 뺀다 ('안방(침실1)' -> '안방', '주방/식당' -> '주방')
+const dispName = id => rooms[id].name_ko.replace(/\(.*?\)/g, '').split('/')[0].trim();
+
+const rooms = Object.fromEntries(PLAN.rooms.map(r => [r.id, r]));
+const acByRoom = Object.fromEntries(PLAN.ac_units.map(u => [u.room, u]));
+const viewsByRoom = {};
+PLAN.views.forEach(v => (viewsByRoom[v.room] ??= []).push(v));
+const OU = PLAN.outdoor_unit;
+const MODEL_KO = { '1way_large': '1Way 대형', '1way': '1Way 중형', '1way_small': '1Way 소형', '4way': '4Way' };
+const modelKo = m => MODEL_KO[m] || m;
+
+/* ============ renderer / scene ============ */
+const stage = $('stage');
+const canvas = $('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.setClearColor(0x000000, 0);
+const maxAniso = renderer.capabilities.getMaxAnisotropy();
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(30, 1, 0.05, 1500);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = !reduced.matches;
+controls.dampingFactor = 0.08;
+
+const E = PLAN.envelope;
+const HOUSE_C = V(E.front_width / 2, E.depth_center_right / 2, 0);
+const H_WALL = PLAN.ceiling.default_mm + PLAN.ceiling.ceiling_void_mm; // walls run up to the slab
+const CUT = 1000; // cutaway height in dollhouse view (visual choice, not a plan value)
+
+const groups = {};
+for (const k of ['floor', 'walls', 'win', 'ceil', 'ac', 'patch', 'pipes', 'furn', 'ou', 'sky']) {
+  groups[k] = new THREE.Group(); scene.add(groups[k]);
+}
+
+/* ============ textures ============ */
+function rng(seed) { let s = seed; return () => (s = (s * 16807) % 2147483647) / 2147483647; }
+function canvasTex(size, draw, repeatM) {
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  draw(c.getContext('2d'), size);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(1 / repeatM, 1 / repeatM);
+  t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = maxAniso;
+  return t;
+}
+const woodTex = canvasTex(1024, (x, S) => {
+  const r = rng(11), rows = 8, rh = S / rows;
+  for (let i = 0; i < rows; i++) {
+    let px = -r() * S * .5;
+    while (px < S) {
+      const len = S * (.38 + r() * .42);
+      x.fillStyle = `hsl(${31 + r() * 5} ${22 + r() * 6}% ${62 + r() * 7}%)`;
+      x.fillRect(px, i * rh, len, rh);
+      for (let g = 0; g < 16; g++) {
+        x.globalAlpha = .05 + r() * .06;
+        x.fillStyle = r() < .6 ? '#5b4631' : '#fff8ee';
+        x.fillRect(px, i * rh + r() * rh, len, 1 + r() * 2);
+      }
+      x.globalAlpha = 1;
+      x.fillStyle = 'rgba(70,52,36,.35)'; x.fillRect(px, i * rh, 2, rh);
+      px += len;
+    }
+    x.fillStyle = 'rgba(70,52,36,.28)'; x.fillRect(0, i * rh, S, 2);
+  }
+}, 1.6);
+const tileTex = canvasTex(512, (x, S) => {
+  const r = rng(5);
+  for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) {
+    x.fillStyle = `hsl(36 8% ${86 + r() * 3}%)`; x.fillRect(i * S / 2, j * S / 2, S / 2, S / 2);
+  }
+  x.fillStyle = '#b9b3ab'; x.fillRect(0, 0, S, 3); x.fillRect(0, S / 2 - 1, S, 3); x.fillRect(0, 0, 3, S); x.fillRect(S / 2 - 1, 0, 3, S);
+}, 1.2);
+const grilleTex = canvasTex(256, (x, S) => {
+  x.fillStyle = '#eef0f1'; x.fillRect(0, 0, S, S);
+  x.fillStyle = '#c3c9cd';
+  for (let i = 0; i < S; i += 8) { x.fillRect(i, 0, 2, S); x.fillRect(0, i, S, 2); }
+}, 1);
+grilleTex.repeat.set(1, 1);
+const fanTex = canvasTex(256, (x, S) => {
+  x.fillStyle = '#3a4146'; x.fillRect(0, 0, S, S);
+  x.strokeStyle = '#8c969c'; x.lineWidth = 3;
+  for (let rr = 16; rr < S / 2; rr += 14) { x.beginPath(); x.arc(S / 2, S / 2, rr, 0, Math.PI * 2); x.stroke(); }
+  for (let a = 0; a < 4; a++) { x.save(); x.translate(S / 2, S / 2); x.rotate(a * Math.PI / 4); x.fillStyle = '#8c969c'; x.fillRect(-S / 2, -2, S, 4); x.restore(); }
+}, 1);
+fanTex.repeat.set(1, 1);
+const tex1 = new THREE.TextureLoader().load(TEX_1WAY, () => invalidate());
+tex1.colorSpace = THREE.SRGBColorSpace; tex1.anisotropy = maxAniso;
+
+/* ============ materials ============ */
+const std = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: .9, ...o });
+const mat = {
+  wall: std(0xEDE9E2),
+  wallHi: std(0xEDE9E2, { transparent: true, opacity: .08, depthWrite: false }),
+  frameHi: std(0xE8EBED, { roughness: .45, transparent: true, opacity: .1, depthWrite: false }),
+  glass: new THREE.MeshStandardMaterial({ color: 0xCFE2EA, roughness: .05, transparent: true, opacity: .14, depthWrite: false, side: THREE.DoubleSide }),
+  wood: std(0xffffff, { map: woodTex, roughness: .62 }),
+  tile: std(0xffffff, { map: tileTex, roughness: .45 }),
+  ceil: std(0xF2F1ED, { transparent: true, opacity: 0, side: THREE.FrontSide }),
+  recess: std(0xE2DFD9, { transparent: true, opacity: 0, side: THREE.BackSide }),
+  coffer: std(0xF4F3EF, { transparent: true, opacity: 0, side: THREE.BackSide }),
+  base: std(0xC9D1D6, { roughness: 1 }),
+  acBody: std(0xCDD3D6, { roughness: .7 }),
+  panel: new THREE.MeshStandardMaterial({ map: tex1, roughness: .5, emissive: 0xffffff, emissiveMap: tex1, emissiveIntensity: .3 }),
+  panelWhite: std(0xF7F8F8, { roughness: .5, emissive: 0xffffff, emissiveIntensity: .08 }),
+  blade: std(0xD7DCDF, { roughness: .35 }),
+  slot: std(0x7F8a90, { roughness: .6 }),
+  grille: std(0xffffff, { map: grilleTex, roughness: .6 }),
+  patch: new THREE.MeshBasicMaterial({ color: 0xBFE9F2, transparent: true, opacity: .6, depthWrite: false, side: THREE.DoubleSide }),
+  patchEdge: new THREE.LineBasicMaterial({ color: 0x004E64, transparent: true, opacity: .9 }),
+  arrow: new THREE.MeshBasicMaterial({ color: 0x004E64, transparent: true, opacity: .75, depthWrite: false, side: THREE.DoubleSide }),
+  hover: new THREE.MeshBasicMaterial({ color: EMBED ? 0x004E64 : 0x3C9DB3, transparent: true, opacity: EMBED ? .14 : .22, depthWrite: false }),
+  ou: std(0xE4E6E6, { roughness: .6 }),
+  fan: std(0xffffff, { map: fanTex, roughness: .7 }),
+  hatch: std(0x6E767B, { roughness: .8 }),
+  drain: std(0x3F474C, { roughness: .8 }),
+};
+const FURN = {
+  sofa: std(0xB3AEA5), bed: std(0xDAD3C8), head: std(0x8F7F6C), blanket: std(0xAFBEC6),
+  wood: std(0x9B8671, { roughness: .7 }), rug: std(0xD7CFC1), cab: std(0xECEAE5, { roughness: .6 }),
+  cook: std(0x2C3135, { roughness: .4 }), hood: std(0xCBD0D3, { roughness: .4, metalness: .2 }),
+};
+
+/* ============ geometry builders ============ */
+function shapeOf(poly, flip = false) {
+  const s = new THREE.Shape();
+  poly.forEach(([x, y], i) => s[i ? 'lineTo' : 'moveTo'](mm(x), flip ? -mm(y) : mm(y)));
+  return s;
+}
+function rectPath([x0, y0, x1, y1], flip = false) { return shapeOf([[x0, y0], [x1, y0], [x1, y1], [x0, y1]], flip); }
+function box(sx, sy, sz, material, pos, shadow = true) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), material);
+  m.position.copy(pos); m.castShadow = shadow; m.receiveShadow = true;
+  return m;
+}
+
+/* floors + hover overlays */
+const floorMeshes = [];
+const hoverMeshes = {};
+const CLICKABLE = new Set([...Object.keys(viewsByRoom), OU.room]);
+for (const r of PLAN.rooms) {
+  const g = new THREE.ShapeGeometry(shapeOf(r.polygon)); g.rotateX(-Math.PI / 2);
+  const m = new THREE.Mesh(g, r.floor_finish.startsWith('타일') ? mat.tile : mat.wood);
+  m.receiveShadow = true; m.userData.room = r.id;
+  groups.floor.add(m);
+  if (CLICKABLE.has(r.id)) {
+    floorMeshes.push(m);
+    const h = new THREE.Mesh(g, mat.hover); h.position.y = .006; h.visible = false; h.renderOrder = 2;
+    groups.floor.add(h); hoverMeshes[r.id] = h;
+  }
+}
+{ // slab edge under the unit + shadow catcher
+  const s = shapeOf(E.footprint_polygon);
+  const g = new THREE.ExtrudeGeometry(s, { depth: .22, bevelEnabled: false }); g.rotateX(-Math.PI / 2); g.translate(0, -.225, 0);
+  groups.floor.add(new THREE.Mesh(g, mat.base));
+  const catcher = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.ShadowMaterial({ opacity: .16 }));
+  catcher.rotation.x = -Math.PI / 2; catcher.position.copy(HOUSE_C).setY(-.23); catcher.receiveShadow = true;
+  scene.add(catcher);
+}
+
+/* walls with openings, split at the cutaway height */
+const opsByWall = {};
+PLAN.openings.filter(o => o.wall).forEach(o => (opsByWall[o.wall] ??= []).push(o));
+function wallPiece(w, s0, s1, z0, z1) {
+  if (s1 - s0 < 1 || z1 - z0 < 1) return;
+  const hz = w.a[1] === w.b[1];
+  for (const [za, zb] of [[z0, Math.min(z1, CUT)], [Math.max(z0, CUT), z1]]) {
+    if (zb - za < 1) continue;
+    const len = mm(s1 - s0), t = mm(w.thickness), c = (s0 + s1) / 2;
+    const pos = hz ? V(c, w.a[1], (za + zb) / 2) : V(w.a[0], c, (za + zb) / 2);
+    groups.walls.add(box(hz ? len : t, mm(zb - za), hz ? t : len, za >= CUT ? mat.wallHi : mat.wall, pos));
+  }
+}
+function addWindow(w, o, a, b) {
+  const hz = w.a[1] === w.b[1], c = (a + b) / 2;
+  const g = new THREE.Group();
+  g.position.copy(hz ? V(c, w.a[1], o.sill) : V(w.a[0], c, o.sill));
+  if (!hz) g.rotation.y = Math.PI / 2;
+  const W = mm(o.width), H = mm(o.height), f = .05, d = .07;
+  const bar = (sx, sy, x, y) => g.add(box(sx, sy, d, mat.frameHi, new THREE.Vector3(x, y, 0)));
+  bar(W, f, 0, f / 2); bar(W, f, 0, H - f / 2); bar(f, H, -W / 2 + f / 2, H / 2); bar(f, H, W / 2 - f / 2, H / 2);
+  if (o.subtype === 'gallery_louver') {
+    for (let y = .12; y < H - .06; y += .1) {
+      const s = box(W - 2 * f, .012, .09, mat.frameHi, new THREE.Vector3(0, y, 0)); s.rotation.x = -.6; g.add(s);
+    }
+  } else {
+    if (W >= 1.4) bar(.04, H, 0, H / 2);
+    const gl = new THREE.Mesh(new THREE.PlaneGeometry(W - 2 * f, H - 2 * f), mat.glass);
+    gl.position.y = H / 2; g.add(gl);
+  }
+  groups.win.add(g);
+}
+for (const w of PLAN.walls) {
+  const hz = w.a[1] === w.b[1];
+  const ends = hz ? [w.a[0], w.b[0]] : [w.a[1], w.b[1]];
+  const s0 = Math.min(...ends) - w.thickness / 2, s1 = Math.max(...ends) + w.thickness / 2;
+  const ops = (opsByWall[w.id] || []).map(o => ({ o, c: hz ? o.at[0] : o.at[1] })).sort((p, q) => p.c - q.c);
+  let cur = s0;
+  for (const { o, c } of ops) {
+    const a = c - o.width / 2, b = c + o.width / 2;
+    wallPiece(w, cur, a, 0, H_WALL);
+    if (o.sill > 0) wallPiece(w, a, b, 0, o.sill);
+    wallPiece(w, a, b, o.sill + o.height, H_WALL);
+    if (o.type === 'window') addWindow(w, o, a, b);
+    cur = b;
+  }
+  wallPiece(w, cur, s1, 0, H_WALL);
+}
+
+/* ceilings, curtain-box recesses, coffer (room views only) */
+// 상자 재질 순서 +x,-x,+y,-y,+z,-z. BackSide 상자의 밑면(-y)은 위에서 내려다볼 때만 그려져 카메라 하강 때 판처럼 화면을 덮는다
+const HIDDEN = new THREE.MeshBasicMaterial({ visible: false }), noBottom = m => [m, m, m, HIDDEN, m, m];
+for (const r of PLAN.rooms) {
+  if (r.finished_ceiling === false) continue;
+  const s = shapeOf(r.polygon, true);
+  const cbs = PLAN.curtain_boxes.filter(cb => cb.room === r.id);
+  cbs.forEach(cb => s.holes.push(rectPath(bbox(cb.polygon), true)));
+  if (r.coffer) s.holes.push(rectPath(bbox(r.coffer.polygon), true));
+  const g = new THREE.ShapeGeometry(s); g.rotateX(Math.PI / 2);
+  const m = new THREE.Mesh(g, mat.ceil); m.position.y = mm(r.ceiling_mm); m.receiveShadow = true;
+  groups.ceil.add(m);
+  for (const cb of cbs) {
+    const [x0, y0, x1, y1] = bbox(cb.polygon), rec = cb.recess_mm;
+    groups.ceil.add(box(mm(x1 - x0), mm(rec), mm(y1 - y0), noBottom(mat.recess), V((x0 + x1) / 2, (y0 + y1) / 2, r.ceiling_mm + rec / 2), false));
+  }
+  if (r.coffer) {
+    const [x0, y0, x1, y1] = bbox(r.coffer.polygon), st = r.coffer.step_mm;
+    groups.ceil.add(box(mm(x1 - x0), mm(st), mm(y1 - y0), noBottom(mat.coffer), V((x0 + x1) / 2, (y0 + y1) / 2, r.ceiling_mm + st / 2), false));
+  }
+}
+// structural slab: invisible, only blocks sun in room views
+const slab = new THREE.Mesh(new THREE.BoxGeometry(mm(E.front_width) + 1, .2, mm(E.depth_center_right) + 1),
+  new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false }));
+slab.position.copy(HOUSE_C).setY(mm(H_WALL) + .1); slab.castShadow = true; slab.visible = false;
+scene.add(slab);
+
+/* furniture (plan hint boxes) */
+for (const f of PLAN.furniture_hint) {
+  const [sx, sy, sz] = f.size.map(mm), [cx, cy] = f.center, z0 = f.z0 || 0;
+  const n = f.name_ko;
+  const at = (dx, dy, z, h) => V(cx + dx, cy + dy, z + h / 2);
+  if (/소파/.test(n)) {
+    groups.furn.add(box(sx, .42, sy, FURN.sofa, at(0, 0, z0, 420)));
+    const west = /서측/.test(n);
+    groups.furn.add(box(.22, sz, sy, FURN.sofa, at((west ? -1 : 1) * (f.size[0] / 2 - 110), 0, z0, f.size[2])));
+  } else if (/침대/.test(n)) {
+    groups.furn.add(box(sx, sz, sy, FURN.bed, at(0, 0, z0, f.size[2])));
+    groups.furn.add(box(sx + .02, .04, sy * .62, FURN.blanket, at(0, -f.size[1] * .19, z0 + f.size[2], 40)));
+    groups.furn.add(box(sx + .06, .95, .08, FURN.head, at(0, f.size[1] / 2 + 40, z0, 950)));
+  } else {
+    const m = /러그/.test(n) ? FURN.rug : /쿡탑/.test(n) ? FURN.cook : /후드/.test(n) ? FURN.hood
+      : /테이블|식탁|책상|협탁|TV장/.test(n) ? FURN.wood : FURN.cab;
+    groups.furn.add(box(sx, sz, sy, m, at(0, 0, z0, f.size[2]), !/러그/.test(n)));
+  }
+}
+
+/* ============ indoor units ============ */
+function roundRect(w, h, r) {
+  const s = new THREE.Shape(), x = -w / 2, y = -h / 2;
+  s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r);
+  s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r);
+  s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
+  return s;
+}
+// plate hanging below local y=0; shape y -> local +z (window side)
+function plate(w, h, t, r) {
+  const g = new THREE.ExtrudeGeometry(roundRect(w, h, r), { depth: t, bevelEnabled: false, curveSegments: 5 });
+  g.rotateX(Math.PI / 2);
+  return g;
+}
+// photo mapping over the whole panel: image top = room side (-z), per the owner's install photos
+function planarUV(g, w, h) {
+  const p = g.attributes.position, uv = new Float32Array(p.count * 2);
+  // seen from below with the room side up, local +x is the viewer's left
+  for (let i = 0; i < p.count; i++) { uv[2 * i] = .5 - p.getX(i) / w; uv[2 * i + 1] = .5 - p.getZ(i) / h; }
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+}
+// regions measured on the 1752x617 official photo (px)
+const PHOTO = { w: 1752, h: 617, flap: [185, 8, 1560, 130], blades: [170, 318, 1580, 528] };
+function patchAndArrow(g, w, h) {
+  const pg = new THREE.ShapeGeometry(roundRect(w + .24, h + .24, .05)); pg.rotateX(-Math.PI / 2);
+  const patch = new THREE.Mesh(pg, mat.patch); patch.position.y = .004; patch.renderOrder = 3;
+  const pts = roundRect(w + .24, h + .24, .05).getPoints(6).map(p => new THREE.Vector3(p.x, .006, p.y));
+  const edge = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), mat.patchEdge);
+  const a = new THREE.Shape();
+  const L0 = h / 2 + .16, L1 = L0 + .42;
+  a.moveTo(-.06, L0); a.lineTo(.06, L0); a.lineTo(.06, L1 - .12); a.lineTo(.14, L1 - .12); a.lineTo(0, L1); a.lineTo(-.14, L1 - .12); a.lineTo(-.06, L1 - .12);
+  const ag = new THREE.ShapeGeometry(a); ag.rotateX(-Math.PI / 2); // shape +y -> local -z (room side), face up
+  const arrow = new THREE.Mesh(ag, mat.arrow); arrow.position.y = .008; arrow.renderOrder = 3;
+  for (const o of [patch, edge, arrow]) { o.userData.patch = true; g.add(o); }
+}
+function build1Way(u) {
+  const [L, D, T] = u.size_mm.map(mm);
+  const g = new THREE.Group();
+  const pg = plate(L, D, T, .02); planarUV(pg, L, D);
+  g.add(new THREE.Mesh(pg, mat.panel));
+  const fr = (px, py) => [(px / PHOTO.w - .5) * L, (py / PHOTO.h - .5) * D];
+  // narrow flat perforated flap (room side)
+  const [fx0, fz0] = fr(PHOTO.flap[0], PHOTO.flap[1]), [fx1, fz1] = fr(PHOTO.flap[2], PHOTO.flap[3]);
+  const fg = plate(fx1 - fx0, fz1 - fz0, .003, .006);
+  fg.translate((fx0 + fx1) / 2, -T, (fz0 + fz1) / 2); planarUV(fg, L, D);
+  g.add(new THREE.Mesh(fg, mat.panel));
+  // curved blades (window side): thin lines sagging slightly at mid-span
+  const [bx0, bz0] = fr(PHOTO.blades[0], PHOTO.blades[1]), [bx1, bz1] = fr(PHOTO.blades[2], PHOTO.blades[3]);
+  for (let i = 0; i < 12; i++) {
+    const z = lerp(bz0, bz1, i / 11), y = -T - .0012;
+    const curve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(bx0, y, z), new THREE.Vector3((bx0 + bx1) / 2, y - .005, z), new THREE.Vector3(bx1, y, z));
+    g.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 10, .0013, 4, false), mat.blade));
+  }
+  const [oL, oD] = u.ceiling_opening_mm.map(mm), bh = mm(u.body_h_mm);
+  g.add(box(oL, bh, oD, mat.acBody, new THREE.Vector3(0, bh / 2 + .002, 0), false));
+  patchAndArrow(g, L, D);
+  return g;
+}
+function build4Way(u) { // square plate + 4 edge blades + centre grille
+  const S = mm(u.size_mm[0]), T = mm(u.size_mm[2] ?? 34);
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(plate(S, S, T, .03), mat.panelWhite));
+  for (let k = 0; k < 4; k++) {
+    const arm = new THREE.Group(); arm.rotation.y = k * Math.PI / 2; g.add(arm);
+    arm.add(box(S * .62, .004, .06, mat.slot, new THREE.Vector3(0, -T - .002, S / 2 - .11), false));
+    const bl = box(S * .6, .003, .045, mat.blade, new THREE.Vector3(0, -T - .006, S / 2 - .11), false); bl.rotation.x = .3; arm.add(bl);
+  }
+  const gr = new THREE.Mesh(new THREE.PlaneGeometry(S * .46, S * .46), mat.grille); gr.rotation.x = Math.PI / 2; gr.position.y = -T - .001; g.add(gr);
+  const oS = mm(u.ceiling_opening_mm?.[0] ?? u.size_mm[0] - 50), bh = mm(u.body_h_mm ?? 250);
+  g.add(box(oS, bh, oS, mat.acBody, new THREE.Vector3(0, bh / 2 + .002, 0), false));
+  patchAndArrow(g, S, S);
+  return g;
+}
+const acGroups = {};
+const patchObjs = [];
+function placeAC(u) {
+  const g = acGroups[u.id];
+  g.position.copy(V(u.center[0], u.center[1], u.mount_z_mm));
+  g.rotation.y = (u.rotation_deg - 90) * DEG; // local -z = discharge (room) side
+}
+for (const u of PLAN.ac_units) {
+  const g = (String(u.model).startsWith('4way') ? build4Way : build1Way)(u);
+  acGroups[u.id] = g; groups.ac.add(g); placeAC(u);
+  g.traverse(o => o.userData.patch && patchObjs.push(o));
+}
+
+/* ============ outdoor unit, hatch, drains ============ */
+{
+  const [sx, sy, sz] = OU.size_mm.map(mm);
+  const g = new THREE.Group(); g.position.copy(V(OU.position[0], OU.position[1], OU.position[2]));
+  g.add(box(sx, sz, sy, mat.ou, new THREE.Vector3(0, sz / 2, 0)));
+  const fan = new THREE.Mesh(new THREE.CircleGeometry(Math.min(sx, sz) * .38, 40), mat.fan);
+  fan.position.set(-sx * .12, sz / 2, sy / 2 + .002); g.add(fan); // front faces the louver (south)
+  groups.ou.add(g);
+  const hz = OU.hatch;
+  const hm = box(mm(hz.size_mm[0]), .012, mm(hz.size_mm[1]), mat.hatch, V(hz.center[0], hz.center[1], 6), false);
+  groups.ou.add(hm);
+  for (const dp of PLAN.drain_points) {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(.06, .06, .01, 20), mat.drain);
+    m.position.copy(V(dp.xy[0], dp.xy[1], 6)); groups.ou.add(m);
+  }
+}
+
+/* ============ piping ============ */
+const PIPE = EMBED
+  ? { refrigerant: [0x004E64, .014], comm: [0x465D68, .005], drain: [0x7FB8C6, .01] } // 사이트 틸 토큰 계열 (배수는 ice 가 흰 모형 위에서 안 보여 한 단 진하게)
+  : { refrigerant: [0x2E7F91, .014], comm: [0x6A767D, .005], drain: [0x8EC6D3, .01] };
+for (const p of PLAN.piping) {
+  const [color, r] = PIPE[p.kind] || PIPE.comm;
+  const path = new THREE.CurvePath();
+  let len = 0;
+  for (let i = 0; i < p.polyline.length - 1; i++) {
+    const a = V(...p.polyline[i]), b = V(...p.polyline[i + 1]);
+    if (a.distanceTo(b) < 1e-4) continue;
+    path.add(new THREE.LineCurve3(a, b)); len += a.distanceTo(b);
+  }
+  const m = new THREE.Mesh(new THREE.TubeGeometry(path, Math.max(8, Math.ceil(len / .04)), r, 6, false),
+    new THREE.MeshStandardMaterial({ color, roughness: .5, emissive: color, emissiveIntensity: .25 }));
+  groups.pipes.add(m);
+}
+
+/* ============ sky + distant towers (room views) ============ */
+const skyGeo = new THREE.SphereGeometry(600, 32, 16);
+const skyMat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, transparent: true, opacity: 0, depthWrite: false, toneMapped: false });
+const sky = new THREE.Mesh(skyGeo, skyMat); sky.position.copy(HOUSE_C);
+groups.sky.add(sky);
+function paintSky(top, horizon, below) {
+  const p = skyGeo.attributes.position, cols = new Float32Array(p.count * 3), c = new THREE.Color();
+  const T = new THREE.Color(top), Hz = new THREE.Color(horizon), B = new THREE.Color(below);
+  for (let i = 0; i < p.count; i++) {
+    const y = p.getY(i) / 600;
+    y >= 0 ? c.copy(Hz).lerp(T, Math.pow(y, .6)) : c.copy(Hz).lerp(B, Math.min(1, -y * 4));
+    c.toArray(cols, i * 3);
+  }
+  skyGeo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+}
+const towerMat = new THREE.MeshLambertMaterial({ color: 0xD3DBDF, transparent: true, opacity: 0 });
+if (EMBED) towerMat.visible = false; // 질감 없는 회색 기둥이 창 가운데를 차지한다
+{
+  const r = rng(29);
+  for (let i = 0; i < 40; i++) {
+    const ang = r() * Math.PI * 2, dist = 170 + r() * 260, w = 16 + r() * 12, d = 11 + r() * 6, h = 55 + r() * 70;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), towerMat);
+    m.position.set(HOUSE_C.x + Math.cos(ang) * dist, h / 2 - 48, HOUSE_C.z + Math.sin(ang) * dist);
+    m.rotation.y = Math.round(r() * 2) * Math.PI / 2 + (r() - .5) * .3;
+    groups.sky.add(m);
+  }
+}
+scene.fog = new THREE.Fog(0xE8EDEF, 90, 520);
+
+/* ============ light ============ */
+const hemi = new THREE.HemisphereLight(0xE3EEF3, 0xC2AE96, .9);
+const amb = new THREE.AmbientLight(0xffffff, .0);
+const sun = new THREE.DirectionalLight(0xFFF4E2, 3);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -11, right: 11, top: 11, bottom: -11, near: 5, far: 90 });
+sun.shadow.bias = -.0004; sun.shadow.normalBias = .03;
+sun.target.position.copy(HOUSE_C);
+// unshadowed low fill from the window side: gives walls/ceiling different tones in room views
+const fill = new THREE.DirectionalLight(0xFFF6EA, 0);
+fill.position.set(.45, .3, 1).multiplyScalar(30); // from the south windows, slightly east
+scene.add(hemi, amb, sun, sun.target, fill);
+const SUN = {
+  day: { az: 190, el: 40, color: 0xFFF3E0, I: 3.1, hs: 0xE2EDF2, hg: 0xC4B09A, hI: .95, amb: .18, exp: 1, sky: [0x8DB6D0, 0xD9E6EC, 0xBFC3C2], fog: 0xD6E2E8 },
+  dawn: { az: 118, el: 9, color: 0xFFC49A, I: 2.4, hs: 0xC5D1DE, hg: 0xB39A86, hI: .55, amb: .12, exp: 1.08, sky: [0x7F9DBB, 0xEFCFB3, 0xB9AEA6], fog: 0xE2CDBD },
+};
+let sunKind = 'day';
+function setSun(kind) {
+  sunKind = kind;
+  const s = SUN[kind], a = s.az * DEG, e = s.el * DEG;
+  const dir = new THREE.Vector3(Math.sin(a) * Math.cos(e), Math.sin(e), -Math.cos(a) * Math.cos(e)); // az from north, clockwise
+  sun.position.copy(HOUSE_C).addScaledVector(dir, 45);
+  sun.color.setHex(s.color); sun.intensity = s.I;
+  hemi.color.setHex(s.hs); hemi.groundColor.setHex(s.hg); lightForBlend();
+  paintSky(...s.sky); scene.fog.color.setHex(s.fog);
+  $('btnDawn').setAttribute('aria-pressed', kind === 'dawn'); $('btnDay').setAttribute('aria-pressed', kind === 'day');
+  invalidate();
+}
+// interiors get a stronger sky fill: the slab blocks direct sun and there is no bounce light
+function lightForBlend() {
+  const s = SUN[sunKind], k = state.k;
+  hemi.intensity = s.hI * lerp(1, 1.9, k); amb.intensity = s.amb * lerp(1, 2.2, k);
+  fill.intensity = k * (sunKind === 'dawn' ? .7 : 1.2); fill.color.setHex(sunKind === 'dawn' ? 0xFFE2C8 : 0xFFF6EA);
+  renderer.toneMappingExposure = s.exp * lerp(1, 1.12, k);
+}
+setSun('day');
+
+/* ============ labels ============ */
+const labelsEl = $('labels');
+const labels = [];
+const acKw = id => acByRoom[id] ? `${modelKo(acByRoom[id].model)} ${acByRoom[id].pyeong}평형` : '';
+for (const r of PLAN.rooms) {
+  const [x0, y0, x1, y1] = bbox(r.polygon);
+  const el = document.createElement('div');
+  const major = CLICKABLE.has(r.id);
+  el.className = 'lbl' + (major ? '' : ' minor');
+  const name = r.name_ko.replace(/\(.*\)/, '');
+  el.innerHTML = `<b>${esc(name)}</b><span class="num">${n2(r.area_m2)}㎡</span>` +
+    (acByRoom[r.id] ? `<span class="kw">${esc(acKw(r.id))}</span>` : r.id === OU.room ? `<span class="kw">실외기 ${OU.capacity_kw}kW</span>` : '');
+  if (major) {
+    el.addEventListener('click', () => goRoom(r.id));
+    el.addEventListener('pointerenter', () => setHover(r.id));
+    el.addEventListener('pointerleave', () => setHover(null));
+  }
+  labelsEl.appendChild(el);
+  // AC rooms with the unit at the south window: keep the label south of where the ceiling unit projects
+  const cy = acByRoom[r.id]?.rotation_deg === 90 ? y0 + (y1 - y0) * .25 : (y0 + y1) / 2;
+  labels.push({ el, v: V((x0 + x1) / 2, cy, 300), id: r.id });
+}
+
+/* ============ UI: list ============ */
+const totalKw = PLAN.ac_units.reduce((s, u) => s + u.capacity_kw, 0);
+const totalPy = PLAN.ac_units.reduce((s, u) => s + u.pyeong, 0);
+$('facts').innerHTML = [
+  ['전용면적', `${n2(CHECKS.area)}<small> ㎡</small>`],
+  ['전면 폭 · 4Bay', `${(E.front_width / 1000).toFixed(1)}<small> m</small>`],
+  [`실내기 ${PLAN.ac_units.length}대 합`, `${totalPy}<small> 평형 · ${totalKw.toFixed(1)} kW</small>`],
+  ['실외기', `${OU.capacity_kw}<small> kW · ${OU.hp}HP</small>`],
+].map(([t, d]) => `<div><dt>${t}</dt><dd>${d}</dd></div>`).join('');
+
+const ORDER = ['living', 'kitchen', 'master', 'bed2', 'bed3'];
+const acRoomIds = [...ORDER.filter(id => viewsByRoom[id]), ...Object.keys(viewsByRoom).filter(id => !ORDER.includes(id))];
+const roomBtn = (id, extra) => {
+  const r = rooms[id];
+  return `<li><button type="button" class="room-btn ${extra || ''}" data-room="${id}" aria-current="false">
+    <span class="n">${esc(r.name_ko)}</span><span class="a">${n2(r.area_m2)}㎡</span>
+    <span class="u">${id === OU.room ? `실외기 ${OU.capacity_kw}kW · ${OU.hp}HP` : esc(acKw(id))}</span></button></li>`;
+};
+$('acRooms').innerHTML = acRoomIds.map(id => roomBtn(id)).join('');
+$('ouRooms').innerHTML = roomBtn(OU.room, 'ou');
+const others = PLAN.rooms.filter(r => !CLICKABLE.has(r.id));
+$('othersSum').textContent = `기타 공간 ${others.length}곳`;
+$('otherRooms').innerHTML = others.map(r => `<li><span>${esc(r.name_ko)}${r.area_class !== '전용' ? ` · ${esc(r.area_class)}` : ''}</span><span class="num">${n2(r.area_m2)}㎡</span></li>`).join('');
+document.querySelectorAll('.room-btn').forEach(b => {
+  b.addEventListener('click', () => goRoom(b.dataset.room));
+  b.addEventListener('pointerenter', () => setHover(b.dataset.room));
+  b.addEventListener('pointerleave', () => setHover(null));
+});
+function bindGrab(sheet, grab) {
+  grab.addEventListener('click', () => {
+    const c = sheet.toggleAttribute('data-collapsed');
+    grab.setAttribute('aria-expanded', String(!c));
+    requestAnimationFrame(() => {
+      applyViewport();
+      if (state.mode === 'room' && !tween) { camera.fov = roomPose(state.room, state.view).fov; camera.updateProjectionMatrix(); }
+    });
+  });
+}
+bindGrab($('listSheet'), $('listGrab'));
+bindGrab($('detailSheet'), $('detailGrab'));
+
+/* ============ UI: detail ============ */
+const nice = msg => msg
+  .replace(/CB_\w+/g, '커튼박스').replace(/\b[EI]\d+[ab]?\b/g, '벽')
+  .replace(/\s*\(W_\w+\)/g, '').replace(/W_\w+/g, '창').replace(/\(rot \d+°, /, '(').replace(/\bAC_\w+\b/g, '실내기');
+const srcLinks = txt => esc(txt).replace(/\b([SMPL]\d{1,2})\b/g, '<a href="#src-$1" data-src="$1">$1</a>');
+const checkList = arr => `<ul class="checks">${arr.map(([lvl, msg]) =>
+  `<li class="${lvl.toLowerCase()}"><span class="badge">${lvl === 'PASS' ? '통과' : lvl === 'INFO' ? '참고' : '주의'}</span><span>${esc(nice(msg))}</span></li>`).join('')}</ul>`;
+const findMm = (arr, re) => { const hit = arr.find(([, m]) => re.test(m)); return hit ? Number((hit[1].match(/(\d+)mm/) || [])[1]) : null; };
+
+function unitDiagram(u) {
+  const base = CHECKS.units[u.id] || [];
+  const [L, D] = u.size_mm;
+  const gap = findMm(base, /창 쪽 끝|흡입 쪽/), open = findMm(base, /토출 앞 개방/);
+  const hasCB = PLAN.curtain_boxes.some(cb => cb.room === u.room && cb.window === u.ref_window);
+  const W = 320, s = 200 / L, px = (W - L * s) / 2;
+  const gapPx = gap == null ? 0 : Math.min(gap * s, 100), broken = gap != null && gap * s > 100;
+  const top = 44, pH = D * s, pBot = top + pH, wallY = pBot + gapPx + (hasCB ? 22 : 0);
+  const Hsvg = wallY + 26;
+  const ink = 'var(--ink-soft)', acc = 'var(--accent)';
+  let blades = '';
+  for (let i = 0; i < 6; i++) { const y = top + pH * (.52 + i * .065); blades += `<path d="M${px + L * s * .1} ${y} Q${W / 2} ${y + 1.6} ${px + L * s * .9} ${y}" stroke="${ink}" stroke-width=".8" fill="none"/>`; }
+  return `<figure class="diagram" style="margin:0"><svg viewBox="0 0 ${W} ${Hsvg}" role="img" aria-label="실내기 평면 배치도: 창 쪽 간격 ${gap ?? '-'}mm, 토출 쪽 개방 ${open ?? '-'}mm">
+    <g font-family="IBM Plex Mono, monospace" font-size="10" fill="${ink}">
+      <path d="M${W / 2} ${top - 6} V8 M${W / 2 - 5} 15 L${W / 2} 8 L${W / 2 + 5} 15" stroke="${acc}" stroke-width="1.5" fill="none"/>
+      <text x="12" y="14" fill="${acc}" font-family="IBM Plex Sans KR, sans-serif">토출 → 방 쪽</text>
+      <text x="12" y="27">개방 ${open != null ? n0(open) : '-'} (≥${n0(PLAN.ac_rules.discharge_clear_mm)})</text>
+      <rect x="${px}" y="${top}" width="${L * s}" height="${pH}" rx="3" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.2"/>
+      <rect x="${px + L * s * .105}" y="${top + 2}" width="${L * s * .79}" height="${pH * .2}" rx="1.5" fill="var(--mist)" stroke="${ink}" stroke-width=".6"/>
+      ${blades}
+      <text x="${px - 6}" y="${top + pH * .16 + 3}" text-anchor="end" font-family="IBM Plex Sans KR, sans-serif">플랩</text>
+      <text x="${px - 6}" y="${top + pH * .72 + 3}" text-anchor="end" font-family="IBM Plex Sans KR, sans-serif">블레이드</text>
+      <path d="M${px} ${top - 10} H${px + L * s} M${px} ${top - 14} V${top - 6} M${px + L * s} ${top - 14} V${top - 6}" stroke="${ink}" stroke-width=".7"/>
+      <text x="${px + L * s - 2}" y="${top - 14}" text-anchor="end">${n0(Math.round(L))}</text>
+      <path d="M${px + L * s + 10} ${top} V${pBot} M${px + L * s + 6} ${top} H${px + L * s + 14} M${px + L * s + 6} ${pBot} H${px + L * s + 14}" stroke="${ink}" stroke-width=".7"/>
+      <text x="${px + L * s + 18}" y="${top + pH / 2 + 3}">${n0(Math.round(D))}</text>
+      ${gap != null ? `<path d="M${px + L * s * .5} ${pBot} V${pBot + gapPx}" stroke="${acc}" stroke-width="1" ${broken ? 'stroke-dasharray="3 3"' : ''}/>
+      <path d="M${px + L * s * .5 - 4} ${pBot} H${px + L * s * .5 + 4} M${px + L * s * .5 - 4} ${pBot + gapPx} H${px + L * s * .5 + 4}" stroke="${acc}" stroke-width="1"/>
+      <text x="${px + L * s * .5 + 8}" y="${pBot + gapPx / 2 + 4}" fill="${acc}">${n0(gap)}</text>` : ''}
+      ${hasCB ? `<rect x="12" y="${pBot + gapPx}" width="${W - 24}" height="22" fill="var(--mist)" stroke="${ink}" stroke-width=".6"/>
+      <text x="18" y="${pBot + gapPx + 14.5}" font-family="IBM Plex Sans KR, sans-serif">커튼박스</text>` : ''}
+      <rect x="4" y="${wallY}" width="${W - 8}" height="7" fill="${ink}" opacity=".35"/>
+      <text x="${W / 2}" y="${wallY + 20}" text-anchor="middle" font-family="IBM Plex Sans KR, sans-serif">${hasCB ? '창' : '창 쪽 벽'}</text>
+    </g></svg>
+    <figcaption>평면도 방향으로 본 실내기 · 치수 mm${broken ? ' · 점선 구간은 축척 생략' : ''}</figcaption></figure>`;
+}
+
+function renderDetail(id, viewIdx) {
+  const r = rooms[id];
+  const body = $('detailBody');
+  const views = viewsByRoom[id] || [];
+  $('detailGrabT').textContent = r.name_ko;
+  const areaFacts = [
+    ['바닥 면적', `${n2(r.area_m2)}<small> ㎡</small>`],
+    ['전용(벽 중심선)', `${n2(r.exclusive_m2_centerline)}<small> ㎡</small>`],
+    ['천장고', `${n0(r.ceiling_mm)}<small> mm</small>`],
+    r.expansion_m2 ? ['확장부 포함', `${n2(r.expansion_m2)}<small> ㎡</small>`] : ['바닥 마감', `<small style="font-family:var(--sans);font-size:13px;color:var(--ink)">${esc(r.floor_finish)}</small>`],
+  ];
+  let html = `<div class="d-head">
+      <p class="eyebrow">${views.length ? '실내 시점' : '실외기실 근접 시점'}</p>
+      <h2>${esc(r.name_ko)}</h2>
+      ${views.length ? `<p class="view">${esc(views[viewIdx].name_ko.split(' - ').slice(1).join(' - ') || views[viewIdx].name_ko)}</p>` : ''}
+      ${views.length > 1 ? `<div class="seg views" role="group" aria-label="시점 선택">${views.map((v, i) => `<button type="button" data-view="${i}" aria-pressed="${i === viewIdx}">시점 ${i + 1}</button>`).join('')}</div>` : ''}
+    </div>
+    <dl class="facts">${areaFacts.map(([t, d]) => `<div><dt>${t}</dt><dd>${d}</dd></div>`).join('')}</dl>
+    <p class="basis">바닥 ${esc(r.floor_finish)} · 근거 ${srcLinks(r.basis)}</p>`;
+
+  const u = acByRoom[id];
+  if (u) {
+    const ck = CHECKS.units[u.id] || [];
+    const ref = CHECKS.pipes['ref_' + u.id], drn = CHECKS.pipes['drn_' + u.id];
+    const drnP = PLAN.piping.find(p => p.id === 'drn_' + u.id);
+    const dp = drnP && PLAN.drain_points.find(d => d.id === drnP.to);
+    const [L, D, T] = u.size_mm;
+    html += `<section class="unit" aria-label="실내기">
+      <h3><span>${esc(modelKo(u.model))} 천장형</span><span class="num">${u.pyeong}<small> 평형</small></span></h3>
+      <div id="diagramSlot">${unitDiagram(u)}</div>
+      <dl class="dims">
+        <dt>냉방능력</dt><dd>${u.capacity_kw.toFixed(1)} kW · ${u.pyeong}평형${u.model_code ? ` <span class="basis" style="font-weight:400">(모델 ${u.model_code})</span>` : ''}</dd>
+        <dt>실면적</dt><dd>${n2(rooms[u.room].area_m2)} ㎡ · ${(rooms[u.room].area_m2 / PLAN.load_rule.m2_per_pyeong).toFixed(1)}평</dd>
+        <dt>패널</dt><dd>${n0(L)} × ${n0(D)} × ${n0(T)} mm</dd>
+        <dt>본체 높이</dt><dd>${n0(u.body_h_mm)} mm</dd>
+        <dt>천장 개구</dt><dd>${u.ceiling_opening_mm.map(n0).join(' × ')} mm</dd>
+        <dt>설치 높이</dt><dd>천장 ${n0(u.mount_z_mm)} mm · 돌출 ${n0(PLAN.ac_rules.protrusion_mm)} mm</dd>
+        <dt>방향</dt><dd class="txt">${esc(u.orientation)}</dd>
+      </dl>
+      <p class="sub">설치 규칙 검산 <span class="basis" style="font-weight:400">(check_plan.py)</span></p>
+      ${checkList(ck)}
+      ${ref || drn ? `<p class="sub">배관</p><table class="pipes"><thead><tr><th>구분</th><th>규격</th><th style="text-align:right">경로 길이</th></tr></thead><tbody>
+        ${ref ? `<tr><td>냉매배관</td><td>${esc(PLAN.piping.find(p => p.id === 'ref_' + u.id)?.spec || '')}</td><td class="num">${ref.m.toFixed(1)} m</td></tr>` : ''}
+        ${drn ? `<tr><td>드레인</td><td>${esc(drnP?.spec || '')} · 구배 ${esc(drnP?.slope || '')} → ${esc(rooms[dp?.room]?.name_ko || '')}</td><td class="num">${drn.m.toFixed(1)} m</td></tr>` : ''}
+      </tbody></table>
+      ${ref && ref.m * 1000 > OU.pipe_limits.basic_included_mm ? `<p class="basis">냉매배관 기본 포함 ${OU.pipe_limits.basic_included_mm / 1000} m 초과분 ${(ref.m - OU.pipe_limits.basic_included_mm / 1000).toFixed(1)} m (카탈로그 최대 배관 길이 ${OU.pipe_limits.per_branch_max_mm / 1000} m)</p>` : ''}` : ''}
+      <p class="basis">근거 ${srcLinks(u.basis)}</p>
+    </section>`;
+  } else if (id === OU.room) {
+    const [w, d, h] = OU.size_mm;
+    const rows = PLAN.ac_units.map(a => [rooms[a.room].name_ko, a.capacity_kw, CHECKS.pipes['ref_' + a.id]?.m, a.pyeong]);
+    html += `<section class="unit" aria-label="실외기">
+      <h3><span>${esc(OU.model)}</span><span class="num">${OU.capacity_kw}<small> kW</small></span></h3>
+      <dl class="dims">
+        <dt>외형</dt><dd>폭 ${n0(w)} · 깊이 ${n0(d)} · 높이 ${n0(h)} mm</dd>
+        <dt>조합</dt><dd class="txt">${esc(CHECKS.total)}</dd>
+        <dt>피난구</dt><dd class="txt">${esc(OU.hatch.type)} ${OU.hatch.size_mm.map(n0).join(' × ')} mm · ${esc(OU.hatch.basis)}</dd>
+        <dt>배관 한도</dt><dd class="txt">최대 배관 길이 ${OU.pipe_limits.per_branch_max_mm / 1000} m · 기본 포함 ${OU.pipe_limits.basic_included_mm / 1000} m</dd>
+        ${OU.ports ? `<dt>배관 포트</dt><dd class="txt">${OU.ports}개 · 다배관은 실내기 최대 ${OU.ports}대</dd>` : ''}
+      </dl>
+      <p class="sub">실내기별 냉매배관 (다배관, 분기관 없음)</p>
+      <table class="pipes"><thead><tr><th>실</th><th style="text-align:right">용량</th><th style="text-align:right">경로</th></tr></thead><tbody>
+        ${rows.map(([n, kw, m, py]) => `<tr><td>${esc(n)}</td><td class="num">${py}평형 · ${kw.toFixed(1)} kW</td><td class="num">${m != null ? m.toFixed(1) + ' m' : '-'}</td></tr>`).join('')}
+      </tbody></table>
+      <p class="basis">근거 ${srcLinks(OU.basis)} · 피난구 ${srcLinks(OU.hatch.basis)}</p>
+    </section>`;
+  }
+  html += `<button type="button" class="btn primary" id="detailHome" style="justify-self:start">전체 보기로 돌아가기</button>`;
+  body.innerHTML = html;
+  body.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => goRoom(id, Number(b.dataset.view))));
+  $('detailHome').addEventListener('click', goHome);
+}
+
+/* ============ notes ============ */
+{
+  const P = PLAN;
+  $('notesMeta').textContent = `출처 ${P.sources.length} · 가정 ${P.assumptions.length} · 확인 필요 ${P.decisions_pending.length} · 검산 ${CHECKS.summary.replace(/\s+/g, ' ')}`;
+  $('notesLeft').innerHTML = `
+    <h3>이 평면은</h3>
+    <p>${esc(P.title)}</p>
+    <p>${srcLinks(P.generic_note)}</p>
+    <p>${srcLinks(P.envelope.basis)}</p>
+    <p>천장 ${srcLinks(P.ceiling.basis)} · 방위 ${srcLinks(P.orientation)}</p>
+    <p>전용면적 ${n2(CHECKS.area)}㎡: ${srcLinks(P.area_rule.method)}</p>
+    <p>실내기 규칙: ${srcLinks(P.ac_rules.basis)}</p>
+    <h3>확인 필요</h3>
+    <ul>${P.decisions_pending.map(d => `<li>${srcLinks(d)}</li>`).join('')}</ul>
+    <h3>가정·추정</h3>
+    <ul>${P.assumptions.map(d => `<li>${srcLinks(d)}</li>`).join('')}</ul>`;
+  $('srcList').innerHTML = P.sources.map(s => {
+    const web = /^https?:\/\//.test(s.url);
+    return `<li id="src-${esc(s.id)}"><span class="sid">${esc(s.id)}</span><span>${web
+      ? `<a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.title)}</a>`
+      : `${esc(s.title)}<span class="internal">내부 자료</span>`}</span></li>`;
+  }).join('');
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[data-src]');
+    if (a) $('notes').open = true;
+  });
+}
+
+/* ============ state / camera ============ */
+let tween = null;
+// must match the CSS breakpoint (viewport width), not the stage width: at 761-792px they disagreed
+const NARROW = matchMedia('(max-width: 760px)');
+const narrow = () => NARROW.matches;
+
+// panels that cover the canvas: shift the projection centre into the free area
+function occlusion() {
+  const w = stage.clientWidth, h = stage.clientHeight, list = $('listSheet'), det = $('detailSheet');
+  // embed: 시트를 CSS 로 숨겨도 hidden 속성은 syncUI 가 계속 푼다 -> offsetLeft 0 을 '열림'으로 읽어 방 시점이 반 화면 밀린다
+  if (EMBED) return state.mode === 'house' ? { w, h, a: inset.l, b: inset.r, top: inset.t, bot: inset.b } : { w, h, a: 0, b: 0, top: inset.rt, bot: inset.rb };
+  const open = el => !el.hidden && !el.hasAttribute('data-collapsed');
+  let a = 0, b = 0, top = 0, bot = 0;
+  if (state.mode === 'house' || narrow()) top = document.querySelector('.topbar').offsetHeight;
+  if (narrow()) {
+    const sheet = state.mode === 'house' ? list : det;
+    if (open(sheet)) bot = Math.min(sheet.getBoundingClientRect().height, h * .5) + 8;
+  } else {
+    if (open(list)) a = list.offsetLeft + list.offsetWidth;
+    if (open(det)) b = w - det.offsetLeft;
+  }
+  return { w, h, a, b, top, bot };
+}
+function applyViewport(o = occlusion()) {
+  const { w, h, a, b, top, bot } = o;
+  if (EMBED) occNow = o;
+  renderer.setSize(w, h, false);
+  const W2 = w + Math.abs(a - b), H2 = h + Math.abs(top - bot);
+  camera.aspect = W2 / H2;
+  if (W2 !== w || H2 !== h) camera.setViewOffset(W2, H2, b > a ? b - a : 0, bot > top ? bot - top : 0, w, h); else camera.clearViewOffset();
+  camera.updateProjectionMatrix();
+  invalidate(); // setSize 가 드로잉 버퍼를 비운다
+}
+// fit the house's bounding box into the free area (call after applyViewport)
+const HOUSE_BOX = [0, 1].flatMap(i => [0, 1].flatMap(j => [0, 1].map(k =>
+  V(i * E.front_width, j * E.depth_center_right, k * H_WALL))));
+function housePose() {
+  const { w, h, a, b, top, bot } = occlusion();
+  // portrait: look from the south-east corner so the 14.7 m front runs diagonally and the house fills more of the screen
+  const fov = 30, dir = (h - top - bot > w - a - b ? new THREE.Vector3(.85, 1.25, .75) : new THREE.Vector3(.2, 1.12, 1)).normalize();
+  const tgt = HOUSE_C.clone().setY(.9);
+  const cam = camera.clone(); cam.fov = fov; cam.updateProjectionMatrix();
+  const fw = w - a - b, fh = h - top - bot;
+  const mr = fw < 600 ? .04 : .08; // 폰은 빈 영역 자체가 작아 여백 비율을 반으로
+  const availX = EMBED ? Math.max(160, fw - 2 * Math.max(12, fw * mr)) : Math.max(160, w - a - b - 32);
+  const availY = EMBED ? Math.max(120, fh - 2 * Math.max(12, fh * mr)) : Math.max(160, h - top - bot - 24);
+  let dist = 30, cx = 0, cy = 0;
+  for (let it = 0; it < 4; it++) {
+    cam.position.copy(tgt).addScaledVector(dir, dist); cam.lookAt(tgt); cam.updateMatrixWorld();
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const c of HOUSE_BOX) {
+      const v = c.clone().project(cam);
+      x0 = Math.min(x0, v.x * w / 2); x1 = Math.max(x1, v.x * w / 2); y0 = Math.min(y0, v.y * h / 2); y1 = Math.max(y1, v.y * h / 2);
+    }
+    dist *= Math.max((x1 - x0) / availX, (y1 - y0) / availY);
+    const tp = tgt.clone().project(cam);
+    cx = (x0 + x1) / 2 - tp.x * w / 2; cy = (y0 + y1) / 2 - tp.y * h / 2;
+  }
+  if (EMBED) { // 원근 때문에 상자 중심이 과녁에서 비켜 있다 -> 과녁을 상자 중심으로 옮긴다 (픽셀 -> 미터: 과녁 거리의 화면 한 픽셀)
+    const H2 = h + Math.abs(top - bot), mpp = 2 * dist * Math.tan(fov * DEG / 2) / H2;
+    const q = cam.quaternion, r = new THREE.Vector3(1, 0, 0).applyQuaternion(q), u = new THREE.Vector3(0, 1, 0).applyQuaternion(q);
+    tgt.addScaledVector(r, cx * mpp).addScaledVector(u, cy * mpp);
+  }
+  return { pos: tgt.clone().addScaledVector(dir, dist), tgt, fov };
+}
+function roomPose(id, i) {
+  if (id === OU.room) {
+    const c = V(OU.position[0], OU.position[1], 500);
+    return { pos: c.clone().add(new THREE.Vector3(-1.3, 3.1, 3.6)), tgt: c, fov: 40, kind: 'ou' };
+  }
+  const v = viewsByRoom[id][i];
+  // keep the plan's horizontal FOV inside the area not covered by panels (vertical never below the 16:9 plate)
+  const { w, h, a, b, top, bot } = occlusion();
+  const freeW = Math.max(160, w - a - b), freeH = Math.max(160, h - top - bot), H2 = h + Math.abs(top - bot);
+  const hf = v.fov_deg * DEG, [aw, ah] = v.aspect.split(':').map(Number);
+  const v169 = 2 * Math.atan(Math.tan(hf / 2) / (aw / ah));
+  let band = clamp(2 * Math.atan(Math.tan(hf / 2) / (freeW / freeH)), v169, 80 * DEG);
+  const pos = V(...v.camera), tgt = V(...v.target);
+  if (narrow()) { // portrait phone: crop in toward the unit, but only while the panel and window centre stay in the free area
+    const u = acByRoom[id], win = u && PLAN.openings.find(o => o.id === u.ref_window);
+    if (u && win) {
+      const along = u.rotation_deg % 180 === 90, [L, D] = u.size_mm;
+      const pts = [-1, 1].flatMap(a => [-1, 1].map(b => V(u.center[0] + (along ? a * L : b * D) / 2, u.center[1] + (along ? b * D : a * L) / 2, u.mount_z_mm - u.size_mm[2])));
+      pts.push(V(win.at[0], win.at[1], win.sill + win.height / 2));
+      const cam = new THREE.PerspectiveCamera(1, freeW / freeH, .05, 100);
+      cam.position.copy(pos); cam.lookAt(tgt);
+      const fits = b => { cam.fov = b / DEG; cam.updateProjectionMatrix(); cam.updateMatrixWorld(); return pts.every(p => { const q = p.clone().project(cam); return Math.abs(q.x) < .94 && Math.abs(q.y) < .94 && q.z < 1; }); };
+      for (const k of [.66, .78, .9]) { const b = Math.max(v169, band * k); if (b < band && fits(b)) { band = b; break; } }
+    }
+  }
+  const full = 2 * Math.atan(Math.tan(band / 2) * H2 / freeH) / DEG;
+  return { pos, tgt, fov: Math.min(full, 150), kind: 'room' };
+}
+function configControls(kind, pose) {
+  controls.enabled = true;
+  if (kind === 'room') {
+    Object.assign(controls, { enablePan: false, enableZoom: false, rotateSpeed: -.32, minDistance: 0, maxDistance: Infinity, minPolarAngle: .25, maxPolarAngle: 2.75 });
+    const dir = pose.tgt.clone().sub(pose.pos).normalize();
+    controls.target.copy(pose.pos).addScaledVector(dir, .01);
+  } else {
+    Object.assign(controls, { enablePan: kind === 'house', enableZoom: true, rotateSpeed: .55, minDistance: kind === 'ou' ? 2 : 6, maxDistance: kind === 'ou' ? 14 : 90, minPolarAngle: .1, maxPolarAngle: 1.36 });
+    controls.target.copy(pose.tgt);
+  }
+  if (EMBED) Object.assign(controls, { enableZoom: false, enablePan: false });
+  controls.update();
+}
+function flyTo(pose, kTo, durMs) {
+  // 방→방 전환 중(dip)에는 벽이 잠깐 걷혀 k 가 .5 아래로 내려가도 방에서 출발한 것으로 본다
+  const prev = tween, fromRoom = state.k > .5 || !!prev?.dip, toRoom = kTo > .5, p0 = camera.position.clone(), d0 = camera.getWorldDirection(new THREE.Vector3());
+  tween = { t0: performance.now(), p0, f0: camera.fov, k0: state.k, pose, kTo, dip: fromRoom && toRoom };
+  // 시선을 방위각·앙각으로 고르게 돌리게 하고, 최고 각속도 기준의 시간을 돌려준다
+  const turnLook = () => {
+    const [y0, a0] = yawPitch(d0), [y1, a1] = yawPitch(pose.tgt.clone().sub(pose.pos)), dy = wrapPi(y1 - y0);
+    Object.assign(tween, { y0, a0, y1, dy });
+    return camMs(Math.hypot(dy * Math.cos((a0 + a1) / 2), a1 - a0) / DEG);
+  };
+  let dur;
+  if (fromRoom && toRoom) { // 방→방: 가까이서 크게 돈다
+    tween.arc = Math.min(3, p0.distanceTo(pose.pos) * .25);
+    dur = turnLook();
+  } else {
+    // 시선은 과녁 점을 따라간다(집이 화면에 남는다). 다만 전환 도중에 새 전환이 오면(인트로 중 목록·탭 클릭 등) 과녁 점이 카메라 옆을 스쳐
+    // 초당 천 도 가까이 돌 수 있어 방위각·앙각으로 돌린다(검토 2026-09-17)
+    if (prev) dur = turnLook(); else tween.q0 = fromRoom ? p0.clone().addScaledVector(d0, lookDist) : controls.target.clone();
+    if (fromRoom !== toRoom) { // 전체↔방: 방 시점의 뒤·위를 지나는 곡선. 방 쪽 끝에서 시선 방향 그대로 들어가고 나와 뒤돌아서지 않는다
+      // 마지막 구간은 방 시점 바로 위(drop)에서 수직으로 천장을 지난다: 뒤에서 수평으로 들어오면 뒷벽을 뚫는 순간 화면이 벽으로 찬다
+      const D = p0.distanceTo(pose.pos), rp = fromRoom ? p0 : pose.pos, rd = fromRoom ? d0.clone() : pose.tgt.clone().sub(pose.pos);
+      rd.y = 0; rd.normalize();
+      const back = rp.clone().addScaledVector(rd, -CAM.back * D), over = rp.clone();
+      back.y += CAM.up * D; over.y += CAM.drop * D;
+      [tween.c1, tween.c2] = fromRoom ? [over, back] : [back, over];
+      // 세로 폰은 전체 보기가 멀어(D 약 78m) 같은 시간이면 막판 회전이 빨라진다: 거리 60m 넘으면 최대 1.3배까지 늘린다
+      dur = Math.max(dur || 0, CAM.far * clamp(D / 60, 1, 1.3));
+    } else dur = Math.max(dur || 0, CAM.min);
+  }
+  tween.dur = reduced.matches ? 0 : (durMs ?? dur);
+  controls.enabled = false;
+  invalidate();
+}
+function syncUI() {
+  const inRoom = state.mode !== 'house';
+  $('btnHome').hidden = !inRoom;
+  $('detailSheet').hidden = !inRoom;
+  stage.classList.toggle('in-room', inRoom);
+  if (narrow()) $('listSheet').hidden = inRoom; else $('listSheet').hidden = false;
+  $('hint').textContent = state.mode === 'room' ? '드래그로 방 안 둘러보기 · Esc 전체 보기' : state.mode === 'ou' ? '드래그 회전 · 휠 확대 · Esc 전체 보기' : '방 바닥을 누르면 그 방 안 시점으로 이동 · 드래그 회전 · 휠 확대';
+  document.querySelectorAll('.room-btn').forEach(b => b.setAttribute('aria-current', String(b.dataset.room === state.room)));
+}
+function goRoom(id, viewIdx = 0) {
+  if (!CLICKABLE.has(id)) return;
+  introPending = false;
+  const list = $('listSheet');
+  if (!narrow() && !list.hasAttribute('data-collapsed')) { list.setAttribute('data-collapsed', ''); $('listGrab').setAttribute('aria-expanded', 'false'); state.autoCollapsed = true; }
+  state.mode = id === OU.room ? 'ou' : 'room'; state.room = id; state.view = viewIdx;
+  setHover(null);
+  syncUI();
+  renderDetail(id, viewIdx);
+  const o0 = occNow, o1 = occlusion();
+  applyViewport(o1);
+  const pose = roomPose(id, viewIdx);
+  if (EMBED && o0) applyViewport(o0);
+  flyTo(pose, pose.kind === 'room' ? 1 : 0);
+  if (EMBED && o0) Object.assign(tween, { o0, o1 });
+  post({ type: 'enter', id, title: dispName(id), sub: id === OU.room ? '실외기' : modelKo(acByRoom[id].model) });
+}
+function goHome() {
+  if (state.mode === 'house' && !tween) return;
+  state.mode = 'house'; state.room = null;
+  if (state.autoCollapsed) { $('listSheet').removeAttribute('data-collapsed'); $('listGrab').setAttribute('aria-expanded', 'true'); state.autoCollapsed = false; }
+  syncUI();
+  const o0 = occNow, o1 = occlusion();
+  applyViewport(o1);
+  const pose = housePose();
+  if (EMBED && o0) applyViewport(o0);
+  flyTo(pose, 0);
+  // embed: 'home' 은 벽이 걷힐 때(k<.3) 보낸다 — 바로 보내면 헤드라인이 실내 벽 위에서 떠오른다
+  if (EMBED) Object.assign(tween, o0 ? { o0, o1, postHome: true } : { postHome: true }); else $('listGrab').focus({ preventScroll: true });
+}
+function setBlend(k) {
+  state.k = k;
+  const solid = k > .999;
+  for (const m of [mat.wallHi, mat.frameHi]) {
+    m.opacity = lerp(m === mat.wallHi ? .08 : .1, 1, k);
+    if (m.transparent === solid) { m.transparent = !solid; m.depthWrite = solid; m.needsUpdate = true; }
+  }
+  for (const m of [mat.ceil, mat.recess, mat.coffer]) {
+    m.opacity = k;
+    if (m.transparent === solid) { m.transparent = !solid; m.needsUpdate = true; }
+  }
+  groups.ceil.visible = k > .01;
+  // 천장 위(배관·실내기 본체)는 방 시점으로 들어갈수록 숨긴다: 위에서 수직으로 내려올 때 화면을 덮는다. 방 안에서는 원래 천장에 가려 안 보인다
+  groups.pipes.visible = state.pipes && k <= .5; mat.acBody.visible = k <= .5;
+  mat.patch.opacity = .6 * (1 - k); mat.patchEdge.opacity = .9 * (1 - k); mat.arrow.opacity = .75 * (1 - k);
+  patchObjs.forEach(o => { o.visible = k < .99; });
+  // embed: 전체 보기 쪽으로 가는 전환에선 원경을 벽보다 먼저(k .6 에서 0) 걷어 낸다 — 복귀 첫 프레임에 창밖이 뚝 끊기지 않게
+  const far = EMBED && state.mode === 'house' ? k * clamp((k - .6) / .4, 0, 1) : k;
+  skyMat.opacity = far; towerMat.opacity = far;
+  groups.sky.visible = far > .01;
+  slab.visible = k > .5;
+  labelsEl.classList.toggle('off', k > .02 || state.mode !== 'house');
+  lightForBlend();
+}
+setBlend(0);
+
+/* ============ interaction ============ */
+const ray = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+let pointer = null, down = null;
+function pick(e) {
+  const r = canvas.getBoundingClientRect();
+  ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  return ray.intersectObjects(floorMeshes, false)[0]?.object.userData.room || null;
+}
+function setHover(id) {
+  if (state.hover === id) return;
+  state.hover = id;
+  for (const [rid, m] of Object.entries(hoverMeshes)) m.visible = rid === id && state.mode === 'house';
+  labels.forEach(l => l.el.classList.toggle('is-hover', l.id === id));
+  document.querySelectorAll('.room-btn').forEach(b => b.classList.toggle('is-hover', b.dataset.room === id));
+  canvas.style.cursor = id ? 'pointer' : '';
+  invalidate();
+}
+canvas.addEventListener('pointermove', e => { pointer = e; if (state.mode === 'house' && !tween && !e.buttons) setHover(pick(e)); });
+canvas.addEventListener('pointerleave', () => { pointer = null; if (state.mode === 'house') setHover(null); });
+canvas.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+canvas.addEventListener('pointerup', e => {
+  if (!down || state.mode !== 'house' || tween) return;
+  const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
+  if (moved < 6 && performance.now() - down.t < 600) { const id = pick(e); if (id) goRoom(id); }
+  down = null;
+});
+$('btnHome').addEventListener('click', goHome);
+$('btnPipes').addEventListener('click', () => {
+  state.pipes = !state.pipes; groups.pipes.visible = state.pipes && state.k <= .5; invalidate();
+  $('btnPipes').setAttribute('aria-pressed', String(state.pipes));
+});
+$('btnDawn').addEventListener('click', () => setSun('dawn'));
+$('btnDay').addEventListener('click', () => setSun('day'));
+addEventListener('keydown', e => { if (e.key === 'Escape' && state.mode !== 'house') goHome(); });
+
+let lastW = 0;
+new ResizeObserver(() => {
+  applyViewport();
+  const w = stage.clientWidth;
+  if (w !== lastW) {
+    lastW = w; syncUI();
+    if (introPending) return; // 첫 크기 감지가 인트로 출발 직전에 오면 카메라를 전체 보기로 옮겨 버린다 (flyTo 가 새 크기로 구도를 잡는다)
+    if (tween) { if (EMBED) retargetTween(); return; }
+    const pose = state.mode === 'house' ? housePose() : roomPose(state.room, state.view);
+    camera.position.copy(pose.pos); camera.fov = pose.fov; camera.updateProjectionMatrix();
+    configControls(state.mode, pose);
+  }
+}).observe(stage);
+
+/* ============ loop ============ */
+const tmp = new THREE.Vector3(), fwd = new THREE.Vector3(), right = new THREE.Vector3();
+const northG = $('northG');
+// 전환 중 크기·inset 이 바뀌면 새 크기 기준으로 목표 구도와 가림 영역을 다시 잡는다
+function retargetTween() {
+  const cur = occNow, o1 = occlusion();
+  applyViewport(o1);
+  if (state.mode === 'house') tween.pose = housePose(); else if (state.room) tween.pose = roomPose(state.room, state.view);
+  if (tween.o0) { tween.o1 = o1; applyViewport(cur); }
+}
+function tick(now) {
+  let moving = false;
+  frameQueued = false; // 먼저 푼다: tick 안에서 예외가 나도 다음 요청이 막히지 않게
+  if (tween) {
+    const t = tween.dur ? clamp((now - tween.t0) / tween.dur, 0, 1) : 1, e = ease(t);
+    if (tween.c1) { const u = 1 - e; camera.position.copy(tween.p0).multiplyScalar(u * u * u).addScaledVector(tween.c1, 3 * u * u * e).addScaledVector(tween.c2, 3 * u * e * e).addScaledVector(tween.pose.pos, e * e * e); }
+    else camera.position.lerpVectors(tween.p0, tween.pose.pos, e);
+    if (tween.arc) camera.position.y += Math.sin(Math.PI * e) * tween.arc; // e 기준: 출발·착지에서 수직 속도 0
+    if (tween.q0) tmp.lerpVectors(tween.q0, tween.pose.tgt, e);
+    else {
+      const [y1, a1] = yawPitch(tmp.subVectors(tween.pose.tgt, tween.pose.pos)), yaw = tween.y0 + (tween.dy + wrapPi(y1 - tween.y1)) * e, pitch = lerp(tween.a0, a1, e);
+      tmp.set(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch)).add(camera.position);
+    }
+    camera.fov = lerp(tween.f0, tween.pose.fov, e); camera.updateProjectionMatrix();
+    camera.lookAt(tmp);
+    // 인트로는 카메라가 천장을 지나기 전에(진행 약 3%, 곡선상 천장 통과는 약 6%) 천장·벽 윗면을 걷어 낸다. 시간이 아니라 진행률에 묶어야 이징·경로를 바꿔도 천장을 뚫고 나가지 않는다
+    setBlend(tween.intro ? clamp(1 - e / .03, 0, 1) : clamp(lerp(tween.k0, tween.kTo, e) - (tween.dip ? .75 * Math.sin(Math.PI * e) : 0), 0, 1));
+    if (tween.o0) { const o = tween.o1; applyViewport({ w: o.w, h: o.h, a: lerp(tween.o0.a, o.a, e), b: lerp(tween.o0.b, o.b, e), top: lerp(tween.o0.top, o.top, e), bot: lerp(tween.o0.bot, o.bot, e) }); }
+    if (tween.postHome && (state.k < .3 || t >= 1)) { tween.postHome = false; post({ type: 'home' }); }
+    if (t >= 1) { const p = tween.pose; lookDist = p.pos.distanceTo(p.tgt); tween = null; setBlend(p.kind === 'room' ? 1 : 0); configControls(state.mode, p); }
+  } else {
+    moving = controls.update(); // 댐핑 꼬리가 남아 있으면 true
+    if (state.mode === 'house' && pointer && !pointer.buttons) setHover(pick(pointer));
+  }
+  if (state.k < .02) {
+    const w = stage.clientWidth, h = stage.clientHeight;
+    for (const l of labels) {
+      tmp.copy(l.v).project(camera);
+      const x = (tmp.x + 1) / 2 * w, y = (1 - tmp.y) / 2 * h;
+      l.el.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px) translate(-50%,-50%)`;
+    }
+  }
+  camera.getWorldDirection(fwd); fwd.y = 0;
+  if (fwd.lengthSq() > 1e-8) { // 정수리에서 내려다보면 수평 성분이 0 -> normalize 가 NaN, 나침반 transform 이 깨진다
+    fwd.normalize();
+    right.crossVectors(fwd, camera.up).normalize();
+    northG.setAttribute('transform', `rotate(${(Math.atan2(-right.z, -fwd.z) / DEG).toFixed(1)})`);
+  }
+  renderer.render(scene, camera);
+  if (tween || moving) invalidate();
+}
+if (matchMedia('(max-width: 1100px)').matches) { // phones/tablets: start with the list folded so the house gets the screen; the sheet bar stays tappable
+  $('listSheet').setAttribute('data-collapsed', ''); $('listGrab').setAttribute('aria-expanded', 'false');
+}
+applyViewport();
+{
+  const p = housePose();
+  camera.position.copy(p.pos); camera.fov = p.fov; camera.updateProjectionMatrix();
+  configControls('house', p);
+}
+syncUI();
+controls.addEventListener('change', invalidate);
+canvas.addEventListener('webglcontextrestored', invalidate);
+invalidate();
+if (EMBED) {
+  // 인트로: 거실 1Way 당긴 구도 -> 전체 보기 (1회)
+  const runIntro = () => {
+    if (reduced.matches || state.mode !== 'house' || tween) return;
+    const i = (viewsByRoom.living || []).findIndex(v => v.id === 'living_ac');
+    if (i < 0) return;
+    const p = roomPose('living', i);
+    camera.position.copy(p.pos); camera.fov = p.fov; camera.updateProjectionMatrix(); camera.lookAt(p.tgt); lookDist = p.pos.distanceTo(p.tgt);
+    configControls('room', p); // 과녁을 카메라 바로 앞에 둬야 다음 update 가 카메라를 집 과녁 쪽으로 끌어가지 않는다
+    setBlend(1); invalidate();
+    introPending = true; // 출발 전에 들어온 inset 이 카메라를 전체 보기로 옮기지 않게
+    // 방 재질로 바뀐 셰이더가 컴파일되는 두 프레임을 지난 뒤 출발해야 앞부분이 건너뛰지 않는다
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      introPending = false;
+      if (state.mode !== 'house' || tween) return;
+      applyViewport(); // 대기 중에 inset 이 바뀌었으면 여기서 반영
+      flyTo(housePose(), 0, INTRO_MS);
+      tween.intro = true; // 시선은 에어컨에서 출발(위에서 lookAt 해 둔 방향)
+    }));
+  };
+  addEventListener('message', e => {
+    const m = e.data;
+    if (e.source !== parent || !m || m.ns !== 'bd3d') return;
+    if (m.type === 'intro') runIntro();
+    else if (m.type === 'home') goHome();
+    else if (m.type === 'goRoom' && CLICKABLE.has(m.id)) goRoom(m.id, 0);
+    else if (m.type === 'hover') { if (state.mode === 'house' && !tween) setHover(CLICKABLE.has(m.id) ? m.id : null); }
+    else if (m.type === 'inset') {
+      const num = v => Math.max(0, Number(v) || 0);
+      inset = { l: num(m.l), r: num(m.r), t: num(m.t), b: num(m.b), rt: num(m.rt), rb: num(m.rb) };
+      if (tween) { retargetTween(); return; }
+      if (introPending) return; // 인트로 출발 직전: 값만 바꿔 두면 flyTo 가 새 값으로 구도를 잡는다
+      applyViewport();
+      const p = state.mode === 'house' ? housePose() : state.room ? roomPose(state.room, state.view) : null;
+      if (p) { camera.position.copy(p.pos); camera.fov = p.fov; camera.updateProjectionMatrix(); configControls(state.mode, p); }
+    } else if (m.type === 'snapshot') { // 개발용: 대체 이미지(poster) 만들기
+      renderer.render(scene, camera);
+      post({ type: 'snapshot', url: canvas.toDataURL('image/png') });
+    }
+  });
+  post({ type: 'ready', entries: acRoomIds.map(id => ({ id, name: dispName(id), sub: modelKo(acByRoom[id].model) })) });
+  readySent = true;
+}
+window.__home3d = { goRoom, goHome, setSun, state, renderer, camera, controls, hemi, amb, fill, sun, mat, FURN };
+</script>

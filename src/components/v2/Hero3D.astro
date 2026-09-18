@@ -1,0 +1,437 @@
+---
+// S1 히어로(3D) — 아파트·상가 빌딩·오피스 빌딩 3D 구성도. 2026-09-18 영상 히어로(Hero.astro)에서 교체.
+// 뷰어는 public/3d/ 의 공개 사본(근거·가정 문구를 비운 것)이다.
+// 클래스는 h3- 접두사로 다른 섹션과 분리한다(도크 목록을 JS 가 만들어서 전역 스타일로 둔다).
+---
+<script is:inline>document.documentElement.classList.add('h3js');</script>
+<noscript><style>.h3-stage iframe { display: none !important; }</style></noscript>
+  <section class="h3-hero" id="hero" aria-labelledby="hero-title">
+    <div class="h3-stage" id="stage">
+      <picture class="h3-poster" aria-hidden="true">
+        <source media="(max-width: 600px)" srcset="/3d/poster-house-portrait.webp">
+        <img src="/3d/poster-house-wide.webp" alt="" decoding="async">
+      </picture>
+      <iframe id="f-house" src="/3d/house.html?embed" title="3D 구성도 · 아파트" tabindex="-1"></iframe>
+    </div>
+
+    <div class="h3-head h3-wrap">
+      <div class="h3-head__in" id="headIn">
+        <h1 id="hero-title">에어컨 생각,<br>오늘이 마지막입니다.</h1>
+        <p>당신의 바람은, 당신의 바람대로 불어옵니다.</p>
+      </div>
+    </div>
+
+    <div class="h3-spacer" aria-hidden="true"></div>
+
+    <div class="h3-dock-wrap h3-wrap" id="dockWrap">
+      <div class="h3-dock h3-glass" id="dock">
+        <div class="h3-dock__row h3-dock__row--top">
+          <div class="h3-spaces" role="group" aria-label="공간 선택" id="spaces"></div>
+          <p class="h3-disclaimer">실제 시공사례를 기반으로 제작한 3D 예시입니다.</p>
+          <button class="h3-touch-toggle" id="touch" type="button" aria-pressed="false" hidden>3D 직접 돌리기</button>
+        </div>
+        <div class="h3-dock__row h3-dock__row--go">
+          <div class="h3-spots" id="spots" role="group" aria-label="공간 목록"></div>
+          <div class="h3-here" id="here" hidden>
+            <button class="h3-back" id="back" type="button">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              전체 보기
+            </button>
+            <p class="h3-here__t" id="hereT"></p>
+          </div>
+        </div>
+      </div>
+      <p class="h3-note" id="hint" role="status">구성도에서 공간이나 에어컨을 누르면 그 시점으로 이동합니다</p>
+    </div>
+    <p class="h3-sr-only" id="live" aria-live="polite"></p>
+  </section>
+
+<script is:inline>
+(() => {
+  const SPACES = [{"key": "house", "viewer": "house", "name": "아파트"}, {"key": "building", "viewer": "commercial", "name": "상가 빌딩"}, {"key": "ob", "viewer": "office", "name": "오피스 빌딩"}]; // [{ key, viewer, name }] — 빌드 때 채운다
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const hero = $('hero'), headIn = $('headIn'), dock = $('dock'), stage = $('stage');
+  const wide = matchMedia('(min-width: 1024px)'), coarse = matchMedia('(any-pointer: coarse)'), reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  const frames = { house: $('f-house') };
+  const VIEWERS = [...new Set(SPACES.map(s => s.viewer))];   // house · commercial(상가) · office(오피스)
+  const st = { space: 'house', viewer: 'house', ready: {}, failed: {}, entries: {}, bldKey: {}, pendingKey: null, dipTimer: 0, room: null, touchLive: false, notice: '' };
+  const FAIL_MSG = '3D 구성도를 불러오지 못했습니다. 잠시 뒤 새로고침해 주세요.';
+  const RETRY_MSG = '구성도를 불러오지 못했습니다. 탭을 다시 누르면 다시 불러옵니다.';
+  const HINT = '구성도에서 공간이나 에어컨을 누르면 그 시점으로 이동합니다';
+  const TOUCH_HINT = '다 보셨으면 3D 직접 돌리기를 한 번 더 눌러 끄세요. 끄면 페이지가 다시 스크롤됩니다.';
+
+  const spaceOf = key => SPACES.find(s => s.key === key);
+  const send = (viewer, msg) => { const f = frames[viewer]; if (f && st.ready[viewer]) f.contentWindow.postMessage({ ns: 'bd3d', ...msg }, '*'); };
+
+  // 3D 가 문구·도크·헤더를 피해서 자리 잡도록 가려지는 픽셀을 알린다 (전체 보기 l,r,t,b / 방 시점 rt,rb)
+  function insetMsg() {
+    const hr = hero.getBoundingClientRect(), hi = headIn.getBoundingClientRect();
+    const hdr = (document.querySelector('.bd-header')?.offsetHeight || 64), b = Math.round(hr.bottom - dock.getBoundingClientRect().top + 16);
+    const m = wide.matches
+      ? { l: Math.round(hi.right - hr.left + 32), r: 0, t: hdr, b } // 오른쪽은 뷰어가 빈 영역 폭의 8%를 여백으로 둔다
+      : { l: 0, r: 0, t: Math.round(hi.bottom - hr.top + 12), b };
+    return { type: 'inset', ...m, rt: hdr, rb: b };
+  }
+  const lastInset = {};
+  function sendInset(force) {
+    const m = insetMsg(), key = JSON.stringify(m);
+    for (const [k, v] of Object.entries({ l: m.l, t: m.t, r: m.r, b: m.b })) stage.style.setProperty('--free-' + k, v + 'px');
+    for (const v of VIEWERS) {
+      if (!st.ready[v] || (!force && lastInset[v] === key)) continue; // 같은 값을 또 보내면 뷰어가 카메라를 다시 잡는다(인트로가 깨진다)
+      lastInset[v] = key; send(v, m);
+    }
+  }
+  const ro = new ResizeObserver(() => sendInset());
+  for (const el of [hero, headIn, dock]) ro.observe(el);
+
+  function ensureFrame(viewer) {
+    if (frames[viewer]) return frames[viewer];
+    const f = document.createElement('iframe');
+    f.id = 'f-' + viewer; f.tabIndex = -1;
+    f.title = '3D 구성도 · ' + (SPACES.find(s => s.viewer === viewer)?.name || '');
+    f.src = '/3d/' + viewer + '.html?embed#' + st.space; // 처음 누른 공간으로 바로 연다
+    stage.appendChild(f);
+    frames[viewer] = f;
+    armTimeout(viewer);
+    return f;
+  }
+  // 대상이 준비될 때까지 이전 화면을 그대로 둔다 (빈 화면으로 끊기지 않게)
+  function showFrame(viewer) {
+    const ready = st.ready[viewer];
+    for (const [v, f] of Object.entries(frames)) {
+      if (!f) continue;
+      if (ready) { f.classList.toggle('on', v === viewer); f.classList.remove('hold'); }
+      else f.classList.toggle('hold', v !== viewer && f.classList.contains('on'));
+    }
+  }
+
+  function syncMore() {
+    const el = $('spots');
+    el.toggleAttribute('data-more', el.scrollWidth - el.scrollLeft - el.clientWidth > 4);
+    el.toggleAttribute('data-less', el.scrollLeft > 4);
+  }
+  $('spots').addEventListener('scroll', syncMore, { passive: true });
+  new ResizeObserver(syncMore).observe($('spots'));
+
+  function renderSpaces() {
+    $('spaces').innerHTML = SPACES.map(s => `<button type="button" data-space="${s.key}" aria-pressed="${s.key === st.space}">${esc(s.name)}</button>`).join('');
+  }
+  function renderDock() {
+    const inRoom = !!st.room;
+    hero.toggleAttribute('data-room', inRoom);
+    $('spots').hidden = inRoom;
+    $('here').hidden = !inRoom;
+    for (const b of $('spaces').children) b.setAttribute('aria-pressed', String(b.dataset.space === st.space));
+    if (inRoom) {
+      $('hereT').innerHTML = `${esc(st.room.title)} <small>${esc(st.room.sub || '')}</small>`;
+    } else {
+      const list = st.entries[st.space];
+      $('spots').innerHTML = list
+        ? list.map(e => `<button type="button" class="h3-spot" data-id="${esc(e.id)}">${esc(e.name)} <small>${esc(e.sub || '')}</small></button>`).join('')
+        : `<span class="h3-spots__load" role="status">구성도를 불러오는 중입니다</span>`;
+      syncMore();
+    }
+    const failed = st.failed.house && !st.ready.house;
+    hero.toggleAttribute('data-fail', !!failed);
+    $('hint').classList.toggle('fail', !!(failed || st.notice));
+    $('hint').textContent = failed ? FAIL_MSG : st.notice || (coarse.matches && st.touchLive ? TOUCH_HINT : HINT);
+  }
+
+  function selectSpace(key) {
+    const sp = spaceOf(key);
+    if (!sp || (key === st.space && !st.room)) return;
+    const from = st.viewer;
+    if (st.ready[from]) send(from, { type: 'home' }); // 떠나는 뷰어는 늘 전체 보기로 — 돌아왔을 때 방 안에 남지 않게
+    const vw = sp.viewer;
+    clearTimeout(st.dipTimer); frames[vw]?.classList.remove('dip');
+    st.space = key; st.room = null; st.notice = '';
+    if (vw !== 'house') {
+      if (st.failed[vw] && !st.ready[vw]) { frames[vw]?.remove(); frames[vw] = null; st.failed[vw] = false; } // 다시 불러오기
+      const f = ensureFrame(vw);
+      if (st.ready[vw] && key === st.bldKey[vw]) st.pendingKey = null; // 이미 그 공간이다(건물이면 보던 층 그대로) — 다시 보내지 않는다
+      else if (st.ready[vw] && st.pendingKey !== key) { // pendingKey = 실제로 보내고 응답을 기다리는 공간
+        delete st.entries[key]; // 응답 전까지 이전에 받은 목록(다른 층)을 누르지 못하게 '불러오는 중'으로
+        if (from === vw && !reduced.matches) {
+          f.classList.add('dip');
+          // 딥이 끝날 때 그 시점에 고른 공간을 보낸다 (그 사이 원래 공간으로 돌아왔으면 딥만 푼다)
+          st.dipTimer = setTimeout(() => {
+            if (st.viewer !== vw || st.space === st.bldKey[vw]) { f.classList.remove('dip'); return; }
+            if (st.pendingKey === st.space) return;
+            st.pendingKey = st.space; send(vw, { type: 'space', key: st.space });
+          }, 240);
+        } else { st.pendingKey = key; send(vw, { type: 'space', key }); }
+      }
+    }
+    st.viewer = sp.viewer;
+    showFrame(st.viewer);
+    renderDock();
+  }
+
+  $('spaces').addEventListener('click', e => { const b = e.target.closest('[data-space]'); if (b) selectSpace(b.dataset.space); });
+  $('spots').addEventListener('click', e => {
+    const b = e.target.closest('[data-id]');
+    if (b) send(st.viewer, st.viewer === 'house' ? { type: 'goRoom', id: b.dataset.id } : { type: 'goUnit', id: b.dataset.id });
+  });
+  // 목록에 올리면 3D 에서 그 자리를 짚어 준다 (라벨이 없는 화면이라 '창가 1'이 어디인지 알게)
+  const hoverSpot = e => { const b = e.target.closest?.('[data-id]'); send(st.viewer, { type: 'hover', id: b ? b.dataset.id : null }); };
+  for (const ev of ['pointerover', 'focusin']) $('spots').addEventListener(ev, hoverSpot);
+  for (const ev of ['pointerleave', 'focusout']) $('spots').addEventListener(ev, () => send(st.viewer, { type: 'hover', id: null }));
+  $('back').addEventListener('click', () => send(st.viewer, { type: 'home' }));
+  addEventListener('keydown', e => { if (e.key === 'Escape' && st.room) send(st.viewer, { type: 'home' }); });
+
+  // 터치 기기: 히어로가 세로 스크롤을 가로채지 않게 기본은 꺼 둔다. 화면을 벗어나면 자동으로 끈다
+  function syncTouch() {
+    const on = coarse.matches;
+    $('touch').hidden = !on;
+    if (!on) { hero.removeAttribute('data-touch'); return; }
+    hero.dataset.touch = st.touchLive ? 'on' : 'off';
+    $('touch').setAttribute('aria-pressed', String(st.touchLive));
+  }
+  $('touch').addEventListener('click', () => { st.touchLive = !st.touchLive; syncTouch(); renderDock(); });
+  coarse.addEventListener('change', syncTouch);
+  new IntersectionObserver(([en]) => { if (!en.isIntersecting && st.touchLive) { st.touchLive = false; syncTouch(); renderDock(); } }).observe(hero);
+  syncTouch();
+
+  let posterShown = false;
+  const showPoster = () => { posterShown = true; hero.dataset.poster = ''; };
+
+  addEventListener('message', e => {
+    const m = e.data;
+    if (!m || m.ns !== 'bd3d' || !frames[m.viewer] || e.source !== frames[m.viewer].contentWindow) return;
+    const v = m.viewer;
+    if (m.type === 'ready') {
+      st.ready[v] = true; st.failed[v] = false;
+      if (v !== 'house') st.notice = '';
+      if (v === 'house') st.entries.house = m.entries; else { st.bldKey[v] = m.key; st.entries[m.key] = m.entries; }
+      sendInset(true);
+      if (v === 'house') {
+        // 대체 이미지를 이미 보여 줬으면 인트로 없이 바로 겹쳐 바꾼다 (집을 이미 본 사람에게 다시 방에서 시작하지 않는다)
+        if (posterShown) setTimeout(() => hero.removeAttribute('data-poster'), 300); else send(v, { type: 'intro' });
+      }
+      if (v !== 'house' && spaceOf(st.space).viewer === v && st.space !== m.key) send(v, { type: 'space', key: st.space });
+      showFrame(st.viewer);
+      renderDock();
+    } else if (m.type === 'space') {
+      const fromDock = dock.contains(document.activeElement);
+      st.bldKey[v] = m.key; st.entries[m.key] = m.entries; st.pendingKey = null;
+      // 응답이 오는 사이 다른 공간을 골랐으면 그 공간으로 다시 맞춘다
+      if (st.viewer === v && st.space !== m.key) { st.pendingKey = st.space; send(v, { type: 'space', key: st.space }); return; }
+      requestAnimationFrame(() => frames[v]?.classList.remove('dip'));
+      if (st.viewer === v) {
+        st.room = null; renderDock();
+        if (m.title) $('live').textContent = m.title; // 건물 정면 · 3층 학원 · 옥상 실외기실
+        if (fromDock && !dock.contains(document.activeElement)) $('spots').querySelector('.h3-spot')?.focus({ preventScroll: true }); // 누른 칩이 목록째 바뀌면 포커스가 body 로 빠진다
+      }
+    } else if (m.type === 'enter' && v === st.viewer) {
+      const fromDock = dock.contains(document.activeElement);
+      st.room = { id: m.id, title: m.title, sub: m.sub };
+      renderDock();
+      $('live').textContent = `${m.title}, ${m.sub || ''}`;
+      if (fromDock) $('back').focus({ preventScroll: true }); // 누른 버튼이 숨으면 포커스가 body 로 빠진다
+    } else if (m.type === 'home' && v === st.viewer) {
+      const fromBack = document.activeElement === $('back'), was = st.room?.id;
+      st.room = null;
+      renderDock();
+      $('live').textContent = '전체 보기';
+      if (fromBack) ($('spots').querySelector(`[data-id="${CSS.escape(was || '')}"]`) || $('spaces').querySelector('[aria-pressed="true"]')).focus({ preventScroll: true });
+    }
+  });
+
+  // three.js(CDN)를 못 받으면 ready 가 오지 않는다. 화면이 보이는 동안만 센다(백그라운드 탭에서 열어도 지우지 않게)
+  function armTimeout(viewer) {
+    let waited = 0;
+    const step = () => {
+      if (st.ready[viewer] || !frames[viewer] || st.failed[viewer]) return;
+      if (document.visibilityState === 'visible') waited += 500;
+      if (viewer === 'house' && waited >= 2500 && !posterShown) showPoster(); // 느린 망: 집 그림부터
+      if (waited >= 15000) return fail(viewer);
+      setTimeout(step, 500);
+    };
+    setTimeout(step, 500);
+  }
+  function fail(viewer) {
+    st.failed[viewer] = true; // iframe 은 남겨 둔다 — 늦게라도 ready 가 오면 그때 회복한다
+    if (viewer === 'house') showPoster();
+    else if (st.viewer !== 'house') { // 살아 있는 아파트로 되돌리고 이유를 알린다 — 탭을 다시 누르면 새로 불러온다
+      st.space = 'house'; st.viewer = 'house'; st.room = null; st.notice = RETRY_MSG;
+      if (st.ready.house) showFrame('house');
+    }
+    renderDock();
+  }
+
+  renderSpaces();
+  renderDock();
+  armTimeout('house');
+})();
+</script>
+
+<style is:global>
+/* 사이트 global.css 에 없는 틴트 2단 + 히어로 안 버튼·제목 기본값(프로토와 같게) */
+.h3-hero { --tint-line: color-mix(in srgb, var(--br-teal) 12%, transparent); --tint-fill: color-mix(in srgb, var(--br-teal) 8%, transparent); }
+.h3-hero button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; letter-spacing: inherit; }
+.h3-hero h1 { font-weight: 800; line-height: 1.15; letter-spacing: -0.02em; text-wrap: balance; }
+.h3-hero p { margin: 0; }
+.h3-hero [hidden] { display: none !important; }
+.h3-wrap { width: 100%; max-width: var(--maxw); margin-inline: auto; padding-inline: 20px; }
+/* 좁은 화면: 오른쪽 아래 '문의' 버튼이 도크 목록을 가리지 않게 도크를 그만큼 올린다 */
+@media (max-width: 760px) { .h3-dock-wrap { padding-bottom: 84px; } }
+.h3-glass {
+  position: relative;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: var(--glass-heavy-bg);
+  -webkit-backdrop-filter: var(--glass-heavy-fx);
+  backdrop-filter: var(--glass-heavy-fx);
+  box-shadow: var(--glass-shadow);
+}
+.h3-glass::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--glass-ring);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+
+/* ── 히어로 ── */
+.h3-hero {
+  position: relative;
+  isolation: isolate;
+  min-height: 92vh;
+  min-height: 92svh;
+  display: flex;
+  flex-direction: column;
+  padding-top: 64px;
+  overflow: hidden;
+  background: var(--br-base);
+}
+@media (max-width: 640px) { .h3-hero { padding-top: 56px; } }
+.h3-stage { position: absolute; inset: 0; z-index: -1; }
+.h3-stage iframe {
+  position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent;
+  transition: opacity var(--dur-reveal) var(--ease-out), visibility 0s linear var(--dur-reveal);
+}
+/* 숨김은 JS 게이트 아래에서만 (DESIGN.md §4 no-JS 안전장치) */
+.h3js .h3-stage iframe { opacity: 0; visibility: hidden; }
+.h3js .h3-stage iframe.on { opacity: 1; visibility: visible; transition: opacity var(--dur-reveal) var(--ease-out), visibility 0s; }
+.h3js .h3-stage iframe.on.dip { opacity: 0; transition: opacity var(--dur-ui) var(--ease-out); } /* 빌딩↔빌딩: 같은 iframe 안 전환을 짧게 끊었다 잇는다 */
+/* 대체 이미지: 3D 가 늦거나 못 뜰 때. 위치는 JS 가 빈 영역(--free-*)으로 맞춘다 */
+.h3-poster {
+  position: absolute; left: var(--free-l, 0); top: var(--free-t, 0); right: var(--free-r, 0); bottom: var(--free-b, 0);
+  transition: opacity var(--dur-reveal) var(--ease-out);
+}
+.h3-poster img { width: 100%; height: 100%; object-fit: contain; }
+.h3js .h3-poster { opacity: 0; }
+.h3js .h3-hero[data-poster] .h3-poster { opacity: 1; }
+/* 터치 기기: 기본은 페이지 스크롤. '3D 직접 돌리기'를 켰을 때만 3D 가 손가락을 받는다 */
+.h3-hero[data-touch="off"] .h3-stage iframe { pointer-events: none; }
+/* 켜진 동안 헤드라인 띠는 스크롤로 남긴다 — 3D 위에서 손가락이 갇히지 않게 빠져나갈 자리 */
+.h3-hero[data-touch="on"] .h3-head { pointer-events: auto; }
+/* 새 공간을 불러오는 동안 남겨 둔 이전 화면은 누르지 못하게 (거기서 방에 들어가면 도크와 어긋난다) */
+.h3-stage iframe.hold { pointer-events: none; }
+
+.h3-head {
+  pointer-events: none; /* 문구 영역 뒤의 3D 도 누를 수 있게 — 이 안에는 링크·버튼이 없다 */
+  padding-block: 40px 0;
+  transition: opacity var(--dur-reveal) var(--ease-out);
+}
+.h3-spacer { flex: 1; min-height: 200px; pointer-events: none; }
+.h3-hero[data-room] .h3-head { opacity: 0; }
+.h3-head h1 { font-size: clamp(36px, 7.4vw, 72px); color: var(--br-teal); }
+.h3-head p { margin-top: 20px; font-size: 17px; line-height: 1.7; color: var(--br-ink-sub); max-width: 34em; }
+
+/* 도크: 공간 전환 + 공간 목록. 히어로 안의 유리는 이것 하나 */
+.h3-dock-wrap { padding-bottom: 24px; }
+.h3-dock { display: grid; padding: 6px; width: fit-content; max-width: 100%; }
+.h3-dock__row { display: flex; align-items: center; column-gap: 16px; min-width: 0; }
+.h3-dock__row--go { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--tint-line); min-height: 57px; }
+
+.h3-spaces { display: flex; gap: 4px; flex: none; }
+.h3-spaces button {
+  min-height: 44px; padding-inline: 14px;
+  border-bottom: 2px solid transparent; border-radius: 6px 6px 0 0;
+  font-size: 15px; font-weight: 600; color: var(--br-ink-sub);
+  transition: color var(--dur-color) var(--ease-out), border-color var(--dur-color) var(--ease-out);
+}
+.h3-spaces button[aria-pressed="true"] { color: var(--br-ink); border-bottom-color: var(--br-teal); }
+@media (hover: hover) { .h3-spaces button[aria-pressed="false"]:hover { color: var(--br-ink); } }
+.h3-spaces button:active { transform: scale(.96); }
+.h3-hero[data-fail] .h3-spaces, .h3-hero[data-fail] .h3-dock__row--go { display: none; }
+
+.h3-disclaimer { padding-inline: 8px; font-size: 13px; line-height: 1.5; color: var(--br-ink-sub); }
+.h3-touch-toggle {
+  flex: none; min-height: 44px; padding-inline: 10px;
+  border-bottom: 2px solid transparent; border-radius: 6px 6px 0 0;
+  font-size: 13px; font-weight: 600; color: var(--br-teal);
+}
+.h3-touch-toggle[aria-pressed="true"] { color: var(--br-ink); border-bottom-color: var(--br-teal); }
+
+.h3-spots { display: flex; gap: 4px; padding: 4px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.h3-spots::-webkit-scrollbar { display: none; }
+/* 옆으로 더 있으면 끝을 흐려서 알린다 (포커스가 안에 있으면 흐림을 뺀다) */
+.h3-spots[data-more] { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent); }
+.h3-spots[data-less] { -webkit-mask-image: linear-gradient(90deg, transparent, #000 32px); mask-image: linear-gradient(90deg, transparent, #000 32px); }
+.h3-spots[data-less][data-more] { -webkit-mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 48px), transparent); mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 48px), transparent); }
+.h3-spots:focus-within { -webkit-mask-image: none; mask-image: none; }
+.h3-spot {
+  display: inline-flex; align-items: center; gap: 6px; flex: none;
+  min-height: 44px; padding-inline: 12px; border-radius: 6px;
+  font-size: 15px; font-weight: 600; color: var(--br-ink);
+  transition: background-color var(--dur-color) var(--ease-out), color var(--dur-color) var(--ease-out);
+}
+.h3-spot:focus-visible { outline-offset: -2px; }
+.h3-spot small { font-size: 13px; font-weight: 500; color: var(--br-ink-sub); }
+@media (hover: hover) { .h3-spot:hover { color: var(--br-teal); background: var(--tint-fill); } }
+.h3-spot:active { transform: scale(.96); }
+.h3-spots__load { padding-inline: 12px; font-size: 13px; color: var(--br-ink-sub); }
+
+.h3-here { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 4px; }
+.h3-back {
+  display: inline-flex; align-items: center; gap: 2px; flex: none;
+  min-height: 44px; padding-inline: 6px 12px; border-radius: 6px;
+  font-size: 15px; font-weight: 600; color: var(--br-teal);
+  transition: background-color var(--dur-color) var(--ease-out);
+}
+@media (hover: hover) { .h3-back:hover { background: var(--tint-fill); } }
+.h3-back:active { transform: scale(.96); }
+.h3-back svg { width: 20px; height: 20px; }
+.h3-here__t { padding-left: 12px; border-left: 1px solid var(--tint-line); font-size: 15px; font-weight: 600; line-height: 1.4; color: var(--br-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h3-here__t small { margin-left: 8px; font-size: 13px; font-weight: 500; color: var(--br-ink-sub); }
+
+.h3-note { padding: 10px 2px 0; font-size: 13px; line-height: 1.5; color: var(--br-ink-sub); }
+.h3-note.fail { color: var(--br-ink); }
+/* 방 안에서는 실내 위에 떠서 읽기 어렵다. 터치 기기는 조작을 켰을 때만 끄는 법을 알린다(꺼져 있으면 자리도 비운다) */
+.h3-hero[data-room] .h3-note:not(.fail) { visibility: hidden; }
+.h3-hero[data-touch="off"] .h3-note:not(.fail) { display: none; }
+
+@media (min-width: 1024px) {
+  /* 넓은 화면: 문구는 왼쪽 단 가운데, 3D 는 그 오른쪽 빈 영역(inset.l)에 맞춘다 */
+  .h3-head { flex: 1; display: flex; align-items: center; padding-block: 24px; }
+  .h3-head__in { max-width: 500px; }
+  .h3-head h1 { font-size: clamp(44px, 3.8vw, 54px); } /* 2단 폭 때문에 사이트 히어로(최대 72px)보다 낮춘다 — DESIGN-amendment.md §3 */
+  .h3-spacer { display: none; }
+}
+@media (max-width: 760px) {
+  .h3-head { padding-block: 28px 0; }
+  .h3-dock-wrap { padding-bottom: 16px; }
+  .h3-dock { width: 100%; }
+  .h3-dock__row--top { flex-wrap: wrap; column-gap: 8px; }
+  .h3-spaces { flex: 1 1 100%; }
+  .h3-spaces button { flex: 1; padding-inline: 6px; }
+  .h3-disclaimer { flex: 1; min-width: 0; padding: 6px 8px 4px; font-size: 12px; }
+  .h3-here__t { white-space: normal; }
+  .h3-here__t small { display: block; margin-left: 0; }
+}
+
+
+.h3-sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (forced-colors: active) { .h3-spaces button[aria-pressed="true"], .h3-touch-toggle[aria-pressed="true"] { border-bottom-color: CanvasText; } }
+
+</style>

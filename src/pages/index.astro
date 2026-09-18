@@ -4,7 +4,7 @@
 // 섹션 문구는 전부 src/content/site/home.json (하드코딩 금지). 히어로·다크구간은 각자 다른 소스.
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
-import Hero from '../components/v2/Hero.astro';
+import Hero3D from '../components/v2/Hero3D.astro';   // 3D 구성도 히어로 (영상 히어로는 Hero.astro 에 보존)
 // import DarkScrub from '../components/v2/DarkScrub.astro'; // 위 미노출 주석 참조
 // import Problem from '../components/v2/Problem.astro'; // 구 S2 — DarkScrub이 동일 메시지를 대체 (비포 사진 확보 후 재검토)
 import ServiceSplit from '../components/v2/ServiceSplit.astro';
@@ -46,8 +46,8 @@ const splitEmphasis = (line: string, word: string) => {
 };
 const cta = home.ctaBand;
 ---
-<Base headerVariant="overlay">
-  <Hero />
+<Base headerVariant="solid">
+  <Hero3D />
 
   {/* 다크 스크럽 미노출 (2026-08-27) — 이 카피는 히어로 영상 자막으로 들어간다.
       화면에 큰 글자로 또 쓰면 같은 말을 두 번 하는 셈이라 뺐다.
