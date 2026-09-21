@@ -150,16 +150,18 @@
   }
 
   // 3D 를 처음 만진 순간(프레임 클릭·드래그 포함). iframe 클릭은 부모로 안 올라와서 blur 로 잡는다
-  function engage() {
+  function engage(on3d) {
+    if (on3d) hero.setAttribute('data-touch3d', '');   // 도면을 직접 만졌을 때만 문구를 비운다
     if (hero.hasAttribute('data-engaged')) return;
     hero.setAttribute('data-engaged', '');
     $('tap').hidden = true;
   }
   addEventListener('blur', () => setTimeout(() => {
     const el = document.activeElement;
-    if (el && el.tagName === 'IFRAME' && stage.contains(el)) engage();
+    if (el && el.tagName === 'IFRAME' && stage.contains(el)) engage(true);
   }, 0));
-  for (const el of [stage, dock]) el.addEventListener('pointerdown', () => { cancelGround(); engage(); });
+  stage.addEventListener('pointerdown', () => { cancelGround(); engage(true); });
+  dock.addEventListener('pointerdown', () => { cancelGround(); engage(false); });
 
   // 빌딩 탭: 건물을 한 번 보여 준 다음 1층으로 내려간다. 거기서 '건물 정면'을 누르면 전체 구성도로 올라간다
   let groundTimer = 0;
@@ -386,7 +388,7 @@
 .h3-hero[data-room] .h3-head, .h3-hero[data-deep] .h3-head { opacity: 0; }
 /* 좁은 화면은 도면이 글자 뒤를 지나간다 — 만지기 시작하면 헤드라인을 비운다.
    넓은 화면은 도면이 오른쪽 빈 영역(--free-l)에 갇혀 겹치지 않으므로 문구를 그대로 둔다 */
-@media (max-width: 1023px) { .h3-hero[data-engaged] .h3-head { opacity: 0; } }
+@media (max-width: 1023px) { .h3-hero[data-touch3d] .h3-head { opacity: 0; } }
 
 /* 누르라는 안내 — 도면 위에 떠서 눈에 걸리게. 한 번 만지면 사라진다 */
 .h3-tap {
@@ -479,7 +481,7 @@
   .h3-tap { left: auto; right: var(--h3-gutter); top: 96px; bottom: auto;
     transform: none; animation-name: h3-tap-pulse-y; }
   .h3-note { position: absolute; z-index: 1; top: 146px; right: var(--h3-gutter);
-    max-width: 26em; margin: 0; padding: 0; text-align: right; }
+    max-width: 26em; margin: 0; padding: 0; text-align: right; pointer-events: none; }
   /* 넓은 화면: 문구는 왼쪽 단 가운데, 3D 는 그 오른쪽 빈 영역(inset.l)에 맞춘다 */
   .h3-head { flex: 1; display: flex; align-items: center; padding-block: 24px; }
   .h3-head__in { max-width: 500px; }

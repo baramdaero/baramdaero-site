@@ -50,9 +50,11 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
         {hasPhoto && (
           <div class="ex-photos">
             {Array.from({ length: photoCount }, (_, k) => (
-              <figure class="ex-photo">
-                <img id={`${id}-photo-${k}`} src={`/media/${items[0].photos?.[k]?.src ?? ''}`}
-                     loading="lazy" decoding="async" alt={items[0].photos?.[k]?.alt ?? ''} />
+              <figure class="ex-photo" id={`${id}-fig-${k}`} hidden={!items[0].photos?.[k]}>
+                {items[0].photos?.[k] && (
+                  <img id={`${id}-photo-${k}`} src={`/media/${items[0].photos[k].src}`}
+                       loading="lazy" decoding="async" alt={items[0].photos[k].alt} />
+                )}
               </figure>
             ))}
           </div>
@@ -61,6 +63,7 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
           <iframe
             id={`${id}-frame`} src={`/3d/parts/${items[0].file}?embed&theme=light&assembled`} loading="lazy"
             title={`분해 3D · ${items[0].label}`}></iframe>
+          <p class="ex-fail" id={`${id}-fail`} role="status">3D 도면을 불러오지 못했습니다. 잠시 뒤 새로고침해 주세요.</p>
         </div>
       </div>
 
@@ -76,50 +79,64 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
 <script is:inline define:vars={{ id, items }}>
   (() => {
     const frame = document.getElementById(`${id}-frame`);
-    let played = false;
     const cap = document.getElementById(`${id}-cap`);
+    const stage = document.getElementById(`${id}-panel`);
     const photos = [...document.querySelectorAll(`[id^="${id}-photo-"]`)];
+    const figs = [...document.querySelectorAll(`[id^="${id}-fig-"]`)];
     const tabs = [...document.querySelectorAll(`[data-ex-tab][aria-controls="${id}-panel"]`)];
     if (!frame || !tabs.length) return;
+    const FAIL_MS = 15000;                 // three.js CDN 이 막히면 뷰어 스크립트 자체가 실행되지 않는다
+    let ready = false, seen = false, played = false, failTimer = 0;
+
+    // 뷰어가 준비됐다고 알려 올 때 재생한다. 타이머로 찍으면 느린 망에서 신호가 버려진다
+    const play = () => {
+      if (played || !ready || !seen || !frame.contentWindow) return;
+      played = true;
+      frame.contentWindow.postMessage({ ns: 'ac3d', type: 'play' }, '*');
+    };
+    const armFail = () => {
+      clearTimeout(failTimer);
+      failTimer = setTimeout(() => { if (!ready) stage?.setAttribute('data-fail', ''); }, FAIL_MS);
+    };
+    addEventListener('message', (e) => {
+      const m = e.data;
+      if (!m || m.ns !== 'ac3d' || e.source !== frame.contentWindow) return;
+      if (m.type !== 'ready') return;
+      ready = true;
+      clearTimeout(failTimer);
+      stage?.removeAttribute('data-fail');
+      play();
+    });
+
     const pick = (i) => {
       const it = items[i];
       if (!it) return;
       const url = `/3d/parts/${it.file}?embed&theme=light&assembled`;
       try { frame.contentWindow.location.replace(url); } catch { frame.src = url; }   // src 재할당은 히스토리를 쌓는다
-      played = false;   // 탭을 바꾸면 그 기종도 한 번 재생한다
+      ready = false; played = false;       // 탭을 바꾸면 그 기종도 한 번 재생한다
+      if (seen) armFail();
       frame.title = `분해 3D · ${it.label}`;
       if (cap) cap.textContent = it.caption ?? '';
       stage?.setAttribute('aria-labelledby', `${id}-tab-${i}`);
-      photos.forEach((img, k) => {
-        const ph = it.photos?.[k];
-        if (!ph) return;
-        img.src = `/media/${ph.src}`;
-        img.alt = ph.alt;
+      figs.forEach((fig, k) => {           // 사진 수가 다른 기종으로 바꿀 때 이전 사진이 남지 않게
+        const ph = it.photos?.[k], img = photos.find((x) => x.id === `${id}-photo-${k}`);
+        fig.hidden = !ph;
+        if (ph && img) { img.src = `/media/${ph.src}`; img.alt = ph.alt; }
       });
       tabs.forEach((t, k) => {
         t.setAttribute('aria-selected', String(k === i));
         t.tabIndex = k === i ? 0 : -1;
       });
     };
-    // 스크롤해서 눈에 들어오면 그때 분해를 재생한다(슬라이더·버튼은 그대로 둔다)
-    const play = () => {
-      if (played || !frame.contentWindow) return;
-      played = true;
-      frame.contentWindow.postMessage({ ns: 'ac3d', type: 'play' }, '*');
-    };
-    const stage = document.getElementById(`${id}-panel`);
+
+    // 스크롤해서 눈에 들어오면 그때부터 센다(백그라운드 탭에서 실패로 찍지 않게)
     if (stage && 'IntersectionObserver' in window) {
-      const io = new IntersectionObserver((es) => {
-        es.forEach((e) => { if (e.isIntersecting) { setTimeout(play, 400); } });   // 프레임이 뜰 틈을 준다
-      }, { threshold: 0.35, rootMargin: '0px 0px -8% 0px' });
-      io.observe(stage);
+      new IntersectionObserver((es) => {
+        es.forEach((e) => { if (e.isIntersecting) { seen = true; armFail(); play(); } });
+      }, { threshold: 0.35, rootMargin: '0px 0px -8% 0px' }).observe(stage);
     } else {
-      frame.addEventListener('load', () => setTimeout(play, 600));
+      seen = true; armFail(); play();
     }
-    frame.addEventListener('load', () => {            // 탭 전환 직후 이미 보고 있으면 바로 재생
-      const r = stage?.getBoundingClientRect();
-      if (r && r.top < innerHeight * 0.6 && r.bottom > 0) setTimeout(play, 400);
-    });
 
     tabs.forEach((t, i) => {
       t.addEventListener('click', () => pick(i));
@@ -160,7 +177,11 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
   }
   .ex-photo img { width: 100%; height: 100%; max-width: 100%; object-fit: contain; }
 
-  .ex-stage { border: 1px solid var(--br-line); border-radius: 16px; overflow: hidden;
+  .ex-fail { display: none; position: absolute; inset: 0; margin: 0; place-content: center;
+    padding: 24px; text-align: center; font-size: 14px; color: var(--br-ink-sub); }
+  .ex-stage[data-fail] .ex-fail { display: grid; }
+  .ex-stage[data-fail] iframe { visibility: hidden; }
+  .ex-stage { position: relative; border: 1px solid var(--br-line); border-radius: 16px; overflow: hidden;
     background: var(--br-mist); aspect-ratio: 16 / 9; width: 100%;
   }
   .ex-stage iframe { display: block; width: 100%; height: 100%; border: 0; }
