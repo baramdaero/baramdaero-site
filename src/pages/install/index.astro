@@ -6,6 +6,7 @@ import PageHero from '../../components/v2/PageHero.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
 import StandardsStory from '../../components/v2/StandardsStory.astro';
 import StoryRow from '../../components/v2/StoryRow.astro';
+import Exploded from '../../components/v2/Exploded.astro';   // 2026-09-21 기종 소개 분해 3D
 import { loadStandards } from '../../lib/standards.ts';
 import { loadSituations } from '../../lib/situations.ts';
 
@@ -24,6 +25,15 @@ const PRODUCT_VIDEOS = [
   { id: 'BUnSZkdcpms', title: '삼성전자 무풍 1Way 카세트 — Pet' },
 ];
 const VIDEO_SOURCE = '출처: 삼성전자 공식 채널';
+
+// 가정용 천장형 — 1Way 두 대(삼성·LG). 4Way·360 원형은 상업용 페이지에 둔다.
+// 뷰어 파일은 public/3d/parts/ 의 공개 사본이다.
+const CEILING_MODELS = [
+  { label: '삼성 1Way', file: 'samsung-1way-AC023CN1PBH1.html',
+    caption: '삼성 싱글 무풍 1Way AC023CN1PBH1 · 본체 970×135×410 · 판넬 1198×35×500 (mm)' },
+  { label: 'LG 1Way', file: 'lg-1way-TNW0230U2S.html',
+    caption: 'LG 휘센 SINGLE 1Way TNW0230U2S · 본체 860×132×450 · 판넬 1100×34×500 (mm)' },
+];
 
 const STEPS = [
   { title: '상담·견적', body: '기종과 대수, 설치 위치를 확인해 견적을 확정합니다. 방문 없이 진행합니다.' },
@@ -55,7 +65,7 @@ const breadcrumbJsonLd = {
     </Fragment>
     {PRODUCT_VIDEOS.length > 0 && (
       <Fragment slot="extra">
-        <div class="install-video__grid">
+        <div class="install-video__grid br-glass br-glass--dark">
           {PRODUCT_VIDEOS.map((v) => (
             <div class="install-video__frame">
               <iframe
@@ -72,6 +82,16 @@ const breadcrumbJsonLd = {
       </Fragment>
     )}
   </PageHero>
+
+  {/* 영상 바로 아래: 기종 소개. 천장형은 1Way·2Way·4Way·360 원형이 있고 안 구조가 다르다 */}
+  <Exploded
+    id="install-exploded"
+    tone="base"
+    eyebrow="기종"
+    title="1Way 천장형, 속은 이렇게 생겼습니다"
+    body="삼성·LG 실제 제원으로 만든 3D입니다. 부품을 눌러 이름과 역할을 보세요."
+    items={CEILING_MODELS}
+  />
 
   {/* 절차 4단계를 한 섹션에 둔다 — 스텝마다 섹션을 쪼개면 「설치 절차」 눈썹이 네 번 반복된다.
       리듬은 배경 줄무늬 대신 이미지 좌우 교차(지그재그)가 맡는다. */}
@@ -139,7 +159,15 @@ const breadcrumbJsonLd = {
 
 <style>
   /* 제품 영상 — 히어로와 같은 섹션(extra 슬롯) 안. 16:9 고정, 768px+ 나란히 */
-  .install-video__grid { display: grid; gap: 16px; }
+  /* 두 영상을 유리판 하나에 담는다. 판은 영상 바깥(패딩)에만 있어 플레이어 위에 겹치지 않는다
+     (YouTube 임베드 정책: 플레이어 앞 오버레이 금지). 판 radius = 영상 radius + 패딩 → 동심원(§5) */
+  .install-video__grid {
+    --pad: 12px;
+    display: grid; gap: var(--pad); padding: var(--pad);
+    border-radius: calc(var(--radius) + var(--pad));
+  }
+  /* 흰 유리 테두리 — 다크 판 기본 링(--glass-ring-on-dark)은 우하단에서 딥틸로 사라진다. 밝은 판 링으로 교체 */
+  .install-video__grid.br-glass--dark::before { background: var(--glass-ring); }
   .install-video__frame {
     position: relative;
     aspect-ratio: 16 / 9;
@@ -155,7 +183,7 @@ const breadcrumbJsonLd = {
   /* 다크 히어로 위 — ink-sub는 배경에 묻힌다 */
   .install-video__source { margin-top: 14px; font-size: 13px; color: rgba(255, 255, 255, 0.7); }
   @media (min-width: 768px) {
-    .install-video__grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .install-video__grid { --pad: 16px; grid-template-columns: repeat(2, 1fr); }
   }
 
   /* 유리 카드 호스트 — 투명해야 앰비언트가 비친다 */

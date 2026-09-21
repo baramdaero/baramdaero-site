@@ -238,6 +238,8 @@ button {
 }
 html.br-js .br-reveal { opacity: 0; transform: translateY(24px); }
 html.br-js .br-reveal.br-in { opacity: 1; transform: translateY(0); }
+/* 대형 헤드라인 — 이동 없이 페이드만. 큰 활자가 움직이면 읽는 눈이 따라간다 (DESIGN.md §4) */
+html.br-js .br-reveal.br-reveal--fade { transform: none; }
 
 /* 접근성 */
 .visually-hidden {

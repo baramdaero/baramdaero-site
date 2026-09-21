@@ -7,6 +7,7 @@ import CtaBand from '../../components/v2/CtaBand.astro';
 import ImageSlot from '../../components/v2/ImageSlot.astro';
 import StandardsStory from '../../components/v2/StandardsStory.astro';
 import StoryRow from '../../components/v2/StoryRow.astro';
+import Exploded from '../../components/v2/Exploded.astro';   // 2026-09-21 기종별 분해 3D
 import { SITE_CONFIG } from '../../config.js';
 import { loadPricing } from '../../lib/pricing.ts';
 import { loadFaq } from '../../lib/faq.ts';
@@ -95,6 +96,37 @@ if (careFaq.length) {
     {headline}
     {intro && <Fragment slot="sub">{intro}</Fragment>}
   </PageHero>
+
+  {/* 분해 세척 페이지의 첫 설명: 말로 적기 전에 기종별로 어디까지 열리는지 보여준다 */}
+  <Exploded
+    id="care-exploded"
+    tone="mist"
+    eyebrow="어디까지 분해하나"
+    title="기종마다 열리는 깊이가 다릅니다."
+    body="기종을 고르고 부품을 눌러 보세요. 분해 순서와 세척 방법이 부품마다 붙어 있습니다."
+    items={[
+      { label: '삼성 4Way', file: 'samsung-4way-AC060CN4PBH1.html',
+        caption: '삼성 싱글 무풍 4Way AC060CN4PBH1 · 부품 15개 · 3D 분해 8단계' },
+      { label: 'LG 4Way', file: 'lg-4way-RNW0720A2S.html',
+        caption: 'LG 휘센 4Way RNW0720A2S · 부품 15개' },
+      { label: '삼성 1Way', file: 'samsung-1way-AC023CN1PBH1.html',
+        caption: '삼성 싱글 무풍 1Way AC023CN1PBH1 · 부품 14개' },
+      { label: 'LG 1Way', file: 'lg-1way-TNW0230U2S.html',
+        caption: 'LG 휘센 SINGLE 1Way TNW0230U2S · 부품 14개' },
+      { label: '삼성 360 원형', file: 'samsung-360-AC110CN6PBH1.html',
+        caption: '삼성 싱글 시스템에어컨 360 AC110CN6PBH1 · 부품 16개 · 원형 토출 프레임에 부스터팬 3개가 들어간다' },
+      { label: 'LG 2Way', file: 'lg-2way-RNW0721G2S.html',
+        caption: 'LG 휘센 2Way RNW0721G2S · 부품 14개 · 열교환기가 좌·우 두 조, 송풍팬은 관류팬 1본' },
+      { label: '삼성 벽걸이', file: 'samsung-wall-AR06T9170HNQ.html',
+        caption: '삼성 무풍 벽걸이 와이드 AR06T9170HNQ · 부품 13개 · 배관은 분해하지 않고 세척' },
+      { label: 'LG 벽걸이', file: 'lg-wall-SQ06EJ1WEN.html',
+        caption: 'LG 휘센 벽걸이 SQ06EJ1WEN · 부품 13개' },
+      { label: '삼성 스탠드', file: 'samsung-stand-AF25DX934WAN.html',
+        caption: '삼성 비스포크 AI 무풍갤러리 AF25DX934WAN · 부품 13개 · 백바디와 열교환기만 남는 상태까지' },
+      { label: 'LG 스탠드', file: 'lg-stand-FQ18DDTHBN.html',
+        caption: 'LG 휘센 오브제컬렉션 타워II FQ18DDTHBN · 부품 13개' },
+    ]}
+  />
 
   {visibleSymptoms.length > 0 && (
     <section class="bd-section care-symptoms" data-layout-section="care-symptoms">

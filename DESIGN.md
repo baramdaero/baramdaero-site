@@ -1,6 +1,6 @@
 # DESIGN.md — 바람대로 디자인 규칙 v3 (teal-rebrand)
 
-모든 UI 작업은 이 문서를 먼저 읽고 시작한다. 위반 스타일은 커밋 금지 (CLAUDE.md 절대 규칙 ③).
+모든 UI 작업은 이 문서를 먼저 읽고 시작한다. 위반 스타일은 커밋 금지 (AGENTS.md 절대 규칙 ③).
 커밋 전 셀프 체크: 아래 규칙 위반 여부를 확인한 뒤에만 커밋한다.
 v1(웜우드·에디토리얼·Noto Serif) 체계는 폐기 — 산출물은 src/legacy/ 보존.
 v2(그린 듀오톤 canopy/lime) 체계는 폐기 — 본 v3 틸 토큰이 대체 (산출물은 git 히스토리 보존).
@@ -63,17 +63,35 @@ v2(그린 듀오톤 canopy/lime) 체계는 폐기 — 본 v3 틸 토큰이 대�
 - 슬로건: **"당신의 바람대로."**
 
 ## 4. 모션 — 공용 1벌 (src/scripts/motion.ts), 외부 라이브러리 금지
+
+> 지속시간·이징 계단은 toss.im 실측(2026-09-07, 데스크톱 1440 / 모바일 390)과 대조해 확정.
+> 우리 토큰이 이미 실측 계단과 맞았다 — 아래는 그걸 규칙으로 승격하고 빠진 것만 채운 것이다.
+
+- **지속시간은 토큰 3단만.** 새 숫자를 인라인으로 적지 않는다.
+  `--dur-color 200ms`(색·배경 피드백) / `--dur-ui 240ms`(상태 전환) / `--dur-reveal 600ms`(진입).
+  유일한 예외는 카운트업 1.2s. 확장(아코디언 등)이 생기면 `--dur-expand 400ms` 토큰을 추가하고
+  인라인 금지. **구 규칙 "UI 모션 300ms 이하"는 이 토큰 계단이 대체한다**
+- **이징은 토큰 2종.** `--ease-out cubic-bezier(.16,1,.3,1)` / `--ease-in-out cubic-bezier(.77,0,.175,1)`.
+  오버슛(back-out) 곡선을 쓸 일이 생기면 **transform 전용** — opacity에 붙이지 않는다
+  (되돌아오며 깜빡인다)
 - **스크롤 리빌** `.br-reveal`: IntersectionObserver threshold 0.15, 1회.
-  opacity 0→1 + translateY(24px→0), 0.6s `cubic-bezier(.16,1,.3,1)`, 형제 60ms stagger.
+  opacity 0→1 + translateY(24px→0), `--dur-reveal` `--ease-out`, 형제 60ms stagger.
   **no-JS 안전장치**: 숨김은 `html.br-js` 하위에서만 — JS 실패 시 전 콘텐츠 노출.
   이 게이트 밖에 `opacity: 0` 초기 숨김 금지
+- **대형 헤드라인은 이동 없이 페이드만** — `.br-reveal.br-reveal--fade` (translate 없음).
+  근거: toss는 대형 카피를 제자리에서 opacity만 올린다(실측). 큰 활자가 움직이면 읽는 눈이 따라간다.
+  본문·카드는 24px 유지
+- **스태거는 시간(60ms)이다.** 스크롤 거리 스태거(toss 실측 약 1,100px)는 sticky 핀이 요소를
+  붙들고 있을 때만 성립한다. 우리는 핀이 S2 하나뿐이라 **검토 후 기각** (2026-09-07)
+- **스크럽은 페이지당 1개.** 현재 S2 다크 스크럽. 두 번째 스크럽을 넣지 않는다
 - **마퀴**: CSS keyframes 무한, 트랙 = 동일 세트 2벌 → translateX(-50%) 루프,
   hover 시 pause. 카드는 cases 컬렉션에서만 (더미 생성 금지)
 - **카운트업** `[data-countup]`: 진입 시 0→목표값 1.2s. 마크업 기본값 = 최종값
 - `prefers-reduced-motion`: 리빌·마퀴·카운트업·히어로 영상 정지
-- UI 모션 300ms 이하, `transform`·`opacity`만, 상태 전환은 transition,
+- UI 모션은 `transform`·`opacity`만, 상태 전환은 transition,
   `:active { scale(0.96) }`, `transition: all` 금지, hover는 `(hover:hover)` 게이트
-- 금지: 패럴랙스, 3D, 커서 이펙트, GSAP 등 외부 라이브러리 (전부 바닐라)
+- 금지: 패럴랙스(배속차 이동), 3D, 커서 이펙트, 무한 회전·바운스, 자동 전환 캐러셀,
+  스크롤 하이재킹, GSAP 등 외부 라이브러리 (전부 바닐라)
 - 히어로 영상: 사전 렌더 mp4 루프 (canvas 프레임 캡처 금지)
 - **다크 스크럽(S2)**: 스크롤 진행도→프레임 시퀀스 캔버스(바닐라), 프레임은 `/public/scrub/`,
   poster 1장 폴백 필수. 모바일=프레임 절반 로드, reduced-motion=스크럽 비활성+정지컷

@@ -12,6 +12,12 @@
         <img src="/3d/poster-house-wide.webp" alt="" decoding="async">
       </picture>
       <iframe id="f-house" src="/3d/house.html?embed" title="3D 구성도 · 아파트" tabindex="-1"></iframe>
+      <p class="h3-tap" id="tap" aria-hidden="true" hidden>
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M9 11V6.5a1.5 1.5 0 0 1 3 0V11m0 0V4.5a1.5 1.5 0 0 1 3 0V11m0 0V6.5a1.5 1.5 0 0 1 3 0V13c0 3.9-2.6 7-6.5 7S6 17.5 6 13.5v-1a1.5 1.5 0 0 1 3 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        공간이나 에어컨을 눌러 보세요
+      </p>
     </div>
 
     <div class="h3-head h3-wrap">
@@ -65,11 +71,12 @@
   const send = (viewer, msg) => { const f = frames[viewer]; if (f && st.ready[viewer]) f.contentWindow.postMessage({ ns: 'bd3d', ...msg }, '*'); };
 
   // 3D 가 문구·도크·헤더를 피해서 자리 잡도록 가려지는 픽셀을 알린다 (전체 보기 l,r,t,b / 방 시점 rt,rb)
+  const TIP_BAND = 178;   // 오른쪽 위 안내가 차지하는 높이. 안내가 사라져도 그대로 둔다 — 줄이면 카메라가 다시 잡히며 튄다
   function insetMsg() {
     const hr = hero.getBoundingClientRect(), hi = headIn.getBoundingClientRect();
     const hdr = (document.querySelector('.bd-header')?.offsetHeight || 64), b = Math.round(hr.bottom - dock.getBoundingClientRect().top + 16);
     const m = wide.matches
-      ? { l: Math.round(hi.right - hr.left + 32), r: 0, t: hdr, b } // 오른쪽은 뷰어가 빈 영역 폭의 8%를 여백으로 둔다
+      ? { l: Math.round(hi.right - hr.left + 32), r: 0, t: Math.max(hdr, TIP_BAND), b } // 오른쪽은 뷰어가 빈 영역 폭의 8%를 여백으로 둔다
       : { l: 0, r: 0, t: Math.round(hi.bottom - hr.top + 12), b };
     return { type: 'inset', ...m, rt: hdr, rb: b };
   }
@@ -119,7 +126,10 @@
   }
   function renderDock() {
     const inRoom = !!st.room;
+    // 층·옥상 안('건물 정면'으로 돌아갈 수 있는 상태)은 도면이 화면을 가득 채운다 — 헤드라인과 겹친다
+    const deep = inRoom || !!st.entries[st.space]?.some(e => e.id === 'building');
     hero.toggleAttribute('data-room', inRoom);
+    hero.toggleAttribute('data-deep', deep);
     $('spots').hidden = inRoom;
     $('here').hidden = !inRoom;
     for (const b of $('spaces').children) b.setAttribute('aria-pressed', String(b.dataset.space === st.space));
@@ -132,10 +142,37 @@
         : `<span class="h3-spots__load" role="status">구성도를 불러오는 중입니다</span>`;
       syncMore();
     }
+    $('tap').hidden = !st.ready[st.viewer] || deep || hero.hasAttribute('data-engaged');
     const failed = st.failed.house && !st.ready.house;
     hero.toggleAttribute('data-fail', !!failed);
     $('hint').classList.toggle('fail', !!(failed || st.notice));
     $('hint').textContent = failed ? FAIL_MSG : st.notice || (coarse.matches && st.touchLive ? TOUCH_HINT : HINT);
+  }
+
+  // 3D 를 처음 만진 순간(프레임 클릭·드래그 포함). iframe 클릭은 부모로 안 올라와서 blur 로 잡는다
+  function engage() {
+    if (hero.hasAttribute('data-engaged')) return;
+    hero.setAttribute('data-engaged', '');
+    $('tap').hidden = true;
+  }
+  addEventListener('blur', () => setTimeout(() => {
+    const el = document.activeElement;
+    if (el && el.tagName === 'IFRAME' && stage.contains(el)) engage();
+  }, 0));
+  for (const el of [stage, dock]) el.addEventListener('pointerdown', () => { cancelGround(); engage(); });
+
+  // 빌딩 탭: 건물을 한 번 보여 준 다음 1층으로 내려간다. 거기서 '건물 정면'을 누르면 전체 구성도로 올라간다
+  let groundTimer = 0;
+  const cancelGround = () => { clearTimeout(groundTimer); st.wantGround = false; };
+  function groundFirst(v) {
+    if (!st.wantGround || st.viewer !== v || st.room) return;
+    const g = (st.entries[st.bldKey[v]] || []).find(e => /^floor:/.test(e.id) && e.name === '1층');
+    if (!g) return;                       // 1층이 없는 건물이면 전체 구성도 그대로 둔다
+    st.wantGround = false;
+    clearTimeout(groundTimer);
+    groundTimer = setTimeout(() => {
+      if (st.viewer === v && !st.room) send(v, { type: 'goUnit', id: g.id });
+    }, reduced.matches ? 300 : 1000);
   }
 
   function selectSpace(key) {
@@ -144,6 +181,7 @@
     const from = st.viewer;
     if (st.ready[from]) send(from, { type: 'home' }); // 떠나는 뷰어는 늘 전체 보기로 — 돌아왔을 때 방 안에 남지 않게
     const vw = sp.viewer;
+    clearTimeout(groundTimer); st.wantGround = vw !== 'house';
     clearTimeout(st.dipTimer); frames[vw]?.classList.remove('dip');
     st.space = key; st.room = null; st.notice = '';
     if (vw !== 'house') {
@@ -212,6 +250,7 @@
       if (v !== 'house' && spaceOf(st.space).viewer === v && st.space !== m.key) send(v, { type: 'space', key: st.space });
       showFrame(st.viewer);
       renderDock();
+      if (v !== 'house') groundFirst(v);
     } else if (m.type === 'space') {
       const fromDock = dock.contains(document.activeElement);
       st.bldKey[v] = m.key; st.entries[m.key] = m.entries; st.pendingKey = null;
@@ -220,6 +259,7 @@
       requestAnimationFrame(() => frames[v]?.classList.remove('dip'));
       if (st.viewer === v) {
         st.room = null; renderDock();
+        groundFirst(v);
         if (m.title) $('live').textContent = m.title; // 건물 정면 · 3층 학원 · 옥상 실외기실
         if (fromDock && !dock.contains(document.activeElement)) $('spots').querySelector('.h3-spot')?.focus({ preventScroll: true }); // 누른 칩이 목록째 바뀌면 포커스가 body 로 빠진다
       }
@@ -268,7 +308,7 @@
 
 <style is:global>
 /* 사이트 global.css 에 없는 틴트 2단 + 히어로 안 버튼·제목 기본값(프로토와 같게) */
-.h3-hero { --tint-line: color-mix(in srgb, var(--br-teal) 12%, transparent); --tint-fill: color-mix(in srgb, var(--br-teal) 8%, transparent); }
+.h3-hero { --h3-gutter: max(20px, calc(50% - var(--maxw) / 2 + 20px)); --tint-line: color-mix(in srgb, var(--br-teal) 12%, transparent); --tint-fill: color-mix(in srgb, var(--br-teal) 8%, transparent); }
 .h3-hero button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; letter-spacing: inherit; }
 .h3-hero h1 { font-weight: 800; line-height: 1.15; letter-spacing: -0.02em; text-wrap: balance; }
 .h3-hero p { margin: 0; }
@@ -343,7 +383,30 @@
   transition: opacity var(--dur-reveal) var(--ease-out);
 }
 .h3-spacer { flex: 1; min-height: 200px; pointer-events: none; }
-.h3-hero[data-room] .h3-head { opacity: 0; }
+.h3-hero[data-room] .h3-head, .h3-hero[data-deep] .h3-head { opacity: 0; }
+/* 좁은 화면은 도면이 글자 뒤를 지나간다 — 만지기 시작하면 헤드라인을 비운다.
+   넓은 화면은 도면이 오른쪽 빈 영역(--free-l)에 갇혀 겹치지 않으므로 문구를 그대로 둔다 */
+@media (max-width: 1023px) { .h3-hero[data-engaged] .h3-head { opacity: 0; } }
+
+/* 누르라는 안내 — 도면 위에 떠서 눈에 걸리게. 한 번 만지면 사라진다 */
+.h3-tap {
+  position: absolute; left: 50%; bottom: 12%; transform: translateX(-50%);
+  display: inline-flex; align-items: center; gap: 8px; margin: 0;
+  padding: 10px 16px; border-radius: 999px; white-space: nowrap;
+  background: rgba(255, 255, 255, 0.92); border: 1px solid var(--br-line);
+  color: var(--br-teal); font-size: 14px; font-weight: 500;
+  box-shadow: 0 6px 20px rgba(11, 32, 39, 0.12);
+  pointer-events: none; animation: h3-tap-pulse 2.4s ease-in-out infinite;
+}
+.h3-tap svg { width: 18px; height: 18px; flex: none; }
+.h3-hero[data-room] .h3-tap, .h3-hero[data-deep] .h3-tap, .h3-hero[data-engaged] .h3-tap,
+.h3-hero[data-touch="off"] .h3-tap { display: none; }
+@keyframes h3-tap-pulse {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(-6px); }
+}
+@keyframes h3-tap-pulse-y { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@media (prefers-reduced-motion: reduce) { .h3-tap { animation: none; } }
 .h3-head h1 { font-size: clamp(36px, 7.4vw, 72px); color: var(--br-teal); }
 .h3-head p { margin-top: 20px; font-size: 17px; line-height: 1.7; color: var(--br-ink-sub); max-width: 34em; }
 
@@ -408,10 +471,15 @@
 .h3-note { padding: 10px 2px 0; font-size: 13px; line-height: 1.5; color: var(--br-ink-sub); }
 .h3-note.fail { color: var(--br-ink); }
 /* 방 안에서는 실내 위에 떠서 읽기 어렵다. 터치 기기는 조작을 켰을 때만 끄는 법을 알린다(꺼져 있으면 자리도 비운다) */
-.h3-hero[data-room] .h3-note:not(.fail) { visibility: hidden; }
+.h3-hero[data-room] .h3-note:not(.fail), .h3-hero[data-deep] .h3-note:not(.fail) { visibility: hidden; }
 .h3-hero[data-touch="off"] .h3-note:not(.fail) { display: none; }
 
 @media (min-width: 1024px) {
+  /* 안내는 히어로 오른쪽 위. 도면은 --free-t(TIP_BAND)로 이 띠를 비워 두므로 서로 간섭하지 않는다 */
+  .h3-tap { left: auto; right: var(--h3-gutter); top: 96px; bottom: auto;
+    transform: none; animation-name: h3-tap-pulse-y; }
+  .h3-note { position: absolute; z-index: 1; top: 146px; right: var(--h3-gutter);
+    max-width: 26em; margin: 0; padding: 0; text-align: right; }
   /* 넓은 화면: 문구는 왼쪽 단 가운데, 3D 는 그 오른쪽 빈 영역(inset.l)에 맞춘다 */
   .h3-head { flex: 1; display: flex; align-items: center; padding-block: 24px; }
   .h3-head__in { max-width: 500px; }
