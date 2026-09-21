@@ -4,7 +4,8 @@
 // 섹션 문구는 전부 src/content/site/home.json (하드코딩 금지). 히어로·다크구간은 각자 다른 소스.
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
-import Hero3D from '../components/v2/Hero3D.astro';   // 3D 구성도 히어로 (영상 히어로는 Hero.astro 에 보존)
+import Hero3D from '../components/v2/Hero3D.astro';   // 2026-09-18 3D 구성도 히어로 (영상 히어로는 Hero.astro 에 보존)
+import Exploded from '../components/v2/Exploded.astro';   // 2026-09-21 히어로 다음 분해 3D
 // import DarkScrub from '../components/v2/DarkScrub.astro'; // 위 미노출 주석 참조
 // import Problem from '../components/v2/Problem.astro'; // 구 S2 — DarkScrub이 동일 메시지를 대체 (비포 사진 확보 후 재검토)
 import ServiceSplit from '../components/v2/ServiceSplit.astro';
@@ -48,6 +49,33 @@ const cta = home.ctaBand;
 ---
 <Base headerVariant="solid">
   <Hero3D />
+
+  {/* 히어로 다음: 천장 속을 연다. 문구는 home.json(exploded), 기종 목록만 여기서 정한다.
+      대표 1Way 두 대만 둔다 — 기종 전체는 /care/ */}
+  {home.exploded && (
+    <Exploded
+      id="home-exploded"
+      tone="mist"
+      eyebrow={home.exploded.eyebrow}
+      title={home.exploded.heading.join(' ')}
+      body={home.exploded.body.join(' ')}
+      photoNote="제품 사진: 삼성전자·LG전자 공식 제품 이미지"
+      items={[
+        { label: '삼성 1Way', file: 'samsung-1way-AC023CN1PBH1.html',
+          photos: [
+            { src: 'ac-1way-samsung-front.webp', alt: '삼성 무풍 1Way 판넬 정면' },
+            { src: 'ac-1way-samsung-angle.webp', alt: '삼성 무풍 1Way 실내기 입체' },
+          ],
+          caption: '삼성전자 싱글 무풍 1Way 냉난방 AC023CN1PBH1 · 냉방 2.3kW · 부품 14개' },
+        { label: 'LG 1Way', file: 'lg-1way-TNW0230U2S.html',
+          photos: [
+            { src: 'ac-1way-lg-front.webp', alt: 'LG 휘센 1Way 판넬 정면' },
+            { src: 'ac-1way-lg-angle.webp', alt: 'LG 휘센 1Way 실내기 입체' },
+          ],
+          caption: 'LG전자 휘센 SINGLE 천장형 1Way 냉난방 TNW0230U2S · 냉방 2.3kW · 부품 14개' },
+      ]}
+    />
+  )}
 
   {/* 다크 스크럽 미노출 (2026-08-27) — 이 카피는 히어로 영상 자막으로 들어간다.
       화면에 큰 글자로 또 쓰면 같은 말을 두 번 하는 셈이라 뺐다.

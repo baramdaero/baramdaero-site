@@ -1,0 +1,203 @@
+---
+// 분해 3D 섹션 — 기종을 탭으로 고르고 한 대를 크게 본다.
+// 뷰어는 public/3d/parts/ 의 공개 사본(내부 근거·출처 문구를 비운 빌드)이다.
+// 한 화면에 한 대만 두는 이유: 두 대를 나란히 놓으면 부품 이름표가 겹쳐 읽히지 않는다.
+// 클래스는 ex- 접두사로 다른 섹션과 분리한다.
+interface Item {
+  /** 탭에 쓰는 짧은 이름 (예: "삼성 1Way") */
+  label: string;
+  /** public/3d/parts/ 안의 파일명 */
+  file: string;
+  /** 탭 아래 한 줄 설명 (모델명·용량 등) */
+  caption?: string;
+  /** public/media/ 안의 제품 사진 [정면 판넬, 입체]. 있으면 사진 칸 + 3D 2단으로 나온다 */
+  photos?: { src: string; alt: string }[];
+}
+interface Props {
+  eyebrow: string;
+  title: string;
+  body?: string;
+  items: Item[];
+  /** 섹션 배경. 앞뒤 섹션과 base↔mist가 교차하도록 페이지가 정한다 */
+  tone?: 'base' | 'mist';
+  /** 같은 페이지에 두 번 들어갈 때 구분 */
+  id?: string;
+}
+interface Props2 { photoNote?: string }
+const { eyebrow, title, body, items, tone = 'base', id = 'exploded' } = Astro.props;
+const { photoNote } = Astro.props as Props2;
+const hasPhoto = items.some((it) => (it.photos?.length ?? 0) > 0);
+const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
+---
+{items.length > 0 && (
+  <section class:list={['bd-section', 'ex-sec', tone === 'mist' && 'ex-sec--mist']} id={id}>
+    <div class="bd-container">
+      <span class="br-eyebrow br-reveal">{eyebrow}</span>
+      <h2 class="br-h br-reveal">{title}</h2>
+      {body && <p class="br-body br-reveal">{body}</p>}
+
+      <div class="ex-tabs br-reveal" role="tablist" aria-label="기종 선택">
+        {items.map((it, i) => (
+          <button
+            type="button" role="tab" class="ex-tab"
+            id={`${id}-tab-${i}`} data-ex-tab={i} aria-controls={`${id}-panel`}
+            aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1}
+          >{it.label}</button>
+        ))}
+      </div>
+
+      <div class:list={['ex-row', 'br-reveal', hasPhoto && 'ex-row--split']}>
+        {hasPhoto && (
+          <div class="ex-photos">
+            {Array.from({ length: photoCount }, (_, k) => (
+              <figure class="ex-photo" id={`${id}-fig-${k}`} hidden={!items[0].photos?.[k]}>
+                {items[0].photos?.[k] && (
+                  <img id={`${id}-photo-${k}`} src={`/media/${items[0].photos[k].src}`}
+                       loading="lazy" decoding="async" alt={items[0].photos[k].alt} />
+                )}
+              </figure>
+            ))}
+          </div>
+        )}
+        <div class="ex-stage" id={`${id}-panel`} role="tabpanel" aria-labelledby={`${id}-tab-0`}>
+          <iframe
+            id={`${id}-frame`} src={`/3d/parts/${items[0].file}?embed&theme=light&assembled`} loading="lazy"
+            title={`분해 3D · ${items[0].label}`}></iframe>
+          <p class="ex-fail" id={`${id}-fail`} role="status">3D 도면을 불러오지 못했습니다. 잠시 뒤 새로고침해 주세요.</p>
+        </div>
+      </div>
+
+      <p class="ex-cap" id={`${id}-cap`}>{items[0].caption ?? ''}</p>
+      <p class="ex-note">
+        {photoNote && <Fragment>{photoNote}<br /></Fragment>}
+        {hasPhoto ? '오른쪽 ' : ''}3D는 실제 제품 제원으로 만든 예시입니다. 내부 부품 형상은 실물과 다를 수 있습니다.
+      </p>
+    </div>
+  </section>
+)}
+
+<script is:inline define:vars={{ id, items }}>
+  (() => {
+    const frame = document.getElementById(`${id}-frame`);
+    const cap = document.getElementById(`${id}-cap`);
+    const stage = document.getElementById(`${id}-panel`);
+    const photos = [...document.querySelectorAll(`[id^="${id}-photo-"]`)];
+    const figs = [...document.querySelectorAll(`[id^="${id}-fig-"]`)];
+    const tabs = [...document.querySelectorAll(`[data-ex-tab][aria-controls="${id}-panel"]`)];
+    if (!frame || !tabs.length) return;
+    const FAIL_MS = 15000;                 // three.js CDN 이 막히면 뷰어 스크립트 자체가 실행되지 않는다
+    let ready = false, seen = false, played = false, failTimer = 0;
+
+    // 뷰어가 준비됐다고 알려 올 때 재생한다. 타이머로 찍으면 느린 망에서 신호가 버려진다
+    const play = () => {
+      if (played || !ready || !seen || !frame.contentWindow) return;
+      played = true;
+      frame.contentWindow.postMessage({ ns: 'ac3d', type: 'play' }, '*');
+    };
+    const armFail = () => {
+      clearTimeout(failTimer);
+      failTimer = setTimeout(() => { if (!ready) stage?.setAttribute('data-fail', ''); }, FAIL_MS);
+    };
+    addEventListener('message', (e) => {
+      const m = e.data;
+      if (!m || m.ns !== 'ac3d' || e.source !== frame.contentWindow) return;
+      if (m.type !== 'ready') return;
+      ready = true;
+      clearTimeout(failTimer);
+      stage?.removeAttribute('data-fail');
+      play();
+    });
+
+    const pick = (i) => {
+      const it = items[i];
+      if (!it) return;
+      const url = `/3d/parts/${it.file}?embed&theme=light&assembled`;
+      try { frame.contentWindow.location.replace(url); } catch { frame.src = url; }   // src 재할당은 히스토리를 쌓는다
+      ready = false; played = false;       // 탭을 바꾸면 그 기종도 한 번 재생한다
+      if (seen) armFail();
+      frame.title = `분해 3D · ${it.label}`;
+      if (cap) cap.textContent = it.caption ?? '';
+      stage?.setAttribute('aria-labelledby', `${id}-tab-${i}`);
+      figs.forEach((fig, k) => {           // 사진 수가 다른 기종으로 바꿀 때 이전 사진이 남지 않게
+        const ph = it.photos?.[k], img = photos.find((x) => x.id === `${id}-photo-${k}`);
+        fig.hidden = !ph;
+        if (ph && img) { img.src = `/media/${ph.src}`; img.alt = ph.alt; }
+      });
+      tabs.forEach((t, k) => {
+        t.setAttribute('aria-selected', String(k === i));
+        t.tabIndex = k === i ? 0 : -1;
+      });
+    };
+
+    // 스크롤해서 눈에 들어오면 그때부터 센다(백그라운드 탭에서 실패로 찍지 않게)
+    if (stage && 'IntersectionObserver' in window) {
+      new IntersectionObserver((es) => {
+        es.forEach((e) => { if (e.isIntersecting) { seen = true; armFail(); play(); } });
+      }, { threshold: 0.35, rootMargin: '0px 0px -8% 0px' }).observe(stage);
+    } else {
+      seen = true; armFail(); play();
+    }
+
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => pick(i));
+      t.addEventListener('keydown', (e) => {                     // 좌우 키로 탭 이동
+        const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (!d) return;
+        e.preventDefault();
+        const n = (i + d + tabs.length) % tabs.length;
+        tabs[n].focus(); pick(n);
+      });
+    });
+  })();
+</script>
+
+<style>
+  .ex-sec { background: var(--br-base); }
+  .ex-sec--mist { background: var(--br-mist); }
+
+  .ex-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+  .ex-tab {
+    font: inherit; font-size: 14px; line-height: 1; cursor: pointer;
+    padding: 10px 16px; border-radius: 999px;
+    border: 1px solid var(--br-line); background: transparent; color: var(--br-ink-sub);
+  }
+  .ex-tab:hover { border-color: var(--br-teal); color: var(--br-teal); }
+  .ex-tab[aria-selected='true'] { background: var(--br-teal); border-color: var(--br-teal); color: #fff; }
+  .ex-tab:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; }
+
+  .ex-row { margin-top: 16px; display: grid; gap: 16px; }
+  .ex-row--split { grid-template-columns: minmax(0, 260px) minmax(0, 1fr); align-items: stretch; }
+  .ex-photos { display: grid; grid-auto-rows: 1fr; gap: 12px; min-width: 0; }
+  /* 제품 사진은 흰 실내기다 — 흰 카드에 두면 형태가 안 보인다.
+     배경을 투명하게 잘라낸 뒤 3D 스테이지와 같은 판 위에 올린다 */
+  .ex-photo {
+    margin: 0; border: 1px solid var(--br-line); border-radius: 12px; overflow: hidden;
+    background: color-mix(in srgb, var(--br-teal) 12%, var(--br-mist));
+    display: grid; place-items: center; padding: 10px; min-height: 0;
+  }
+  .ex-photo img { width: 100%; height: 100%; max-width: 100%; object-fit: contain; }
+
+  .ex-fail { display: none; position: absolute; inset: 0; margin: 0; place-content: center;
+    padding: 24px; text-align: center; font-size: 14px; color: var(--br-ink-sub); }
+  .ex-stage[data-fail] .ex-fail { display: grid; }
+  .ex-stage[data-fail] iframe { visibility: hidden; }
+  .ex-stage { position: relative; border: 1px solid var(--br-line); border-radius: 16px; overflow: hidden;
+    background: var(--br-mist); aspect-ratio: 16 / 9; width: 100%;
+  }
+  .ex-stage iframe { display: block; width: 100%; height: 100%; border: 0; }
+
+  .ex-cap { margin: 12px 0 0; color: var(--br-ink-sub); font-size: 14px; }
+  .ex-cap:empty { display: none; }
+  .ex-note { margin: 6px 0 0; color: var(--br-ink-sub); font-size: 12.5px; }
+
+  /* 세로로 긴 화면에서는 부품 줄이 잘리지 않게 세로 비율을 키운다 */
+  @media (max-width: 860px) {
+    .ex-row--split { grid-template-columns: 1fr; }
+    .ex-photos { grid-auto-rows: auto; grid-template-columns: 1fr 1fr; }
+    .ex-photo { padding: 10px; aspect-ratio: 4 / 3; }
+  }
+  @media (max-width: 760px) {
+    .ex-stage { aspect-ratio: 3 / 4; }
+    .ex-tab { padding: 9px 13px; font-size: 13.5px; }
+  }
+</style>

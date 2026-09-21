@@ -11,10 +11,11 @@ const faqItems = loadFaq();
 const faqJson = JSON.stringify(faqItems).replace(/</g, '\\u003c');
 // 런처 위 선택 문구(티저) — 세션당 1회, 1.5s 뒤 등장해 12s 유지. 누르면 해당 흐름으로 바로 진입.
 // 한 줄 25자 상한(챗봇 카피 규칙). 키는 TREE_START(install/clean/as/etc)와 일치해야 한다.
+// brief 는 좁은 화면용 — 3줄로 쌓으면 히어로 도크를 통째로 덮어서 한 줄로 줄인다
 const TEASER = [
-  { tree: 'install', text: '설치 견적 받고 싶어요' },
-  { tree: 'clean', text: '분해세척 견적 받고 싶어요' },
-  { tree: 'as', text: '쓰던 에어컨에 문제가 있어요' },
+  { tree: 'install', text: '설치 견적 받고 싶어요', brief: '설치 견적' },
+  { tree: 'clean', text: '분해세척 견적 받고 싶어요', brief: '세척 견적' },
+  { tree: 'as', text: '쓰던 에어컨에 문제가 있어요', brief: 'A/S 문의' },
 ];
 ---
 <div class="chat" data-chat-root>
@@ -43,7 +44,8 @@ const TEASER = [
   </button>
   <div class="chat__teaser" data-chat-teaser hidden>
     {TEASER.map((t) => (
-      <button disabled aria-describedby="chat-unavailable" type="button" class="chat__teaser-item" data-chat-tree={t.tree}>{t.text}</button>
+      <button disabled aria-describedby="chat-unavailable" type="button" class="chat__teaser-item" data-chat-tree={t.tree}
+        ><span class="chat__teaser-full">{t.text}</span><span class="chat__teaser-brief">{t.brief}</span></button>
     ))}
   </div>
 
@@ -75,7 +77,6 @@ const TEASER = [
           class="chat__input"
           data-chat-input
           type="text"
-          inputmode="numeric"
           placeholder="선택지를 눌러 주세요"
           aria-label="메시지 입력"
           autocomplete="off"
@@ -171,6 +172,16 @@ const TEASER = [
        → 빈 배열이면 통과. 화면에 이미 나온 말풍선만 검사하므로 트리를 걸어가며 확인한다.
      ═══════════════════════════════════════════════════════════════════ */
   const L = (...lines: string[]) => lines.join('\n');
+
+  /* 대수 입력 파서 — 정확한 대수를 모를 때 쓰는 '약 20대', '10~20대'를 받는다.
+     숫자만 뽑아 검증하고 어림 표현은 그대로 남겨 접수 카드에 반영한다.
+     받을 수 없으면 null (호출부가 입력을 붙잡는다). */
+  const parseUnits = (raw: string): string | null => {
+    const nums = (raw.match(/\d+/g) ?? []).map(Number).filter((v) => v > 0);
+    if (!nums.length) return null;
+    if (nums.length > 1) return `${Math.min(...nums)}~${Math.max(...nums)}`;
+    return /약|쯤|정도|가량|내외|안팎|여/.test(raw) ? `약 ${nums[0]}` : String(nums[0]);
+  };
 
   const COPY = {
     /* --- 공통 --- */
@@ -398,12 +409,8 @@ const TEASER = [
       text: COPY.install_space,
       options: [
         { label: '아파트·주택', next: 'install.brand', set: { 공간: '아파트·주택' } },
-        { label: '카페', next: 'install.brand', set: { 공간: '카페' } },
-        { label: '매장·상가', next: 'install.brand', set: { 공간: '매장·상가' } },
-        { label: '사무실', next: 'install.brand', set: { 공간: '사무실' } },
-        { label: '학원·교육시설', next: 'install.brand', set: { 공간: '학원·교육시설' } },
+        { label: '상가·사무실', next: 'install.brand', set: { 공간: '상가·사무실' } },
         { label: '관공서·공공시설', next: 'install.brand', set: { 공간: '관공서·공공시설' } },
-        { label: '대형빌딩', next: 'install.brand', set: { 공간: '대형빌딩' } },
       ],
     },
     'install.brand': {
@@ -562,7 +569,7 @@ const TEASER = [
     input.disabled = false;
     sendBtn.disabled = false;
     input.placeholder = placeholder;
-    input.inputMode = mode === 'number' ? 'numeric' : 'text';
+    input.inputMode = 'text'; // 숫자 키패드로는 '약 20대'를 칠 수 없다
     input.maxLength = max;
     input.value = '';
     input.focus();
@@ -573,7 +580,7 @@ const TEASER = [
     input.disabled = true;
     sendBtn.disabled = true;
     input.placeholder = '선택지를 눌러 주세요';
-    input.inputMode = 'numeric';
+    input.inputMode = 'text';
     input.value = '';
   }
 
@@ -583,9 +590,9 @@ const TEASER = [
     const raw = input.value.trim();
     let value: string;
     if (inputMode === 'number') {
-      const n = parseInt(raw, 10);
-      if (!n || n < 1) { input.focus(); return; }
-      value = String(n);
+      const parsed = parseUnits(raw);
+      if (!parsed) { input.focus(); return; }
+      value = parsed;
     } else {
       if (!raw) { input.focus(); return; }
       value = raw;
@@ -1039,7 +1046,10 @@ const TEASER = [
       teaser.hidden = false;
       void teaser.offsetHeight;
       teaser.classList.add('is-on');
-      setTimeout(hideTeaser, 12000);
+      const narrow = matchMedia('(max-width: 640px)').matches;
+      setTimeout(hideTeaser, narrow ? 8000 : 12000);
+      // 좁은 화면에서는 사람이 스크롤을 시작하면 바로 비킨다 (화면을 가리는 시간을 줄인다)
+      if (narrow) addEventListener('scroll', hideTeaser, { once: true, passive: true });
     }, 1500);
   }
   root.querySelector('[data-chat-close]')?.addEventListener('click', close);
@@ -1150,6 +1160,14 @@ const TEASER = [
   .chat__teaser.is-on .chat__teaser-item:nth-child(3) { transition-delay: 280ms; }
   @media (hover: hover) and (pointer: fine) {
     .chat__teaser-item:hover { transform: translateX(-2px); }
+  }
+  .chat__teaser-brief { display: none; }
+  /* 좁은 화면: 세 줄을 한 줄로 — 덮는 높이 153px → 36px */
+  @media (max-width: 640px) {
+    .chat__teaser { left: 20px; display: flex; justify-content: flex-end; gap: 6px; bottom: 82px; }
+    .chat__teaser-item { font-size: 13px; padding: 8px 11px; }
+    .chat__teaser-full { display: none; }
+    .chat__teaser-brief { display: inline; }
   }
   .chat__fab-icon--close { opacity: 0; transform: scale(0.25) rotate(-45deg); }
   .chat.is-open .chat__fab-icon--bubble { opacity: 0; transform: scale(0.25); }

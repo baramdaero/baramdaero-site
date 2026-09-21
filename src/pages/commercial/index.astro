@@ -3,6 +3,7 @@ import Base from '../../layouts/Base.astro';
 import PageHero from '../../components/v2/PageHero.astro';
 import StoryRow from '../../components/v2/StoryRow.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
+import Exploded from '../../components/v2/Exploded.astro';   // 2026-09-21 상업용 기종 분해 3D
 
 const spaces = [
   { title: '카페', detail: '좌석과 주방 배치, 공간을 사용하는 시간' },
@@ -83,6 +84,23 @@ const jsonLd = {
       </div>
     </div>
   </section>
+
+  {/* 상업용에 실제로 들어가는 기종: 4Way 천장형(원형 카세트는 근거 확보 후 추가) */}
+  <Exploded
+    id="commercial-exploded"
+    tone="base"
+    eyebrow="상업 공간 기종"
+    title="상가·사무실에 들어가는 4Way와 360 원형, 안은 이렇습니다."
+    body="천장에 매립되는 본체와 실내에서 보이는 판넬이 어떻게 나뉘는지, 세척 때 어디까지 분해하는지 보여 줍니다."
+    items={[
+      { label: '삼성 4Way', file: 'samsung-4way-AC060CN4PBH1.html',
+        caption: '삼성 싱글 무풍 4Way AC060CN4PBH1 · 본체 840×204×840 · 판넬 950×48×950 (mm)' },
+      { label: 'LG 4Way', file: 'lg-4way-RNW0720A2S.html',
+        caption: 'LG 휘센 4Way RNW0720A2S · 본체 840×288×840 · 판넬 950×32×950 (mm)' },
+      { label: '삼성 360 원형', file: 'samsung-360-AC110CN6PBH1.html',
+        caption: '삼성 싱글 시스템에어컨 360 AC110CN6PBH1 · 부품 16개 · 원형 토출 프레임에 부스터팬 3개가 들어간다' },
+    ]}
+  />
 
   <CtaBand chatTree="install" buttonLabel="상업용 설치 상담">
     공간을 알려주세요<br />함께 시작하겠습니다

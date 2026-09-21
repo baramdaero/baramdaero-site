@@ -23,8 +23,15 @@ export interface HomeTriageCard {
 }
 /** Chatbot.astro의 TREE_START 키와 일치해야 한다. 없는 키는 눌러도 흐름이 열리지 않는다. */
 const CHAT_TREES = ['install', 'clean', 'as', 'etc'] as const;
+export interface HomeExploded {
+  eyebrow: string;
+  heading: string[];
+  body: string[];
+}
 export interface HomeData {
   services: { leadHeading: string[]; cards: HomeService[] };
+  /** 히어로 다음 분해 3D 섹션 문구. 비면 섹션을 건너뛴다 */
+  exploded: HomeExploded | null;
   triage: { heading: string[]; cards: HomeTriageCard[] } | null;
   process: { eyebrow: string; heading: string[]; steps: HomeProcessStep[] } | null;
   ctaBand: {
@@ -37,6 +44,7 @@ export interface HomeData {
 
 const EMPTY: HomeData = {
   services: { leadHeading: [], cards: [] },
+  exploded: null,
   triage: null,
   process: null,
   ctaBand: null,
@@ -191,5 +199,21 @@ export function loadHome(): HomeData {
     }
   }
 
-  return { services: { leadHeading, cards }, triage, process, ctaBand };
+  let exploded: HomeExploded | null = null;
+  const rawEx = (raw as Record<string, unknown> | undefined)?.exploded as
+    Record<string, unknown> | undefined;
+  if (rawEx) {
+    const heading = strArray(rawEx.heading);
+    if (heading.length > 0) {
+      exploded = {
+        eyebrow: isNonEmptyString(rawEx.eyebrow) ? rawEx.eyebrow.trim() : '',
+        heading,
+        body: strArray(rawEx.body),
+      };
+    } else {
+      warn('"exploded.heading"이 비어 분해 3D 섹션을 건너뜁니다.');
+    }
+  }
+
+  return { services: { leadHeading, cards }, exploded, triage, process, ctaBand };
 }
