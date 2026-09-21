@@ -434,13 +434,13 @@ const n2 = v => Number(v).toFixed(2);
 const lerp = THREE.MathUtils.lerp;
 const clamp = THREE.MathUtils.clamp;
 // ---- 카메라 전환(멀미 방지, 2026-09-17) ----
-// sine in-out: 최고 속도가 평균의 π/2 배(이전 cubic 은 3배)
+// sine in-out: 피크 속도가 평균의 π/2 배(이전 cubic 은 3배)
 const ease = t => (1 - Math.cos(Math.PI * t)) / 2;
 // 이전 방식(직선 이동 + 과녁 점 lerp)은 과녁이 카메라 앞을 스칠 때 화면이 초당 수백~수천 도로 휙 돌았다.
 // 방→방: 방위각·앙각으로 고르게 돈다. 전체↔방: 방 시점 뒤·위(back·up × 이동 거리)를 지나는 곡선으로 드나들어 방 안에서 뒤돌지 않는다
 const yawPitch = v => [Math.atan2(v.x, v.z), Math.atan2(v.y, Math.hypot(v.x, v.z))];
 const wrapPi = a => Math.atan2(Math.sin(a), Math.cos(a));
-// 방→방 시간: 최고 각속도(π/2 × 회전각 / 시간)가 degps 를 넘지 않게 min~max 안에서. 전체↔방은 far
+// 방→방 시간: 피크 각속도(π/2 × 회전각 / 시간)가 degps 를 넘지 않게 min~max 안에서. 전체↔방은 far
 const CAM = { min: 1400, max: 2400, degps: 120, far: 2200, back: .25, up: .35, drop: .1 };
 const camMs = turnDeg => clamp(Math.PI / 2 * turnDeg / CAM.degps * 1000, CAM.min, CAM.max);
 let lookDist = 4; // 마지막 도착 시점의 과녁 거리: 방→전체 곡선에서 시선이 출발하는 점
@@ -702,11 +702,11 @@ for (const f of PLAN.furniture_hint) {
   if (/소파/.test(n)) {
     groups.furn.add(box(sx, .42, sy, FURN.sofa, at(0, 0, z0, 420)));
     const west = /서측/.test(n);
-    groups.furn.add(box(.22, sz, sy, FURN.sofa, at((west ? -1 : 1) * (f.size[0] / 2 - 110), 0, z0, f.size[2])));
+    groups.furn.add(box(.22, sz, sy, FURN.sofa, at((west ? -1 : 1) * (f.size[0] / 2 - 120), 0, z0, f.size[2])));
   } else if (/침대/.test(n)) {
     groups.furn.add(box(sx, sz, sy, FURN.bed, at(0, 0, z0, f.size[2])));
-    groups.furn.add(box(sx + .02, .04, sy * .62, FURN.blanket, at(0, -f.size[1] * .19, z0 + f.size[2], 40)));
-    groups.furn.add(box(sx + .06, .95, .08, FURN.head, at(0, f.size[1] / 2 + 40, z0, 950)));
+    groups.furn.add(box(sx + .02, .04, sy * .60, FURN.blanket, at(0, -f.size[1] * .19, z0 + f.size[2] - 10, 40)));
+    groups.furn.add(box(sx + .06, .95, .08, FURN.head, at(0, f.size[1] / 2 - 45, z0, 950)));
   } else {
     const m = /러그/.test(n) ? FURN.rug : /쿡탑/.test(n) ? FURN.cook : /후드/.test(n) ? FURN.hood
       : /테이블|식탁|책상|협탁|TV장/.test(n) ? FURN.wood : FURN.cab;
@@ -1224,7 +1224,7 @@ function flyTo(pose, kTo, durMs) {
   // 방→방 전환 중(dip)에는 벽이 잠깐 걷혀 k 가 .5 아래로 내려가도 방에서 출발한 것으로 본다
   const prev = tween, fromRoom = state.k > .5 || !!prev?.dip, toRoom = kTo > .5, p0 = camera.position.clone(), d0 = camera.getWorldDirection(new THREE.Vector3());
   tween = { t0: performance.now(), p0, f0: camera.fov, k0: state.k, pose, kTo, dip: fromRoom && toRoom };
-  // 시선을 방위각·앙각으로 고르게 돌리게 하고, 최고 각속도 기준의 시간을 돌려준다
+  // 시선을 방위각·앙각으로 고르게 돌리게 하고, 피크 각속도 기준의 시간을 돌려준다
   const turnLook = () => {
     const [y0, a0] = yawPitch(d0), [y1, a1] = yawPitch(pose.tgt.clone().sub(pose.pos)), dy = wrapPi(y1 - y0);
     Object.assign(tween, { y0, a0, y1, dy });

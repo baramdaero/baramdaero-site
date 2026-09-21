@@ -12,7 +12,7 @@
     "commercial-building": { "src": "/media/commercial-building.webp", "alt": "사무 공간 천장에 매립된 4Way 카세트 시스템에어컨" },
     "commercial-cafe": { "src": "/media/commercial-cafe.webp", "alt": "카페 홀 천장에 매립된 4Way 카세트 시스템에어컨" },
     "home-service-record": { "src": "/media/home-service-record.webp", "alt": "천장 점검구 안으로 지나가는 보온 냉매 배관과 드레인 배관" },
-    "home-service-clean": { "src": "/media/home-service-clean.webp", "alt": "보양 시트 위에 정돈한 분해 부품 — 패널 커버, 송풍팬, 필터" },
+    "home-service-clean": { "src": "/media/home-service-clean.webp", "alt": "보양 시트 위에 정돈한 분해 부품 — 1Way 판넬, 송풍팬, 필터" },
     "home-triage-install": { "src": "/media/home-triage-install.webp", "alt": "설치 전 천장의 배관 인입구와 마개 처리된 배관 끝" },
     "home-triage-clean": { "src": "/media/home-triage-clean.webp", "alt": "실내기에서 빼낸 송풍팬 날개 사이에 쌓인 먼지" },
     "home-triage-as": { "src": "/media/home-triage-as.webp", "alt": "실내기 드레인 배관과 배수 호스 연결부의 물기 상태" },

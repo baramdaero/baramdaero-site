@@ -591,10 +591,10 @@ const TEASER = [
     let value: string;
     if (inputMode === 'number') {
       const parsed = parseUnits(raw);
-      if (!parsed) { input.focus(); return; }
+      if (!parsed) { toast('대수는 숫자로 적어 주세요. 예: 2'); input.focus(); return; }
       value = parsed;
     } else {
-      if (!raw) { input.focus(); return; }
+      if (!raw) { toast('내용을 입력해 주세요.'); input.focus(); return; }
       value = raw;
     }
     const handler = inputHandler;
@@ -731,6 +731,8 @@ const TEASER = [
       });
       group.appendChild(btn);
     });
+    // 칩이 새로 그려지면 포커스가 body 로 빠진다 — 첫 칩으로 옮긴다
+    if (document.activeElement === document.body) group.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus({ preventScroll: true });
     scrollDown();
   }
 
@@ -987,6 +989,7 @@ const TEASER = [
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   });
 
+  let hideTimer: ReturnType<typeof setTimeout>;
   function open(startNode = 'home') {
     lastFocus = document.activeElement as HTMLElement;
     data = {};
@@ -995,6 +998,7 @@ const TEASER = [
     log.innerHTML = '';
     disarmInput();
     hideTeaser();
+    clearTimeout(hideTimer);   // 닫는 중에 다시 열면 그 타이머가 방금 연 패널을 숨긴다
     panel.hidden = false;
     // rAF 대신 동기 리플로우 — 백그라운드 탭(rAF 정지)에서도 열림 상태가 즉시 적용된다
     void panel.offsetHeight;
@@ -1014,7 +1018,7 @@ const TEASER = [
     fab.setAttribute('aria-expanded', 'false');
     fab.setAttribute('aria-label', '문의 챗봇 열기');
     openState = false;
-    setTimeout(() => { panel.hidden = true; }, 220);
+    hideTimer = setTimeout(() => { panel.hidden = true; }, 220);
     lastFocus?.focus();
   }
 
