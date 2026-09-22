@@ -133,7 +133,6 @@ button {
 .sit-journey__story--deep,
 .sit-close {
   --br-eyebrow-fg: var(--br-ice);
-  --br-eyebrow-line: rgba(255, 255, 255, 0.16);
   --br-slot-line: rgba(255, 255, 255, 0.14);
   --br-slot-bg: rgba(255, 255, 255, 0.04);
   --br-slot-fg: rgba(255, 255, 255, 0.5);
@@ -278,7 +277,7 @@ html.br-js .br-reveal.br-h { transform: none; }
    2026-08-27 에 '눈썹 없는 제목이 허공에서 시작한다'며 border-top 을 넣었는데,
    눈썹의 밑줄과 합쳐 홈 제목 9개 중 9개에 1120px 가로선이 깔렸다 — 모든 층위가
    같은 선으로 시작하니 페이지가 템플릿으로 읽힌다. 앵커는 선이 아니라 활자 크기가
-   맡는다(.br-h 는 최대 64px/800). ⚠️ 제목 위 가로선을 되살리지 말 것. */
+   맡는다(.br-h 는 clamp(28px, 3.6vw, 46px)/700). ⚠️ 제목 위 가로선을 되살리지 말 것. */
 .br-h:not(.v2-phero__title) { margin-top: 0; }
 .br-eyebrow + .br-h { margin-top: 14px; }
 
