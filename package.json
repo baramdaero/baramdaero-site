@@ -11,7 +11,8 @@
     "test:motion": "node scripts/check-motion.mjs",
     "test:commercial": "node scripts/check-commercial.mjs",
     "case:new": "node scripts/new-case.mjs",
-    "test:case": "node scripts/new-case.mjs --selfcheck"
+    "test:case": "node scripts/new-case.mjs --selfcheck",
+    "test:rhythm": "astro build && node scripts/check-design-rhythm.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",

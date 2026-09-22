@@ -54,8 +54,10 @@
     color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:1px 6px;white-space:nowrap}
   .co span{display:none;grid-column:1/-1;color:var(--dim);padding-left:24px}
   .co:hover span,.co.on span{display:block}
-  .co:hover{border-color:var(--accent)}
+  .co:hover{border-color:var(--accent);z-index:5}          /* 펼쳐진 이름표가 옆을 덮지 않게 위로 */
+  .co.on{z-index:6}
   .co.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .co:hover span,.co.on span{background:var(--panel)}   /* 펼친 줄이 뒤 도면에 겹쳐 읽히던 것 */
   .co.on em{color:var(--accent)}
   /* 좁은 화면: 번호만 */
   .co.num{max-width:none;padding:2px;grid-template-columns:auto;column-gap:0}

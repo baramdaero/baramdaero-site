@@ -26,13 +26,11 @@ const PRODUCT_VIDEOS = [
 ];
 const VIDEO_SOURCE = '출처: 삼성전자 공식 채널';
 
-// 가정용 천장형 — 1Way 두 대(삼성·LG). 4Way·360 원형은 상업용 페이지에 둔다.
+// 가정용 천장형 — 1Way 한 기종(치수 기준 모델은 삼성). 4Way·360 원형은 상업용 페이지에 둔다.
 // 뷰어 파일은 public/3d/parts/ 의 공개 사본이다.
 const CEILING_MODELS = [
-  { label: '삼성 1Way', file: 'samsung-1way-AC023CN1PBH1.html',
-    caption: '삼성 싱글 무풍 1Way AC023CN1PBH1 · 본체 970×135×410 · 판넬 1198×35×500 (mm)' },
-  { label: 'LG 1Way', file: 'lg-1way-TNW0230U2S.html',
-    caption: 'LG 휘센 SINGLE 1Way TNW0230U2S · 본체 860×132×450 · 판넬 1100×34×500 (mm)' },
+  { label: '1Way', file: 'samsung-1way-AC023CN1PBH1.html',
+    caption: '천장형 1Way · 부품 14개 · 치수는 삼성 AC023CN1PBH1 기준 (본체 970×135×410 · 판넬 1198×35×500 mm)' },
 ];
 
 // 01 상담·견적은 '방문 없이'라 현장 사진이 붙으면 글과 부딪힌다 — 빈 슬롯으로 두고 한 칸씩 민다
@@ -89,9 +87,9 @@ const breadcrumbJsonLd = {
   <Exploded
     id="install-exploded"
     tone="base"
-    eyebrow="기종"
+    eyebrow=""
     title="1Way 천장형, 속은 이렇게 생겼습니다"
-    body="삼성·LG 실제 제원으로 만든 3D입니다. 부품을 눌러 이름과 역할을 보세요."
+    body="삼성 1Way 실제 제원으로 만든 3D입니다. 부품을 눌러 이름과 역할을 보세요."
     items={CEILING_MODELS}
   />
 
@@ -141,7 +139,6 @@ const breadcrumbJsonLd = {
   <section class="bd-section install-after" data-layout-section="install-after">
     <div class="bd-container">
       <StoryRow slotId="install-aftercare" slotLabel="install-aftercare" imageSide="left" glass>
-        <span class="br-eyebrow br-reveal">설치 이후</span>
         <h2 class="br-h br-reveal">설치로 끝나지 않습니다</h2>
         <p class="br-body br-reveal">설치할 때 남긴 기록이 그대로 이어집니다.<br />배관 경로와 시공 이력이 남아 있어, 분해세척과 정기 점검 때 어디를 어떻게 다뤄야 하는지 알고 갑니다.</p>
         <p class="install-after__more br-reveal">

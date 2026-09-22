@@ -48,18 +48,22 @@ const { chatTree = 'menu', buttonLabel = '견적 문의', ring = false } = Astro
     justify-content: center;
     align-items: center;
   }
-  /* 밴드 CTA — SpecularButton 설정 이식(2026-09-04): tint 0(투명) · 글자 #f5f5f5 · 흰 specular 라인 · radius 18 · lg(18px 40px).
-     원본 baseColor 스트로크는 밴드 위에서 white 22% 보더로. hover 는 면 8% 만 밝아진다(전엔 ice 채움). */
+  /* 밴드 CTA — DESIGN.md §1 '다크 구간 CTA = ice 채움 + teal 글자, hover 흰 채움'으로 복귀(2026-09-22).
+     2026-09-04 에 투명 고스트(흰 22% 테두리)로 바꿨는데, 사이트의 유일한 접수 진입점이
+     밴드 위에서 버튼으로 읽히지 않았다. ice/teal 대비 7.10:1 (DESIGN.md 대비표). */
   .v2-cta__btn {
-    --sb-line: #fff;
+    --sb-line: var(--br-teal);
     position: relative; /* specular 링 기준 */
-    font-size: 18.4px; font-weight: 600; letter-spacing: 0.01em;
+    font-size: 18.4px; font-weight: 700; letter-spacing: 0.01em;
     padding: 18px 40px; border-radius: 18px;
-    background: transparent; color: #f5f5f5;
-    border: 1px solid color-mix(in srgb, #fff 22%, transparent);
-    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent), 0 8px 24px rgba(0, 41, 58, 0.25);
+    background: var(--br-ice); color: var(--br-teal);
+    border: 1px solid transparent;
+    box-shadow: 0 8px 24px rgba(0, 41, 58, 0.25);
   }
-  .v2-cta__btn:hover { background: color-mix(in srgb, #fff 8%, transparent); color: #fff; }
+  .v2-cta__btn:hover { background: #fff; color: var(--br-teal-deep); }
+  /* 전역 포커스 링은 라이트 구간용(teal)이라 ice 면 위에서 1.65:1 로 묻힌다.
+     면 안쪽에 그려 teal/ice 7.10:1 을 쓴다 (DESIGN.md §1 대비표). */
+  .v2-cta__btn:focus-visible { outline-offset: -5px; outline-color: var(--br-teal); }
   .v2-cta__phone { font-weight: 700; color: var(--br-ice); }
   @media (min-width: 768px) { .v2-cta__sub { font-size: 17px; } }
 

@@ -32,10 +32,11 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
 {items.length > 0 && (
   <section class:list={['bd-section', 'ex-sec', tone === 'mist' && 'ex-sec--mist']} id={id}>
     <div class="bd-container">
-      <span class="br-eyebrow br-reveal">{eyebrow}</span>
+      {eyebrow && <span class="br-eyebrow br-reveal">{eyebrow}</span>}
       <h2 class="br-h br-reveal">{title}</h2>
       {body && <p class="br-body br-reveal">{body}</p>}
 
+      {items.length > 1 && (
       <div class="ex-tabs br-reveal" role="tablist" aria-label="기종 선택">
         {items.map((it, i) => (
           <button
@@ -45,6 +46,7 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
           >{it.label}</button>
         ))}
       </div>
+      )}
 
       <div class:list={['ex-row', 'br-reveal', hasPhoto && 'ex-row--split']}>
         {hasPhoto && (
@@ -59,7 +61,12 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
             ))}
           </div>
         )}
-        <div class="ex-stage" id={`${id}-panel`} role="tabpanel" aria-labelledby={`${id}-tab-0`}>
+        <div
+          class="ex-stage" id={`${id}-panel`}
+          role={items.length > 1 ? 'tabpanel' : 'group'}
+          aria-labelledby={items.length > 1 ? `${id}-tab-0` : undefined}
+          aria-label={items.length > 1 ? undefined : `분해 3D · ${items[0].label}`}
+        >
           <iframe
             id={`${id}-frame`} src={`/3d/parts/${items[0].file}?embed&theme=light&assembled`} loading="lazy"
             title={`분해 3D · ${items[0].label}`}></iframe>
@@ -84,7 +91,10 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
     const photos = [...document.querySelectorAll(`[id^="${id}-photo-"]`)];
     const figs = [...document.querySelectorAll(`[id^="${id}-fig-"]`)];
     const tabs = [...document.querySelectorAll(`[data-ex-tab][aria-controls="${id}-panel"]`)];
-    if (!frame || !tabs.length) return;
+    // ⚠️ tabs.length 를 가드에 넣지 말 것 — 기종이 1개인 페이지(홈·설치)는 탭 줄을 안 그린다.
+    // 여기서 반환하면 자동 재생(IntersectionObserver)·로드 실패 안내(armFail)까지 같이 죽는다.
+    // tabs.forEach 는 빈 배열에서 no-op 이고 pick() 은 탭 핸들러에서만 불린다.
+    if (!frame) return;
     const FAIL_MS = 15000;                 // three.js CDN 이 막히면 뷰어 스크립트 자체가 실행되지 않는다
     let ready = false, seen = false, played = false, failTimer = 0;
 
