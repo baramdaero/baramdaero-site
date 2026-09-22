@@ -59,16 +59,16 @@ const cta = home.ctaBand;
       eyebrow={home.exploded.eyebrow}
       title={home.exploded.heading.join(' ')}
       body={home.exploded.body.join(' ')}
-      photoNote="제품 사진: 삼성전자 공식 제품 이미지"
+      photoNote="제품 사진: 삼성전자·LG전자 공식 제품 이미지"
       items={[
-        // 기종 단위 — 부품 구성은 브랜드가 아니라 기종이 정한다. 치수 기준 모델만 캡션에 밝힌다
+        // 기종 단위 — 부품 구성은 브랜드가 아니라 기종이 정한다.
+        // 사진은 두 제조사를 한 장씩 둔다: 한쪽만 걸면 그 브랜드만 한다는 뜻으로 읽힌다.
         { label: '1Way', file: 'samsung-1way-AC023CN1PBH1.html',
           photos: [
-            // 한 카드 안에서는 같은 제조사 쌍만 쓴다 — 캡션의 치수 기준이 삼성 모델이다.
-            { src: 'ac-1way-samsung-front.webp', alt: '삼성 무풍 1Way 판넬 정면' },
-            { src: 'ac-1way-samsung-angle.webp', alt: '삼성 무풍 1Way 실내기 입체' },
+            { src: 'ac-1way-samsung-front.webp', alt: '삼성 무풍 1Way 판넬 정면', caption: '삼성 무풍 1Way' },
+            { src: 'ac-1way-lg-angle.webp', alt: 'LG 휘센 1Way 실내기 입체', caption: 'LG 휘센 1Way' },
           ],
-          caption: '천장형 1Way · 부품 14개 · 치수는 삼성 AC023CN1PBH1(냉방 2.3kW) 기준' },
+          caption: '천장형 1Way · 부품 14개 · 치수는 AC023CN1PBH1(냉방 2.3kW) 기준' },
       ]}
     />
   )}

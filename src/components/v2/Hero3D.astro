@@ -12,7 +12,6 @@
         <img src="/3d/poster-house-wide.webp" alt="" decoding="async">
       </picture>
       <iframe id="f-house" src="/3d/house.html?embed" title="3D 구성도 · 아파트" tabindex="-1"></iframe>
-      <p class="h3-tap h3-glass" id="tap" aria-hidden="true" hidden>공간을 눌러 보세요</p>
     </div>
 
     <div class="h3-head h3-wrap">
@@ -25,6 +24,16 @@
     <div class="h3-spacer" aria-hidden="true"></div>
 
     <div class="h3-dock-wrap h3-wrap" id="dockWrap">
+      <p class="h3-tap h3-glass" id="tap" aria-hidden="true" hidden>
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M5 3l14 8-6.2 1.8L10.4 19 5 3z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+        </svg>
+        <span class="h3-tap__txt">
+          <strong id="tapWhat">아파트·상가·오피스</strong>
+          <small id="tapWhy">눌러서 안까지 들어가 봅니다</small>
+        </span>
+      </p>
+
       <div class="h3-dock h3-glass" id="dock">
         <div class="h3-dock__row h3-dock__row--top">
           <div class="h3-spaces" role="group" aria-label="공간 선택" id="spaces"></div>
@@ -66,7 +75,9 @@
   const send = (viewer, msg) => { const f = frames[viewer]; if (f && st.ready[viewer]) f.contentWindow.postMessage({ ns: 'bd3d', ...msg }, '*'); };
 
   // 3D 가 문구·도크·헤더를 피해서 자리 잡도록 가려지는 픽셀을 알린다 (전체 보기 l,r,t,b / 방 시점 rt,rb)
-  const TIP_BAND = 178;   // 오른쪽 위 안내가 차지하는 높이. 안내가 사라져도 그대로 둔다 — 줄이면 카메라가 다시 잡히며 튄다
+  // 안내 칩은 도크 바로 위(도크와 같은 왼쪽 선)에 둔다. 위 띠를 비워 둘 필요가 없어
+  // 3D 가 헤더 아래 전부를 쓴다. 칩이 차지하는 높이는 아래 b(도크 위 여백)에 포함된다.
+  const TIP_BAND = 0;
   function insetMsg() {
     const hr = hero.getBoundingClientRect(), hi = headIn.getBoundingClientRect();
     const hdr = (document.querySelector('.bd-header')?.offsetHeight || 64), b = Math.round(hr.bottom - dock.getBoundingClientRect().top + 16);
@@ -132,8 +143,15 @@
       $('hereT').innerHTML = `${esc(st.room.title)} <small>${esc(st.room.sub || '')}</small>`;
     } else {
       const list = st.entries[st.space];
+      // '건물 정면'은 층에서 빠져나오는 길이다. 방 칩과 같은 모양으로 목록에 섞여 있으면
+      // 탈출구로 안 읽힌다 — 맨 앞에 되돌아가기 버튼으로 세운다.
+      const up = list?.find(e => e.id === 'building');
+      const rest = list?.filter(e => e.id !== 'building') ?? [];
       $('spots').innerHTML = list
-        ? list.map(e => `<button type="button" class="h3-spot" data-id="${esc(e.id)}">${esc(e.name)} <small>${esc(e.sub || '')}</small></button>`).join('')
+        ? (up ? `<button type="button" class="h3-spot h3-spot--up" data-id="${esc(up.id)}">`
+              + `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+              + `${esc(up.name)}</button>` : '')
+          + rest.map(e => `<button type="button" class="h3-spot" data-id="${esc(e.id)}">${esc(e.name)} <small>${esc(e.sub || '')}</small></button>`).join('')
         : `<span class="h3-spots__load" role="status">구성도를 불러오는 중입니다</span>`;
       syncMore();
     }
@@ -142,9 +160,13 @@
     // (칩은 도크·도면을 처음 만지는 순간 사라진다. 그래서 공간별 분기는 두지 않는다)
     if (!$('tap').hidden) {
       const names = (st.entries[st.space] || []).filter(e => e.id !== 'building').slice(0, 2).map(e => e.name);
-      const what = names.length ? `${names.join('·')}${eul(names.at(-1))}` : '공간을';
-      // 터치 기기는 도면을 직접 누르는 대신 아래 목록을 누른다 — 어디를 누르라는 건지 다르게 말한다
-      $('tap').textContent = coarse.matches && !st.touchLive ? `아래 목록에서 ${what} 눌러 보세요` : `${what} 눌러 보세요`;
+      // 위: 무엇을 볼 수 있는지(세 공간 전부). 아래: 지금 이 화면에서 어디를 누르면 되는지.
+      const others = SPACES.filter((x) => x.key !== st.space).map((x) => x.name.replace(' 빌딩', ''));
+      $('tapWhat').textContent = `${spaceOf(st.space).name.replace(' 빌딩', '')} · ${others.join(' · ')}`;
+      const ex = names.length ? `${names.slice(0, 2).join('·')}${eul(names.slice(0, 2).at(-1))}` : '공간을';
+      $('tapWhy').textContent = coarse.matches && !st.touchLive
+        ? `아래 목록에서 ${ex} 눌러 보세요`
+        : `${ex} 눌러 안까지 들어가 봅니다`;
     }
     const failed = st.failed.house && !st.ready.house;
     hero.toggleAttribute('data-fail', !!failed);
@@ -320,7 +342,10 @@
 <style is:global>
 /* 사이트 global.css 에 없는 틴트 2단 + 히어로 안 버튼·제목 기본값(프로토와 같게) */
 .h3-hero { --h3-gutter: max(20px, calc(50% - var(--maxw) / 2 + 20px)); --tint-line: color-mix(in srgb, var(--br-teal) 12%, transparent); --tint-fill: color-mix(in srgb, var(--br-teal) 8%, transparent); }
-.h3-hero button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; letter-spacing: inherit; }
+/* 버튼 리셋 — :where() 로 특이도 0. 그냥 `.h3-hero button` 이면 (0,1,1) 이라
+   뒤에 오는 .h3-spot·.h3-touch-toggle·.h3-spot--up 의 색·굵기·배경을 전부 이겨 버린다
+   (2026-09-23 실측: 되돌아가기 버튼의 ice 채움과 700 굵기가 죽어 있었다). */
+:where(.h3-hero) button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; letter-spacing: inherit; }
 .h3-hero h1 { font-weight: 800; line-height: 1.15; letter-spacing: -0.02em; text-wrap: balance; }
 .h3-hero p { margin: 0; }
 .h3-hero [hidden] { display: none !important; }
@@ -409,11 +434,15 @@
    표면은 도크와 같은 글래스(.h3-glass)를 쓴다 — 흰 알약 하나만 다른 재질로 떠 있으면 붙여 넣은 것처럼 보인다.
    ⚠️ 무한 바운스를 되살리지 말 것 (DESIGN.md §4 금지). 2026-09-22 이전엔 2.4s 무한 부유였다. */
 .h3-tap {
-  position: absolute; left: 50%; bottom: 12%; transform: translateX(-50%);
-  margin: 0; padding: 10px 16px; max-width: min(300px, 74vw);
-  color: var(--br-teal); font-size: 14.5px; font-weight: 700; line-height: 1.35;
+  width: max-content; max-width: 100%;
+  display: inline-flex; align-items: center; gap: 10px;
+  margin: 0 0 10px; padding: 11px 16px;
+  color: var(--br-teal); font-size: 14.5px; font-weight: 700; line-height: 1.3;
   pointer-events: none;
 }
+.h3-tap svg { width: 17px; height: 17px; flex: none; opacity: 0.9; }
+.h3-tap__txt { display: grid; gap: 1px; min-width: 0; }
+.h3-tap small { font-size: 12.5px; font-weight: 500; color: var(--br-ink-sub); }
 .h3-hero[data-room] .h3-tap, .h3-hero[data-deep] .h3-tap, .h3-hero[data-engaged] .h3-tap { display: none; }
 /* ⚠️ [data-touch="off"] 를 여기 다시 넣지 말 것 — 터치 기기에서 안내가 0개가 된다(2026-09-22).
    도면을 직접 못 누르는 상태라도 '아래 목록에서 누른다'는 건 알려 줘야 한다. */
@@ -462,6 +491,18 @@
 .h3-spot:focus-visible { outline-offset: -2px; }
 .h3-spot small { font-size: 13px; font-weight: 500; color: var(--br-ink-sub); }
 @media (hover: hover) { .h3-spot:hover { color: var(--br-teal); background: var(--tint-fill); } }
+/* 층 → 건물 전경 되돌아가기. 옆 방 칩들과 확실히 다르게 — 채운 면 + 화살표 + 구분선 */
+.h3-spot--up {
+  gap: 4px; padding-left: 10px; font-weight: 700; color: var(--br-teal);
+  background: var(--br-ice); border-radius: 999px;
+  margin-right: 10px; position: relative; flex: none;
+}
+.h3-spot--up svg { width: 16px; height: 16px; flex: none; }
+.h3-spot--up::after {
+  content: ''; position: absolute; right: -10px; top: 50%; translate: 0 -50%;
+  width: 1px; height: 20px; background: var(--br-line);
+}
+@media (hover: hover) { .h3-spot--up:hover { background: #fff; color: var(--br-teal-deep); } }
 .h3-spot:active { transform: scale(.96); }
 .h3-spots__load { padding-inline: 12px; font-size: 13px; color: var(--br-ink-sub); }
 
@@ -487,7 +528,7 @@
 
 @media (min-width: 1024px) {
   /* 안내는 히어로 오른쪽 위. 도면은 --free-t(TIP_BAND)로 이 띠를 비워 두므로 서로 간섭하지 않는다 */
-  .h3-tap { left: auto; right: var(--h3-gutter); top: 96px; bottom: auto; transform: none; }
+
   .h3-note { position: absolute; z-index: 1; top: 146px; right: var(--h3-gutter);
     max-width: 26em; margin: 0; padding: 0; text-align: right; pointer-events: none; }
   /* 넓은 화면: 문구는 왼쪽 단 가운데, 3D 는 그 오른쪽 빈 영역(inset.l)에 맞춘다 */
