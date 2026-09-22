@@ -3,6 +3,7 @@
 // question(검색어형 제목)이 있으면 그걸 노출하고, 없으면 title로 폴백.
 import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
+import CtaBand from '../../components/v2/CtaBand.astro';
 
 // sample: true 글은 형식 참고용 템플릿 — 프로덕션 미노출 (md에서 플래그를 지우면 자동 노출)
 const posts = (await getCollection('blog'))
@@ -83,6 +84,10 @@ const breadcrumb = {
       )}
     </div>
   </section>
+  <CtaBand>
+    글은 일반론입니다<br /><em>현장</em>은 제각각입니다
+    <Fragment slot="sub">기종과 대수만 알려주시면 됩니다.</Fragment>
+  </CtaBand>
 </Base>
 
 <style>

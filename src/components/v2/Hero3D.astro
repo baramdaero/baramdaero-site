@@ -142,7 +142,9 @@
     // (칩은 도크·도면을 처음 만지는 순간 사라진다. 그래서 공간별 분기는 두지 않는다)
     if (!$('tap').hidden) {
       const names = (st.entries[st.space] || []).filter(e => e.id !== 'building').slice(0, 2).map(e => e.name);
-      $('tap').textContent = names.length ? `${names.join('·')}${eul(names.at(-1))} 눌러 보세요` : '공간을 눌러 보세요';
+      const what = names.length ? `${names.join('·')}${eul(names.at(-1))}` : '공간을';
+      // 터치 기기는 도면을 직접 누르는 대신 아래 목록을 누른다 — 어디를 누르라는 건지 다르게 말한다
+      $('tap').textContent = coarse.matches && !st.touchLive ? `아래 목록에서 ${what} 눌러 보세요` : `${what} 눌러 보세요`;
     }
     const failed = st.failed.house && !st.ready.house;
     hero.toggleAttribute('data-fail', !!failed);
@@ -395,6 +397,14 @@
    넓은 화면은 도면이 오른쪽 빈 영역(--free-l)에 갇혀 겹치지 않으므로 문구를 그대로 둔다 */
 @media (max-width: 1023px) { .h3-hero[data-touch3d] .h3-head { opacity: 0; } }
 
+/* 낮은 화면(iPhone SE 375x667 등): 히어로가 뷰포트보다 길어지면 도크 아래 84px 예약이
+   화면 밖에서 소모돼 고정 챗봇 버튼이 도크 칩을 덮는다(375x667 실측 '안방' 84x18).
+   공기(.h3-spacer)를 줄여 도크를 접힌 선 위로 끌어올린다. 임계값 실측 714px. */
+@media (max-height: 713px) {
+  .h3-spacer { min-height: 96px; }
+  .h3-head { padding-block: 16px 0; }
+}
+
 /* 누르라는 안내 — 도면 위에 떠서 눈에 걸리게. 한 번 만지면 사라진다.
    표면은 도크와 같은 글래스(.h3-glass)를 쓴다 — 흰 알약 하나만 다른 재질로 떠 있으면 붙여 넣은 것처럼 보인다.
    ⚠️ 무한 바운스를 되살리지 말 것 (DESIGN.md §4 금지). 2026-09-22 이전엔 2.4s 무한 부유였다. */
@@ -404,8 +414,9 @@
   color: var(--br-teal); font-size: 14.5px; font-weight: 700; line-height: 1.35;
   pointer-events: none;
 }
-.h3-hero[data-room] .h3-tap, .h3-hero[data-deep] .h3-tap, .h3-hero[data-engaged] .h3-tap,
-.h3-hero[data-touch="off"] .h3-tap { display: none; }
+.h3-hero[data-room] .h3-tap, .h3-hero[data-deep] .h3-tap, .h3-hero[data-engaged] .h3-tap { display: none; }
+/* ⚠️ [data-touch="off"] 를 여기 다시 넣지 말 것 — 터치 기기에서 안내가 0개가 된다(2026-09-22).
+   도면을 직접 못 누르는 상태라도 '아래 목록에서 누른다'는 건 알려 줘야 한다. */
 .h3-head h1 { font-size: clamp(36px, 7.4vw, 72px); color: var(--br-teal); }
 .h3-head p { margin-top: 20px; font-size: 17px; line-height: 1.7; color: var(--br-ink-sub); max-width: 34em; }
 
