@@ -316,8 +316,6 @@
 .h3-hero p { margin: 0; }
 .h3-hero [hidden] { display: none !important; }
 .h3-wrap { width: 100%; max-width: var(--maxw); margin-inline: auto; padding-inline: 20px; }
-/* 좁은 화면: 오른쪽 아래 '문의' 버튼이 도크 목록을 가리지 않게 도크를 그만큼 올린다 */
-@media (max-width: 760px) { .h3-dock-wrap { padding-bottom: 84px; } }
 .h3-glass {
   position: relative;
   border: 1px solid transparent;
@@ -490,7 +488,10 @@
 }
 @media (max-width: 760px) {
   .h3-head { padding-block: 28px 0; }
-  /* 84px 는 챗봇 런처가 도크를 덮지 않게 비워 두는 자리다 — 앞 규칙을 덮지 않는다 */
+  /* 챗봇 런처(고정 '문의' 56px + bottom 20px)가 도크 목록을 덮지 않게 그만큼 비운다.
+     ⚠️ .h3-dock-wrap 기본값(padding-bottom: 24px)과 명시도가 같다 — 반드시 그 뒤에 있어야 먹는다.
+     2026-09-22 이전에는 이 선언이 기본값보다 앞에 있어 한 번도 적용된 적이 없었다(실측 24px). */
+  .h3-dock-wrap { padding-bottom: 84px; }
   .h3-dock { width: 100%; }
   .h3-dock__row--top { flex-wrap: wrap; column-gap: 8px; }
   .h3-spaces { flex: 1 1 100%; }

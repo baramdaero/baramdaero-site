@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>에어컨 분해도</title>
 <meta name="robots" content="noindex">
+<link rel="icon" href="data:,">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" crossorigin
   href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
@@ -617,7 +618,9 @@ const svg = $('#callouts svg');
 const labels = order.map((it, i) => {
   const el = document.createElement('div');
   el.className = 'co' + (it.p.wash ? ' wash' : '');
-  const short = (it.p.clean || '').split(/[.。]/)[0].slice(0, 22);
+  const sent = (it.p.clean || '').split(/[.。]/)[0];
+  // 22자 = 칩 설명 1줄 한도. 자를 땐 걸친 어절을 버리고 … 를 붙여 잘렸음을 표시한다(전문은 선택 시 카드에 나온다)
+  const short = sent.length > 22 ? sent.slice(0, 22).replace(/\s\S*$/, '') + '…' : sent;
   el.innerHTML = `<i>${it.n}</i><em>${esc(it.p.name_ko)}</em><span>${esc(it.p.name_en || '')}</span>`
                + (short && !/^—/.test(short) ? `<span>${esc(short)}</span>` : '');
   el.addEventListener('click', () => select(it.p.id));
