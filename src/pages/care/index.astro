@@ -157,7 +157,7 @@ if (careFaq.length) {
   {process.length > 0 && (
     <section class="bd-section care-process care-process--mist" data-layout-section="care-process">
       <div class="bd-container">
-        <h2 class="br-h br-reveal">분해세척 6단계</h2>
+        <h2 class="br-h br-reveal">분해세척 {process.length}단계</h2>
         {processIntro.length > 0 && (
           <p class="br-body br-reveal">
             {processIntro.map((line, j) => <Fragment>{j > 0 && <br />}{line}</Fragment>)}

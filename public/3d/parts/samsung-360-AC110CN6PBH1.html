@@ -747,12 +747,13 @@ function paint() {
     const kwTxt = v => /^[\d.]+$/.test(String(v).trim()) ? num(v) + 'kW' : String(v);   // 원문에 'W'가 붙어 오면 그대로 쓴다
     const kw = sp.cooling_kw ? ` · 냉방 ${kwTxt(sp.cooling_kw)}` : '';
     const lu = sp.lineup
-      ? `<span class="ln">같은 시리즈 ${sp.lineup.count}종 · ${num(sp.lineup.kw_min)}~${num(sp.lineup.kw_max)}kW 중 하나입니다</span>` : '';
+      ? `<span class="ln">이 시리즈는 냉방 ${num(sp.lineup.kw_min)}~${num(sp.lineup.kw_max)}kW로 나옵니다 · 화면은 ${num(sp.cooling_kw)}kW 기준</span>` : '';
     $('#headt').innerHTML = `<b>${esc(series)}</b>${esc(DATA.model_code)}${kw} · 부품 ${DATA.parts.length}개${lu}`;
   }
   $('#sub').textContent = `${DATA.brand} · ${DATA.form.toUpperCase()} · 부품 ${DATA.parts.length}개`;
-  $('#spec').innerHTML = [['본체', DATA.spec.body_size_mm], ['판넬', DATA.spec.panel_size_mm],
-    ['중량', DATA.spec.weight_kg], ['냉방', DATA.spec.cooling_kw && DATA.spec.cooling_kw + ' kW']]
+  const unitless = v => String(v ?? '').replace(/\s*(mm|kg|kW)\b/gi, '').trim();   // 원문에 단위가 붙어 온 행이 있다
+  $('#spec').innerHTML = [['본체', unitless(DATA.spec.body_size_mm)], ['판넬', unitless(DATA.spec.panel_size_mm)],
+    ['중량', unitless(DATA.spec.weight_kg)], ['냉방', DATA.spec.cooling_kw && unitless(DATA.spec.cooling_kw) + ' kW']]
     .filter(x => x[1]).map(([k, v]) => `<span>${esc(k)}</span><b>${esc(v)}</b>`).join('');
   $('#note').textContent = DATA.public_note
     || '외형 치수만 제원표 근거. 내부 부품 형상은 분해도를 보고 만든 추정이며 실제 치수가 아닙니다.';
