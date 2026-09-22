@@ -31,7 +31,7 @@
 - `src/config.js` — 연락처·채널·샵 링크·히어로 영상 경로 (단일 소스)
 - `src/content/cases/` — 시공사례 md (frontmatter: region, space, brand, type, units, date, cover)
 - `src/content/blog/` — 블로그 md
-- `src/components/Chatbot.astro` — 문의 챗봇 (4트리: 세척/AS/설치/기타). 진입점 2개: 플로팅 버튼 + 홈 히어로 하단 로우
+- `src/components/Chatbot.astro` — 문의 챗봇 (4트리: 세척/AS/설치/기타). 진입점 2개: 플로팅 버튼 + 세션 1회 티저(모바일 8초 / 데스크톱 12초)
 - 히어로: 사전 렌더 왕복 루프 mp4 (`config.HERO_VIDEO`). canvas 프레임 캡처 방식 구현 금지
 - `docs/standards/` — 기준 체계 4문서 (렌더 대상 아님, Astro는 `src/pages/`만 라우팅).
   추적분은 0·2·3, 1은 미추적 (절대 규칙 6)

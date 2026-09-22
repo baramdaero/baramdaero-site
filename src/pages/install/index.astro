@@ -35,10 +35,12 @@ const CEILING_MODELS = [
     caption: 'LG 휘센 SINGLE 1Way TNW0230U2S · 본체 860×132×450 · 판넬 1100×34×500 (mm)' },
 ];
 
+// 01 상담·견적은 '방문 없이'라 현장 사진이 붙으면 글과 부딪힌다 — 빈 슬롯으로 두고 한 칸씩 민다
+const STEP_SLOTS = ['', 'install-process-01', 'install-process-02', 'install-process-04'];
 const STEPS = [
   { title: '상담·견적', body: '기종과 대수, 설치 위치를 확인해 견적을 확정합니다. 방문 없이 진행합니다.' },
   { title: '설계', body: '도면과 현장 조건을 확인해 배관 경로와 실외기 위치를 정합니다. 시공 전에 확정하고, 정해진 대로만 진행합니다.' },
-  { title: '시공', body: '천장 매립 설계로 벽걸이와 스탠드가 차지하던 자리를 돌려드립니다.' },
+  { title: '시공', body: '견적서에 적은 범위대로 배관과 실내기를 시공합니다. 매립되면 다시 볼 수 없는 구간은 덮기 전에 사진으로 남깁니다.' },
   { title: '시운전·기록', body: '냉방과 배수 상태를 확인하고 사용 방법을 안내합니다. 작업 사진을 남겨 전달합니다.' },
 ];
 
@@ -97,21 +99,30 @@ const breadcrumbJsonLd = {
       리듬은 배경 줄무늬 대신 이미지 좌우 교차(지그재그)가 맡는다. */}
   <section class="bd-section install-step install-step--mist" data-layout-section="install-process">
     <div class="bd-container">
-      <h2 class="br-h br-reveal">설치 4단계</h2>
+      <h2 class="br-h br-reveal">설치 {STEPS.length}단계</h2>
       <div class="install-steps__list">
         {STEPS.map((st, i) => (
           <article class="install-step__card br-glass br-glass--medium br-reveal" data-glow>
-            <StoryRow
-              slotId={`install-process-${String(i + 1).padStart(2, '0')}`}
-              slotLabel={`install-process-${String(i + 1).padStart(2, '0')}`}
-              ratio="square"
-              imageSide={i % 2 === 0 ? 'left' : 'right'}
-              tone="light"
-            >
-              <span class="install-step__no">{String(i + 1).padStart(2, '0')}</span>
-              <h3 class="install-step__title">{st.title}</h3>
-              <p class="br-body">{st.body}</p>
-            </StoryRow>
+            {STEP_SLOTS[i] ? (
+              <StoryRow
+                slotId={STEP_SLOTS[i]}
+                slotLabel={STEP_SLOTS[i]}
+                ratio="square"
+                imageSide={i % 2 === 0 ? 'left' : 'right'}
+                tone="light"
+              >
+                <span class="install-step__no">{String(i + 1).padStart(2, '0')}</span>
+                <h3 class="install-step__title">{st.title}</h3>
+                <p class="br-body">{st.body}</p>
+              </StoryRow>
+            ) : (
+              /* 01 상담·견적은 '방문 없이' 라 현장 사진이 붙으면 글과 부딪힌다 — 사진 없이 글만 */
+              <div class="install-step__copy">
+                <span class="install-step__no">{String(i + 1).padStart(2, '0')}</span>
+                <h3 class="install-step__title">{st.title}</h3>
+                <p class="br-body">{st.body}</p>
+              </div>
+            )}
           </article>
         ))}
       </div>
