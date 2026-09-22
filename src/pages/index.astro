@@ -61,18 +61,13 @@ const cta = home.ctaBand;
       body={home.exploded.body.join(' ')}
       photoNote="제품 사진: 삼성전자·LG전자 공식 제품 이미지"
       items={[
-        { label: '삼성 1Way', file: 'samsung-1way-AC023CN1PBH1.html',
+        // 기종 단위 — 부품 구성은 브랜드가 아니라 기종이 정한다. 치수 기준 모델만 캡션에 밝힌다
+        { label: '1Way', file: 'samsung-1way-AC023CN1PBH1.html',
           photos: [
-            { src: 'ac-1way-samsung-front.webp', alt: '삼성 무풍 1Way 판넬 정면' },
-            { src: 'ac-1way-samsung-angle.webp', alt: '삼성 무풍 1Way 실내기 입체' },
+            { src: 'ac-1way-samsung-front.webp', alt: '천장에 매입된 1Way 판넬 정면' },
+            { src: 'ac-1way-lg-angle.webp', alt: '1Way 실내기를 비스듬히 본 모습' },
           ],
-          caption: '삼성전자 싱글 무풍 1Way 냉난방 AC023CN1PBH1 · 냉방 2.3kW · 부품 14개' },
-        { label: 'LG 1Way', file: 'lg-1way-TNW0230U2S.html',
-          photos: [
-            { src: 'ac-1way-lg-front.webp', alt: 'LG 휘센 1Way 판넬 정면' },
-            { src: 'ac-1way-lg-angle.webp', alt: 'LG 휘센 1Way 실내기 입체' },
-          ],
-          caption: 'LG전자 휘센 SINGLE 천장형 1Way 냉난방 TNW0230U2S · 냉방 2.3kW · 부품 14개' },
+          caption: '천장형 1Way · 부품 14개 · 치수는 삼성 AC023CN1PBH1(냉방 2.3kW) 기준' },
       ]}
     />
   )}

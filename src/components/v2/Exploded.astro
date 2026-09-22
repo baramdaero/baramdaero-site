@@ -32,10 +32,11 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
 {items.length > 0 && (
   <section class:list={['bd-section', 'ex-sec', tone === 'mist' && 'ex-sec--mist']} id={id}>
     <div class="bd-container">
-      <span class="br-eyebrow br-reveal">{eyebrow}</span>
+      {eyebrow && <span class="br-eyebrow br-reveal">{eyebrow}</span>}
       <h2 class="br-h br-reveal">{title}</h2>
       {body && <p class="br-body br-reveal">{body}</p>}
 
+      {items.length > 1 && (
       <div class="ex-tabs br-reveal" role="tablist" aria-label="기종 선택">
         {items.map((it, i) => (
           <button
@@ -45,6 +46,7 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
           >{it.label}</button>
         ))}
       </div>
+      )}
 
       <div class:list={['ex-row', 'br-reveal', hasPhoto && 'ex-row--split']}>
         {hasPhoto && (
