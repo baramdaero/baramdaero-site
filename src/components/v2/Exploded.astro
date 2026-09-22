@@ -168,6 +168,8 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
   .ex-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
   .ex-tab {
     font: inherit; font-size: 14px; line-height: 1; cursor: pointer;
+    /* 터치 히트영역 44px (DESIGN.md §5). 패딩만 주면 36px 로 모자란다 */
+    display: inline-flex; align-items: center; min-height: 44px;
     padding: 10px 16px; border-radius: 999px;
     border: 1px solid var(--br-line); background: transparent; color: var(--br-ink-sub);
   }
