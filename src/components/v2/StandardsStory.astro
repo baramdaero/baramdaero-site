@@ -96,7 +96,7 @@ const toneAt = (index: number) => {
               </details>
             )}
             {noExtra && (
-              <details class="v2-standards-story__details br-reveal">
+              <details class="v2-standards-story__details br-reveal" open>
                 <summary>{noExtra.title}</summary>
                 {noExtra.body.length > 0 && (
                   <p>{noExtra.body.map((line, i) => <Fragment>{i > 0 && <br />}{line}</Fragment>)}</p>

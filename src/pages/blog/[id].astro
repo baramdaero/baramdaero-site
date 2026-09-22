@@ -5,6 +5,7 @@
 import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import CaseCard from '../../components/CaseCard.astro';
+import CtaBand from '../../components/v2/CtaBand.astro';
 import { loadSituations } from '../../lib/situations.ts';
 
 export async function getStaticPaths() {
@@ -135,7 +136,7 @@ if (qa.length) {
         <section class="post__links">
           {related_checklist && (
             <a class="post__link-card" href={related_checklist}>
-              <span class="post__link-label">견적 비교 체크리스트</span>
+              <span class="post__link-label">가정용 설치 안내</span>
               <span class="post__link-hint">견적서에서 확인할 항목을 정리해 두었습니다 →</span>
             </a>
           )}
@@ -154,6 +155,8 @@ if (qa.length) {
       <p class="post__back"><a class="bd-btn-ghost" href="/blog/">목록으로</a></p>
     </div>
   </article>
+
+  <CtaBand />
 </Base>
 
 <style>

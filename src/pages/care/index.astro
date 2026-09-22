@@ -169,7 +169,7 @@ if (careFaq.length) {
             return (
               <li class="care-process__card br-glass br-glass--medium br-reveal">
                 {isImageSlotVisible(slotId, st.image) && (
-                  <ImageSlot id={slotId} src={st.image} alt={`${st.title} 작업 사진`} label={slotId} ratio="square" />
+                  <ImageSlot id={slotId} src={st.image} alt={`${st.title} 단계 이미지`} label={slotId} ratio="square" />
                 )}
                 <span class="care-process__no">{String(st.step).padStart(2, '0')}</span>
                 <h3 class="care-process__title">{st.title}</h3>

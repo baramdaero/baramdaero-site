@@ -1,6 +1,7 @@
 ---
 // 브랜드이야기
 import Base from '../../layouts/Base.astro';
+import CtaBand from '../../components/v2/CtaBand.astro';
 
 const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? '';
 const breadcrumb = {
@@ -37,6 +38,8 @@ const breadcrumb = {
       </div>
     </div>
   </section>
+
+  <CtaBand />
 </Base>
 
 <style>

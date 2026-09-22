@@ -756,7 +756,7 @@ const FURN_BUILD = {
   monitor(w, d, h, f, A) { const g = A.g(); FURN_BUILD._monitor(A, g, 0, 0, 0, 0, w, h); return g; },
   partition(w, d, h, f, A) {
     const g = A.g();
-    g.add(A.rbox(w, h - .04, Math.max(.03, d), .01, A.M.screenPanel, 0, (h - .04) / 2 + .04, 0));
+    g.add(A.rbox(w, h - .03, Math.max(.03, d), .01, A.M.screenPanel, 0, (h - .03) / 2 + .03, 0));
     g.add(A.box(w, .04, d + .02, A.M.metal, 0, .02, 0));
     return g;
   },
@@ -841,7 +841,7 @@ const FURN_BUILD = {
   },
   counter(w, d, h, f, A) {
     const g = A.g();
-    g.add(A.rbox(w, h - .04, d, .008, A.M.cabFront, 0, (h - .04) / 2, 0));
+    g.add(A.rbox(w, h - .03, d, .008, A.M.cabFront, 0, (h - .03) / 2, 0));
     g.add(A.rbox(w + .05, .04, d + .05, .008, A.M.stone, 0, h - .02, 0));
     g.add(A.box(w - .06, .012, .012, A.M.metal, 0, .06, d / 2 + .004));
     return g;
@@ -903,7 +903,7 @@ const FURN_BUILD = {
   plant(w, d, h, f, A) {   // 화분 + 잎 덩어리(멀리서는 둥근 수형, 가까이서 잎 몇 장)
     const g = A.g(), pot = Math.min(w, d), ph = Math.min(h * .32, pot * .85);
     g.add(A.cyl(pot / 2, ph, A.M.pot, 0, ph / 2, 0, 16));
-    g.add(A.cyl(pot / 2 * .96, ph * .12, A.M.soil, 0, ph - ph * .06, 0, 16));
+    g.add(A.cyl(pot / 2 * .96, ph * .12, A.M.soil, 0, ph - ph * .12, 0, 16));   // 흙 윗면을 화분 테두리보다 낮춘다 — 같은 높이면 면이 갈라진다(z-fighting)
     const r = A.rand(f.center[0] + f.center[1]), top = h - ph;
     for (const [ty, rr] of [[.40, .46], [.64, .52], [.86, .38]]) {   // 잎 덩어리 3 (부드러운 구), 멀리서 수형이 읽힌다
       const m = new A.Mesh(new A.Ico(pot * rr, 1), A.M.leaf);
@@ -957,7 +957,7 @@ const FURN_BUILD = {
   /* ---------- 카페 ---------- */
   bar_counter(w, d, h, f, A) {
     const g = A.g();
-    g.add(A.rbox(w, h - .05, d, .01, A.M.barFront, 0, (h - .05) / 2, 0));
+    g.add(A.rbox(w, h - .04, d, .01, A.M.barFront, 0, (h - .04) / 2, 0));
     g.add(A.rbox(w + .06, .05, d + .06, .008, A.M.stone, 0, h - .025, 0));
     for (let i = 0; i < Math.max(1, Math.round(w / .9)); i++)
       g.add(A.box(w / Math.max(1, Math.round(w / .9)) - .04, h * .5, .012, A.M.barPanel, -w / 2 + w / Math.max(1, Math.round(w / .9)) * (i + .5), h * .34, d / 2 + .008));
