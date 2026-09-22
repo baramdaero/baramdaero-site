@@ -21,6 +21,9 @@ import sharp from 'sharp';
 const ROOT = new URL('..', import.meta.url).pathname;
 const PHOTO_W = 1280;                       // 사례 사진 가로 상한 — 본문 폭(1120)보다 한 단계 위
 const TYPES = new Set(['설치', '세척', '복원']);
+// 현장 사진은 카톡방에서 '단지명 c동 2409호' 로 온다 — 그 습관이 폴더 이름으로 따라오면 사이트에 실린다.
+// region 은 시·구까지만(README.txt 개인정보 규칙). 기계가 막을 수 있는 건 여기까지다.
+const BANNED = /\d+\s*동|\d+\s*호|파크|캐슬|자이|래미안|푸르지오|힐스테이트|더샵|트리폴리스|아란티움|스카이|센트럴|리버뷰/;
 const IMG = /\.(jpe?g|png|webp|heic)$/i;
 
 /** `2026-09-22_경기부천_사무실_LG_세척_4대` → 레코드 머리말 */
@@ -31,6 +34,8 @@ export function parseFolder(name) {
   const n = Number(String(units ?? '').replace(/[^0-9]/g, ''));
   assert.ok(n > 0, `대수를 읽지 못했다: ${units}`);
   // 지역은 시·구까지만 — 붙여 쓴 것을 띄운다 (경기부천 → 경기 부천)
+  const bad = [region, space, brand].find((v) => BANNED.test(v ?? ''));
+  assert.ok(!bad, `단지명·동호수는 쓸 수 없다(시·구까지만): ${bad} — src/content/cases/README.txt`);
   const r = /^(서울|경기|인천)(.+)$/.exec(region ?? '');
   return {
     date, region: r ? `${r[1]} ${r[2]}` : region, space, brand, type, units: n,
@@ -117,7 +122,10 @@ function selfcheck() {
   assert.doesNotMatch(toMarkdown(m, [], { publish: true }), /sample: true/);
   assert.throws(() => parseFolder('경기부천_사무실_LG_세척_4대'), /날짜/);
   assert.throws(() => parseFolder('2026-09-22_경기부천_사무실_LG_청소_4대'), /구분/);
-  console.log('new-case selfcheck: 7/7 passed');
+  assert.throws(() => parseFolder('2026-09-22_서울송도아이파크_아파트_LG_설치_5대'), /단지명/);
+  assert.throws(() => parseFolder('2026-09-22_경기하남_아파트2504동_LG_설치_5대'), /단지명/);
+  assert.equal(parseFolder('2026-09-22_경기하남_아파트_삼성_설치_5대').space, '아파트');   // 정상값은 통과해야 한다
+  console.log('new-case selfcheck: 10/10 passed');
 }
 
 if (process.argv.includes('--selfcheck')) selfcheck();
