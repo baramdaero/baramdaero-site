@@ -1662,7 +1662,7 @@ function buildSpace(key) {
     const ops = (opsByWall[w.id] || []).map(o => ({ o, c: hz ? o.at[0] : o.at[1] })).sort((p, q) => p.c - q.c);
     if (w.kind === 'glass_partition') { // glass up to the finished ceiling, door frames inside it
       const s0 = Math.min(...ends), s1 = Math.max(...ends);
-      const { bar } = glazing(w, s0, s1, 0, H_CEIL, null);
+      const { bar } = glazing(w, s0 - 10, s1 + 10, 0, H_CEIL, null);   // 끝 바를 벽 속으로 10mm 더 넣는다
       for (const { o, c } of ops) {
         const x = mm(c - (s0 + s1) / 2), dw = mm(o.width), dh = mm(o.height);
         bar(.05, dh, x - dw / 2, dh / 2); bar(.05, dh, x + dw / 2, dh / 2); bar(dw, .05, x, dh);
@@ -1916,11 +1916,11 @@ function buildOutdoor(u) {
     add(new THREE.CircleGeometry(r, 20), OU_DARK, -svcW / 2, cy, front - .03);
     add(new THREE.PlaneGeometry(r * 2, r * 2), FAN_MAT, -svcW / 2, cy, front);
   }
-  const side = add(new THREE.PlaneGeometry(D - .03, H - .09), FIN_MAT, -W / 2 + .004, H / 2, 0);
+  const side = add(new THREE.PlaneGeometry(D - .03, H - .09), FIN_MAT, -W / 2 - .004, H / 2, 0);   // 부호가 반대라 케이스 안에 박혀 안 보였다
   side.rotation.y = -Math.PI / 2;
   const back = add(new THREE.PlaneGeometry(caseW - .03, H - .09), FIN_MAT, -svcW / 2, H / 2, -D / 2 - .004);
   back.rotation.y = Math.PI;
-  add(new THREE.BoxGeometry(W + .01, .014, D + .01), OU_DARK, 0, H - .007, 0);
+  add(new THREE.BoxGeometry(W + .01, .014, D + .01), OU_DARK, 0, H, 0);   // 케이스 윗면과 같은 높이라 뒤집혔다
   for (const sx of [-1, 1]) add(new THREE.BoxGeometry(.07, .015, D * .9), OU_DARK, sx * (W / 2 - .06), .0075, 0);
   g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   return g;
@@ -2041,7 +2041,7 @@ function buildBuilding() {
   }
   cur = riserG; g.add(riserG);
   const ps = Bd.core.ps, psZ = ps.z_from_by_level?.['1'] ?? 3100;
-  block(ps.rect, psZ, R.slab_top_mm + 300 - psZ, RISER_MAT, false);
+  block([ps.rect[0] - 20, ps.rect[1] - 20, ps.rect[2] + 20, ps.rect[3] + 20], psZ, R.slab_top_mm + 300 - psZ, RISER_MAT, false);   // 코어 블록과 측면이 같은 평면이었다
   // 입상관: 층마다 실외기 세트 port 에서 배관 샤프트(PS)를 따라 옥상까지(층 안 배관이 여기로 모인다)
   for (const f of Bd.floors) for (const set of DATA[f.key].outdoor_unit.sets) {
     const [x, y, z] = set.port, a = V(x, y, f.z_mm + z), b = V(x, y, R.slab_top_mm + (R.ps_outlet ? R.ps_outlet.height_mm - 200 : 400));

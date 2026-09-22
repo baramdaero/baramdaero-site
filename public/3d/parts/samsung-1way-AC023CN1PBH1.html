@@ -161,7 +161,7 @@ try { renderer = new THREE.WebGLRenderer({antialias:true, alpha:true}); }
 catch (e) { $('#err').style.display = 'grid'; }
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(30, 1, 0.05, 150);
+const camera = new THREE.PerspectiveCamera(30, 1, 0.15, 150);   // near 0.05 → 0.15 (깊이 양자 3배 개선). far 는 그대로 — 줄이면 바닥 그림자판이 잘린다
 let controls;
 if (renderer) {
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -177,7 +177,7 @@ if (renderer) {
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
   // three r160 은 scene.environmentIntensity 를 읽지 않는다(r163+). 환경광은 아래에서 재질별 envMapIntensity 로 내린다.
   controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true; controls.dampingFactor = 0.08;
+  controls.enableDamping = true; controls.dampingFactor = 0.08; controls.minDistance = 0.3;   // near 0.15 보다 2배 밖
 }
 const key = new THREE.DirectionalLight(0xffffff, 1.6);
 key.position.set(-3, 6, 5); key.castShadow = true;
@@ -402,7 +402,7 @@ function meshFor(p) {
         break; }
     case 'shell': {                                 // 캐비닛: 윗판 + 옆면 4장
       const t = Math.max(w*0.05, 20);
-      add(boxG(w, d, t), [0, h/2 - t/2, 0]);
+      add(boxG(w - 20, d - 20, t), [0, h/2 - t/2 - 10, 0]);   // 옆판 안으로 물린다 — 면을 공유하면 카메라마다 승자가 바뀐다
       const sides = [[w, t, 0, (d-t)/2], [w, t, 0, -(d-t)/2],
                      [t, d-2*t, (w-t)/2, 0], [t, d-2*t, -(w-t)/2, 0]];
       for (const [bw, bd, cx, cz] of sides) add(boxG(bw, bd, h), [cx, 0, cz]);
@@ -568,6 +568,8 @@ scene.add(ground);
 key.shadow.camera.left = -lineLen; key.shadow.camera.right = lineLen;
 key.shadow.camera.top = lineLen; key.shadow.camera.bottom = -lineLen;
 key.shadow.camera.far = 30;
+key.shadow.bias = -0.00023;                       // 실거리 = |bias| x (far-near) — 0.0008 이면 23.6mm 로 부품보다 두껍다
+key.shadow.normalBias = Math.min(lineLen / 512, 0.006);
 
 // 카메라: 줄이 화면을 비스듬히 가로지르는 3/4 — 레퍼런스식 분해도 구도
 const DIR = new THREE.Vector3(0.52, 0.30, 0.80).normalize();   // 비스듬한 3/4 — 줄이 대각선으로 들어간다

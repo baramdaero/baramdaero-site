@@ -611,7 +611,7 @@ for (const r of PLAN.rooms) {
 }
 { // slab edge under the unit + shadow catcher
   const s = shapeOf(E.footprint_polygon);
-  const g = new THREE.ExtrudeGeometry(s, { depth: .22, bevelEnabled: false }); g.rotateX(-Math.PI / 2); g.translate(0, -.225, 0);
+  const g = new THREE.ExtrudeGeometry(s, { depth: .195, bevelEnabled: false }); g.rotateX(-Math.PI / 2); g.translate(0, -.225, 0);   // 바닥과 30mm 띄운다(5mm 는 깊이 정밀도에 먹힌다)
   groups.floor.add(new THREE.Mesh(g, mat.base));
   const catcher = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.ShadowMaterial({ opacity: .16 }));
   catcher.rotation.x = -Math.PI / 2; catcher.position.copy(HOUSE_C).setY(-.23); catcher.receiveShadow = true;
@@ -807,7 +807,7 @@ for (const u of PLAN.ac_units) {
   const g = new THREE.Group(); g.position.copy(V(OU.position[0], OU.position[1], OU.position[2]));
   g.add(box(sx, sz, sy, mat.ou, new THREE.Vector3(0, sz / 2, 0)));
   const fan = new THREE.Mesh(new THREE.CircleGeometry(Math.min(sx, sz) * .38, 40), mat.fan);
-  fan.position.set(-sx * .12, sz / 2, sy / 2 + .002); g.add(fan); // front faces the louver (south)
+  fan.position.set(-sx * .12, sz / 2, sy / 2 + .02); g.add(fan); // front faces the louver (south)
   groups.ou.add(g);
   const hz = OU.hatch;
   const hm = box(mm(hz.size_mm[0]), .012, mm(hz.size_mm[1]), mat.hatch, V(hz.center[0], hz.center[1], 6), false);
@@ -872,7 +872,7 @@ const sun = new THREE.DirectionalLight(0xFFF4E2, 3);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -11, right: 11, top: 11, bottom: -11, near: 5, far: 90 });
-sun.shadow.bias = -.0004; sun.shadow.normalBias = .03;
+sun.shadow.bias = -.00016; sun.shadow.normalBias = .015;   // bias 실거리 = |bias|x(far-near)=85m → 34mm 였다
 sun.target.position.copy(HOUSE_C);
 // unshadowed low fill from the window side: gives walls/ceiling different tones in room views
 const fill = new THREE.DirectionalLight(0xFFF6EA, 0);
