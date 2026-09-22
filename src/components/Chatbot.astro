@@ -836,6 +836,16 @@ const TEASER = [
     return btn;
   }
 
+  /** 외부 링크 CTA — 값이 빈 설정이면 부르지 않는다(죽은 링크 차단, 헤더·푸터와 같은 규칙) */
+  function ctaHref(label: string, href: string, kind: 'primary' | 'ghost' | 'sub' = 'ghost'): HTMLAnchorElement {
+    const a = document.createElement('a');
+    a.className = `chat__cta chat__cta--${kind}`;
+    a.href = href;
+    a.rel = 'noopener';
+    a.textContent = label;
+    return a;
+  }
+
   function ctaTel(label: string, kind: 'primary' | 'ghost' = 'ghost'): HTMLAnchorElement {
     const a = document.createElement('a');
     a.className = `chat__cta chat__cta--${kind}`;
@@ -917,6 +927,8 @@ const TEASER = [
         wrap.appendChild(consult);
         if (PHONE) wrap.appendChild(ctaTel(`전화하기 ${PHONE}`, 'ghost'));
       }
+      // 쇼핑몰이 열리면 접수 카드에서 바로 상품으로 — SHOP_URL 이 비면 렌더되지 않는다
+      if (SITE_CONFIG.SHOP_URL) wrap.appendChild(ctaHref('상품 보고 바로 예약하기', SITE_CONFIG.SHOP_URL, 'ghost'));
     } else {
       renderFallbackCtas(text, wrap);
     }
