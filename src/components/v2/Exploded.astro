@@ -67,7 +67,7 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
           aria-labelledby={items.length > 1 ? `${id}-tab-0` : undefined}
           aria-label={items.length > 1 ? undefined : `분해 3D · ${items[0].label}`}
         >
-          <iframe
+          <iframe tabindex="-1"
             id={`${id}-frame`} src={`/3d/parts/${items[0].file}?embed&theme=light&assembled`} loading="lazy"
             title={`분해 3D · ${items[0].label}`}></iframe>
           <p class="ex-fail" id={`${id}-fail`} role="status">3D 도면을 불러오지 못했습니다. 잠시 뒤 새로고침해 주세요.</p>
@@ -77,7 +77,7 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
       <p class="ex-cap" id={`${id}-cap`}>{items[0].caption ?? ''}</p>
       <p class="ex-note">
         {photoNote && <Fragment>{photoNote}<br /></Fragment>}
-        {hasPhoto ? '오른쪽 ' : ''}3D는 기종 공통 구성으로 만들고 외형 치수만 각 모델 제원을 씁니다. 내부 부품 형상은 실물과 다를 수 있습니다.
+        3D는 기종 공통 구성으로 만들고 외형 치수만 각 모델 제원을 씁니다. 내부 부품 형상은 실물과 다를 수 있습니다.
       </p>
     </div>
   </section>
@@ -171,7 +171,7 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
     /* 터치 히트영역 44px (DESIGN.md §5). 패딩만 주면 36px 로 모자란다 */
     display: inline-flex; align-items: center; min-height: 44px;
     padding: 10px 16px; border-radius: 999px;
-    border: 1px solid var(--br-line); background: transparent; color: var(--br-ink-sub);
+    border: 1px solid color-mix(in srgb, var(--br-teal) 28%, transparent); background: transparent; color: var(--br-ink-sub);
   }
   .ex-tab:hover { border-color: var(--br-teal); color: var(--br-teal); }
   .ex-tab[aria-selected='true'] { background: var(--br-teal); border-color: var(--br-teal); color: #fff; }

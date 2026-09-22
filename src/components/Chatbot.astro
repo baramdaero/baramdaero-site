@@ -47,6 +47,11 @@ const TEASER = [
       <button disabled aria-describedby="chat-unavailable" type="button" class="chat__teaser-item" data-chat-tree={t.tree}
         ><span class="chat__teaser-full">{t.text}</span><span class="chat__teaser-brief">{t.brief}</span></button>
     ))}
+    <button type="button" class="chat__teaser-x" data-chat-teaser-close aria-label="문의 안내 닫기">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <path d="M6 6l12 12M18 6L6 18" />
+      </svg>
+    </button>
   </div>
 
   <section class="chat__panel" data-chat-panel role="dialog" aria-modal="true" aria-label="바람대로 문의 챗봇" hidden>
@@ -1009,6 +1014,19 @@ const TEASER = [
   });
 
   let hideTimer: ReturnType<typeof setTimeout>;
+  // 전체화면 시트가 떠 있는 동안 뒤 페이지 스크롤을 막는다. 스크롤 위치는 복원한다
+  let lockedY = 0;
+  function lockScroll(on: boolean) {
+    const b = document.body;
+    if (on) {
+      lockedY = window.scrollY;
+      b.style.position = 'fixed'; b.style.top = `-${lockedY}px`; b.style.width = '100%';
+    } else if (b.style.position === 'fixed') {
+      b.style.position = ''; b.style.top = ''; b.style.width = '';
+      window.scrollTo(0, lockedY);
+    }
+  }
+
   function open(startNode = 'home') {
     lastFocus = document.activeElement as HTMLElement;
     data = {};
@@ -1022,6 +1040,7 @@ const TEASER = [
     // rAF 대신 동기 리플로우 — 백그라운드 탭(rAF 정지)에서도 열림 상태가 즉시 적용된다
     void panel.offsetHeight;
     panel.classList.add('is-open');
+    lockScroll(true);        // 전체화면 시트 뒤로 페이지가 밀려 내려가던 것
     root.classList.add('is-open');
     fab.setAttribute('aria-expanded', 'true');
     fab.setAttribute('aria-label', '문의 챗봇 닫기');
@@ -1038,6 +1057,7 @@ const TEASER = [
     fab.setAttribute('aria-label', '문의 챗봇 열기');
     openState = false;
     hideTimer = setTimeout(() => { panel.hidden = true; }, 220);
+    lockScroll(false);
     lastFocus?.focus();
   }
 
@@ -1075,6 +1095,7 @@ const TEASER = [
       if (narrow) addEventListener('scroll', hideTeaser, { once: true, passive: true });
     }, 1500);
   }
+  root.querySelector('[data-chat-teaser-close]')?.addEventListener('click', hideTeaser);
   root.querySelector('[data-chat-close]')?.addEventListener('click', close);
   backBtn.addEventListener('click', goBack);
   resetBtn.addEventListener('click', reset);
@@ -1151,6 +1172,11 @@ const TEASER = [
     .chat__fab:hover:active { transform: scale(0.96); }
   }
   .chat__fab-label { font-size: 15px; font-weight: 700; letter-spacing: 0.01em; }
+  /* 좁은 화면: 라벨을 빼고 원형 56px. 91px 폭이 본문 글자를 덮었다(44x44 하한은 그대로 만족) */
+  @media (max-width: 640px) {
+    .chat__fab-label { display: none; }
+    .chat__fab { width: 56px; height: 56px; padding: 0; border-radius: 999px; }
+  }
   .chat.is-open .chat__fab-label { display: none; }
   .chat.is-open .chat__fab { padding: 0 17px; }
   .chat__fab-ico { display: grid; width: 22px; height: 22px; }
@@ -1188,6 +1214,16 @@ const TEASER = [
     .chat__teaser-item:hover { transform: translateX(-2px); }
   }
   .chat__teaser-brief { display: none; }
+  /* 닫기 — 띠가 본문을 덮는 동안 사람이 직접 비킬 수 있어야 한다(8.5초를 기다리게 두지 않는다) */
+  .chat__teaser-x {
+    pointer-events: auto; display: grid; place-items: center;
+    width: 44px; height: 44px; padding: 0; border-radius: 999px;
+    background: color-mix(in srgb, var(--br-teal-deep) 88%, transparent);
+    border: 1px solid var(--glass-line-on-dark); color: #fff;
+    opacity: 0; transition: opacity 240ms ease;
+  }
+  .chat__teaser.is-on .chat__teaser-x { opacity: 1; transition-delay: 380ms; }
+  .chat__teaser-x:focus-visible { outline: 2px solid var(--br-ice); outline-offset: 2px; }
   /* 좁은 화면: 세 줄을 한 줄로 — 덮는 높이 153px → 36px */
   @media (max-width: 640px) {
     .chat__teaser { left: 20px; display: flex; justify-content: flex-end; gap: 6px; bottom: 82px; }
@@ -1262,6 +1298,7 @@ const TEASER = [
   .chat__log {
     flex: 1;
     overflow-y: auto;
+    overscroll-behavior: contain;   /* 목록 끝에서 뒤 페이지로 스크롤이 넘어가지 않게 */
     padding: 16px;
     display: flex;
     flex-direction: column;

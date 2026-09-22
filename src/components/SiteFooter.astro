@@ -31,6 +31,9 @@ const situations = loadSituations();
         {situations.map((s) => <a href={`/situation/${s.slug}/`}>{s.meta.title}</a>)}
       </nav>
     )}
+    <p class="bd-footer__cta">
+      <button disabled aria-describedby="chat-unavailable" type="button" class="bd-footer__ask" data-chat-tree="menu">문의하기</button>
+    </p>
     <hr class="bd-footer__hairline" />
     <p class="bd-footer__legal">
       <!-- 사업자 정보 확정 후 기입: 상호·대표·사업자등록번호·주소·연락처 -->
@@ -57,6 +60,18 @@ const situations = loadSituations();
     font-size: 14px;
   }
   .bd-footer__nav a { padding: 8px 0; transition: color var(--dur-color) ease; }
+  /* 연락처(PHONE·KAKAO)는 확정 전까지 빈 값이라(AGENTS.md 절대 규칙 2) 푸터에 연락 수단이 없었다.
+     접수 진입점은 챗봇 단일이므로(DESIGN.md §6) 같은 챗봇을 부르는 버튼 하나를 둔다 */
+  .bd-footer__cta { margin-top: 20px; }
+  .bd-footer__ask {
+    display: inline-flex; align-items: center; min-height: 44px;
+    padding: 0 20px; border-radius: 999px;
+    background: var(--br-ice); color: var(--br-teal);
+    font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; border: 0;
+    transition: background-color var(--dur-color) ease;
+  }
+  @media (hover: hover) { .bd-footer__ask:hover { background: #fff; } }
+  .bd-footer__ask:active { transform: scale(0.96); }
   .bd-footer__nav a:hover { color: var(--br-ice); }
   .bd-footer__nav--sub { font-size: 13px; align-items: center; }
   .bd-footer__navlabel { color: rgba(255, 255, 255, 0.5); }
