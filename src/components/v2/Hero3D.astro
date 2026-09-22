@@ -180,6 +180,7 @@
   function selectSpace(key) {
     const sp = spaceOf(key);
     if (!sp || (key === st.space && !st.room)) return;
+    let reground = false;                 // 메시지를 하나도 안 보내는 경로인가 (아래 참조)
     const from = st.viewer;
     if (st.ready[from]) send(from, { type: 'home' }); // 떠나는 뷰어는 늘 전체 보기로 — 돌아왔을 때 방 안에 남지 않게
     const vw = sp.viewer;
@@ -189,7 +190,7 @@
     if (vw !== 'house') {
       if (st.failed[vw] && !st.ready[vw]) { frames[vw]?.remove(); frames[vw] = null; st.failed[vw] = false; } // 다시 불러오기
       const f = ensureFrame(vw);
-      if (st.ready[vw] && key === st.bldKey[vw]) st.pendingKey = null; // 이미 그 공간이다(건물이면 보던 층 그대로) — 다시 보내지 않는다
+      if (st.ready[vw] && key === st.bldKey[vw]) { st.pendingKey = null; reground = true; } // 이미 그 공간이다 — 다시 보내지 않는다. 대신 아래에서 1층 진입만 다시 건다
       else if (st.ready[vw] && st.pendingKey !== key) { // pendingKey = 실제로 보내고 응답을 기다리는 공간
         delete st.entries[key]; // 응답 전까지 이전에 받은 목록(다른 층)을 누르지 못하게 '불러오는 중'으로
         if (from === vw && !reduced.matches) {
@@ -206,6 +207,10 @@
     st.viewer = sp.viewer;
     showFrame(st.viewer);
     renderDock();
+    // 이미 준비된 건물로 돌아오면 ready·space 응답이 하나도 안 온다. groundFirst 는 그 두 핸들러에서만
+    // 불리므로 여기서 직접 걸어야 '건물을 고르면 1층부터' 규칙이 2회차 이후에도 지켜진다.
+    // (떠날 때 보내는 home 은 뷰어 안에서 '유닛 → 층 입구'까지만 되돌린다 — 건물 전경으로는 안 돌아간다)
+    if (reground) groundFirst(vw);
   }
 
   $('spaces').addEventListener('click', e => { const b = e.target.closest('[data-space]'); if (b) selectSpace(b.dataset.space); });
