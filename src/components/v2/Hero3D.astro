@@ -33,7 +33,7 @@
       <div class="h3-dock h3-glass" id="dock">
         <div class="h3-dock__row h3-dock__row--top">
           <div class="h3-spaces" role="group" aria-label="공간 선택" id="spaces"></div>
-          <p class="h3-disclaimer">실제 시공사례를 기반으로 제작한 3D 예시입니다.</p>
+          <p class="h3-disclaimer">제품 제원으로 만든 3D 예시입니다. 실제 현장과 다를 수 있습니다.</p>
           <button class="h3-touch-toggle" id="touch" type="button" aria-pressed="false" hidden>3D 직접 돌리기</button>
         </div>
         <div class="h3-dock__row h3-dock__row--go">
@@ -490,7 +490,7 @@
 }
 @media (max-width: 760px) {
   .h3-head { padding-block: 28px 0; }
-  .h3-dock-wrap { padding-bottom: 16px; }
+  /* 84px 는 챗봇 런처가 도크를 덮지 않게 비워 두는 자리다 — 앞 규칙을 덮지 않는다 */
   .h3-dock { width: 100%; }
   .h3-dock__row--top { flex-wrap: wrap; column-gap: 8px; }
   .h3-spaces { flex: 1 1 100%; }

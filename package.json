@@ -9,7 +9,9 @@
     "preview": "astro preview",
     "photos": "node scripts/photo-editor.mjs",
     "test:motion": "node scripts/check-motion.mjs",
-    "test:commercial": "node scripts/check-commercial.mjs"
+    "test:commercial": "node scripts/check-commercial.mjs",
+    "case:new": "node scripts/new-case.mjs",
+    "test:case": "node scripts/new-case.mjs --selfcheck"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",

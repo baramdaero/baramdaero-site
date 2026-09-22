@@ -88,8 +88,9 @@ const extraJsonLd = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
   <body>
     {/* 앰비언트 배경 — 유리 표면 뒤에 비치는 레이어. 장식이라 aria-hidden */}
     <div class="br-ambient" aria-hidden="true"></div>
+    <a href="#main" class="skip-link">본문 바로가기</a>
     <SiteHeader variant={headerVariant} />
-    <main>
+    <main id="main">
       <slot />
     </main>
     <SiteFooter />

@@ -146,7 +146,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-const DATA = {"title":"삼성전자 무풍에어컨 벽걸이 와이드 (T 시리즈) AR06T9170HNQ 분해도","brand":"삼성전자","form":"벽걸이","model_code":"AR06T9170HNQ","spec":{"body_size_mm":"820×299×215","panel_size_mm":"","weight_kg":"","cooling_kw":"2.30","series_ko":"무풍에어컨 벽걸이 와이드 (T 시리즈)","lineup":null},"envelope":{"body":[-410.0,-107.5,-149.5,410.0,107.5,149.5],"panel":null,"basis":"제원표 외형 치수. 원점 = 본체 중심, z+ = 위"},"local_axes":"x=긴 변, y=짧은 변, z=위(천장 속)+","discharge_dir_local":"y-","steps":["필터","전면 커버","흡입 그릴","전면 판넬","전장박스","드레인 트레이","크로스플로우팬","팬모터","열교환기"],"parts":[{"id":"filter","name_ko":"먼지 필터","name_en":"FILTER AIR-PRE","kind":"filter","shape":"plate","size_mm":[705.2,12,185.4],"center_mm":[0,64.5,41.9],"step":0,"step_name":"필터","explode_dir":[0,1,0.3],"explode_mm":408.0,"soil":"흡입면 바로 뒤라 먼지가 가장 먼저 쌓인다","clean":"공구 없이 손으로 빠진다. 자가 세척 대상","wash":true},{"id":"cover_panel","name_ko":"전면 커버 (무풍 패널)","name_en":"ASSY PANEL FRONT / COVER PANEL","kind":"panel","shape":"curved","size_mm":[820.0,96.8,275.1],"center_mm":[0,-64.5,0],"step":1,"step_name":"전면 커버","explode_dir":[0,-1,0],"explode_mm":366.0,"soil":"무풍 마이크로홀이 막히고 겉면에 손자국·먼지","clean":"후크로 빠진다. 물세척 후 홀 막힘 확인","wash":true},{"id":"grille_inlet","name_ko":"흡입 그릴","name_en":"GRILLE INLET / GRILLE ASSEMBLY, FRONT","kind":"grille","shape":"grid","size_mm":[770.8,55.9,137.5],"center_mm":[0,-17.2,59.8],"step":2,"step_name":"흡입 그릴","explode_dir":[0,-1,0.2],"explode_mm":322.0,"soil":"먼지가 살 사이에 낀다","clean":"분리해 세척한다","wash":true},{"id":"blade","name_ko":"토출 블레이드 (상하 루버)","name_en":"Discharge Louver / BLADE","kind":"blade","shape":"plate","size_mm":[721.6,64.5,18],"center_mm":[0,-43.0,-101.7],"step":1,"step_name":"전면 커버","explode_dir":[0,-0.7,-1],"explode_mm":322.0,"soil":"결로가 맺히는 자리. 검은 곰팡이가 가장 먼저 눈에 띈다","clean":"탈거해 물세척","wash":true},{"id":"crossflow_fan","name_ko":"송풍팬 (관류팬)","name_en":"ASSY FAN CROSS","kind":"fan","shape":"crossflow","size_mm":[656.0,131.6,131.6],"center_mm":[0,0,-17.9],"step":6,"step_name":"크로스플로우팬","explode_dir":[0,-1,0],"explode_mm":258.0,"soil":"날개 홈마다 먼지가 굳는다. 벽걸이에서 냄새·풍량 저하의 주원인","clean":"분리해 세척한다. 약품 살포 후 침투를 기다렸다가 고압 세척","wash":true},{"id":"fan_motor","name_ko":"팬 모터","name_en":"MOTOR BLDC FAN","kind":"motor","shape":"cylinder","size_mm":[73.8,101.7,101.7],"center_mm":[352.6,0,-15.0],"step":7,"step_name":"팬모터","explode_dir":[1,0,0],"explode_mm":258.0,"soil":"전장 부품","clean":"분리한 뒤 세척한다. 붙인 채 물세척하지 않는다","wash":false},{"id":"motor_cover","name_ko":"모터 커버","name_en":"COVER MOTOR / MOTOR COVER","kind":"bracket","shape":"box","size_mm":[98.4,120.4,137.5],"center_mm":[352.6,0,-15.0],"step":7,"step_name":"팬모터","explode_dir":[1,0.3,0],"explode_mm":322.0,"soil":"—","clean":"세척 대상 아님","wash":false},{"id":"evaporator","name_ko":"열교환기","name_en":"ASSY EVAP / EVAPORATOR","kind":"heat_exchanger","shape":"coil_flat","size_mm":[754.4,68.8,227.2],"center_mm":[0,30.1,12.0],"step":8,"step_name":"열교환기","explode_dir":[0,1,0.4],"explode_mm":215.0,"soil":"핀 사이 먼지 + 결로 → 곰팡이. 여기서 냄새가 난다","clean":"벽걸이는 배관을 분해하지 않고 세척한다. 세척가대 설치 후 약품 살포·고압 세척","wash":true},{"id":"drain_tray","name_ko":"드레인팬 (물받이)","name_en":"TRAY DRAIN / Drain pan","kind":"drain","shape":"box","size_mm":[754.4,64.5,41.9],"center_mm":[0,4.3,-119.6],"step":5,"step_name":"드레인 트레이","explode_dir":[0,-0.6,-1],"explode_mm":280.0,"soil":"응축수가 고인다. 냄새와 물떨어짐의 원인","clean":"분리해 세척한다. 고압 직분사 금지(압력 20% 낮춤). 드레인 호스까지 확인","wash":true},{"id":"drain_hose","name_ko":"드레인 호스 + 고무캡","name_en":"Drain hose / Rubber cap","kind":"drain","shape":"cylinder","size_mm":[32,172.0,32],"center_mm":[-360.8,17.2,-119.6],"step":5,"step_name":"드레인 트레이","explode_dir":[-1,0,-0.4],"explode_mm":301.0,"soil":"슬라임이 끼면 물이 역류해 벽으로 샌다","clean":"관통 세척 후 잔수를 뺀다. 배수 방향을 바꿀 때 고무캡과 자리를 맞바꾼다","wash":true},{"id":"control_box","name_ko":"전장박스 (메인 PCB)","name_en":"CONTROL BOX / ASSY CONTROL IN","kind":"electric","shape":"box","size_mm":[180.4,107.5,125.6],"center_mm":[278.8,4.3,29.9],"step":4,"step_name":"전장박스","explode_dir":[0,-1,0.3],"explode_mm":344.0,"soil":"전장 부품","clean":"배전반 차단 후 작업. 분리 안 되는 부분은 보양한다","wash":false},{"id":"back_body","name_ko":"백바디 (본체 샤시)","name_en":"Back Body (도면 풍선 8-1/8-2)","kind":"case","shape":"shell","size_mm":[820.0,215.0,299.0],"center_mm":[0,0,0],"step":8,"step_name":"열교환기","explode_dir":[0,1,0],"explode_mm":108.0,"soil":"송풍로 벽면에 먼지가 붙는다","clean":"세척가대 설치 후 약품 살포·고압 세척","wash":true},{"id":"hanger_plate","name_ko":"벽걸이 설치판","name_en":"PLATE-HANGER","kind":"bracket","shape":"plate","size_mm":[787.2,12,239.2],"center_mm":[0,98.9,0],"step":8,"step_name":"열교환기","explode_dir":[0,1,0],"explode_mm":172.0,"soil":"—","clean":"세척 대상 아님. 벽에 고정되는 판","wash":false}],"public_note":"실제 제품 제원으로 만든 3D 예시입니다. 내부 부품 형상은 실물과 다를 수 있습니다."};
+const DATA = {"title":"삼성전자 무풍에어컨 벽걸이 와이드 (T 시리즈) AR06T9170HNQ 분해도","brand":"삼성전자","form":"벽걸이","model_code":"AR06T9170HNQ","spec":{"body_size_mm":"820×299×215","panel_size_mm":"","weight_kg":"","cooling_kw":"2.30","series_ko":"무풍에어컨 벽걸이 와이드 (T 시리즈)","lineup":null},"envelope":{"body":[-410.0,-107.5,-149.5,410.0,107.5,149.5],"panel":null,"basis":"제원표 외형 치수. 원점 = 본체 중심, z+ = 위"},"local_axes":"x=긴 변, y=짧은 변, z=위(천장 속)+","discharge_dir_local":"y-","steps":["필터","전면 커버","흡입 그릴","전장박스","드레인팬","크로스플로우팬","팬모터","열교환기"],"parts":[{"id":"filter","name_ko":"먼지 필터","name_en":"FILTER AIR-PRE","kind":"filter","shape":"plate","size_mm":[705.2,12,185.4],"center_mm":[0,64.5,41.9],"step":0,"step_name":"필터","explode_dir":[0,1,0.3],"explode_mm":408.0,"soil":"흡입면 바로 뒤라 먼지가 가장 먼저 쌓인다","clean":"공구 없이 손으로 빠진다. 자가 세척 대상","wash":true},{"id":"cover_panel","name_ko":"전면 커버 (무풍 패널)","name_en":"ASSY PANEL FRONT / COVER PANEL","kind":"panel","shape":"curved","size_mm":[820.0,96.8,275.1],"center_mm":[0,-64.5,0],"step":1,"step_name":"전면 커버","explode_dir":[0,-1,0],"explode_mm":366.0,"soil":"무풍 마이크로홀이 막히고 겉면에 손자국·먼지","clean":"후크로 빠진다. 물세척 후 홀 막힘 확인","wash":true,"micro_hole":true},{"id":"grille_inlet","name_ko":"흡입 그릴","name_en":"GRILLE INLET / GRILLE ASSEMBLY, FRONT","kind":"grille","shape":"grid","size_mm":[770.8,55.9,137.5],"center_mm":[0,-17.2,59.8],"step":2,"step_name":"흡입 그릴","explode_dir":[0,-1,0.2],"explode_mm":322.0,"soil":"먼지가 살 사이에 낀다","clean":"분리해 세척한다","wash":true},{"id":"blade","name_ko":"토출 블레이드 (상하 루버)","name_en":"Discharge Louver / BLADE","kind":"blade","shape":"plate","size_mm":[721.6,64.5,18],"center_mm":[0,-43.0,-101.7],"step":1,"step_name":"전면 커버","explode_dir":[0,-0.7,-1],"explode_mm":322.0,"soil":"결로가 맺히는 자리. 검은 곰팡이가 가장 먼저 눈에 띈다","clean":"탈거해 물세척","wash":true},{"id":"crossflow_fan","name_ko":"송풍팬 (관류팬)","name_en":"ASSY FAN CROSS","kind":"fan","shape":"crossflow","size_mm":[656.0,131.6,131.6],"center_mm":[0,0,-17.9],"step":5,"step_name":"크로스플로우팬","explode_dir":[0,-1,0],"explode_mm":258.0,"soil":"날개 홈마다 먼지가 굳는다. 벽걸이에서 냄새·풍량 저하의 주원인","clean":"분리해 세척한다. 약품 살포 후 침투를 기다렸다가 고압 세척","wash":true},{"id":"fan_motor","name_ko":"팬 모터","name_en":"MOTOR BLDC FAN","kind":"motor","shape":"cylinder","size_mm":[73.8,101.7,101.7],"center_mm":[352.6,0,-15.0],"step":6,"step_name":"팬모터","explode_dir":[1,0,0],"explode_mm":258.0,"soil":"전장 부품","clean":"분리한 뒤 세척한다. 붙인 채 물세척하지 않는다","wash":false},{"id":"motor_cover","name_ko":"모터 커버","name_en":"COVER MOTOR / MOTOR COVER","kind":"bracket","shape":"box","size_mm":[98.4,120.4,137.5],"center_mm":[352.6,0,-15.0],"step":6,"step_name":"팬모터","explode_dir":[1,0.3,0],"explode_mm":322.0,"soil":"—","clean":"세척 대상 아님","wash":false},{"id":"evaporator","name_ko":"열교환기","name_en":"ASSY EVAP / EVAPORATOR","kind":"heat_exchanger","shape":"coil_flat","size_mm":[754.4,68.8,227.2],"center_mm":[0,30.1,12.0],"step":7,"step_name":"열교환기","explode_dir":[0,1,0.4],"explode_mm":215.0,"soil":"핀 사이 먼지 + 결로 → 곰팡이. 여기서 냄새가 난다","clean":"벽걸이는 배관을 분해하지 않고 세척한다. 세척가대 설치 후 약품 살포·고압 세척","wash":true},{"id":"drain_tray","name_ko":"드레인팬 (물받이)","name_en":"TRAY DRAIN / Drain pan","kind":"drain","shape":"box","size_mm":[754.4,64.5,41.9],"center_mm":[0,4.3,-119.6],"step":4,"step_name":"드레인팬","explode_dir":[0,-0.6,-1],"explode_mm":280.0,"soil":"응축수가 고인다. 냄새와 물떨어짐의 원인","clean":"분리해 세척한다. 고압 직분사 금지(압력 20% 낮춤). 드레인 호스까지 확인","wash":true},{"id":"drain_hose","name_ko":"드레인 호스 + 고무캡","name_en":"Drain hose / Rubber cap","kind":"drain","shape":"cylinder","size_mm":[32,172.0,32],"center_mm":[-360.8,17.2,-119.6],"step":4,"step_name":"드레인팬","explode_dir":[-1,0,-0.4],"explode_mm":301.0,"soil":"슬라임이 끼면 물이 역류해 벽으로 샌다","clean":"관통 세척 후 잔수를 뺀다. 배수 방향을 바꿀 때 고무캡과 자리를 맞바꾼다","wash":true},{"id":"control_box","name_ko":"전장박스 (메인 PCB)","name_en":"CONTROL BOX / ASSY CONTROL IN","kind":"electric","shape":"box","size_mm":[180.4,107.5,125.6],"center_mm":[278.8,4.3,29.9],"step":3,"step_name":"전장박스","explode_dir":[0,-1,0.3],"explode_mm":344.0,"soil":"전장 부품","clean":"배전반 차단 후 작업. 분리 안 되는 부분은 보양한다","wash":false},{"id":"back_body","name_ko":"백바디 (본체 샤시)","name_en":"Back Body (도면 풍선 8-1/8-2)","kind":"case","shape":"shell","size_mm":[820.0,215.0,299.0],"center_mm":[0,0,0],"step":7,"step_name":"열교환기","explode_dir":[0,1,0],"explode_mm":108.0,"soil":"송풍로 벽면에 먼지가 붙는다","clean":"세척가대 설치 후 약품 살포·고압 세척","wash":true},{"id":"hanger_plate","name_ko":"벽걸이 설치판","name_en":"PLATE-HANGER","kind":"bracket","shape":"plate","size_mm":[787.2,12,239.2],"center_mm":[0,98.9,0],"step":7,"step_name":"열교환기","explode_dir":[0,1,0],"explode_mm":172.0,"soil":"—","clean":"세척 대상 아님. 벽에 고정되는 판","wash":false}],"public_note":"실제 제품 제원으로 만든 3D 예시입니다. 내부 부품 형상은 실물과 다를 수 있습니다."};
 const S = 0.001;                                   // mm -> m
 const $ = q => document.querySelector(q);
 const Q = new URLSearchParams(location.search);
@@ -161,7 +161,7 @@ try { renderer = new THREE.WebGLRenderer({antialias:true, alpha:true}); }
 catch (e) { $('#err').style.display = 'grid'; }
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(30, 1, 0.05, 150);
+const camera = new THREE.PerspectiveCamera(30, 1, 0.15, 150);   // near 0.05 → 0.15 (깊이 양자 3배 개선). far 는 그대로 — 줄이면 바닥 그림자판이 잘린다
 let controls;
 if (renderer) {
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -177,7 +177,7 @@ if (renderer) {
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
   // three r160 은 scene.environmentIntensity 를 읽지 않는다(r163+). 환경광은 아래에서 재질별 envMapIntensity 로 내린다.
   controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true; controls.dampingFactor = 0.08;
+  controls.enableDamping = true; controls.dampingFactor = 0.08; controls.minDistance = 0.3;   // near 0.15 보다 2배 밖
 }
 const key = new THREE.DirectionalLight(0xffffff, 1.6);
 key.position.set(-3, 6, 5); key.castShadow = true;
@@ -259,7 +259,7 @@ for (const k of ['panel','panelHoles','grille','blade','eps','drain','plastic','
   { M[k].envMapIntensity = 0.55; M[k].needsUpdate = true; }
 function matFor(p) {
   const id = p.id, k = p.kind;
-  if (k === 'panel') return /cover|front|lower/.test(id) ? M.panelHoles : M.panel;
+  if (k === 'panel') return p.micro_hole ? M.panelHoles : M.panel;   // 무풍 마이크로홀은 삼성 무풍 시리즈만
   if (k === 'grille') return id === 'cover_safety' ? M.dark : M.grille;
   if (k === 'filter') return M.filter;
   if (k === 'blade') return M.blade;
@@ -402,7 +402,7 @@ function meshFor(p) {
         break; }
     case 'shell': {                                 // 캐비닛: 윗판 + 옆면 4장
       const t = Math.max(w*0.05, 20);
-      add(boxG(w, d, t), [0, h/2 - t/2, 0]);
+      add(boxG(w - 20, d - 20, t), [0, h/2 - t/2 - 10, 0]);   // 옆판 안으로 물린다 — 면을 공유하면 카메라마다 승자가 바뀐다
       const sides = [[w, t, 0, (d-t)/2], [w, t, 0, -(d-t)/2],
                      [t, d-2*t, (w-t)/2, 0], [t, d-2*t, -(w-t)/2, 0]];
       for (const [bw, bd, cx, cz] of sides) add(boxG(bw, bd, h), [cx, 0, cz]);
@@ -568,6 +568,8 @@ scene.add(ground);
 key.shadow.camera.left = -lineLen; key.shadow.camera.right = lineLen;
 key.shadow.camera.top = lineLen; key.shadow.camera.bottom = -lineLen;
 key.shadow.camera.far = 30;
+key.shadow.bias = -0.00023;                       // 실거리 = |bias| x (far-near) — 0.0008 이면 23.6mm 로 부품보다 두껍다
+key.shadow.normalBias = Math.min(lineLen / 512, 0.006);
 
 // 카메라: 줄이 화면을 비스듬히 가로지르는 3/4 — 레퍼런스식 분해도 구도
 const DIR = new THREE.Vector3(0.52, 0.30, 0.80).normalize();   // 비스듬한 3/4 — 줄이 대각선으로 들어간다
@@ -630,7 +632,7 @@ function drawCallouts() {
   const show = t > 0.92 ? Math.min(1, (t - 0.92)/0.08) : 0;
   const W = renderer.domElement.clientWidth, H = renderer.domElement.clientHeight;
   if (!W || !H) return;                                    // 숨겨진(지연 로딩) 프레임: 크기가 0 이면 좌표가 NaN 이다
-  const numOnly = W < 620 || order.length / W > 0.022;      // 좁으면 번호만(글씨 겹침 방지)
+  const numOnly = W < 620 || order.length / W > 0.017;      // 좁으면 번호만(글씨 겹침 방지)
   labels.forEach(L => L.el.classList.toggle('num', numOnly));
   // 부품 위/아래 끝의 화면 좌표
   const pts = labels.map(L => {
@@ -660,7 +662,9 @@ function drawCallouts() {
     if (up) upLanes = deep; else dnLanes = deep;
   }
   // 쌓인 줄만큼 시작점을 당긴다 — 위는 헤더, 아래는 재생 바를 넘지 않게
-  rowUp = Math.max(62 + upLanes*LANE, rowUp);
+  const headB = ($('#head')?.getBoundingClientRect().bottom || 62) - renderer.domElement.getBoundingClientRect().top;
+  const LH = labels[0]?.el.offsetHeight || 26;
+  rowUp = Math.max(headB + LH + upLanes*LANE + 8, rowUp);   // 헤더 실제 하단 + 라벨 높이만큼 비운다
   rowDn = Math.min(H - 110 - dnLanes*LANE, rowDn);
   let lines = '';
   const ok = (...v) => v.every(Number.isFinite);
@@ -706,12 +710,13 @@ const dimmed = new Map();
 function paintMaterials() {
   for (const it of items) it.g.traverse(o => {
     if (!o.isMesh && !o.isInstancedMesh) return;
-    if (!dimmed.has(o)) dimmed.set(o, o.material);
-    const base = dimmed.get(o);
+    if (!dimmed.has(o)) dimmed.set(o, { m: o.material, cs: o.castShadow });
+    const { m: base, cs } = dimmed.get(o);
     if (selected && it.p.id !== selected) {
       if (!o.userData.ghost) { const m = base.clone(); m.transparent = true; m.opacity = .08; m.depthWrite = false; o.userData.ghost = m; }
       o.material = o.userData.ghost;
-    } else o.material = base;
+      o.castShadow = false;            // 재질 투명도는 그림자 맵과 무관하다 — 끄지 않으면 실루엣이 바닥에 남는다
+    } else { o.material = base; o.castShadow = cs; }
   });
 }
 function select(id) {
@@ -738,15 +743,19 @@ function paint() {
   {
     const sp = DATA.spec || {};
     const num = v => String(v).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');   // 2.30 → 2.3 (값은 그대로, 뒤 0만 뗀다)
-    const series = sp.series_ko ? `${DATA.brand} ${sp.series_ko}` : `${DATA.brand} · ${DATA.form.toUpperCase()}`;
-    const kw = sp.cooling_kw ? ` · 냉방 ${num(sp.cooling_kw)}kW` : '';
+    const series = sp.series_ko
+      ? (/^(LG전자|LG|삼성전자|삼성)\s/.test(sp.series_ko) ? sp.series_ko : `${DATA.brand} ${sp.series_ko}`)
+      : `${DATA.brand} · ${DATA.form.toUpperCase()}`;
+    const kwTxt = v => /^[\d.]+$/.test(String(v).trim()) ? num(v) + 'kW' : String(v);   // 원문에 'W'가 붙어 오면 그대로 쓴다
+    const kw = sp.cooling_kw ? ` · 냉방 ${kwTxt(sp.cooling_kw)}` : '';
     const lu = sp.lineup
-      ? `<span class="ln">같은 시리즈 ${sp.lineup.count}종 · ${num(sp.lineup.kw_min)}~${num(sp.lineup.kw_max)}kW 중 하나입니다</span>` : '';
+      ? `<span class="ln">이 시리즈는 냉방 ${num(sp.lineup.kw_min)}~${num(sp.lineup.kw_max)}kW로 나옵니다 · 화면은 ${num(sp.cooling_kw)}kW 기준</span>` : '';
     $('#headt').innerHTML = `<b>${esc(series)}</b>${esc(DATA.model_code)}${kw} · 부품 ${DATA.parts.length}개${lu}`;
   }
   $('#sub').textContent = `${DATA.brand} · ${DATA.form.toUpperCase()} · 부품 ${DATA.parts.length}개`;
-  $('#spec').innerHTML = [['본체', DATA.spec.body_size_mm], ['판넬', DATA.spec.panel_size_mm],
-    ['중량', DATA.spec.weight_kg], ['냉방', DATA.spec.cooling_kw && DATA.spec.cooling_kw + ' kW']]
+  const unitless = v => String(v ?? '').replace(/\s*(mm|kg|kW)\b/gi, '').trim();   // 원문에 단위가 붙어 온 행이 있다
+  $('#spec').innerHTML = [['본체', unitless(DATA.spec.body_size_mm)], ['판넬', unitless(DATA.spec.panel_size_mm)],
+    ['중량', unitless(DATA.spec.weight_kg)], ['냉방', DATA.spec.cooling_kw && unitless(DATA.spec.cooling_kw) + ' kW']]
     .filter(x => x[1]).map(([k, v]) => `<span>${esc(k)}</span><b>${esc(v)}</b>`).join('');
   $('#note').textContent = DATA.public_note
     || '외형 치수만 제원표 근거. 내부 부품 형상은 분해도를 보고 만든 추정이며 실제 치수가 아닙니다.';
