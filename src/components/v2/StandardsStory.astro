@@ -1,6 +1,7 @@
 ---
 import type { BaselineBlock, PromiseBlock, StandardsData } from '../../lib/standards.ts';
 import StoryRow from './StoryRow.astro';
+import ImageSlot from './ImageSlot.astro';
 
 interface Props {
   promise: PromiseBlock | null;
@@ -11,6 +12,9 @@ interface Props {
   startTone?: 'base' | 'mist';
   pricingEyebrow?: string;
   pricingHeading?: string;
+  /** 기준 항목마다 사진 한 장(슬롯 `${slotPrefix}-standards-01` …). 끄면 큰 사진 한 장 + 목록.
+   *  /install/ 이 켠다 — 사진 한 장으로는 세 기준이 무슨 뜻인지 안 읽혔다(2026-09-23 대표 지적) */
+  itemPhotos?: boolean;
 }
 
 const {
@@ -22,6 +26,7 @@ const {
   startTone = 'base',
   pricingEyebrow = '',
   pricingHeading = '',
+  itemPhotos = false,
 } = Astro.props;
 
 const hasPricing = Astro.slots.has('pricing');
@@ -36,7 +41,34 @@ const toneAt = (index: number) => {
 ---
 {(promise || baseline || hasPricing) && (
   <section class="v2-standards-story" aria-label={promise?.heading || baseline?.title || pricingHeading}>
-    {promise && (
+    {promise && itemPhotos && (
+      <article
+        class:list={['bd-section', 'v2-standards-story__message', `v2-standards-story__message--${toneAt(0)}`]}
+        data-layout-section="standard"
+      >
+        <div class="bd-container">
+          <div class="v2-standards-story__card br-glass br-glass--medium">
+            <h2 class="br-h br-reveal">{promise.heading}</h2>
+            <ol class="v2-standards-story__steps br-reveal">
+              {promise.items.map((item) => (
+                <li>
+                  <ImageSlot id={`${slotPrefix}-standards-${item.no}`} ratio="card" />
+                  <div>
+                    <span>{item.no}</span>
+                    <h3>{item.title}</h3>
+                    {item.lines.length > 0 && (
+                      <p>{item.lines.map((line, i) => <Fragment>{i > 0 && <br />}{line}</Fragment>)}</p>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+      </article>
+    )}
+
+    {promise && !itemPhotos && (
       <article
         class:list={['bd-section', 'v2-standards-story__message', `v2-standards-story__message--${toneAt(0)}`]}
         data-layout-section="standard"
@@ -173,6 +205,23 @@ const toneAt = (index: number) => {
   }
 
   .v2-standards-story__promise h3 { color: var(--br-teal); font-size: 17px; }
+
+  /* 항목별 사진 — 사진 위, 번호·제목·설명 아래. 좁은 화면은 한 줄에 하나 */
+  .v2-standards-story__card { padding: 24px 20px 28px; }
+  .v2-standards-story__card .br-h { font-size: clamp(26px, 0.9rem + 1.9vw, 36px); line-height: 1.25; }
+  .v2-standards-story__steps { margin-top: 28px; list-style: none; display: grid; gap: 28px; }
+  .v2-standards-story__steps > li { display: grid; gap: 16px; align-content: start; }
+  .v2-standards-story__steps > li :global(.br-image-slot) { --slot-radius: calc(var(--radius) - 4px); }
+  .v2-standards-story__steps > li > div > span {
+    font-size: 13px; font-weight: 700; letter-spacing: 0.14em; color: var(--br-teal); opacity: 0.55;
+    font-variant-numeric: tabular-nums;
+  }
+  .v2-standards-story__steps h3 { margin-top: 4px; color: var(--br-teal); font-size: 19px; }
+  .v2-standards-story__steps p { margin-top: 8px; font-size: 14px; line-height: 1.65; color: var(--br-ink-sub); }
+  @media (min-width: 768px) {
+    .v2-standards-story__card { padding: var(--panel-pad); }
+    .v2-standards-story__steps { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+  }
   .v2-standards-story__promise p { margin-top: 6px; font-size: 14px; line-height: 1.65; }
 
   .v2-standards-story__formula {

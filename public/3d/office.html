@@ -505,7 +505,7 @@ const LV_KO = { PASS: '통과', WARN: '주의', INFO: '참고', FAIL: '실패' }
 // 벽 색: 조사 사진에서 고른 값(디자인 선택, 평면 데이터 아님)
 const PALETTE = { office: { wall: 0xEDEFEF }, cafe: { wall: 0xE9E3D9 }, clinic: { wall: 0xF2F4F3 }, academy: { wall: 0xEFEDE8 }, gym: { wall: 0xDDE0E1 } };
 
-const state = { level: 'building', levelDir: null, mode: 'house', zone: null, view: 0, unit: null, pipes: true, grid: true, k: 0, tanP: 0, hover: null, autoCollapsed: false };
+const state = { level: 'building', levelDir: null, mode: 'house', zone: null, view: 0, unit: null, pipes: true, grid: true, k: 0, ceil: 0, tanP: 0, hover: null, autoCollapsed: false };
 // ---- embed: 부모(히어로)가 덮는 영역·요청 렌더 ----
 const EMBED = document.documentElement.classList.contains('embed');
 // inset: 전체 보기(l,r,t,b)와 방 시점(rt,rb)에서 부모 UI 가 덮는 픽셀. occNow = 마지막으로 투영에 건 값(전환 중 보간 출발점)
@@ -2506,7 +2506,7 @@ function configControls(kind, pose) {
 function flyTo(pose, kTo, turn = false) {
   // 방→방 전환 중(dip)에는 벽이 잠깐 걷혀 k 가 .5 아래로 내려가도 방에서 출발한 것으로 본다
   const prev = tween, fromRoom = state.k > .5 || !!prev?.dip, toRoom = kTo > .5, p0 = camera.position.clone(), d0 = camera.getWorldDirection(new THREE.Vector3());
-  tween = { t0: performance.now(), p0, f0: camera.fov, s0: state.tanP, k0: state.k, pose, kTo, dip: fromRoom && toRoom };
+  tween = { t0: performance.now(), p0, f0: camera.fov, s0: state.tanP, k0: state.k, pose, kTo, dip: fromRoom && toRoom, cl0: state.ceil, cl1: ceilTarget() };
   // 절단 목표는 전환마다 지금 단계에서 잡는다: 층 이동 중에 구역·실내기를 눌러도 절단이 중간에 멈추지 않는다
   // 시선을 방위각·앙각으로 고르게 돌리게 하고, 피크 각속도 기준의 시간을 돌려준다
   const turnLook = () => {
@@ -2609,7 +2609,7 @@ function setDetail(others = state.level !== 'floor') {
     if (mine) sp.buildFurn();   // 그 층에 들어갈 때 한 번 만든다
     sp.root.visible = mine || others;
     sp.g.furn.visible = mine;
-    sp.g.grid.visible = mine && state.grid;
+    sp.g.grid.visible = mine && state.grid && state.ceil >= .5;
     BLD.floorG[sp.key].visible = sp.root.visible;
   }
   BLD.roofG.visible = BLD.riserG.visible = others;
@@ -2636,7 +2636,7 @@ function flyWith(poseFn, fly) {
 function flyDolly(pose, inward) {
   const p0 = camera.position.clone(), [y0, a0] = yawPitch(camera.getWorldDirection(new THREE.Vector3())), [y1, a1] = yawPitch(pose.tgt.clone().sub(pose.pos));
   tween = { t0: performance.now(), dur: reduced.matches ? 0 : ENTRY_MS, p0, f0: camera.fov, s0: state.tanP, k0: state.k, pose, kTo: inward ? 1 : 0,
-            y0, a0, y1, dy: wrapPi(y1 - y0), dolly: inward ? 'in' : 'out' };
+            y0, a0, y1, dy: wrapPi(y1 - y0), dolly: inward ? 'in' : 'out', cl0: state.ceil, cl1: ceilTarget() };
   setDetail(true); // 들어가는 동안은 다른 층도 보인다
   controls.enabled = false;
   invalidate();
@@ -2685,7 +2685,7 @@ function placeLevel(k) {
   const level = k === 'roof' ? 'roof' : DATA[k] ? 'floor' : 'building';
   enterLevel(level, level === 'floor' ? k : KEYS[0]);
   state.levelDir = (level === 'roof' ? ROOF_DIR : FRONT_DIR).clone();
-  setBlend(level === 'floor' ? 1 : 0); setDetail(); applyViewport();
+  state.ceil = ceilTarget(); setBlend(level === 'floor' ? 1 : 0); setDetail(); applyViewport();
   const p = currentPose();
   camera.position.copy(p.pos); camera.fov = p.fov; state.tanP = p.tanP; updProj();
   configControls(p.kind, p);
@@ -2716,6 +2716,8 @@ function entries() {
   if (state.level === 'roof') return back;
   return [...back, ...S.units.map(u => ({ id: `${S.key}/${u.id}`, name: entryName(u), sub: MODEL_KO[u.model] || u.model }))];
 }
+// 반자 목표: 구역·실내기 시점만 덮는다(층 입구·건물·옥상은 걷는다)
+function ceilTarget() { return state.zone ? 1 : 0; }
 function setBlend(k) {
   state.k = k;
   const solid = k > .999;
@@ -2723,11 +2725,15 @@ function setBlend(k) {
     m.opacity = lerp(base, 1, k);
     if (m.transparent === solid) { m.transparent = !solid; m.depthWrite = solid; m.needsUpdate = true; }
   }
-  mat.ceil.opacity = k;
-  if (mat.ceil.transparent === solid) { mat.ceil.transparent = !solid; mat.ceil.needsUpdate = true; }
-  S.g.ceil.visible = k > .01;
+  // 층 입구에서는 반자(천장판)를 걷어 천장 속 배관·실내기 본체가 계속 보이게 둔다. 구역·실내기 시점으로 들어갈 때만 반자를 덮는다
+  // (2026-09-23 대표: 상가·오피스는 배관이 들어가는 동안만 잠깐 보였다. 아파트는 평면에서 이미 보여 그대로)
+  const c = Math.min(k, state.ceil), cSolid = c > .999, open = state.ceil < .5;
+  mat.ceil.opacity = c;
+  if (mat.ceil.transparent === cSolid) { mat.ceil.transparent = !cSolid; mat.ceil.needsUpdate = true; }
+  S.g.ceil.visible = c > .01;
+  if (state.level === 'floor') S.g.grid.visible = state.grid && !open; // 격자·조명은 반자에 붙어 있다
   // 천장 위(배관·실내기 본체)는 시점으로 들어갈수록 숨긴다: 위에서 수직으로 내려올 때 옆 실내기 본체 윗면이 화면을 덮는다. 시점 안에서는 원래 천장에 가려 안 보인다
-  S.g.pipes.visible = state.pipes && k <= .5; mat.acBody.visible = k <= .5;
+  S.g.pipes.visible = state.pipes && (k <= .5 || open); mat.acBody.visible = k <= .5 || open;
   mat.grid.opacity = lerp(.32, .95, k); mat.grid.color.lerpColors(GRID_OVER, GRID_ROOM, k);
   mat.patch.opacity = .6 * (1 - k); mat.patchEdge.opacity = .9 * (1 - k); mat.arrow.opacity = .75 * (1 - k);
   S.patchObjs.forEach(o => { o.visible = k < .99; });
@@ -2794,7 +2800,7 @@ canvas.addEventListener('pointerup', e => {
 });
 $('btnHome').addEventListener('click', goHome);
 $('btnPipes').addEventListener('click', () => {
-  state.pipes = !state.pipes; Object.values(spaces).forEach(s => { s.g.pipes.visible = state.pipes && (s !== S || state.k <= .5); }); invalidate();
+  state.pipes = !state.pipes; Object.values(spaces).forEach(s => { s.g.pipes.visible = state.pipes && (s !== S || state.k <= .5 || state.ceil < .5); }); invalidate();
   $('btnPipes').setAttribute('aria-pressed', String(state.pipes));
 });
 $('btnGrid').addEventListener('click', () => {
@@ -2833,6 +2839,7 @@ function tick(now) {
   if (tween) {
     const t = tween.dur ? clamp((now - tween.t0) / tween.dur, 0, 1) : 1, e = ease(t);
     const dolly = tween.dolly, inw = dolly === 'in';
+    state.ceil = lerp(tween.cl0, tween.cl1, e); // 반자는 카메라와 같이 서서히
     if (tween.c1) { const u = 1 - e; camera.position.copy(tween.p0).multiplyScalar(u * u * u).addScaledVector(tween.c1, 3 * u * u * e).addScaledVector(tween.c2, 3 * u * e * e).addScaledVector(tween.pose.pos, e * e * e); }
     else camera.position.lerpVectors(tween.p0, tween.pose.pos, e);
     if (tween.arc) camera.position.y += Math.sin(Math.PI * e) * tween.arc; // e 기준: 출발·착지에서 수직 속도 0

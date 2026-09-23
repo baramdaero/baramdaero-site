@@ -65,17 +65,21 @@ public/media/care-process-01.jpg   ← 여기에 그 이름으로 저장(드래�
 | `care-season-03` | 세척 시기 — 가을 | 4:3 | 사용 직후 열교환기와 배수부의 습기 상태, 근접 구도 1장 |
 | `care-season-04` | 세척 시기 — 겨울 | 4:3 | 비가동기 점검을 위해 열린 실내기, 정면 구도 1장 |
 
-`care-process-01`부터 `care-process-06`까지는 `src/content/site/pricing.json`의 `process[].image`에 연결된다. 나머지 정적 슬롯 32개는 `src/content/site/image-slots.json`의 `src`·`alt`만 채우면 전 페이지에 반영된다. 모든 사진은 `public/media/`의 공개 동의 이미지만 사용한다.
+`care-process-01`부터 `care-process-06`까지는 `src/content/site/pricing.json`의 `process[].image`에 연결된다. 나머지 정적 슬롯 38개는 `src/content/site/image-slots.json`의 `src`·`alt`만 채우면 전 페이지에 반영된다. 모든 사진은 `public/media/`의 공개 동의 이미지만 사용한다.
 
 ## 설치 `/install/`
 
 | 식별자 | 위치 | 규격 | 권장 촬영 내용 |
 |---|---|---|---|
-| `install-process-01` | 설치 01 상담·견적 | 1:1 | 설치 위치로 정한 천장과 벽면, 주소·세대 정보 없이 정면 구도 1장 |
-| `install-process-02` | 설치 02 설계 | 1:1 | 마감 전 배관 경로와 실외기 연결 방향, 30~45도 사선 구도 1장 |
-| `install-process-03` | 설치 03 시공 | 1:1 | 천장형 실내기 체결 상태, 작업자 없이 하부 정면 구도 1장 |
-| `install-process-04` | 설치 04 시운전·기록 | 1:1 | 완공된 실내기와 배수 확인 지점, 수평을 맞춘 정면 구도 1장 |
-| `install-standards-scope` | 설치 기준 | 16:10 | 천장 안 배관·전선·드레인 경로가 함께 보이는 구도 1장 |
+| `install-consult` | 설치 01 상담·견적 | 1:1 | 상담 화면(챗봇)이 보이는 휴대폰 1장. 방문 없이 진행하는 단계라 현장 사진을 쓰지 않는다 |
+| `install-process-01` | 설치 02 설계 | 1:1 | 설치 위치로 정한 천장과 벽면, 주소·세대 정보 없이 정면 구도 1장 |
+| `install-process-02` | 설치 03 시공 | 1:1 | 마감 전 배관 경로와 실외기 연결 방향, 30~45도 사선 구도 1장 |
+| `install-process-03` | (현재 미사용) | 1:1 | 천장형 실내기 체결 상태, 작업자 없이 하부 정면 구도 1장 |
+| `install-process-04` | 설치 04 시운전·기록 | 1:1 | 시운전 측정 기록 화면과 창가 천장의 실내기가 함께 보이는 1장 |
+| `install-standards-01` | 작업 기준 01 범위 확정 | 4:3 | 실내기 위치·배관 경로를 표시한 평면도와 견적서 1장 |
+| `install-standards-02` | 작업 기준 02 천장 안 기록 | 4:3 | 매립 전 천장 속 배관을 촬영하는 장면 1장 |
+| `install-standards-03` | 작업 기준 03 연락 한 곳 | 4:3 | 상담부터 시공 기록까지 한 대화에 이어진 휴대폰 화면 1장 |
+| `install-standards-scope` | 작업 기준(항목별 사진을 끈 경우) | 16:10 | 천장 안 배관·전선·드레인 경로가 함께 보이는 구도 1장 |
 | `install-pricing-basis` | 설치 가격 기준 | 16:10 | 배관·보온재·체결 부속을 규격별로 정돈한 구도 1장 |
 | `install-aftercare` | 설치 이후 | 16:10 | 완공된 실내기와 점검구가 함께 보이는 공간 전경 1장 |
 
