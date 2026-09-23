@@ -1,16 +1,15 @@
 ---
-// 기준가 도입부 + 추가비용 없음 블록 — 콘텐츠는 standards.json 단일 소스.
+// 기준가 도입부 — 콘텐츠는 standards.json 단일 소스.
 // baseline은 페이지별(baseline_install / baseline_care)로 받는다.
 // baseline 없으면 통째로 미렌더, updated 비면 갱신일 줄만 미노출 (빈 값 = 미노출 규칙).
 import type { StandardsData } from '../../lib/standards.ts';
 
 interface Props {
   baseline: StandardsData['baselineCare'];
-  noExtra: StandardsData['noExtra'];
   /** 섹션 배경. 앞뒤 섹션과 base↔mist가 교차하도록 페이지가 정한다 (신규 색 금지) */
   tone?: 'base' | 'mist';
 }
-const { baseline, noExtra, tone = 'base' } = Astro.props;
+const { baseline, tone = 'base' } = Astro.props;
 ---
 {baseline && (
   <section class:list={['bd-section', 'v2-baseline', tone === 'mist' && 'v2-baseline--mist']}>
@@ -30,23 +29,6 @@ const { baseline, noExtra, tone = 'base' } = Astro.props;
         <ul class="v2-baseline__policy br-reveal">
           {baseline.policyLines.map((line) => <li>{line}</li>)}
         </ul>
-      )}
-
-      {noExtra && (
-        <div class="v2-baseline__noextra br-reveal">
-          <h3>{noExtra.title}</h3>
-          {noExtra.body.length > 0 && (
-            <p class="v2-baseline__noextra-body">
-              {noExtra.body.map((line, i) => (
-                <Fragment>{i > 0 && <br />}{line}</Fragment>
-              ))}
-            </p>
-          )}
-          <ul>
-            {noExtra.items.map((item) => <li>{item}</li>)}
-          </ul>
-          {noExtra.closing && <p class="v2-baseline__closing">{noExtra.closing}</p>}
-        </div>
       )}
 
       {baseline.updated && (
@@ -96,41 +78,6 @@ const { baseline, noExtra, tone = 'base' } = Astro.props;
     background: var(--br-teal);
   }
 
-  .v2-baseline__noextra {
-    margin-top: 40px;
-    max-width: 760px;
-    border: 1px solid var(--glass-line);
-    border-radius: var(--radius);
-    padding: 24px 22px;
-    background: var(--glass-medium-bg);
-    -webkit-backdrop-filter: var(--glass-medium-fx);
-    backdrop-filter: var(--glass-medium-fx);
-    box-shadow: var(--glass-shadow);
-  }
-  .v2-baseline__noextra h3 { font-size: 17px; color: var(--br-ink); margin-bottom: 12px; }
-  .v2-baseline__noextra ul { list-style: none; display: grid; gap: 6px; }
-  .v2-baseline__noextra li {
-    font-size: 15px;
-    color: var(--br-ink);
-    padding-left: 16px;
-    position: relative;
-  }
-  .v2-baseline__noextra li::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0.72em;
-    width: 8px;
-    height: 1px;
-    background: var(--br-teal);
-  }
-  .v2-baseline__noextra-body {
-    margin-bottom: 14px;
-    font-size: 15px;
-    line-height: 1.8;
-    color: var(--br-ink);
-  }
-  .v2-baseline__closing { margin-top: 14px; font-size: 14px; color: var(--br-ink-sub); }
 
   .v2-baseline__updated {
     margin-top: 24px;

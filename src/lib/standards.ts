@@ -21,7 +21,6 @@ export interface BaselineBlock {
 export interface StandardsData {
   baselineInstall: BaselineBlock | null;
   baselineCare: BaselineBlock | null;
-  noExtra: { title: string; body: string[]; items: string[]; closing: string } | null;
   promiseInstall: PromiseBlock | null;
   promiseCare: PromiseBlock | null;
   careChecklist: Checklist | null;
@@ -31,7 +30,6 @@ export interface StandardsData {
 const EMPTY: StandardsData = {
   baselineInstall: null,
   baselineCare: null,
-  noExtra: null,
   promiseInstall: null,
   promiseCare: null,
   careChecklist: null,
@@ -111,18 +109,6 @@ export function loadStandards(): StandardsData {
     };
   }
 
-  let noExtra: StandardsData['noExtra'] = null;
-  if (raw.no_extra) {
-    const n = raw.no_extra;
-    const items = strArray(n.items);
-    if (isNonEmptyString(n.title) && items.length) {
-      // body는 title 아래 도입 줄 — 비면 그 줄만 미노출
-      noExtra = { title: n.title.trim(), body: strArray(n.body), items, closing: isNonEmptyString(n.closing) ? n.closing.trim() : '' };
-    } else {
-      warn('"no_extra" — title과 items가 필요합니다. 블록을 건너뜁니다.');
-    }
-  }
-
   /* ---------- promise — 「우리가 정해둔 것」 기준 선언 (페이지별) ---------- */
   const promiseHeading = isNonEmptyString(raw.promise_heading) ? raw.promise_heading.trim() : '';
 
@@ -151,7 +137,6 @@ export function loadStandards(): StandardsData {
   return {
     baselineInstall: pickBaseline(raw.baseline_install, 'baseline_install'),
     baselineCare: pickBaseline(raw.baseline_care, 'baseline_care'),
-    noExtra,
     promiseInstall: pickPromise(raw.promise_install, 'promise_install'),
     promiseCare: pickPromise(raw.promise_care, 'promise_care'),
     careChecklist: pickChecklist(raw.care_checklist, 'care_checklist'),

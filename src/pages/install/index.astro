@@ -6,6 +6,7 @@ import PageHero from '../../components/v2/PageHero.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
 import StandardsStory from '../../components/v2/StandardsStory.astro';
 import StoryRow from '../../components/v2/StoryRow.astro';
+import ImageSlot from '../../components/v2/ImageSlot.astro';
 import Exploded from '../../components/v2/Exploded.astro';   // 2026-09-21 기종 소개 분해 3D
 import { loadStandards } from '../../lib/standards.ts';
 import { loadSituations } from '../../lib/situations.ts';
@@ -36,10 +37,11 @@ const CEILING_MODELS = [
 // 01 상담·견적은 '방문 없이'라 현장 사진 대신 실제 상담 화면(챗봇 캡처를 폰에 합성)을 쓴다
 const STEP_SLOTS = ['install-consult', 'install-process-01', 'install-process-02', 'install-process-04'];
 const STEPS = [
-  { title: '상담·견적', body: '기종과 대수, 설치 위치를 확인해 견적을 확정합니다. 방문 없이 진행합니다.' },
-  { title: '설계', body: '도면과 현장 조건을 확인해 배관 경로와 실외기 위치를 정합니다. 시공 전에 확정하고, 정해진 대로만 진행합니다.' },
-  { title: '시공', body: '견적서에 적은 범위대로 배관과 실내기를 시공합니다. 매립되면 다시 볼 수 없는 구간은 덮기 전에 사진으로 남깁니다.' },
-  { title: '시운전·기록', body: '냉방과 배수 상태를 확인하고 사용 방법을 안내합니다. 작업 사진을 남겨 전달합니다.' },
+// 단계마다 한 문장 — 범위 확정·매립 구간 사진 같은 약속은 바로 아래 '작업 기준'이 맡는다
+  { title: '상담·견적', body: '기종과 대수, 설치 위치를 확인해 견적을 확정합니다.' },
+  { title: '설계', body: '도면과 현장 조건을 확인해 배관 경로와 실외기 위치를 정합니다.' },
+  { title: '시공', body: '견적서에 적은 범위대로 배관과 실내기를 시공합니다.' },
+  { title: '시운전·기록', body: '냉방과 배수 상태를 확인하고 작업 사진을 남겨 전달합니다.' },
 ];
 
 const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? '';
@@ -59,10 +61,7 @@ const breadcrumbJsonLd = {
 >
   <PageHero eyebrow="시스템에어컨 설치" lead>
     에어컨은 사라지고<br />공간만 남습니다
-    <Fragment slot="sub">
-      견적은 방문 전에 나옵니다.<br />
-      도면과 배관 경로, 실외기 위치는 시공 전에 함께 정합니다.
-    </Fragment>
+    <Fragment slot="sub">견적은 방문 전에 나옵니다.</Fragment>
   </PageHero>
 
   {/* 기종 소개. 제품 영상은 제목과 3D 안내 사이 — 히어로 맨 아래에 있을 때는 첫 화면 밖이라
@@ -71,8 +70,7 @@ const breadcrumbJsonLd = {
     id="install-exploded"
     tone="base"
     eyebrow=""
-    title="1Way 천장형, 속은 이렇게 생겼습니다"
-    body="삼성·LG 공통 구성으로 만든 3D입니다. 부품을 눌러 이름과 역할을 보세요."
+    title={['1Way 천장형,', '속은 이렇게 생겼습니다']}
     items={CEILING_MODELS}
   >
     {PRODUCT_VIDEOS.length > 0 && (
@@ -100,30 +98,23 @@ const breadcrumbJsonLd = {
   <section class="bd-section install-step install-step--mist" data-layout-section="install-process">
     <div class="bd-container">
       <h2 class="br-h br-reveal">설치 {STEPS.length}단계</h2>
-      <div class="install-steps__list">
+      {/* 네 단계를 한 판에 — 사진 위·글 아래. 1024px+ 한 줄, 그 아래는 2열·1열 */}
+      <ol class="install-steps__list">
         {STEPS.map((st, i) => (
-          <article class="install-step__card br-glass br-glass--medium br-reveal" data-glow>
-            <StoryRow
-              slotId={STEP_SLOTS[i]}
-              slotLabel={STEP_SLOTS[i]}
-              ratio="square"
-              imageSide={i % 2 === 0 ? 'left' : 'right'}
-              tone="light"
-            >
-              <span class="install-step__no">{String(i + 1).padStart(2, '0')}</span>
-              <h3 class="install-step__title">{st.title}</h3>
-              <p class="br-body">{st.body}</p>
-            </StoryRow>
-          </article>
+          <li class="install-step__card br-glass br-glass--medium br-reveal" data-glow>
+            <ImageSlot id={STEP_SLOTS[i]} label={STEP_SLOTS[i]} ratio="square" />
+            <span class="install-step__no">{String(i + 1).padStart(2, '0')}</span>
+            <h3 class="install-step__title">{st.title}</h3>
+            <p>{st.body}</p>
+          </li>
         ))}
-      </div>
+      </ol>
     </div>
   </section>
 
   <StandardsStory
     promise={standards.promiseInstall}
     baseline={standards.baselineInstall}
-    noExtra={standards.noExtra}
     slotPrefix="install"
     startSide="left"
     startTone="base"
@@ -133,21 +124,15 @@ const breadcrumbJsonLd = {
   <section class="bd-section install-after" data-layout-section="install-after">
     <div class="bd-container">
       <StoryRow slotId="install-aftercare" slotLabel="install-aftercare" imageSide="left" glass>
-        <h2 class="br-h br-reveal">설치로 끝나지 않습니다</h2>
-        <p class="br-body br-reveal">설치할 때 남긴 기록이 그대로 이어집니다.<br />배관 경로와 시공 이력이 남아 있어, 분해세척과 정기 점검 때 어디를 어떻게 다뤄야 하는지 알고 갑니다.</p>
-        <p class="install-after__more br-reveal">
-          <a class="install-after__link" href="/care/">세척·정기관리 안내 보기 <span aria-hidden="true">→</span></a>
-        </p>
-        <p class="install-after__more br-reveal">
-          <a class="install-after__link" href="/commercial/">상가·관공서·대형빌딩 안내 보기 <span aria-hidden="true">→</span></a>
-        </p>
-        {situations.length > 0 && (
-          <ul class="install-situations br-reveal">
-            {situations.map((s) => (
-              <li><a href={`/situation/${s.slug}/`}>{s.meta.title} <span aria-hidden="true">→</span></a></li>
-            ))}
-          </ul>
-        )}
+        <h2 class="br-h br-reveal">설치한 기록이<br />그대로 이어집니다</h2>
+        <p class="br-body br-reveal">배관 경로와 시공 이력이 남아 있어, 분해세척과 정기 점검 때 어디를 어떻게 다뤄야 하는지 알고 갑니다.</p>
+        <ul class="install-after__links br-pills br-reveal">
+          <li><a class="br-pill" href="/care/">세척·정기관리 안내 보기 <span aria-hidden="true">→</span></a></li>
+          <li><a class="br-pill" href="/commercial/">상가·관공서·대형빌딩 안내 보기 <span aria-hidden="true">→</span></a></li>
+          {situations.map((s) => (
+            <li><a class="br-pill" href={`/situation/${s.slug}/`}>{s.meta.title} <span aria-hidden="true">→</span></a></li>
+          ))}
+        </ul>
       </StoryRow>
     </div>
   </section>
@@ -183,11 +168,13 @@ const breadcrumbJsonLd = {
   .install-step--mist { background: transparent; }
   .install-step--deep { background: var(--br-teal-deep); }
   /* 회색 섹션 위에 기본색 카드 — 단계 경계를 여백이 아니라 면으로 만든다 */
-  .install-steps__list { margin-top: 48px; display: grid; gap: 16px; }
+  .install-steps__list { margin-top: var(--head-gap); list-style: none; display: grid; gap: 16px; }
   .install-step__card {
-    padding: 28px 24px;
+    display: flex; flex-direction: column;
+    padding: 16px 16px 24px;
     /* 배경·테두리·radius·그림자는 .br-glass--medium 이 맡는다 */
   }
+  .install-step__card :global(.br-image-slot) { max-width: none; margin-bottom: 20px; --slot-radius: calc(var(--radius) - 4px); }
   .install-step__no {
     display: block;
     font-size: 13px;
@@ -195,33 +182,20 @@ const breadcrumbJsonLd = {
     letter-spacing: 0.14em;
     color: var(--br-ink-sub);
   }
-  .install-step__title { margin-top: 6px; color: var(--br-ink); font-size: clamp(20px, 2.4vw, 26px); }
-  .install-step__card .br-body { margin-top: 10px; }
-  @media (min-width: 768px) {
-    .install-steps__list { gap: 20px; }
-    .install-step__card { padding: 36px 32px; }
+  .install-step__title { margin-top: 4px; color: var(--br-ink); }
+  .install-step__card p { margin-top: 8px; font-size: 15px; line-height: 1.65; color: var(--br-ink-sub); }
+  /* 모바일 — 사진은 왼쪽 썸네일, 글은 오른쪽. 네 단계가 한 화면 남짓에 들어온다 */
+  @media (max-width: 639px) {
+    .install-step__card { display: grid; grid-template-columns: 104px minmax(0, 1fr); column-gap: 16px; align-content: start; padding: 12px 16px 12px 12px; }
+    .install-step__card :global(.br-image-slot) { grid-row: 1 / span 3; margin-bottom: 0; }
+  }
+  @media (min-width: 640px) {
+    .install-steps__list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (min-width: 1024px) {
+    .install-steps__list { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
   }
 
   .install-after { background: transparent; } /* 유리 카드 호스트 */
-  .install-after__more { margin-top: 24px; }
-  .install-after__link {
-    display: inline-block;
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--br-teal);
-    border-bottom: 2px solid var(--br-teal);
-    padding-bottom: 2px;
-    transition: color var(--dur-color) ease, border-color var(--dur-color) ease;
-  }
-  .install-after__link:hover { color: var(--br-teal-deep); border-color: var(--br-ice); }
-
-  .install-situations { margin-top: 20px; list-style: none; display: flex; flex-wrap: wrap; gap: 4px 24px; }
-  .install-situations a {
-    display: inline-block;
-    padding: 8px 0;
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--br-teal);
-  }
-  .install-situations a:hover { color: var(--br-teal-deep); }
+  .install-after__links { margin-top: 28px; list-style: none; }
 </style>

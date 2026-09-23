@@ -23,6 +23,12 @@
 
   --maxw: 1120px;
   --radius: 12px;
+  --radius-pill: 999px;
+  /* 틴트 — 누를 수 있는 것의 면. 글자(teal)가 식별을 맡고 면은 1.1:1 로 조용히 */
+  --tint-fill: color-mix(in srgb, var(--br-teal) 6%, transparent);
+  --tint-strong: color-mix(in srgb, var(--br-teal) 12%, transparent);
+  /* 제목 묶음 → 본 블록(그리드·목록·3D·사진) 간격. 흩어진 28·32·48 을 이 값 하나로 */
+  --head-gap: 40px;
 
   /* 섹션·패널 리듬 토큰 (2026-09-07). 섹션 간격은 한 곳에서만 정한다 — 컴포넌트가 이 값을 소비한다.
      데스크톱 160px는 앞뒤 섹션이 만나면 320px가 되어 카드와 다음 섹션이 서로 남처럼 떨어져 보였다(900px 캡처).
@@ -102,7 +108,7 @@ button {
 /* 섹션 수직 리듬 — 모바일 72px / 768px+ 96→120px(뷰포트 비례) / 1024px+ 120px.
    값은 :root --section-pad 한 곳에서만 바꾼다. */
 @media (min-width: 768px) {
-  :root { --section-pad: clamp(96px, 12.5vw, 120px); --panel-pad: 32px; --panel-gap: 32px; }
+  :root { --section-pad: clamp(96px, 12.5vw, 120px); --panel-pad: 32px; --panel-gap: 32px; --head-gap: 64px; }
 }
 @media (min-width: 1024px) {
   :root { --panel-pad: 40px; --panel-gap: 40px; }
@@ -138,11 +144,28 @@ button {
 .care-close,
 .install-step--deep,
 .sit-journey__story--deep,
-.sit-close {
+.sit-close,
+.commercial-services {
   --br-eyebrow-fg: rgba(255, 255, 255, 0.75); /* 어두운 배경 글자는 흰색 두 단계(제목 100% · 보조 75%) */
   --br-slot-line: rgba(255, 255, 255, 0.14);
   --br-slot-bg: rgba(255, 255, 255, 0.04);
   --br-slot-fg: rgba(255, 255, 255, 0.5);
+  --pill-fg: var(--br-ice);                                        /* ice / teal-deep 11.7:1 */
+  --pill-bg: color-mix(in srgb, var(--br-ice) 10%, transparent);
+  --pill-bg-hover: color-mix(in srgb, var(--br-ice) 18%, transparent);
+  --pill-dot: color-mix(in srgb, var(--br-ice) 16%, transparent);
+  --pill-fg-hover: var(--br-ice);
+}
+/* 딥 섹션 안의 밝은 유리 카드는 라이트 값으로 — 슬롯 변수 리셋(아래)과 같은 이유 */
+.br-glass--heavy,
+.br-glass--medium,
+.br-glass--light {
+  --pill-fg: var(--br-teal);
+  --pill-bg: var(--tint-fill);
+  --pill-bg-hover: var(--tint-strong);
+  --pill-dot: var(--tint-strong);
+  /* 딥 위 유리 면은 이미 어두워서(≈#b7c4ca) 틴트가 짙어지는 hover 에서 teal 이 4.3:1 로 떨어진다 — hover 글자만 teal-deep */
+  --pill-fg-hover: var(--br-teal-deep);
 }
 /* 슬롯이 유리 카드 '안'에 있으면 카드 표면 기준으로 되돌린다 — heavy/medium 카드는 딥 섹션 위에서도 밝은 면이라
    섹션 기준 흰 글자(위 규칙)가 그대로 오면 캡션이 사라진다(2차 실측 1.30:1). 카드 규칙이 섹션 규칙을 이긴다. */
@@ -193,44 +216,79 @@ button {
   color: var(--br-ink);
 }
 
-/* CTA(라이트 구간) — teal 채움 + 흰 글자, hover = ice 채움 + teal 글자 (DESIGN.md §1)
-   비율 기준(실측 조정): 폰트는 본문(16~17px) 이상, 상하 패딩 ≈ 폰트의 0.7배,
-   좌우 패딩 ≈ 폰트의 1.5배. 이전 값(15px / 15·32px)은 폰트가 본문보다 작고 패딩이
-   폰트와 1:1이라 글자가 큰 박스 안에 떠 보였다. 높이 52.9px로 44px 터치영역 유지. */
+/* 버튼 2종 + 텍스트 링크 1종 (2026-09-23, 토스 실측 — DESIGN.md §5)
+   primary   .bd-cta   teal 채움 알약. 문의(접수) 전용, 한 화면에 하나
+   secondary .br-pill  teal 틴트 알약 + 원 화살표. 페이지 이동·반복되는 보조 동작은 전부 이것
+   inline    .br-link  본문 속 밑줄 텍스트 — 아직 쓰는 곳이 없어 규칙은 처음 쓸 때 추가한다(DESIGN.md §5)
+   칩·탭·토글은 여기 넣지 않는다 — 모양이 같아지면 '이동'과 '고르기'가 섞인다. */
 .bd-cta {
-  display: inline-block;
-  padding: 12px 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 0 28px;
   background: var(--br-teal);
   color: #fff;
   font-weight: 700;
   font-size: 17px;
   letter-spacing: -0.01em;
-  border-radius: 10px;
+  border-radius: var(--radius-pill);
   transition: background-color var(--dur-color) ease, color var(--dur-color) ease, transform 160ms var(--ease-out);
 }
-.bd-cta:hover { background: var(--br-ice); color: var(--br-teal); }
 .bd-cta:active { transform: scale(0.96); }
-
-/* CTA 다크 구간 변형 — ice 채움 + teal 글자, hover 흰 채움 */
+/* 다크 구간 변형 — ice 채움 + teal 글자 */
 .bd-cta--deep { background: var(--br-ice); color: var(--br-teal); }
-.bd-cta--deep:hover { background: var(--br-base); color: var(--br-teal); }
-
-/* 보조 버튼 — 라인. CTA와 같은 비율 규칙, 위계는 굵기(600)와 채움 없음으로 준다 */
-.bd-btn-ghost {
-  display: inline-block;
-  padding: 11px 24px;
-  border: 1px solid var(--br-teal);
-  color: var(--br-teal);
-  font-weight: 600;
-  font-size: 16px;
-  letter-spacing: -0.01em;
-  border-radius: 10px;
-  transition: background-color var(--dur-color) ease, color var(--dur-color) ease, transform 160ms var(--ease-out);
-}
-.bd-btn-ghost:active { transform: scale(0.96); }
 @media (hover: hover) and (pointer: fine) {
-  .bd-btn-ghost:hover { background: var(--br-teal); color: #fff; }
+  .bd-cta:hover { background: var(--br-ice); color: var(--br-teal); }
+  .bd-cta--deep:hover { background: var(--br-base); }
 }
+
+/* secondary — 기존 <span aria-hidden="true">→</span> 을 원으로 칠한다(아이콘 신규 생성 없음) */
+.br-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--pill-bg, var(--tint-fill));
+  color: var(--pill-fg, var(--br-teal));
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--dur-color) ease, transform 160ms var(--ease-out);
+}
+.br-pill > [aria-hidden="true"]:last-child {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin-right: -10px; /* 원이 알약 안쪽 8px 에 붙게 */
+  border-radius: 50%;
+  background: var(--pill-dot, var(--tint-strong));
+  font-size: 14px;
+  line-height: 1;
+  transition: transform var(--dur-ui) var(--ease-out);
+}
+.br-pill:active { transform: scale(0.96); }
+.br-pill:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) {
+  .br-pill:hover { background: var(--pill-bg-hover, var(--tint-strong)); color: var(--pill-fg-hover, var(--pill-fg, var(--br-teal))); }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .br-pill:hover > [aria-hidden="true"]:last-child { transform: translateX(2px); }
+}
+@media (forced-colors: active) { .br-pill { border: 1px solid ButtonText; } }
+/* 여러 개가 한 줄에 올 때 */
+.br-pills { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .bd-hairline { border: 0; border-top: 1px solid var(--br-line); }
 
@@ -522,17 +580,11 @@ html.br-js .br-reveal.br-h { transform: none; }
   .bd-footer a,
   .faq-nav__chip,
   .blog__topic-chip,
-  .faq-item__related a,
-  .install-after__link,
-  .sit-faq__link,
-  .sit-related__list a,
-  .post__link,
-  .v2-svc__link {
+  .post__link {
     display: inline-flex;
     align-items: center;
     min-height: 44px;
   }
-  .faq-item__related { gap: 8px 20px; }
 }
 
 /* 포커스 링 — 전역 값은 라이트 구간용(teal)이라 딥 구간에서 1.65:1 로 묻힌다.
@@ -546,6 +598,12 @@ html.br-js .br-reveal.br-h { transform: none; }
 .sit-journey__story--deep :focus-visible,
 .bd-cta--deep:focus-visible {
   outline-color: var(--br-ice);
+}
+/* 딥 섹션 안의 밝은 유리 카드는 다시 teal — 카드 면(≈#b7c4ca) 위 ice 링은 1.4:1 로 안 보인다 (teal 5.1:1) */
+.br-glass--heavy :focus-visible,
+.br-glass--medium :focus-visible,
+.br-glass--light :focus-visible {
+  outline-color: var(--br-teal);
 }
 
 /* 가운뎃점이 줄 첫머리로 내려가는 것을 막는다. · 는 줄바꿈 금지 문자가 아니라
