@@ -1177,7 +1177,7 @@ const TEASER = [
      런처가 유일한 진입점이 된다. */
   @media (min-width: 768px) {
     .chat:not(.is-open) .chat__fab { display: none; }   /* 열려 있을 땐 닫기 버튼이라 남긴다 */
-    .chat__teaser { display: none; }                    /* 헤더 버튼이 있는 폭에서는 티저도 군더더기 */
+    .chat .chat__teaser { display: none; }              /* 헤더 버튼이 있는 폭에서는 티저도 군더더기. 뒤에 오는 기본 display:grid 를 이기려고 .chat 를 붙인다 */
   }
   /* 좁은 화면: 라벨을 빼고 원형 56px. 91px 폭이 본문 글자를 덮었다(44x44 하한은 그대로 만족) */
   @media (max-width: 640px) {

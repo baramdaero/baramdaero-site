@@ -72,12 +72,19 @@ img, video { max-width: 100%; height: auto; display: block; }
 
 a { color: inherit; text-decoration: none; transition: color var(--dur-color) ease; }
 
+/* 제목 3단 — 페이지(h1) / 섹션(h2 = .br-h) / 카드·단계(h3).
+   구 800/1.15 는 .br-h(700/1.3)보다 굵어, 작은 카드 제목이 섹션 제목보다 세게 읽히는
+   역전을 만들었다(2026-09-23 실측: 카드 17~20px/800 vs 섹션 28px/700).
+   굵기는 700 한 단으로 두고 층위는 크기로만 만든다. */
 h1, h2, h3 {
-  font-weight: 800;
-  line-height: 1.15;
+  font-weight: 700;
+  line-height: 1.25;
   letter-spacing: -0.02em;
   text-wrap: balance;
 }
+/* 카드·단계 제목 기본값. 더 큰 층위가 필요한 곳은 컴포넌트가 따로 정한다 */
+h3 { font-size: 19px; line-height: 1.35; }
+@media (min-width: 768px) { h3 { font-size: 20px; } }
 
 p, li, figcaption, blockquote { text-wrap: pretty; }
 
