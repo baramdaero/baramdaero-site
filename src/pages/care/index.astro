@@ -186,15 +186,13 @@ if (careFaq.length) {
   <StandardsStory
     promise={standards.promiseCare}
     baseline={standards.baselineCare}
-    noExtra={standards.noExtra}
     slotPrefix="care"
     startSide="right"
     startTone="base"
-    pricingEyebrow="기준가"
-    pricingHeading="견적서에 없는 돈은 현장에서도 없습니다"
+    pricingHeading="기종별 기준가"
   >
     {/* 확정가가 한 줄이라도 있을 때만 표를 그린다. 없으면 블록째 빠진다 —
-        '챗봇으로 안내합니다' 대기 문구는 아래 추가금 섹션·CTA 밴드와 같은 말이었다 */}
+        '챗봇으로 안내합니다' 대기 문구는 아래 CTA 밴드와 같은 말이었다 */}
     <Fragment slot="pricing">
       {prices.length > 0 && (
         <Fragment>

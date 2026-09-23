@@ -1,12 +1,11 @@
 ---
-import type { BaselineBlock, PromiseBlock, StandardsData } from '../../lib/standards.ts';
+import type { BaselineBlock, PromiseBlock } from '../../lib/standards.ts';
 import StoryRow from './StoryRow.astro';
 import ImageSlot from './ImageSlot.astro';
 
 interface Props {
   promise: PromiseBlock | null;
   baseline: BaselineBlock | null;
-  noExtra: StandardsData['noExtra'];
   slotPrefix: string;
   startSide?: 'left' | 'right';
   startTone?: 'base' | 'mist';
@@ -20,7 +19,6 @@ interface Props {
 const {
   promise,
   baseline,
-  noExtra,
   slotPrefix,
   startSide = 'left',
   startTone = 'base',
@@ -141,25 +139,6 @@ const toneAt = (index: number) => {
               </div>
             )}
           </StoryRow>
-        </div>
-      </article>
-    )}
-
-    {/* 추가금 정책 — 기준가 카드 안 펼침에서 꺼내 한 화면으로 (한 화면 한 메시지, 2026-09-23) */}
-    {baseline && noExtra && (
-      <article
-        class:list={['bd-section', 'v2-standards-story__message', `v2-standards-story__message--${toneAt(2)}`]}
-        data-layout-section="no-extra"
-      >
-        <div class="bd-container">
-          <div class="v2-standards-story__card br-glass br-glass--medium">
-            <h2 class="br-h br-reveal">{lines(noExtra.title).map((l, i) => <Fragment>{i > 0 && <br />}{l}</Fragment>)}</h2>
-            {noExtra.body.length > 0 && (
-              <p class="br-body br-reveal">{noExtra.body.map((line, i) => <Fragment>{i > 0 && <br />}{line}</Fragment>)}</p>
-            )}
-            <ul class="v2-standards-story__concede br-reveal">{noExtra.items.map((item) => <li>{item}</li>)}</ul>
-            {noExtra.closing && <p class="v2-standards-story__closing br-reveal">{noExtra.closing}</p>}
-          </div>
         </div>
       </article>
     )}
@@ -286,17 +265,6 @@ const toneAt = (index: number) => {
     background: var(--br-teal);
   }
 
-  /* 추가금 — 양보절 세 줄을 헤어라인으로 나눠 한 줄씩 읽히게, 맺음 한 줄은 ink 로 받는다 */
-  .v2-standards-story__concede { margin-top: var(--head-gap); list-style: none; border-top: 1px solid var(--br-line); }
-  .v2-standards-story__concede li {
-    padding: 16px 0; border-bottom: 1px solid var(--br-line);
-    font-size: 17px; font-weight: 600; color: var(--br-ink);
-  }
-  .v2-standards-story__closing { margin-top: 24px; font-size: 17px; font-weight: 700; color: var(--br-ink); }
-  @media (min-width: 768px) {
-    .v2-standards-story__concede li { font-size: 19px; padding: 20px 0; }
-    .v2-standards-story__closing { font-size: 19px; }
-  }
   .v2-standards-story__updated { margin-top: 18px; font-size: 13px; }
 
   .v2-standards-story__pricing {
