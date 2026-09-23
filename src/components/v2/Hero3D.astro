@@ -14,6 +14,8 @@
       <iframe id="f-house" src="/3d/house.html?embed" title="3D 구성도 · 아파트" tabindex="-1"></iframe>
     </div>
 
+    <p class="h3-kicker h3-wrap"><span class="nb">시스템에어컨 설치</span> · <span class="nb">분해세척</span> · <span class="nb">관리</span></p>
+
     <div class="h3-head h3-wrap">
       <div class="h3-head__in" id="headIn">
         <h1 id="hero-title">에어컨 생각,<br>오늘이 마지막입니다.</h1>
@@ -347,7 +349,9 @@
    (2026-09-23 실측: 되돌아가기 버튼의 ice 채움과 700 굵기가 죽어 있었다). */
 :where(.h3-hero) button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; letter-spacing: inherit; }
 .h3-hero h1 { font-weight: 800; line-height: 1.15; letter-spacing: -0.02em; text-wrap: balance; }
-.h3-hero p { margin: 0; }
+/* :where() 로 특이도 0 — (0,1,1) 이면 .h3-wrap 의 margin-inline:auto 를 지워 가운데 정렬이 깨진다
+   (2026-09-23 업종 줄이 왼쪽 끝 x=20 에 붙었다. 버튼 리셋과 같은 원인) */
+:where(.h3-hero) p { margin: 0; }
 .h3-hero [hidden] { display: none !important; }
 .h3-wrap { width: 100%; max-width: var(--maxw); margin-inline: auto; padding-inline: 20px; }
 .h3-glass {
@@ -447,6 +451,17 @@
 /* ⚠️ [data-touch="off"] 를 여기 다시 넣지 말 것 — 터치 기기에서 안내가 0개가 된다(2026-09-22).
    도면을 직접 못 누르는 상태라도 '아래 목록에서 누른다'는 건 알려 줘야 한다. */
 .h3-head h1 { font-size: clamp(36px, 7.4vw, 72px); color: var(--br-teal); }
+/* 업종 한 줄 — 헤더 바로 아래. 제목 위 빈 띠가 첫 화면에서 가장 먼저 눈이 가는 자리다.
+   자간을 넓힌 작은 teal 라벨(.br-eyebrow 와 같은 문법)이라 제목과 층위가 겹치지 않는다. */
+.h3-kicker {
+  position: relative; z-index: 1;
+  padding-top: 24px; margin-block: 0;   /* margin:0 이면 .h3-wrap 의 가운데 정렬이 지워진다 */
+  font-size: 15px; font-weight: 700; letter-spacing: 0.12em;
+  color: var(--br-teal);
+  pointer-events: none;
+}
+.h3-hero[data-room] .h3-kicker, .h3-hero[data-deep] .h3-kicker { opacity: 0; }
+@media (max-width: 1023px) { .h3-hero[data-touch3d] .h3-kicker { opacity: 0; } }
 .h3-head p { margin-top: 20px; font-size: 17px; line-height: 1.7; color: var(--br-ink-sub); max-width: 34em; }
 
 /* 도크: 공간 전환 + 공간 목록. 히어로 안의 유리는 이것 하나 */
