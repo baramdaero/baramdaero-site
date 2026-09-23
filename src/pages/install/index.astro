@@ -33,8 +33,8 @@ const CEILING_MODELS = [
     caption: '천장형 1Way · 부품 14개 · 치수는 AC023CN1PBH1 기준 (본체 970×135×410 · 판넬 1198×35×500 mm)' },
 ];
 
-// 01 상담·견적은 '방문 없이'라 현장 사진이 붙으면 글과 부딪힌다 — 빈 슬롯으로 두고 한 칸씩 민다
-const STEP_SLOTS = ['', 'install-process-01', 'install-process-02', 'install-process-04'];
+// 01 상담·견적은 '방문 없이'라 현장 사진 대신 실제 상담 화면(챗봇 캡처를 폰에 합성)을 쓴다
+const STEP_SLOTS = ['install-consult', 'install-process-01', 'install-process-02', 'install-process-04'];
 const STEPS = [
   { title: '상담·견적', body: '기종과 대수, 설치 위치를 확인해 견적을 확정합니다. 방문 없이 진행합니다.' },
   { title: '설계', body: '도면과 현장 조건을 확인해 배관 경로와 실외기 위치를 정합니다. 시공 전에 확정하고, 정해진 대로만 진행합니다.' },
@@ -63,9 +63,21 @@ const breadcrumbJsonLd = {
       견적은 방문 전에 나옵니다.<br />
       도면과 배관 경로, 실외기 위치는 시공 전에 함께 정합니다.
     </Fragment>
+  </PageHero>
+
+  {/* 기종 소개. 제품 영상은 제목과 3D 안내 사이 — 히어로 맨 아래에 있을 때는 첫 화면 밖이라
+      큰 빈 다크 면 뒤에 묻혔다(2026-09-23 대표 지적 "위치가 별로") */}
+  <Exploded
+    id="install-exploded"
+    tone="base"
+    eyebrow=""
+    title="1Way 천장형, 속은 이렇게 생겼습니다"
+    body="삼성·LG 공통 구성으로 만든 3D입니다. 부품을 눌러 이름과 역할을 보세요."
+    items={CEILING_MODELS}
+  >
     {PRODUCT_VIDEOS.length > 0 && (
-      <Fragment slot="extra">
-        <div class="install-video__grid br-glass br-glass--dark">
+      <Fragment slot="lead">
+        <div class="install-video__grid">
           {PRODUCT_VIDEOS.map((v) => (
             <div class="install-video__frame">
               <iframe
@@ -81,17 +93,7 @@ const breadcrumbJsonLd = {
         <p class="install-video__source">{VIDEO_SOURCE}</p>
       </Fragment>
     )}
-  </PageHero>
-
-  {/* 영상 바로 아래: 기종 소개. 천장형은 1Way·2Way·4Way·360 원형이 있고 안 구조가 다르다 */}
-  <Exploded
-    id="install-exploded"
-    tone="base"
-    eyebrow=""
-    title="1Way 천장형, 속은 이렇게 생겼습니다"
-    body="삼성·LG 공통 구성으로 만든 3D입니다. 부품을 눌러 이름과 역할을 보세요."
-    items={CEILING_MODELS}
-  />
+  </Exploded>
 
   {/* 절차 4단계를 한 섹션에 둔다 — 스텝마다 섹션을 쪼개면 「설치 절차」 눈썹이 네 번 반복된다.
       리듬은 배경 줄무늬 대신 이미지 좌우 교차(지그재그)가 맡는다. */}
@@ -101,26 +103,17 @@ const breadcrumbJsonLd = {
       <div class="install-steps__list">
         {STEPS.map((st, i) => (
           <article class="install-step__card br-glass br-glass--medium br-reveal" data-glow>
-            {STEP_SLOTS[i] ? (
-              <StoryRow
-                slotId={STEP_SLOTS[i]}
-                slotLabel={STEP_SLOTS[i]}
-                ratio="square"
-                imageSide={i % 2 === 0 ? 'left' : 'right'}
-                tone="light"
-              >
-                <span class="install-step__no">{String(i + 1).padStart(2, '0')}</span>
-                <h3 class="install-step__title">{st.title}</h3>
-                <p class="br-body">{st.body}</p>
-              </StoryRow>
-            ) : (
-              /* 01 상담·견적은 '방문 없이' 라 현장 사진이 붙으면 글과 부딪힌다 — 사진 없이 글만 */
-              <div class="install-step__copy">
-                <span class="install-step__no">{String(i + 1).padStart(2, '0')}</span>
-                <h3 class="install-step__title">{st.title}</h3>
-                <p class="br-body">{st.body}</p>
-              </div>
-            )}
+            <StoryRow
+              slotId={STEP_SLOTS[i]}
+              slotLabel={STEP_SLOTS[i]}
+              ratio="square"
+              imageSide={i % 2 === 0 ? 'left' : 'right'}
+              tone="light"
+            >
+              <span class="install-step__no">{String(i + 1).padStart(2, '0')}</span>
+              <h3 class="install-step__title">{st.title}</h3>
+              <p class="br-body">{st.body}</p>
+            </StoryRow>
           </article>
         ))}
       </div>
@@ -134,6 +127,7 @@ const breadcrumbJsonLd = {
     slotPrefix="install"
     startSide="left"
     startTone="base"
+    itemPhotos
   />
 
   <section class="bd-section install-after" data-layout-section="install-after">
@@ -166,32 +160,22 @@ const breadcrumbJsonLd = {
 
 
 <style>
-  /* 제품 영상 — 히어로와 같은 섹션(extra 슬롯) 안. 16:9 고정, 768px+ 나란히 */
-  /* 두 영상을 유리판 하나에 담는다. 판은 영상 바깥(패딩)에만 있어 플레이어 위에 겹치지 않는다
-     (YouTube 임베드 정책: 플레이어 앞 오버레이 금지). 판 radius = 영상 radius + 패딩 → 동심원(§5) */
-  .install-video__grid {
-    --pad: 12px;
-    display: grid; gap: var(--pad); padding: var(--pad);
-    border-radius: calc(var(--radius) + var(--pad));
-  }
-  /* 흰 유리 테두리 — 다크 판 기본 링(--glass-ring-on-dark)은 우하단에서 딥틸로 사라진다. 밝은 판 링으로 교체 */
-  .install-video__grid.br-glass--dark::before { background: var(--glass-ring); }
+  /* 제품 영상 — 분해 3D 섹션 제목 아래(lead 슬롯). 16:9 고정, 768px+ 나란히.
+     테두리 판은 없앤다(2026-09-23 대표: "테두리는 없애고 글래스 느낌 그림자 하나").
+     그림자는 영상 바깥에만 — YouTube 임베드 정책상 플레이어 위에 겹치는 것은 두지 않는다 */
+  .install-video__grid { display: grid; gap: 16px; }
   .install-video__frame {
     position: relative;
     aspect-ratio: 16 / 9;
     border-radius: var(--radius);
     overflow: hidden;
     background: var(--br-ink);
+    box-shadow: var(--glass-shadow);
   }
   .install-video__frame iframe { width: 100%; height: 100%; border: 0; display: block; }
-  .install-video__fallback {
-    display: grid; place-items: center; width: 100%; height: 100%;
-    color: var(--br-ice); font-weight: 700; text-align: center; padding: 20px;
-  }
-  /* 다크 히어로 위 — ink-sub는 배경에 묻힌다 */
-  .install-video__source { margin-top: 14px; font-size: 13px; color: rgba(255, 255, 255, 0.7); }
+  .install-video__source { margin-top: 14px; font-size: 13px; color: var(--br-ink-sub); }
   @media (min-width: 768px) {
-    .install-video__grid { --pad: 16px; grid-template-columns: repeat(2, 1fr); }
+    .install-video__grid { gap: 24px; grid-template-columns: repeat(2, 1fr); }
   }
 
   /* 유리 카드 호스트 — 투명해야 앰비언트가 비친다 */

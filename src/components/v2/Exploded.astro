@@ -35,6 +35,8 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
     <div class="bd-container">
       {eyebrow && <span class="br-eyebrow br-reveal">{eyebrow}</span>}
       <h2 class="br-h br-reveal">{title}</h2>
+      {/* 제목과 3D 안내 사이 — /install/ 은 제품 영상을 여기 둔다 */}
+      {Astro.slots.has('lead') && <div class="ex-lead br-reveal"><slot name="lead" /></div>}
       {body && <p class="br-body br-reveal">{body}</p>}
 
       {items.length > 1 && (
@@ -171,6 +173,9 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
   .ex-sec { background: var(--br-base); }
   .ex-sec--mist { background: var(--br-mist); }
 
+  .ex-lead { margin-top: 28px; }
+  .ex-lead:empty { display: none; }   /* 부모가 조건부로 비운 슬롯도 has('lead') 는 true 다 */
+  .ex-lead:not(:empty) + .br-body { margin-top: 32px; }
   .ex-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
   .ex-tab {
     font: inherit; font-size: 14px; line-height: 1; cursor: pointer;
