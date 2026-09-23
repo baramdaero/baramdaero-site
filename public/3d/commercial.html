@@ -2558,16 +2558,38 @@ function syncUI() {
   BLD.labels.forEach(l => { l.el.hidden = state.level !== 'building'; });
   ROOF.labels.forEach(l => { l.el.hidden = state.level !== 'roof'; });
 }
-function markUnit(id) {
-  for (const s of Object.values(spaces)) for (const [uid, m] of Object.entries(s.unitMark || {})) m.visible = s === S && uid === id;
+function markUnit(id) { // id 하나 또는 배열(같은 시점 묶음)
+  const ids = Array.isArray(id) ? id : [id];
+  for (const s of Object.values(spaces)) for (const [uid, m] of Object.entries(s.unitMark || {})) m.visible = s === S && ids.includes(uid);
 }
-function goUnit(id) { // "에어컨을 누르면 그 에어컨 시점으로": the unit's own ac_closeup, else any view that must show it
+// 실내기 → 그 실내기로 가는 시점 번호: 자기 ac_closeup, 없으면 그 실내기를 담는 첫 시점, 그것도 없으면 구역 시점
+function unitView(u) {
+  const views = S.P.views, shows = v => v.must_show !== 'all' && v.must_show.includes(u.id);
+  const vi = views.findIndex(v => v.kind === 'ac_closeup' && shows(v));
+  const alt = vi >= 0 ? vi : views.findIndex(shows);
+  return alt >= 0 ? alt : viewFor(S.P.zones.find(q => q.id === u.zone));
+}
+// 같은 시점으로 가는 실내기끼리 묶는다(목록 순서 유지). 히어로 목록에서 한 칸이 된다 —
+// 칸마다 같은 장면으로 날아가 천장만 덮였다 걷혔다 했다(2026-09-23 대표 지적)
+function unitGroups() {
+  const by = new Map();
+  for (const u of S.units) { const vi = unitView(u); if (!by.has(vi)) by.set(vi, []); by.get(vi).push(u); }
+  return [...by.values()];
+}
+const groupOf = id => unitGroups().find(g => g.some(u => u.id === id)) || [];
+function groupName(g) { // 창가 1·3·4 / 창가 2·3 · 안쪽 3·4
+  const parts = new Map();
+  for (const u of g) {
+    const n = entryName(u), m = n.match(/^(.*\S)\s+(\d+)$/), key = m ? m[1] : n;
+    if (!parts.has(key)) parts.set(key, []);
+    if (m) parts.get(key).push(m[2]);
+  }
+  return [...parts].map(([k, ns]) => ns.length ? `${k} ${ns.join('·')}` : k).join(' · ');
+}
+function goUnit(id) { // "에어컨을 누르면 그 에어컨 시점으로"
   const u = S.unitsById[id];
   if (!u) return;
-  const shows = v => v.must_show !== 'all' && v.must_show.includes(id);
-  const vi = S.P.views.findIndex(v => v.kind === 'ac_closeup' && shows(v));
-  const alt = vi >= 0 ? vi : S.P.views.findIndex(shows);
-  goZone(u.zone, alt >= 0 ? alt : undefined, id);
+  goZone(u.zone, unitView(u), id);
 }
 function goZone(id, viewIdx, unitId) {
   const z = S.P.zones.find(q => q.id === id);
@@ -2580,7 +2602,8 @@ function goZone(id, viewIdx, unitId) {
   syncUI();
   renderDetail(id, viewIdx, state.unit);
   // embed: 자기 전용 당긴 구도로 들어가면 표시 링을 끈다(제품 컷에 선이 얹히면 합성처럼 보인다)
-  markUnit(state.unit && !(EMBED && S.P.views[viewIdx]?.kind === 'ac_closeup') ? state.unit : null);
+  const grp = state.unit ? groupOf(state.unit) : [];
+  markUnit(state.unit && !(EMBED && S.P.views[viewIdx]?.kind === 'ac_closeup') ? (grp.length > 1 ? grp.map(u => u.id) : state.unit) : null);
   const o0 = occNow, o1 = occlusion();
   applyViewport(o1);
   const pose = viewPose(viewIdx);
@@ -2589,7 +2612,9 @@ function goZone(id, viewIdx, unitId) {
   if (EMBED) {
     if (o0) Object.assign(tween, { o0, o1 });
     const u = unitId && S.unitsById[unitId], us = S.unitsByZone[id] || [];
-    post({ type: 'enter', id: `${S.key}/${unitId || id}`, title: u ? entryName(u) : short(z.name_ko), sub: u ? (MODEL_KO[u.model] || u.model) : (us.length ? modelSummary(us) : '전용 실내기 없음') });
+    const title = u ? (grp.length > 1 ? groupName(grp) : entryName(u)) : short(z.name_ko);
+    const sub = u ? (grp.length > 1 ? modelSummary(grp) : (MODEL_KO[u.model] || u.model)) : (us.length ? modelSummary(us) : '전용 실내기 없음');
+    post({ type: 'enter', id: `${S.key}/${unitId || id}`, title, sub });
   }
 }
 function goHome() { // 구역·실내기 → 층 입구 → 건물 정면, 한 단계씩
@@ -2714,7 +2739,9 @@ function entries() {
   ];
   const back = [{ id: 'building', name: '건물 정면', sub: '' }];
   if (state.level === 'roof') return back;
-  return [...back, ...S.units.map(u => ({ id: `${S.key}/${u.id}`, name: entryName(u), sub: MODEL_KO[u.model] || u.model }))];
+  return [...back, ...unitGroups().map(g => g.length === 1
+    ? { id: `${S.key}/${g[0].id}`, name: entryName(g[0]), sub: MODEL_KO[g[0].model] || g[0].model }
+    : { id: `${S.key}/${g[0].id}`, name: groupName(g), sub: modelSummary(g) })];
 }
 // 반자 목표: 구역·실내기 시점만 덮는다(층 입구·건물·옥상은 걷는다)
 function ceilTarget() { return state.zone ? 1 : 0; }
@@ -2773,7 +2800,8 @@ function setHover(id) {
   for (const s of Object.values(spaces)) {
     const live = s === S && state.level === 'floor' && !state.zone; // 층 입구에서 천장 에어컨·바닥 구역을 짚어 준다
     for (const [zid, m] of Object.entries(s.hoverMeshes)) m.visible = live && zid === id;
-    for (const [uid, m] of Object.entries(s.unitHover)) m.visible = live && uid === id;
+    const hg = live && id && S.unitsById[id] ? groupOf(id).map(u => u.id) : [id]; // 같은 시점 묶음은 함께 짚는다
+    for (const [uid, m] of Object.entries(s.unitHover)) m.visible = live && hg.includes(uid);
   }
   BLD?.pick.forEach(m => { m.visible = state.level === 'building' && m.userData.hid === id; });
   for (const l of [...(S?.labels || []), ...(BLD?.labels || [])]) l.el.classList.toggle('is-hover', l.id != null && l.id === id);
