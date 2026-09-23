@@ -14,7 +14,8 @@ const FAQ_PATH = join(process.cwd(), 'src/content/site/faq.json');
 
 /** next.tree 허용값 — 챗봇 TREE_START 키와 일치해야 한다 */
 const VALID_TREES = ['install', 'clean', 'as', 'etc'] as const;
-export const FAQ_CATEGORIES = ['비용', '세척', '설치', '진행', '사후'] as const;
+// 순서 = /faq/ 목록 순서. 비용 먼저, 그다음 수요가 가장 큰 고장·증상(09-23 질문 수집 기준)
+export const FAQ_CATEGORIES = ['비용', '고장·증상', '세척', '사용·관리', '설치', '선택·구매', '진행', '사후'] as const;
 export type FaqCategory = (typeof FAQ_CATEGORIES)[number];
 
 export interface FaqItem {
@@ -33,6 +34,12 @@ export interface FaqPageItem {
   priceNote: string;
   related: { label: string; href: string }[];
   updated: string;
+  /** 검색 동의어 — 고객이 실제로 쓰는 말(쉰내·퀴퀴한 냄새 등). 화면에는 안 나오고 검색에만 쓴다 */
+  keywords: string[];
+  /** /faq/ 에서 물어본 질문에 먼저 보이는 짧은 답 — 페이지 전용(챗봇에 안 나온다) */
+  shortA: string;
+  /** 챗봇용 짧은 답 — shortA 가 비면 /faq/ 에서도 이걸 먼저 보인다(없으면 본문 첫 문단) */
+  chatA: string;
 }
 
 const warn = (msg: string) => console.warn(`[faq.json 경고] ${msg}`);
@@ -127,6 +134,9 @@ export function loadFaqPage(): FaqPageItem[] {
       priceNote: isNonEmptyString(it.price_note) ? it.price_note.trim() : '',
       related,
       updated: isNonEmptyString(it.updated) ? it.updated.trim() : '',
+      keywords: Array.isArray(it.keywords) ? it.keywords.filter(isNonEmptyString).map((k: string) => k.trim()) : [],
+      shortA: isNonEmptyString(it.short_a) ? it.short_a.trim() : '',
+      chatA: isNonEmptyString(it.chat_a) ? it.chat_a.trim() : '',
     });
   });
   return out;
@@ -138,7 +148,8 @@ export function loadFaqPage(): FaqPageItem[] {
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const bold = (s: string) => s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
 
-export function renderFaqMd(src: string): string {
+/** h — '## ' 소제목을 몇 단계 제목으로 낼지. 놓이는 자리의 제목 단계에 맞춘다(기본 h3) */
+export function renderFaqMd(src: string, h = 3): string {
   const blocks = src.split(/\n\s*\n/);
   return blocks
     .map((block) => {
@@ -158,7 +169,7 @@ export function renderFaqMd(src: string): string {
       }
       if (lines[0].startsWith('## ')) {
         const rest = lines.slice(1);
-        return `<h3>${bold(esc(lines[0].slice(3)))}</h3>` + (rest.length ? renderFaqMd(rest.join('\n')) : '');
+        return `<h${h}>${bold(esc(lines[0].slice(3)))}</h${h}>` + (rest.length ? renderFaqMd(rest.join('\n'), h) : '');
       }
       return `<p>${lines.map((l) => bold(esc(l))).join('<br />')}</p>`;
     })

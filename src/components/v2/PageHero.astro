@@ -18,7 +18,7 @@ const { eyebrow = '', lead = false } = Astro.props;
   )}
   <div class="bd-container v2-phero__inner">
     <h1 class="br-h v2-phero__title br-reveal"><slot /></h1>
-    <p class="v2-phero__sub br-reveal"><slot name="sub" /></p>
+    {Astro.slots.has('sub') && <p class="v2-phero__sub br-reveal"><slot name="sub" /></p>}
     <div class="v2-phero__extra br-reveal"><slot name="extra" /></div>
   </div>
 </section>
