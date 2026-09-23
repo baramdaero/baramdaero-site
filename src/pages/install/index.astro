@@ -26,11 +26,11 @@ const PRODUCT_VIDEOS = [
 ];
 const VIDEO_SOURCE = '출처: 삼성전자 공식 채널';
 
-// 가정용 천장형 — 1Way 한 기종(치수 기준 모델은 삼성). 4Way·360 원형은 상업용 페이지에 둔다.
+// 가정용 천장형 — 1Way 한 기종. 부품 구성은 삼성·LG 공통이라 브랜드로 나누지 않는다(치수 기준 모델만 캡션에).
 // 뷰어 파일은 public/3d/parts/ 의 공개 사본이다.
 const CEILING_MODELS = [
   { label: '1Way', file: 'samsung-1way-AC023CN1PBH1.html',
-    caption: '천장형 1Way · 부품 14개 · 치수는 삼성 AC023CN1PBH1 기준 (본체 970×135×410 · 판넬 1198×35×500 mm)' },
+    caption: '천장형 1Way · 부품 14개 · 치수는 AC023CN1PBH1 기준 (본체 970×135×410 · 판넬 1198×35×500 mm)' },
 ];
 
 // 01 상담·견적은 '방문 없이'라 현장 사진이 붙으면 글과 부딪힌다 — 빈 슬롯으로 두고 한 칸씩 민다
@@ -89,7 +89,7 @@ const breadcrumbJsonLd = {
     tone="base"
     eyebrow=""
     title="1Way 천장형, 속은 이렇게 생겼습니다"
-    body="삼성 1Way 실제 제원으로 만든 3D입니다. 부품을 눌러 이름과 역할을 보세요."
+    body="삼성·LG 공통 구성으로 만든 3D입니다. 부품을 눌러 이름과 역할을 보세요."
     items={CEILING_MODELS}
   />
 

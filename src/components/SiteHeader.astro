@@ -72,11 +72,12 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
         SHOP_URL이 비면 슬롯째 미렌더한다: 빈 요소를 남기면 inner의 gap이 그대로 붙어
         메뉴가 이유 없이 왼쪽으로 밀린다. 슬롯이 생기면 메뉴는 gap만큼 밀릴 뿐이고,
         폭은 flex가 알아서 나눈다 (고정값 재조정 불요). */}
-    {SITE_CONFIG.SHOP_URL && (
-      <div class="bd-header__actions">
-        <a href={SITE_CONFIG.SHOP_URL} class="bd-header__cta" rel="noopener">예약·구매</a>
-      </div>
-    )}
+    <div class="bd-header__actions">
+      {SITE_CONFIG.SHOP_URL && (
+        <a href={SITE_CONFIG.SHOP_URL} class="bd-header__shop" rel="noopener">예약·구매</a>
+      )}
+      <button disabled aria-describedby="chat-unavailable" type="button" class="bd-header__cta" data-chat-tree="menu">문의</button>
+    </div>
   </div>
 </header>
 
@@ -116,14 +117,17 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     color: var(--ink);
   }
   /* 로고와 메뉴 사이의 남는 폭은 auto로 배분한다. 메뉴가 늘어도 화면 밖으로 밀지 않는다. */
+  /* 로고 · 메뉴 · 액션 3분할. 좌우 열 폭을 같게 잡아 메뉴가 화면 정가운데에 선다
+     (애플 내비의 기본 골격 — 메뉴를 우측에 붙이면 로고와 무게가 안 맞는다) */
   .bd-header__inner {
     max-width: var(--maxw);
     margin: 0 auto;
     padding: 0 24px;
     height: 64px;
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    gap: 28px;
+    gap: 16px;
   }
   /* flex 축소 금지 — 축소는 flex '아이템'에서 일어난다. img에만 걸면 부모 picture/brand가
      대신 눌려 로고 비율이 깨진다 (360px에서 155→123px 실측). 사슬 전체에 건다 */
@@ -136,7 +140,8 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   .bd-header__actions {
     display: flex;
     align-items: center;
-    gap: 12px;
+    justify-content: flex-end;
+    gap: 10px;
     flex-shrink: 0;
   }
   /* 767px 이하에서는 슬롯을 접는다. 폭 예산이 물리적으로 부족하기 때문이다 —
@@ -145,8 +150,12 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
      겹침이 아니라 자리 부족이라 간격 조정으로는 못 푼다.
      ⚠️ 슬롯에 실제 내용이 들어갈 때 이 구간 정책(축약 CTA만 노출 / 햄버거 등)을
      다시 정할 것 — 지금은 SHOP_URL이 비어 슬롯 자체가 미렌더라 영향이 없다. */
+  /* 767px 이하: 우측 액션을 접고 2열로 — 로고 + 메뉴 알약.
+     문의는 전 페이지에 떠 있는 챗봇 런처가 이미 맡는다(같은 의도를 두 번 두지 않는다). */
   @media (max-width: 767px) {
     .bd-header__actions { display: none; }
+    .bd-header__inner { grid-template-columns: auto 1fr; }
+    .bd-header__nav { justify-self: end; }
   }
 
   /* 로고 — 높이 고정·width auto (비율 무변경). 톤 전환은 기존 상태 클래스만 사용.
@@ -166,47 +175,77 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   .bd-header--overlay.is-scrolled .bd-header__logo--ink { display: block; }
   /* 다크 구간(JS 초기화 후 히어로 위 투명 오버레이) = 리버스 */
   .bd-header--overlay.is-ready:not(.is-scrolled) .bd-header__logo--rev { display: block; }
+  /* 메뉴 — 유리 알약 하나에 담는다. 헤더가 투명일 때도 메뉴가 3D 위에서 읽힌다 */
   .bd-header__nav {
     display: flex;
-    gap: 22px;
+    align-items: center;
+    gap: 2px;
+    padding: 4px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--br-base) 42%, transparent);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid color-mix(in srgb, var(--br-line) 60%, transparent);
+  }
+  .bd-header--overlay.is-ready:not(.is-scrolled) .bd-header__nav {
+    background: color-mix(in srgb, #000 22%, transparent);
+    border-color: color-mix(in srgb, #fff 20%, transparent);
   }
   .bd-header__link {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 44px;
     min-height: 44px;
+    padding: 0 14px;
+    border-radius: 999px;
     font-size: 14px;
     font-weight: 500;
-    opacity: 0.85;
-    transition: opacity var(--dur-color) ease;
-    /* 44px 히트영역 확보 */
-    padding: 12px 2px;
+    opacity: 0.78;
+    transition: opacity var(--dur-color) ease, background-color var(--dur-color) ease;
   }
-  .bd-header__link:hover,
-  .bd-header__link[aria-current='page'] { opacity: 1; }
+  /* 현재 위치 — 밑줄 하나. 알약을 또 채우면 메뉴 알약과 겹쳐 읽힌다 */
+  .bd-header__link[aria-current='page']::after {
+    content: '';
+    position: absolute;
+    left: 14px; right: 14px; bottom: 9px;
+    height: 2px; border-radius: 2px;
+    background: currentColor;
+  }
+  .bd-header__link[aria-current='page'] { opacity: 1; font-weight: 700; }
+  @media (hover: hover) {
+    .bd-header__link:hover { opacity: 1; background: color-mix(in srgb, currentColor 8%, transparent); }
+  }
   /* 라벨 전환 — display:none은 접근성 트리에서도 제외되므로 한 링크가 두 번 읽히지 않는다 */
   .bd-header__label--full { display: none; }
+  .bd-header__shop,
   .bd-header__cta {
-    font-size: 14px;
-    font-weight: 600;
-    padding: 10px 18px;
-    border-radius: 6px;
-    background: var(--copper);
-    color: #fff;
+    display: inline-flex; align-items: center;
+    min-height: 44px; padding: 0 16px;
+    border: 0; border-radius: 999px;
+    font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+    background: var(--br-teal); color: #fff;
     transition: background-color var(--dur-color) ease, transform 160ms var(--ease-out);
   }
-  .bd-header__cta:hover { background: var(--copper-deep); }
+  .bd-header__shop { background: transparent; color: inherit; font-weight: 500; padding: 0 10px; }
+  /* 투명 오버레이 위에서는 ice 채움 — teal 버튼이 어두운 히어로에 묻힌다 */
+  .bd-header--overlay.is-ready:not(.is-scrolled) .bd-header__cta {
+    background: var(--br-ice); color: var(--br-teal);
+  }
+  @media (hover: hover) {
+    .bd-header__cta:hover { background: var(--br-teal-deep); }
+    .bd-header--overlay.is-ready:not(.is-scrolled) .bd-header__cta:hover { background: #fff; }
+    .bd-header__shop:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
+  }
   .bd-header__cta:active { transform: scale(0.96); }
 
   .bd-header__link,
   .bd-header__cta,
+  .bd-header__shop,
   .bd-header__brand { white-space: nowrap; }
 
   /* 상업용 메뉴 추가 후 390px에서 고정 여백이 넘쳐, 모바일도 남는 폭만 배분한다. */
-  @media (max-width: 640px) {
-    .bd-header__brand { margin-right: auto; }
-  }
+
 
   /* 데스크톱 헤더(64px)는 여유가 있어 40px의 2/3 = 26.667px */
   @media (min-width: 641px) {
@@ -221,7 +260,6 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
        150px로 줄이자 메뉴가 가운데로 뭉치고 오른쪽이 비었다(08-24).
        auto는 남는 폭을 전부 왼쪽에 몰아주므로 로고↔메뉴 간격은 화면이 넓어질수록
        늘고, 메뉴 우측 끝은 컨테이너에 고정된다. */
-    .bd-header__nav { margin-left: auto; }
   }
 
   /* 가로형이 안 들어가는 폭 — 마크 단독 강등 (파일 교체는 <picture> media가).
@@ -233,10 +271,15 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
 
   @media (max-width: 640px) {
     /* 기존 로고 크기와 헤더 높이를 유지한다. */
-    .bd-header__inner { gap: 10px; padding: 0 8px; height: 56px; }
-    .bd-header__nav { gap: 10px; }
-    .bd-header__link { font-size: 12px; padding: 12px 0; }
-    .bd-header__cta { padding: 8px 11px; font-size: 12px; }
+    .bd-header__inner { gap: 8px; padding: 0 12px; height: 56px; }
+    .bd-header__nav {
+      gap: 0; padding: 3px; min-width: 0;
+      overflow-x: auto; scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .bd-header__nav::-webkit-scrollbar { display: none; }
+    .bd-header__link { font-size: 12.5px; padding: 0 9px; flex: none; }
+    .bd-header__link[aria-current='page']::after { left: 9px; right: 9px; bottom: 7px; }
   }
 </style>
 

@@ -10,8 +10,9 @@ interface Item {
   file: string;
   /** 탭 아래 한 줄 설명 (모델명·용량 등) */
   caption?: string;
-  /** public/media/ 안의 제품 사진 [정면 판넬, 입체]. 있으면 사진 칸 + 3D 2단으로 나온다 */
-  photos?: { src: string; alt: string }[];
+  /** public/media/ 안의 제품 사진. 있으면 사진 칸 + 3D 2단으로 나온다.
+   *  caption 은 사진 아래 보이는 라벨 — 제조사를 여기서 밝힌다(삼성만 한다는 오해 방지) */
+  photos?: { src: string; alt: string; caption?: string }[];
 }
 interface Props {
   eyebrow: string;
@@ -54,8 +55,11 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
             {Array.from({ length: photoCount }, (_, k) => (
               <figure class="ex-photo" id={`${id}-fig-${k}`} hidden={!items[0].photos?.[k]}>
                 {items[0].photos?.[k] && (
-                  <img id={`${id}-photo-${k}`} src={`/media/${items[0].photos[k].src}`}
-                       loading="lazy" decoding="async" alt={items[0].photos[k].alt} />
+                  <Fragment>
+                    <img id={`${id}-photo-${k}`} src={`/media/${items[0].photos[k].src}`}
+                         loading="lazy" decoding="async" alt={items[0].photos[k].alt} />
+                    <figcaption id={`${id}-cap-${k}`}>{items[0].photos[k].caption ?? ''}</figcaption>
+                  </Fragment>
                 )}
               </figure>
             ))}
@@ -77,7 +81,7 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
       <p class="ex-cap" id={`${id}-cap`}>{items[0].caption ?? ''}</p>
       <p class="ex-note">
         {photoNote && <Fragment>{photoNote}<br /></Fragment>}
-        3D는 기종 공통 구성으로 만들고 외형 치수만 각 모델 제원을 씁니다. 내부 부품 형상은 실물과 다를 수 있습니다.
+        3D는 삼성·LG 공통 구성으로 만들고 외형 치수만 한 모델의 제원을 씁니다. 내부 부품 형상은 실물과 다를 수 있습니다.
       </p>
     </div>
   </section>
@@ -132,6 +136,8 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
         const ph = it.photos?.[k], img = photos.find((x) => x.id === `${id}-photo-${k}`);
         fig.hidden = !ph;
         if (ph && img) { img.src = `/media/${ph.src}`; img.alt = ph.alt; }
+        const cap = fig.querySelector('figcaption');
+        if (cap) cap.textContent = ph?.caption ?? '';
       });
       tabs.forEach((t, k) => {
         t.setAttribute('aria-selected', String(k === i));
@@ -185,9 +191,16 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
   .ex-photo {
     margin: 0; border: 1px solid var(--br-line); border-radius: 12px; overflow: hidden;
     background: color-mix(in srgb, var(--br-teal) 12%, var(--br-mist));
-    display: grid; place-items: center; padding: 10px; min-height: 0;
+    display: grid; grid-template-rows: 1fr auto; justify-items: center;
+    padding: 10px; min-height: 0;
   }
-  .ex-photo img { width: 100%; height: 100%; max-width: 100%; object-fit: contain; }
+  .ex-photo img { width: 100%; height: 100%; max-width: 100%; object-fit: contain; min-height: 0; }
+  /* 제조사 라벨 — 두 브랜드를 다 한다는 게 사진에서 바로 읽혀야 한다 */
+  .ex-photo figcaption {
+    font-size: 12.5px; font-weight: 600; color: var(--br-teal);
+    padding-top: 6px; text-align: center;
+  }
+  .ex-photo figcaption:empty { display: none; }
 
   .ex-fail { display: none; position: absolute; inset: 0; margin: 0; place-content: center;
     padding: 24px; text-align: center; font-size: 14px; color: var(--br-ink-sub); }
