@@ -115,7 +115,7 @@ button {
 .br-eyebrow {
   display: inline-block;
   padding: 0;
-  color: var(--br-eyebrow-fg, var(--br-teal));
+  color: var(--br-eyebrow-fg, var(--br-ink-sub)); /* 라벨은 회색 — teal 글자는 누를 수 있는 것에만(2026-09-23 토스 실측, DESIGN.md §1) */
   font-size: 15.5px; /* 구 알약 13px × 1.2 */
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -139,7 +139,7 @@ button {
 .install-step--deep,
 .sit-journey__story--deep,
 .sit-close {
-  --br-eyebrow-fg: var(--br-ice);
+  --br-eyebrow-fg: rgba(255, 255, 255, 0.75); /* 어두운 배경 글자는 흰색 두 단계(제목 100% · 보조 75%) */
   --br-slot-line: rgba(255, 255, 255, 0.14);
   --br-slot-bg: rgba(255, 255, 255, 0.04);
   --br-slot-fg: rgba(255, 255, 255, 0.5);
@@ -151,9 +151,9 @@ button {
 .br-glass--light .br-image-slot {
   --br-slot-line: rgba(0, 78, 100, 0.14);
   --br-slot-bg: rgba(0, 78, 100, 0.035);
-  /* 캡션은 solid teal — Heavy 카드가 딥 섹션 위에 오면 표면이 192,202,208로 내려앉아 알파 78%로는 3.7:1(2차 실측).
-     solid이면 Heavy-on-deep 5.7 / base 8.75. 흐림은 크기·자간이 맡는다 */
-  --br-slot-fg: var(--br-teal);
+  /* 캡션은 solid ink — Heavy 카드가 딥 섹션 위에 오면 표면이 192,202,208로 내려앉는다(2차 실측).
+     ink-sub 는 그 표면에서 4.5 아래라 ink(9.8:1). 흐림은 크기·자간이 맡는다 */
+  --br-slot-fg: var(--br-ink);
 }
 
 /* 섹션 헤드라인 — 과감한 스케일, 의도적 줄바꿈 전제 */
@@ -165,7 +165,7 @@ button {
   font-weight: 700;
   line-height: 1.3;
   letter-spacing: -0.02em;
-  color: var(--br-teal);
+  color: var(--br-ink);
 }
 .br-h em { font-style: normal; color: var(--br-ice); } /* 딥 배경 전용 강조 */
 
@@ -190,7 +190,7 @@ button {
 .bd-section-title {
   font-size: clamp(24px, 3.2vw, 34px);
   margin: 10px 0 36px;
-  color: var(--br-teal);
+  color: var(--br-ink);
 }
 
 /* CTA(라이트 구간) — teal 채움 + 흰 글자, hover = ice 채움 + teal 글자 (DESIGN.md §1)
