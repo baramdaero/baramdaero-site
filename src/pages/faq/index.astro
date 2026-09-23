@@ -467,7 +467,7 @@ if (items.length) {
     overflow-wrap: anywhere;
   }
   .faq-chat__we { padding: 22px 24px 24px; }
-  .faq-chat__who { margin-bottom: 8px; font-size: 13px; font-weight: 700; letter-spacing: 0.02em; color: var(--br-teal); }
+  .faq-chat__who { margin-bottom: 8px; font-size: 13px; font-weight: 700; letter-spacing: 0.02em; color: var(--br-ink-sub); }
   .faq-chat__lead { font-size: 17px; font-weight: 700; line-height: 1.55; color: var(--br-ink); outline: none; }
   .faq-chat__alt { margin: 16px 0 14px; font-size: 15px; line-height: 1.7; color: var(--br-ink-sub); }
   .faq-chat__alt + .faq-chat__chips--tight { margin-top: -6px; }
@@ -579,7 +579,7 @@ if (items.length) {
   .faq-nav + .faq-cat { margin-top: 0; }
   .faq-cat__title {
     font-size: 20px;
-    color: var(--br-teal);
+    color: var(--br-ink);
     padding-bottom: 10px;
     border-bottom: 2px solid var(--br-teal);
   }
@@ -588,18 +588,19 @@ if (items.length) {
   .faq-item__q {
     cursor: pointer;
     font-weight: 700;
-    font-size: 16.5px;
+    font-size: 17px;
     line-height: 1.6;
     padding: 18px 4px;
     color: var(--br-ink);
   }
   .faq-item__body { padding: 2px 4px 24px; }
 
-  /* 후킹 한 줄 — 답의 얼굴 */
+  /* 후킹 한 줄 — 답의 얼굴. 질문(17px/700 ink)보다 한 단계 아래 — 질문을 훑어 내려가는 게 FAQ 의 기본 동작이다
+     (2026-09-23 teal→무채색 전환 뒤 hook 18px ink 가 질문보다 커져 위계가 뒤집혔다) */
   .faq-item__hook {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--br-teal);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--br-ink-sub);
     line-height: 1.6;
     margin-bottom: 12px;
   }
@@ -631,7 +632,7 @@ if (items.length) {
     padding: 10px 12px;
     border-bottom: 1px solid var(--br-line);
   }
-  .faq-item__a :global(th) { color: var(--br-teal); font-weight: 700; }
+  .faq-item__a :global(th) { color: var(--br-ink); font-weight: 700; }
   .faq-item__a :global(strong) { color: var(--br-ink); }
 
   .faq-item__price {
@@ -655,5 +656,5 @@ if (items.length) {
   }
 
   .faq-page__pending { text-align: center; padding: 24px 0; }
-  .faq-page__pending-title { font-size: 20px; font-weight: 700; color: var(--br-teal); margin-bottom: 24px; }
+  .faq-page__pending-title { font-size: 20px; font-weight: 700; color: var(--br-ink); margin-bottom: 24px; }
 </style>
