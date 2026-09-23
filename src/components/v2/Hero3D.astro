@@ -26,17 +26,15 @@
     <div class="h3-spacer" aria-hidden="true"></div>
 
     <div class="h3-dock-wrap h3-wrap" id="dockWrap">
-      <p class="h3-tap h3-glass" id="tap" aria-hidden="true" hidden>
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M5 3l14 8-6.2 1.8L10.4 19 5 3z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
-        </svg>
-        <span class="h3-tap__txt">
-          <strong id="tapWhat">아파트·상가·오피스</strong>
-          <small id="tapWhy">눌러서 안까지 들어가 봅니다</small>
-        </span>
-      </p>
 
       <div class="h3-dock h3-glass" id="dock">
+        <p class="h3-invite" id="invite">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M5 3l14 8-6.2 1.8L10.4 19 5 3z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+          </svg>
+          <strong>눌러서 들어가 보세요</strong>
+          <span id="inviteWhy">방마다 에어컨 자리와 천장 속 배관 경로가 보입니다</span>
+        </p>
         <div class="h3-dock__row h3-dock__row--top">
           <div class="h3-spaces" role="group" aria-label="공간 선택" id="spaces"></div>
           <p class="h3-disclaimer">실제 시공사례를 기반으로 제작한 3D 예시입니다.</p>
@@ -67,7 +65,6 @@
   const wide = matchMedia('(min-width: 1024px)'), coarse = matchMedia('(any-pointer: coarse)'), reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const frames = { house: $('f-house') };
   const VIEWERS = [...new Set(SPACES.map(s => s.viewer))];   // house · commercial(상가) · office(오피스)
-  const eul = w => { const c = (w || '').codePointAt((w || '').length - 1) - 0xAC00; return c >= 0 && c < 11172 && c % 28 === 0 ? '를' : '을'; };
   const st = { space: 'house', viewer: 'house', ready: {}, failed: {}, entries: {}, bldKey: {}, pendingKey: null, dipTimer: 0, room: null, touchLive: false, notice: '' };
   const FAIL_MSG = '3D 구성도를 불러오지 못했습니다. 잠시 뒤 새로고침해 주세요.';
   const RETRY_MSG = '구성도를 불러오지 못했습니다. 탭을 다시 누르면 다시 불러옵니다.';
@@ -157,19 +154,12 @@
         : `<span class="h3-spots__load" role="status">구성도를 불러오는 중입니다</span>`;
       syncMore();
     }
-    $('tap').hidden = !st.ready[st.viewer] || deep || hero.hasAttribute('data-engaged');
-    // 어딜 누르라는 건지 이름으로 말한다 — 목록에서 그대로 가져오므로 없는 방을 부르지 않는다.
-    // (칩은 도크·도면을 처음 만지는 순간 사라진다. 그래서 공간별 분기는 두지 않는다)
-    if (!$('tap').hidden) {
-      const names = (st.entries[st.space] || []).filter(e => e.id !== 'building').slice(0, 2).map(e => e.name);
-      // 위: 무엇을 볼 수 있는지(세 공간 전부). 아래: 지금 이 화면에서 어디를 누르면 되는지.
-      const others = SPACES.filter((x) => x.key !== st.space).map((x) => x.name.replace(' 빌딩', ''));
-      $('tapWhat').textContent = `${spaceOf(st.space).name.replace(' 빌딩', '')} · ${others.join(' · ')}`;
-      const ex = names.length ? `${names.slice(0, 2).join('·')}${eul(names.slice(0, 2).at(-1))}` : '공간을';
-      $('tapWhy').textContent = coarse.matches && !st.touchLive
-        ? `아래 목록에서 ${ex} 눌러 보세요`
-        : `${ex} 눌러 안까지 들어가 봅니다`;
-    }
+    $('invite').hidden = inRoom;
+    $('inviteWhy').textContent = deep
+      ? '에어컨을 누르면 그 자리에서 봅니다'
+      : st.space === 'house'
+        ? '방마다 에어컨 자리와 천장 속 배관 경로가 보입니다'
+        : '층을 누르면 안으로 들어갑니다. 층마다 에어컨 자리와 배관이 보입니다';
     const failed = st.failed.house && !st.ready.house;
     hero.toggleAttribute('data-fail', !!failed);
     $('hint').classList.toggle('fail', !!(failed || st.notice));
@@ -182,7 +172,39 @@
     if (on3d) hero.setAttribute('data-touch3d', '');   // 도면을 직접 만졌을 때만 문구를 비운다
     if (hero.hasAttribute('data-engaged')) return;
     hero.setAttribute('data-engaged', '');
-    $('tap').hidden = true;
+    stopTour();
+  }
+
+  // ── 처음 온 사람에게 '눌리는 것'이라는 걸 보여 준다 ──
+  // 방 칩 세 개를 차례로 짚고, 3D 에서도 그 방을 밝힌다(setHover — 카메라는 안 움직인다).
+  // 한 번만. 만지거나 공간을 바꾸거나 화면을 벗어나면 멈춘다. 모션 감소 설정이면 하지 않는다.
+  // ⚠️ 반복하지 말 것 — 무한 루프 모션은 DESIGN.md §4 금지.
+  let tourTimer = 0, tourDone = false;
+  function stopTour() {
+    if (tourDone) return;
+    tourDone = true; clearTimeout(tourTimer);
+    $('spots').querySelectorAll('.is-demo').forEach(b => b.classList.remove('is-demo'));
+    send('house', { type: 'hover', id: null });
+  }
+  function startTour() {
+    if (tourDone || reduced.matches) return;
+    // 집 인트로 카메라(실측 약 6.5초)가 끝난 뒤에 — 도는 동안에는 뷰어가 hover 를 무시한다
+    tourTimer = setTimeout(() => {
+      if (st.viewer !== 'house' || st.room || hero.hasAttribute('data-engaged')) return stopTour();
+      if (hero.getBoundingClientRect().bottom < innerHeight * 0.5) return stopTour();
+      const chips = [...$('spots').querySelectorAll('.h3-spot:not(.h3-spot--up)')].slice(0, 3);
+      let i = 0;
+      const step = () => {
+        if (tourDone) return;
+        chips.forEach(b => b.classList.remove('is-demo'));
+        const b = chips[i++];
+        if (!b || !b.isConnected) return stopTour();   // 끝까지 갔거나 목록이 다시 그려졌다
+        b.classList.add('is-demo');
+        send('house', { type: 'hover', id: b.dataset.id });
+        tourTimer = setTimeout(step, 1300);
+      };
+      step();
+    }, 7000);
   }
   addEventListener('blur', () => setTimeout(() => {
     const el = document.activeElement;
@@ -208,6 +230,7 @@
   function selectSpace(key) {
     const sp = spaceOf(key);
     if (!sp || (key === st.space && !st.room)) return;
+    stopTour();
     let reground = false;                 // 메시지를 하나도 안 보내는 경로인가 (아래 참조)
     const from = st.viewer;
     if (st.ready[from]) send(from, { type: 'home' }); // 떠나는 뷰어는 늘 전체 보기로 — 돌아왔을 때 방 안에 남지 않게
@@ -247,7 +270,7 @@
     if (b) send(st.viewer, st.viewer === 'house' ? { type: 'goRoom', id: b.dataset.id } : { type: 'goUnit', id: b.dataset.id });
   });
   // 목록에 올리면 3D 에서 그 자리를 짚어 준다 (라벨이 없는 화면이라 '창가 1'이 어디인지 알게)
-  const hoverSpot = e => { const b = e.target.closest?.('[data-id]'); send(st.viewer, { type: 'hover', id: b ? b.dataset.id : null }); };
+  const hoverSpot = e => { stopTour(); const b = e.target.closest?.('[data-id]'); send(st.viewer, { type: 'hover', id: b ? b.dataset.id : null }); };
   for (const ev of ['pointerover', 'focusin']) $('spots').addEventListener(ev, hoverSpot);
   for (const ev of ['pointerleave', 'focusout']) $('spots').addEventListener(ev, () => send(st.viewer, { type: 'hover', id: null }));
   $('back').addEventListener('click', () => send(st.viewer, { type: 'home' }));
@@ -281,6 +304,7 @@
       if (v === 'house') {
         // 대체 이미지를 이미 보여 줬으면 인트로 없이 바로 겹쳐 바꾼다 (집을 이미 본 사람에게 다시 방에서 시작하지 않는다)
         if (posterShown) setTimeout(() => hero.removeAttribute('data-poster'), 300); else send(v, { type: 'intro' });
+        startTour();
       }
       if (v !== 'house' && spaceOf(st.space).viewer === v && st.space !== m.key) send(v, { type: 'space', key: st.space });
       showFrame(st.viewer);
@@ -434,29 +458,23 @@
   .h3-head { padding-block: 16px 0; }
 }
 
-/* 누르라는 안내 — 도면 위에 떠서 눈에 걸리게. 한 번 만지면 사라진다.
-   표면은 도크와 같은 글래스(.h3-glass)를 쓴다 — 흰 알약 하나만 다른 재질로 떠 있으면 붙여 넣은 것처럼 보인다.
-   ⚠️ 무한 바운스를 되살리지 말 것 (DESIGN.md §4 금지). 2026-09-22 이전엔 2.4s 무한 부유였다. */
-.h3-tap {
-  width: max-content; max-width: 100%;
-  display: inline-flex; align-items: center; gap: 10px;
-  margin: 0 0 10px; padding: 11px 16px;
-  color: var(--br-teal); font-size: 14.5px; font-weight: 700; line-height: 1.3;
-  pointer-events: none;
+/* 도크 맨 윗줄 안내 — 누르는 버튼들과 한 덩어리로 둔다(따로 떠 있는 카드는 붙여 넣은 툴팁처럼 보였다).
+   목적은 '눌러 보고 싶게' — 무엇이 보이는지(에어컨 자리·천장 속 배관)를 말해 호기심을 건다 */
+.h3-invite {
+  display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; row-gap: 2px;
+  padding: 8px 12px 6px; font-size: 14px; line-height: 1.4; color: var(--br-ink-sub);
 }
-.h3-tap svg { width: 17px; height: 17px; flex: none; opacity: 0.9; }
-.h3-tap__txt { display: grid; gap: 1px; min-width: 0; }
-.h3-tap small { font-size: 12.5px; font-weight: 500; color: var(--br-ink-sub); }
-.h3-hero[data-room] .h3-tap, .h3-hero[data-deep] .h3-tap, .h3-hero[data-engaged] .h3-tap { display: none; }
+.h3-invite svg { width: 16px; height: 16px; flex: none; color: var(--br-teal); }
+.h3-invite strong { color: var(--br-teal); font-weight: 700; }
 /* ⚠️ [data-touch="off"] 를 여기 다시 넣지 말 것 — 터치 기기에서 안내가 0개가 된다(2026-09-22).
    도면을 직접 못 누르는 상태라도 '아래 목록에서 누른다'는 건 알려 줘야 한다. */
 .h3-head h1 { font-size: clamp(36px, 7.4vw, 72px); color: var(--br-teal); }
-/* 업종 한 줄 — 헤더 바로 아래. 제목 위 빈 띠가 첫 화면에서 가장 먼저 눈이 가는 자리다.
-   자간을 넓힌 작은 teal 라벨(.br-eyebrow 와 같은 문법)이라 제목과 층위가 겹치지 않는다. */
+/* 업종 한 줄 — 헤더 바로 아래. 제목 위 빈 띠가 첫 화면에서 가장 먼저 눈이 가는 자리다. */
 .h3-kicker {
   position: relative; z-index: 1;
   padding-top: 24px; margin-block: 0;   /* margin:0 이면 .h3-wrap 의 가운데 정렬이 지워진다 */
-  font-size: 15px; font-weight: 700; letter-spacing: 0.12em;
+  /* 부제형 — 15px 자간 라벨은 작고 장식처럼 읽혔다(2026-09-23 대표 지적). 자간 없이 크게 */
+  font-size: clamp(17px, 1.6vw, 20px); font-weight: 700; letter-spacing: -0.01em;
   color: var(--br-teal);
   pointer-events: none;
 }
@@ -490,7 +508,7 @@
 }
 .h3-touch-toggle[aria-pressed="true"] { color: var(--br-ink); border-bottom-color: var(--br-teal); }
 
-.h3-spots { display: flex; gap: 4px; padding: 4px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.h3-spots { display: flex; gap: 6px; padding: 4px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
 .h3-spots::-webkit-scrollbar { display: none; }
 /* 옆으로 더 있으면 끝을 흐려서 알린다 (포커스가 안에 있으면 흐림을 뺀다) */
 .h3-spots[data-more] { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent); }
@@ -499,13 +517,19 @@
 .h3-spots:focus-within { -webkit-mask-image: none; mask-image: none; }
 .h3-spot {
   display: inline-flex; align-items: center; gap: 6px; flex: none;
-  min-height: 44px; padding-inline: 12px; border-radius: 6px;
+  min-height: 44px; padding-inline: 14px; border-radius: 999px;
+  /* 글자만 있으면 라벨로 읽힌다 — 테두리 알약으로 '눌리는 것'이라는 걸 보여 준다 */
+  border: 1px solid color-mix(in srgb, var(--br-teal) 22%, transparent);
+  background: color-mix(in srgb, #fff 55%, transparent);
   font-size: 15px; font-weight: 600; color: var(--br-ink);
-  transition: background-color var(--dur-color) var(--ease-out), color var(--dur-color) var(--ease-out);
+  transition: background-color var(--dur-color) var(--ease-out), color var(--dur-color) var(--ease-out),
+              border-color var(--dur-color) var(--ease-out);
 }
+/* 처음 온 사람에게 한 번 짚어 주는 칩 (startTour) — 마우스를 올렸을 때와 같은 모양 */
+.h3-spot.is-demo { border-color: var(--br-teal); background: var(--br-ice); color: var(--br-teal); }
 .h3-spot:focus-visible { outline-offset: -2px; }
 .h3-spot small { font-size: 13px; font-weight: 500; color: var(--br-ink-sub); }
-@media (hover: hover) { .h3-spot:hover { color: var(--br-teal); background: var(--tint-fill); } }
+@media (hover: hover) { .h3-spot:hover { color: var(--br-teal); background: var(--br-ice); border-color: var(--br-teal); } }
 /* 층 → 건물 전경 되돌아가기. 옆 방 칩들과 확실히 다르게 — 채운 면 + 화살표 + 구분선 */
 .h3-spot--up {
   gap: 4px; padding-left: 10px; font-weight: 700; color: var(--br-teal);

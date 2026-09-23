@@ -189,12 +189,27 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
   /* 제품 사진은 흰 실내기다 — 흰 카드에 두면 형태가 안 보인다.
      배경을 투명하게 잘라낸 뒤 3D 스테이지와 같은 판 위에 올린다 */
   .ex-photo {
-    margin: 0; border: 1px solid var(--br-line); border-radius: 12px; overflow: hidden;
+    position: relative;
+    margin: 0; border-radius: 12px; overflow: hidden;
     background: color-mix(in srgb, var(--br-teal) 12%, var(--br-mist));
     display: grid; grid-template-rows: 1fr auto; justify-items: center;
     padding: 10px; min-height: 0;
   }
   .ex-photo img { width: 100%; height: 100%; max-width: 100%; object-fit: contain; min-height: 0; }
+  /* 유리 테두리 — 히어로 도크와 같은 링·그림자(global.css --glass-ring / --glass-shadow).
+     면(배경)은 그대로 둔다: 흰 제품 사진·흰 3D 부품이 흰 면 위에서 안 보이던 문제로 틴트를 깐 자리다.
+     overflow:hidden 이 iframe 을 둥글게 자르느라 바깥(inset:-1px)에 그린 링은 잘린다 — 안쪽에 그린다 */
+  .ex-stage, .ex-photo { box-shadow: var(--glass-shadow); }
+  .ex-stage::before, .ex-photo::before {
+    content: ""; position: absolute; inset: 0; z-index: 2;
+    border-radius: inherit; padding: 1px;
+    background: var(--glass-ring);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+  }
   /* 제조사 라벨 — 두 브랜드를 다 한다는 게 사진에서 바로 읽혀야 한다 */
   .ex-photo figcaption {
     font-size: 12.5px; font-weight: 600; color: var(--br-teal);
@@ -206,7 +221,7 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
     padding: 24px; text-align: center; font-size: 14px; color: var(--br-ink-sub); }
   .ex-stage[data-fail] .ex-fail { display: grid; }
   .ex-stage[data-fail] iframe { visibility: hidden; }
-  .ex-stage { position: relative; border: 1px solid var(--br-line); border-radius: 16px; overflow: hidden;
+  .ex-stage { position: relative; border-radius: 16px; overflow: hidden;
     background: var(--br-mist); aspect-ratio: 16 / 9; width: 100%;
   }
   .ex-stage iframe { display: block; width: 100%; height: 100%; border: 0; }
