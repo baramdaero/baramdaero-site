@@ -48,9 +48,9 @@ const hasVisual = isImageSlotVisible(slotId, image);
         <p class="br-body br-reveal"><slot name="body" /></p>
         <p class="v2-svc__more br-reveal">
           {link ? (
-            <a class="v2-svc__link" href={link}>{linkLabel} <span aria-hidden="true">→</span></a>
+            <a class="br-pill" href={link}>{linkLabel} <span aria-hidden="true">→</span></a>
           ) : (
-            <button disabled aria-describedby="chat-unavailable" type="button" class="v2-svc__link" data-chat-tree={chatTree}>{linkLabel} <span aria-hidden="true">→</span></button>
+            <button disabled aria-describedby="chat-unavailable" type="button" class="br-pill" data-chat-tree={chatTree}>{linkLabel} <span aria-hidden="true">→</span></button>
           )}
         </p>
       </div>
@@ -104,23 +104,7 @@ const hasVisual = isImageSlotVisible(slotId, image);
   /* home.json 의 lines 는 '한 칸 = 한 문장'으로 흐르게 한다. 반폭 열(≤500px)에는 35자 문장이 한 줄에 들어가지
      않아 강제 줄바꿈이 2줄+1줄의 들쭉날쭉한 짝을 만들었다(900px 캡처). 문장 사이 공백은 index.astro 가 넣는다. */
   .v2-svc__txt :global(.br-body br) { display: none; }
-  .v2-svc__more { margin: 10px 0 -8px; } /* 링크 터치영역 44px 의 아래 공기를 카드 패딩에서 되돌린다 */
-  .v2-svc__link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35em;
-    min-height: 44px;
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--br-teal);
-    text-decoration: underline;
-    text-decoration-thickness: 2px;
-    text-underline-offset: 4px;
-    transition: color var(--dur-color) ease, text-decoration-color var(--dur-color) ease;
-  }
-  @media (hover: hover) {
-    .v2-svc__link:hover { color: var(--br-teal-deep); text-decoration-color: var(--br-ice); }
-  }
+  .v2-svc__more { margin-top: 24px; }
   .v2-svc__txt :global(.br-body) { color: var(--br-ink); }
   .v2-svc__card--copy-only { max-width: 760px; }
 

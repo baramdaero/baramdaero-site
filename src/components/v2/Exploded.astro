@@ -16,7 +16,8 @@ interface Item {
 }
 interface Props {
   eyebrow: string;
-  title: string;
+  /** 배열이면 한 칸이 한 줄 — 제목은 2줄·줄당 12자 안팎 (DESIGN.md §2) */
+  title: string | string[];
   body?: string;
   items: Item[];
   /** 섹션 배경. 앞뒤 섹션과 base↔mist가 교차하도록 페이지가 정한다 */
@@ -27,6 +28,7 @@ interface Props {
 interface Props2 { photoNote?: string }
 const { eyebrow, title, body, items, tone = 'base', id = 'exploded' } = Astro.props;
 const { photoNote } = Astro.props as Props2;
+const titleLines = Array.isArray(title) ? title : [title];
 const hasPhoto = items.some((it) => (it.photos?.length ?? 0) > 0);
 const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
 ---
@@ -34,7 +36,7 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
   <section class:list={['bd-section', 'ex-sec', tone === 'mist' && 'ex-sec--mist']} id={id}>
     <div class="bd-container">
       {eyebrow && <span class="br-eyebrow br-reveal">{eyebrow}</span>}
-      <h2 class="br-h br-reveal">{title}</h2>
+      <h2 class="br-h br-reveal">{titleLines.map((line, i) => <Fragment>{i > 0 && <br />}{line}</Fragment>)}</h2>
       {/* 제목과 3D 안내 사이 — /install/ 은 제품 영상을 여기 둔다 */}
       {Astro.slots.has('lead') && <div class="ex-lead br-reveal"><slot name="lead" /></div>}
       {body && <p class="br-body br-reveal">{body}</p>}
@@ -173,22 +175,34 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
   .ex-sec { background: var(--br-base); }
   .ex-sec--mist { background: var(--br-mist); }
 
-  .ex-lead { margin-top: 28px; }
+  /* 제목 묶음 → 본 블록은 --head-gap 하나로 (영상·탭·3D 중 먼저 오는 것) */
+  .ex-lead { margin-top: var(--head-gap); }
   .ex-lead:empty { display: none; }   /* 부모가 조건부로 비운 슬롯도 has('lead') 는 true 다 */
   .ex-lead:not(:empty) + .br-body { margin-top: 32px; }
-  .ex-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
-  .ex-tab {
-    font: inherit; font-size: 14px; line-height: 1; cursor: pointer;
-    /* 터치 히트영역 44px (DESIGN.md §5). 패딩만 주면 36px 로 모자란다 */
-    display: inline-flex; align-items: center; min-height: 44px;
-    padding: 10px 16px; border-radius: 999px;
-    border: 1px solid color-mix(in srgb, var(--br-teal) 28%, transparent); background: transparent; color: var(--br-ink-sub);
+  /* 탭 — 홈 3D 도크(.h3-spaces)와 같은 밑줄 탭. 채움 알약은 문의 버튼(.bd-cta) 모양이라 쓰지 않는다 */
+  /* 한 줄 고정 — 밑줄 탭은 두 줄로 꺾이면 선택 밑줄이 기준선에서 뜬다. 넘치면 가로로 민다(390px /care/ 6개).
+     기준선은 inset 그림자: overflow 안에서 탭 밑줄(-1px 겹침)이 잘리지 않게. mist 섹션 위에서 보이도록 ink 12% */
+  .ex-tabs {
+    display: flex; gap: 4px; margin-top: var(--head-gap);
+    overflow-x: auto; scrollbar-width: none;
+    box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--br-ink) 12%, transparent);
   }
-  .ex-tab:hover { border-color: var(--br-teal); color: var(--br-teal); }
-  .ex-tab[aria-selected='true'] { background: var(--br-teal); border-color: var(--br-teal); color: #fff; }
-  .ex-tab:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; }
+  .ex-tabs::-webkit-scrollbar { display: none; }
+  .ex-tab {
+    font: inherit; font-size: 15px; font-weight: 600; line-height: 1; cursor: pointer;
+    /* 터치 히트영역 44px (DESIGN.md §5) */
+    display: inline-flex; align-items: center; min-height: 44px;
+    flex: none; padding: 0 14px;
+    border: 0; border-bottom: 2px solid transparent; border-radius: 6px 6px 0 0;
+    background: transparent; color: var(--br-ink-sub);
+    transition: color var(--dur-color) var(--ease-out), border-color var(--dur-color) var(--ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) { .ex-tab[aria-selected='false']:hover { color: var(--br-ink); } }
+  .ex-tab[aria-selected='true'] { color: var(--br-ink); border-bottom-color: var(--br-teal); }
+  .ex-tab:focus-visible { outline: 2px solid var(--br-teal); outline-offset: -2px; } /* 스크롤 영역 안이라 안쪽에 그린다 */
 
-  .ex-row { margin-top: 16px; display: grid; gap: 16px; }
+  .ex-row { margin-top: var(--head-gap); display: grid; gap: 16px; }
+  .ex-tabs + .ex-row { margin-top: 16px; }
   .ex-row--split { grid-template-columns: minmax(0, 260px) minmax(0, 1fr); align-items: stretch; }
   .ex-photos { display: grid; grid-auto-rows: 1fr; gap: 12px; min-width: 0; }
   /* 제품 사진은 흰 실내기다 — 흰 카드에 두면 형태가 안 보인다.
@@ -243,6 +257,7 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
   }
   @media (max-width: 760px) {
     .ex-stage { aspect-ratio: 3 / 4; }
-    .ex-tab { padding: 9px 13px; font-size: 13.5px; }
+    .ex-tabs { gap: 0; }
+    .ex-tab { padding: 0 11px; font-size: 14px; } /* 390px 에서 6개가 한 줄에 든다(더 좁으면 가로로 민다) */
   }
 </style>

@@ -123,57 +123,57 @@ const jsonLd: object[] = [
     startTone="mist"
   />
 
-  <section class="bd-section sit-close">
-    <div class="bd-container">
-      {faq.length > 0 && (
+  {/* 자주 묻는 질문 + 이어 볼 곳 — 공동구매와 한 섹션이던 것을 나눴다(섹션 하나에 메시지 하나). 질문은 전부 닫아 둔다 */}
+  {(faq.length > 0 || related.length > 0) && (
+    <section class="bd-section sit-close">
+      <div class="bd-container">
         <div class="sit-faq" data-layout-section="newhome-faq">
-          <h2 class="br-h br-reveal">자주 묻는 질문</h2>
-          <div class="sit-faq__list br-reveal">
-            {faq.map((f, i) => (
-              <details class="sit-faq__item br-glass br-glass--heavy" id={f.id} open={i === 0}>
-                <summary class="sit-faq__q">{f.q}</summary>
-                <div class="sit-faq__a" set:html={renderFaqMd(f.a)} />
-              </details>
-            ))}
-          </div>
-          <p class="sit-faq__more br-reveal">
-            <a class="sit-faq__link" href="/faq/">전체 질문 보기 <span aria-hidden="true">→</span></a>
-          </p>
-        </div>
-      )}
-
-      {groupBuy && (
-        <div class="sit-group" data-layout-section="newhome-group-buy">
-          <StoryRow
-            slotId={`${situation.slug}-group-buy`}
-            slotLabel={`${situation.slug}-group-buy`}
-            imageSide="right"
-            tone="deep"
-          >
-            <span class="br-eyebrow br-reveal">단지 공동구매</span>
-            <h2 class="br-h br-reveal">{groupBuy.title}</h2>
-            <p class="br-body br-reveal">{groupBuy.body}</p>
-            {groupBuy.ctaLabel && (
-              <p class="sit-group__cta br-reveal">
-                <button disabled aria-describedby="chat-unavailable" type="button" class="bd-cta bd-cta--deep" data-chat-tree="install">{groupBuy.ctaLabel}</button>
-              </p>
-            )}
-          </StoryRow>
-        </div>
-      )}
-
-      {related.length > 0 && (
-        <div class="sit-related">
-          <span class="br-eyebrow br-reveal">함께 보기</span>
-          <ul class="sit-related__list br-reveal">
+          {faq.length > 0 && (
+            <Fragment>
+              <h2 class="br-h br-reveal">자주 묻는 질문</h2>
+              <div class="sit-faq__list br-reveal">
+                {faq.map((f) => (
+                  <details class="sit-faq__item br-glass br-glass--heavy" id={f.id}>
+                    <summary class="sit-faq__q">{f.q}</summary>
+                    <div class="sit-faq__a" set:html={renderFaqMd(f.a)} />
+                  </details>
+                ))}
+              </div>
+            </Fragment>
+          )}
+          <ul class="sit-faq__more br-pills br-reveal">
+            {faq.length > 0 && <li><a class="br-pill" href="/faq/">전체 질문 보기 <span aria-hidden="true">→</span></a></li>}
             {related.map((r) => (
-              <li><a href={r.href}>{r.label} <span aria-hidden="true">→</span></a></li>
+              <li><a class="br-pill" href={r.href}>{r.label} <span aria-hidden="true">→</span></a></li>
             ))}
           </ul>
         </div>
-      )}
-    </div>
-  </section>
+      </div>
+    </section>
+  )}
+
+  {groupBuy && (
+    <section class="bd-section sit-group" data-layout-section="newhome-group-buy">
+      <div class="bd-container">
+        <StoryRow
+          slotId={`${situation.slug}-group-buy`}
+          slotLabel={`${situation.slug}-group-buy`}
+          imageSide="right"
+          glass
+        >
+          <span class="br-eyebrow br-reveal">단지 공동구매</span>
+          <h2 class="br-h br-reveal">{groupBuy.title}</h2>
+          <p class="br-body br-reveal">{groupBuy.body}</p>
+          {groupBuy.ctaLabel && (
+            <p class="sit-group__cta br-reveal">
+              {/* 보조 알약 — 채움(주) 버튼은 바로 아래 CTA 밴드 하나 */}
+              <button disabled aria-describedby="chat-unavailable" type="button" class="br-pill" data-chat-tree="install">{groupBuy.ctaLabel} <span aria-hidden="true">→</span></button>
+            </p>
+          )}
+        </StoryRow>
+      </div>
+    </section>
+  )}
 
   <CtaBand chatTree="install" buttonLabel="설치 상담 시작">
     <em>견적</em>은 방문 전에<br />나옵니다
@@ -183,7 +183,7 @@ const jsonLd: object[] = [
 
 <style>
   /* 진행 순서 — 회색 섹션 위 기본색 카드 (/install/ /care/ 와 같은 패턴) */
-  .sit-journey__list { margin-top: 48px; list-style: none; display: grid; gap: 16px; }
+  .sit-journey__list { margin-top: var(--head-gap); list-style: none; display: grid; gap: 16px; }
   .sit-journey__card {
     padding: 28px 24px;
     /* 면은 .br-glass--medium */
@@ -248,7 +248,7 @@ const jsonLd: object[] = [
 
   .sit-close { background: var(--br-teal-deep); }
   .sit-close :global(.br-h) { color: var(--br-base); }
-  .sit-faq__list { margin-top: 48px; display: grid; gap: 10px; }
+  .sit-faq__list { margin-top: var(--head-gap); display: grid; gap: 10px; }
   .sit-faq__item { color: var(--br-ink); } /* 면은 .br-glass--heavy (딥 위) */
   .sit-faq__q {
     cursor: pointer;
@@ -275,40 +275,9 @@ const jsonLd: object[] = [
   }
   .sit-faq__a :global(table) { width: 100%; border-collapse: collapse; font-size: 14.5px; margin: 16px 0; }
   .sit-faq__a :global(strong) { color: var(--br-ink); }
-  .sit-faq__more { margin-top: 24px; }
-  .sit-faq__link {
-    display: inline-block;
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--br-ice);
-    border-bottom: 2px solid var(--br-ice);
-    padding-bottom: 2px;
-    transition: color var(--dur-color) ease, border-color var(--dur-color) ease;
-  }
-  .sit-faq__link:hover { color: var(--br-base); border-color: var(--br-base); }
+  .sit-faq__more { margin-top: 32px; list-style: none; }
+  .sit-faq__list + .sit-faq__more { margin-top: 24px; }
 
-  .sit-group { margin-top: 120px; }
-  .sit-group__cta { margin-top: 32px; }
-
-  .sit-related { margin-top: 120px; }
-  .sit-related__list {
-    margin-top: 24px;
-    list-style: none;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px 24px;
-  }
-  .sit-related__list a {
-    display: inline-block;
-    padding: 8px 0;
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--br-ice);
-  }
-  .sit-related__list a:hover { color: var(--br-base); }
-
-  @media (max-width: 767px) {
-    .sit-group,
-    .sit-related { margin-top: 72px; }
-  }
+  .sit-group { background: transparent; } /* 유리 카드 호스트 */
+  .sit-group__cta { margin-top: 28px; }
 </style>

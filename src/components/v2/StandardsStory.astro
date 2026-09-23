@@ -29,7 +29,11 @@ const {
   itemPhotos = false,
 } = Astro.props;
 
-const hasPricing = Astro.slots.has('pricing');
+// 슬롯을 넘겨도 내용이 비면(확정가 0건) 블록째 빼야 한다 — has() 는 조건부로 비운 슬롯도 true 다
+const pricingHtml = Astro.slots.has('pricing') ? (await Astro.slots.render('pricing')).trim() : '';
+const hasPricing = pricingHtml !== '';
+// 제목의 '\n' 은 줄바꿈 자리 — 제목은 2줄·줄당 12자 안팎 (DESIGN.md §2)
+const lines = (t: string) => t.split('\n');
 const sideAt = (index: number) => {
   const isStart = index % 2 === 0;
   return isStart ? startSide : (startSide === 'left' ? 'right' : 'left');
@@ -40,7 +44,7 @@ const toneAt = (index: number) => {
 };
 ---
 {(promise || baseline || hasPricing) && (
-  <section class="v2-standards-story" aria-label={promise?.heading || baseline?.title || pricingHeading}>
+  <section class="v2-standards-story" aria-label={promise?.heading || baseline?.title.replaceAll('\n', ' ') || pricingHeading}>
     {promise && itemPhotos && (
       <article
         class:list={['bd-section', 'v2-standards-story__message', `v2-standards-story__message--${toneAt(0)}`]}
@@ -111,13 +115,13 @@ const toneAt = (index: number) => {
             imageSide={sideAt(1)}
             glass
           >
-            <h2 class="br-h br-reveal">{baseline.title}</h2>
+            <h2 class="br-h br-reveal">{lines(baseline.title).map((l, i) => <Fragment>{i > 0 && <br />}{l}</Fragment>)}</h2>
             <p class="br-body br-reveal">
               {baseline.bodyLines.map((line, i) => <Fragment>{i > 0 && <br />}{line}</Fragment>)}
             </p>
             {baseline.formulaLine && <p class="v2-standards-story__formula br-reveal">{baseline.formulaLine}</p>}
             {baseline.policyLines.length > 0 && (
-              <details class="v2-standards-story__policy-details br-reveal" open>
+              <details class="v2-standards-story__policy-details br-reveal">
                 <summary>{baseline.policyLines[0]}</summary>
                 {baseline.policyLines.length > 1 && (
                   <ul class="v2-standards-story__policy">
@@ -126,27 +130,36 @@ const toneAt = (index: number) => {
                 )}
               </details>
             )}
-            {noExtra && (
-              <details class="v2-standards-story__details br-reveal" open>
-                <summary>{noExtra.title}</summary>
-                {noExtra.body.length > 0 && (
-                  <p>{noExtra.body.map((line, i) => <Fragment>{i > 0 && <br />}{line}</Fragment>)}</p>
-                )}
-                <ul>{noExtra.items.map((item) => <li>{item}</li>)}</ul>
-                {noExtra.closing && <p>{noExtra.closing}</p>}
-              </details>
-            )}
             {baseline.updated && <p class="v2-standards-story__updated br-reveal">기준가 최종 갱신: {baseline.updated}</p>}
             {hasPricing && (
               <div class="v2-standards-story__pricing br-reveal">
                 {pricingEyebrow && <span class="br-eyebrow">{pricingEyebrow}</span>}
                 <details class="v2-standards-story__pricing-details">
                   {pricingHeading && <summary>{pricingHeading}</summary>}
-                  <div class="v2-standards-story__pricing-content"><slot name="pricing" /></div>
+                  <div class="v2-standards-story__pricing-content"><Fragment set:html={pricingHtml} /></div>
                 </details>
               </div>
             )}
           </StoryRow>
+        </div>
+      </article>
+    )}
+
+    {/* 추가금 정책 — 기준가 카드 안 펼침에서 꺼내 한 화면으로 (한 화면 한 메시지, 2026-09-23) */}
+    {baseline && noExtra && (
+      <article
+        class:list={['bd-section', 'v2-standards-story__message', `v2-standards-story__message--${toneAt(2)}`]}
+        data-layout-section="no-extra"
+      >
+        <div class="bd-container">
+          <div class="v2-standards-story__card br-glass br-glass--medium">
+            <h2 class="br-h br-reveal">{lines(noExtra.title).map((l, i) => <Fragment>{i > 0 && <br />}{l}</Fragment>)}</h2>
+            {noExtra.body.length > 0 && (
+              <p class="br-body br-reveal">{noExtra.body.map((line, i) => <Fragment>{i > 0 && <br />}{line}</Fragment>)}</p>
+            )}
+            <ul class="v2-standards-story__concede br-reveal">{noExtra.items.map((item) => <li>{item}</li>)}</ul>
+            {noExtra.closing && <p class="v2-standards-story__closing br-reveal">{noExtra.closing}</p>}
+          </div>
         </div>
       </article>
     )}
@@ -165,7 +178,7 @@ const toneAt = (index: number) => {
           >
             {pricingEyebrow && <span class="br-eyebrow br-reveal">{pricingEyebrow}</span>}
             {pricingHeading && <h2 class="br-h br-reveal">{pricingHeading}</h2>}
-            <slot name="pricing" />
+            <Fragment set:html={pricingHtml} />
           </StoryRow>
         </div>
       </article>
@@ -209,7 +222,7 @@ const toneAt = (index: number) => {
   /* 항목별 사진 — 사진 위, 번호·제목·설명 아래. 좁은 화면은 한 줄에 하나 */
   .v2-standards-story__card { padding: 24px 20px 28px; }
   .v2-standards-story__card .br-h { font-size: clamp(26px, 0.9rem + 1.9vw, 36px); line-height: 1.25; }
-  .v2-standards-story__steps { margin-top: 28px; list-style: none; display: grid; gap: 28px; }
+  .v2-standards-story__steps { margin-top: var(--head-gap); list-style: none; display: grid; gap: 28px; }
   .v2-standards-story__steps > li { display: grid; gap: 16px; align-content: start; }
   .v2-standards-story__steps > li :global(.br-image-slot) { --slot-radius: calc(var(--radius) - 4px); }
   .v2-standards-story__steps > li > div > span {
@@ -273,24 +286,17 @@ const toneAt = (index: number) => {
     background: var(--br-teal);
   }
 
-  .v2-standards-story__details {
-    margin-top: 16px;
-    border-top: 1px solid var(--br-teal);
-    border-bottom: 1px solid var(--br-teal);
+  /* 추가금 — 양보절 세 줄을 헤어라인으로 나눠 한 줄씩 읽히게, 맺음 한 줄은 ink 로 받는다 */
+  .v2-standards-story__concede { margin-top: var(--head-gap); list-style: none; border-top: 1px solid var(--br-line); }
+  .v2-standards-story__concede li {
+    padding: 16px 0; border-bottom: 1px solid var(--br-line);
+    font-size: 17px; font-weight: 600; color: var(--br-ink);
   }
-
-  .v2-standards-story__details summary {
-    min-height: 44px;
-    padding: 12px 0;
-    cursor: pointer;
-    color: var(--br-teal);
-    font-size: 15px;
-    font-weight: 700;
+  .v2-standards-story__closing { margin-top: 24px; font-size: 17px; font-weight: 700; color: var(--br-ink); }
+  @media (min-width: 768px) {
+    .v2-standards-story__concede li { font-size: 19px; padding: 20px 0; }
+    .v2-standards-story__closing { font-size: 19px; }
   }
-
-  .v2-standards-story__details p,
-  .v2-standards-story__details ul { margin: 0 0 14px; font-size: 14px; line-height: 1.7; }
-  .v2-standards-story__details ul { padding-left: 18px; }
   .v2-standards-story__updated { margin-top: 18px; font-size: 13px; }
 
   .v2-standards-story__pricing {

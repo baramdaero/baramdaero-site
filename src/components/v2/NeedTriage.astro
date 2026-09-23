@@ -34,8 +34,9 @@ const { heading, cards, tone = 'deep' } = Astro.props;
                   <Fragment>{j > 0 && <br />}{line}</Fragment>
                 ))}</p>
               )}
-              <button disabled aria-describedby="chat-unavailable" type="button" class="bd-cta v2-triage__cta" data-chat-tree={c.chatTree}>
-                {c.buttonLabel}
+              {/* 셋이 동등한 선택지라 보조 알약 — 채움(주) 버튼은 맨 아래 CTA 밴드 하나 (DESIGN.md §5) */}
+              <button disabled aria-describedby="chat-unavailable" type="button" class="br-pill v2-triage__cta" data-chat-tree={c.chatTree}>
+                {c.buttonLabel} <span aria-hidden="true">→</span>
               </button>
             </div>
           </li>
@@ -51,7 +52,7 @@ const { heading, cards, tone = 'deep' } = Astro.props;
   .v2-triage--deep :global(.br-h) { color: var(--br-base); }
 
   .v2-triage__grid {
-    margin-top: 48px;
+    margin-top: var(--head-gap);
     list-style: none;
     display: grid;
     gap: 16px;
@@ -78,7 +79,7 @@ const { heading, cards, tone = 'deep' } = Astro.props;
     color: var(--br-ink);
   }
   .v2-triage__card p {
-    margin-top: 8px;
+    margin: 8px 0 20px;
     font-size: 15px;
     line-height: 1.6;
     color: var(--br-ink);
@@ -86,11 +87,8 @@ const { heading, cards, tone = 'deep' } = Astro.props;
   }
 
   .v2-triage__cta {
-    margin-top: 20px;
+    margin-top: auto; /* 세 카드의 버튼을 바닥에 맞춘다 */
     align-self: flex-start;
   }
-  /* 카드 폭이 좁아지는 모바일에서는 버튼을 폭에 맞춘다 */
-  @media (max-width: 767px) {
-    .v2-triage__cta { align-self: stretch; text-align: center; }
-  }
+  .v2-triage__card h3 + .v2-triage__cta { margin-top: 20px; } /* 본문 없는 카드 */
 </style>

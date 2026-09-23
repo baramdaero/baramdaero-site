@@ -12,6 +12,8 @@ import { loadFaqPage, renderFaqMd, faqPlainText, FAQ_CATEGORIES } from '../../li
 import { normFaq } from '../../scripts/faq-rank';
 
 const items = loadFaqPage();
+/** 분류마다 처음 보이는 문항 수 — 나머지는 'N개 더 보기'로 접힌다 */
+const FAQ_VISIBLE = 5;
 
 // 검색 인덱스 — 질의·대상 모두 공백 제거+소문자 후 부분 일치 (마크다운 기호 제거한 평문 기준)
 const norm = normFaq;
@@ -149,7 +151,7 @@ if (items.length) {
             <div class="faq-chat__foot">
               <button type="button" class="faq-chat__again" data-faq-again>다른 질문하기</button>
               {/* 채널톡(상담)을 바로 연다 — 물어본 말을 입력칸에 채워 둔다. 채널톡이 아직 안 떴으면 챗봇 '기타 문의'(상담 연결)로 */}
-              <button disabled aria-describedby="chat-unavailable" type="button" class="faq-chat__bot-btn" data-chat-tree="etc" data-faq-consult>상담으로 묻기</button>
+              <button disabled aria-describedby="chat-unavailable" type="button" class="br-pill faq-chat__bot-btn" data-chat-tree="etc" data-faq-consult>상담으로 묻기</button>
             </div>
           </div>
 
@@ -174,7 +176,7 @@ if (items.length) {
                   <p class="faq-ans__links">
                     <span class="faq-ans__links-t">더 알아보기</span>
                     {f.related.map((r) => (
-                      <a href={r.href}>{r.label} <span aria-hidden="true">→</span></a>
+                      <a class="br-pill" href={r.href}>{r.label} <span aria-hidden="true">→</span></a>
                     ))}
                   </p>
                 )}
@@ -189,35 +191,47 @@ if (items.length) {
             ))}
           </nav>
 
-          {sections.map((s, si) => (
+          {sections.map((s) => (
             <div class="faq-cat" id={`cat-${s.cat}`} data-faq-cat>
               <h3 class="faq-cat__title">{s.cat}</h3>
-              {s.items.map((f, fi) => (
-                <details
-                  class="faq-item br-glass br-glass--medium"
-                  id={f.id}
-                  open={si === 0 && fi === 0}
-                  data-faq-item
-                  data-cat={f.category}
-                  data-q={norm(f.q)}
-                  data-kw={norm(f.keywords.join(' '))}
-                  data-hook={norm(f.hook)}
-                  data-body={norm(faqPlainText(f.a))}
-                >
-                  <summary class="faq-item__q">{f.q}</summary>
-                  <div class="faq-item__body">
-                    {f.hook && <p class="faq-item__hook">{f.hook}</p>}
-                    <div class="faq-item__a" set:html={renderFaqMd(f.a, 4)} />
-                    {f.priceNote && <p class="faq-item__price">{f.priceNote}</p>}
-                    {f.related.length > 0 && (
-                      <p class="faq-item__related">
-                        {f.related.map((r) => (
-                          <a href={r.href}>{r.label} <span aria-hidden="true">→</span></a>
-                        ))}
-                      </p>
-                    )}
-                  </div>
-                </details>
+              {s.items.map((f, i) => (
+                <Fragment>
+                  <details
+                    class="faq-item br-glass br-glass--medium"
+                    id={f.id}
+                    data-faq-item
+                    data-cat={f.category}
+                    data-q={norm(f.q)}
+                    data-kw={norm(f.keywords.join(' '))}
+                    data-hook={norm(f.hook)}
+                    data-body={norm(faqPlainText(f.a))}
+                  >
+                    <summary class="faq-item__q">{f.q}</summary>
+                    <div class="faq-item__body">
+                      {f.hook && <p class="faq-item__hook">{f.hook}</p>}
+                      <div class="faq-item__a" set:html={renderFaqMd(f.a, 4)} />
+                      {f.priceNote && <p class="faq-item__price">{f.priceNote}</p>}
+                      {f.related.length > 0 && (
+                        <p class="faq-item__related br-pills">
+                          {f.related.map((r) => (
+                            <a class="br-pill" href={r.href}>{r.label} <span aria-hidden="true">→</span></a>
+                          ))}
+                        </p>
+                      )}
+                    </div>
+                  </details>
+                  {/* 분류마다 앞 5문항만 — 토글을 5번째 문항 바로 뒤에 둬서, 열면 Tab 이 새로 보인 문항으로 이어진다.
+                      닫힌 동안 뒤 문항은 CSS 형제 선택자로 숨긴다(문항 HTML·검색 마크업은 그대로 다 있다) */}
+                  {i === FAQ_VISIBLE - 1 && s.items.length > FAQ_VISIBLE && (
+                    <details class="faq-more">
+                      <summary>
+                        <span class="faq-more__open">{s.items.length - FAQ_VISIBLE}개 더 보기</span>
+                        <span class="faq-more__close">접기</span>
+                        <span class="visually-hidden"> — {s.cat}</span>
+                      </summary>
+                    </details>
+                  )}
+                </Fragment>
               ))}
             </div>
           ))}
@@ -233,7 +247,6 @@ if (items.length) {
 
   <CtaBand>
     답이 없는 질문은<br />직접 <em>답</em>해 드립니다
-    <Fragment slot="sub">기종과 대수, 설치 위치. 이 정도면 됩니다.</Fragment>
   </CtaBand>
 </Base>
 
@@ -491,14 +504,6 @@ if (items.length) {
   .faq-chat__next-t { font-size: 13px; font-weight: 700; color: var(--br-ink-sub); }
   .faq-chat__next .faq-chat__chips { margin-top: 8px; }
   .faq-chat__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 20px; }
-  .faq-chat__bot-btn {
-    min-height: 44px; padding: 0 4px;
-    border: 0; background: none;
-    font: inherit; font-size: 14.5px; font-weight: 700; color: var(--br-teal);
-    text-decoration: underline; text-underline-offset: 4px;
-    cursor: pointer;
-  }
-  .faq-chat__bot-btn:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; }
   .faq-chat__again {
     min-height: 44px; padding: 0 4px;
     border: 0; background: none;
@@ -528,17 +533,8 @@ if (items.length) {
   .faq-ans__more[open] .faq-ans__toggle::after { transform: translateY(2px) rotate(-135deg); }
   .faq-ans__toggle:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; border-radius: 4px; }
   .faq-ans__full { padding: 8px 0 4px; }
-  .faq-ans__links { margin-top: 16px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; }
-  .faq-ans__links-t { font-size: 13px; font-weight: 700; color: var(--br-ink-sub); }
-  .faq-ans__links a {
-    font-size: 14.5px; font-weight: 700; color: var(--br-teal);
-    border-bottom: 1px solid currentColor; padding-bottom: 1px;
-  }
-  /* 터치 — 목록의 .faq-item__related a 와 같은 44px 바닥(global.css coarse 블록) */
-  @media (pointer: coarse) {
-    .faq-ans__links { gap: 8px 18px; }
-    .faq-ans__links a { display: inline-flex; align-items: center; min-height: 44px; }
-  }
+  .faq-ans__links { margin-top: 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .faq-ans__links-t { margin-right: 4px; font-size: 13px; font-weight: 700; color: var(--br-ink-sub); }
 
   @media (prefers-reduced-motion: no-preference) {
     .faq-chat.is-new > * { animation: faq-in var(--dur-ui) var(--ease-out) both; }
@@ -564,7 +560,7 @@ if (items.length) {
     border: 1px solid var(--br-line);
     border-radius: 999px;
     padding: 8px 16px;
-    min-height: 40px;
+    min-height: 44px;
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -646,14 +642,19 @@ if (items.length) {
     color: var(--br-teal);
   }
 
-  .faq-item__related { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 6px 20px; }
-  .faq-item__related a {
-    font-size: 14.5px;
-    font-weight: 700;
-    color: var(--br-teal);
-    border-bottom: 1px solid currentColor;
-    padding-bottom: 1px;
+  .faq-item__related { margin-top: 16px; }
+
+  /* 분류별 앞 5문항 — 토글(5번째 문항 뒤)이 닫혀 있으면 그 뒤 문항을 숨긴다 */
+  .faq-more:not([open]) ~ .faq-item { display: none; }
+  .faq-more summary {
+    display: inline-flex; align-items: center; min-height: 44px;
+    list-style: none; cursor: pointer;
+    font-size: 15px; font-weight: 700; color: var(--br-teal);
   }
+  .faq-more summary::-webkit-details-marker { display: none; }
+  .faq-more summary:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; border-radius: 4px; }
+  .faq-more[open] .faq-more__open,
+  .faq-more:not([open]) .faq-more__close { display: none; }
 
   .faq-page__pending { text-align: center; padding: 24px 0; }
   .faq-page__pending-title { font-size: 20px; font-weight: 700; color: var(--br-ink); margin-bottom: 24px; }

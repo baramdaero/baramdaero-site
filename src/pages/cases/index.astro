@@ -31,12 +31,13 @@ const breadcrumb = {
 <Base title="시공사례" description="바람대로 에어컨 설치·세척·복원 시공사례." jsonLd={breadcrumb}>
   <PageHero eyebrow="시공사례">
     기록을 쌓는<br />중입니다
-    <Fragment slot="sub">작업 전·후 상태를 사진과 기록으로 남깁니다. 실측값이 없는 수치는 쓰지 않습니다.</Fragment>
+    <Fragment slot="sub">작업 전·후 상태를 사진과 기록으로 남깁니다.</Fragment>
   </PageHero>
 
+  {/* 사례가 0건이면 섹션째 그리지 않는다 — 준비 중 안내·접수 버튼은 히어로·CTA 밴드와 같은 말이었다 */}
+  {entries.length > 0 && (
   <section class="bd-section cases">
     <div class="bd-container">
-      {entries.length > 0 ? (
         <Fragment>
           <div class="case-filters br-reveal" data-case-filters>
             <div class="case-filters__group" role="group" aria-label="지역 필터">
@@ -78,15 +79,9 @@ const breadcrumb = {
           </div>
           <p class="case-empty" data-case-empty hidden>조건에 맞는 사례가 아직 없습니다.</p>
         </Fragment>
-      ) : (
-        <div class="case-pending br-glass br-glass--medium br-reveal">
-          <p class="case-pending__title">시공 기록을 준비 중입니다.</p>
-          <p class="case-pending__body">작업 전·후 사진과 현장 기록이 정리되는 대로 올립니다.<br />지금 필요한 상담은 챗봇으로 바로 접수하실 수 있습니다.</p>
-          <button disabled aria-describedby="chat-unavailable" type="button" class="bd-cta case-pending__cta" data-chat-tree="menu">상담 접수하기</button>
-        </div>
-      )}
     </div>
   </section>
+  )}
 
   <CtaBand>
     다음 현장이<br /><em>우리 집</em>이어도 됩니다
@@ -104,6 +99,9 @@ const breadcrumb = {
     let type = '';
     let model = '';
     let tag = '';
+    // 선택 상태를 스크린리더에도 알린다 — 틴트만으로는 눈에만 보인다
+    const sync = () => root.querySelectorAll('.case-filters__btn').forEach((b) => b.setAttribute('aria-pressed', String(b.classList.contains('is-active'))));
+    sync();
     const apply = () => {
       let visible = 0;
       grid.querySelectorAll<HTMLElement>('.case-grid__cell').forEach((cell) => {
@@ -129,6 +127,7 @@ const breadcrumb = {
       else return;
       btn.parentElement?.querySelectorAll('.is-active').forEach((b) => b.classList.remove('is-active'));
       btn.classList.add('is-active');
+      sync();
       apply();
     });
   }
@@ -159,10 +158,11 @@ const breadcrumb = {
   @media (hover: hover) and (pointer: fine) {
     .case-filters__btn:hover { border-color: var(--br-teal); color: var(--br-teal); }
   }
+  /* 선택 = 틴트 + teal 글자·테두리. teal 채움은 문의 버튼(.bd-cta) 모양이라 쓰지 않는다 */
   .case-filters__btn.is-active {
-    background: var(--br-teal);
+    background: var(--tint-strong);
     border-color: var(--br-teal);
-    color: #fff;
+    color: var(--br-teal);
   }
   .case-grid {
     display: grid;
@@ -171,16 +171,7 @@ const breadcrumb = {
   }
   .case-empty { color: var(--br-ink-sub); padding: 40px 0; }
 
-  /* 실사례 0건 폴백 — 빈 그리드 대신 안내 + 챗봇 접수 */
   .cases { background: transparent; } /* 유리 카드 호스트 */
-  .case-pending {
-    /* 배경·테두리·radius·그림자는 .br-glass--medium 이 맡는다 */
-    padding: 48px 24px;
-    text-align: center;
-  }
-  .case-pending__title { font-size: 20px; font-weight: 700; color: var(--br-ink); }
-  .case-pending__body { margin-top: 12px; font-size: 15px; line-height: 1.7; color: var(--br-ink-sub); }
-  .case-pending__cta { margin-top: 28px; }
   @media (max-width: 900px) {
     .case-grid { grid-template-columns: repeat(2, 1fr); }
   }
