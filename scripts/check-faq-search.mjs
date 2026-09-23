@@ -52,12 +52,23 @@ for (const [a, b] of [['냄새ㅠㅠ', '냄새'], ['“냄새”', '냄새'], ['
   assert.deepEqual(decideFaq(a, docs), decideFaq(b, docs), `"${a}" 와 "${b}" 가 다르게 나온다`);
 }
 
+// 2-2) 오타 — 자모 한두 개 틀림, 한/영 전환을 잊고 친 말
+for (const [a, b] of [['냄세', '냄새'], ['누슈', '누수'], ['dpdjzjs soato', '에어컨 냄새'], ['vlfxj cjdth', '필터 청소']]) {
+  assert.deepEqual(decideFaq(a, docs), decideFaq(b, docs), `오타 "${a}" 가 "${b}" 와 다르게 나온다`);
+}
+for (const [q, id] of [['에어콘에서 물이 떨어져요', 'faq-drip-ceiling'], ['배수펌뿌', 'faq-drain-pump']]) {
+  const r = decideFaq(q, docs);
+  assert.ok(r.kind === 'answer' && r.id === id, `오타 "${q}" → ${id} 기대, 실제 ${say(r)}`);
+}
+assert.equal(decideFaq('lg', docs).kind === 'none', false, 'lg 를 한글 자판으로 바꿔 버리면 안 된다');
+
 // 3) 틀린 답을 자신 있게 내놓지 않는다 — 누수 질문에 보양 답이 나오던 사례, 군말뿐인 질문
 // 금액을 묻는 말에 금액 없는 견적 차이 답, 세척 뒤 문제에 '바로 쓰셔도 됩니다' 답을 못 박지 않는다(09-23 커버리지 검수)
 for (const [q, wrong] of [['에어컨에서 물이 떨어져요', 'faq-curing'], ['천장형 에어컨에서 물이 떨어져요', 'faq-curing'],
   ['설치비 얼마', 'faq-quote-gap'], ['시스템에어컨 설치비', 'faq-quote-gap'], ['청소비 얼마', 'faq-quote-gap'],
   ['세척 후 냄새', 'faq-clean-after-use'], ['청소하고 나서 물이 떨어져요', 'faq-clean-after-use'],
   ['청소비 얼마예요', 'faq-tenant-cost'],                // 값을 묻는데 '누가 내나요' 답을 못 박지 않는다
+  ['카드 결제 되나요', 'faq-dispute-help'],              // 결제 수단을 묻는데 분쟁·할부 거절 답을 못 박지 않는다
   // 답이 없는 질문(건강·천장 얼룩)은 가까운 문항을 못 박지 않는다 — 없는 말도 질문의 일부로 친다
   ['에어컨 곰팡이 냄새를 계속 맡으면 아이 건강에 문제가 되나요?', 'faq-smell'],
   ['에어컨 주변 천장 벽지가 젖고 곰팡이가 폈어요. 결로인가요, 누수인가요?', 'faq-curing']]) {

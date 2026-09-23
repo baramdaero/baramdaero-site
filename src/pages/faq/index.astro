@@ -134,7 +134,10 @@ if (items.length) {
             <div class="faq-chat__we br-glass br-glass--medium" data-faq-none hidden>
               <p class="faq-chat__who">바람대로</p>
               <p class="faq-chat__lead" tabindex="-1" data-faq-focus>맞는 답을 찾지 못했습니다.</p>
-              <p class="faq-chat__alt">다른 말로 물어보세요.</p>
+              <p class="faq-chat__alt">예)</p>
+              <div class="faq-chat__chips faq-chat__chips--tight" role="group" aria-label="예시 검색어">
+                {['누수', '소음', '냄새', '필터', '설치비'].map((t) => <button type="button" data-faq-term={t}>{t}</button>)}
+              </div>
             </div>
 
             <div class="faq-chat__next" data-faq-next hidden>
@@ -145,7 +148,8 @@ if (items.length) {
             {/* 어느 상태에서든 사람에게 닿는 길 — 이 칸은 접수 창구가 아니다(접수는 챗봇 단일, DESIGN.md §6) */}
             <div class="faq-chat__foot">
               <button type="button" class="faq-chat__again" data-faq-again>다른 질문하기</button>
-              <button disabled aria-describedby="chat-unavailable" type="button" class="faq-chat__bot-btn" data-chat-tree="menu">챗봇으로 묻기</button>
+              {/* 채널톡(상담)을 바로 연다 — 물어본 말을 입력칸에 채워 둔다. 채널톡이 아직 안 떴으면 챗봇 '기타 문의'(상담 연결)로 */}
+              <button disabled aria-describedby="chat-unavailable" type="button" class="faq-chat__bot-btn" data-chat-tree="etc" data-faq-consult>상담으로 묻기</button>
             </div>
           </div>
 
@@ -236,6 +240,7 @@ if (items.length) {
 <script>
   // 묻고 답하기 — 물어본 말에 가장 가까운 문항 하나로 답한다. 고르는 규칙은 faq-rank.ts.
   import { decideFaq, type FaqDoc } from '../../scripts/faq-rank';
+  import { ensureChannel, openConsult } from '../../lib/channel';
 
   const form = document.querySelector<HTMLFormElement>('[data-faq-form]');
   const input = document.querySelector<HTMLInputElement>('[data-faq-search]');
@@ -299,9 +304,12 @@ if (items.length) {
     history.replaceState(null, '', url);
   }
 
+  let lastQ = '';
   function ask(raw: string, id?: string) {
     const q = raw.trim();
     if (!q || !chat) return;
+    lastQ = q;
+    void ensureChannel();                              // 상담 버튼을 누를 때 바로 열리도록 미리 띄운다(처음 한 번)
     if (input) input.value = q;
     if (me) me.textContent = q;
     chat.hidden = false;
@@ -341,10 +349,17 @@ if (items.length) {
     const a = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[href^="/faq/#"]');
     const hid = a?.hash.slice(1);
     if (hid && byId.has(hid)) { e.preventDefault(); ask(qOf(hid), hid); return; }
+    // 못 찾았을 때의 예시 검색어
+    const term = (e.target as HTMLElement).closest<HTMLElement>('[data-faq-term]')?.dataset.faqTerm;
+    if (term) { ask(term); return; }
     // 예시·관련 질문·고르기 — 문항 id 로 바로 답한다
     const b = (e.target as HTMLElement).closest<HTMLElement>('[data-faq-ask]');
     if (!b?.dataset.faqAsk) return;
     ask(b.dataset.faqText ?? qOf(b.dataset.faqAsk), b.dataset.faqAsk);
+  });
+  // 상담 — 채널톡이 열리면 챗봇(문서에 걸린 data-chat-tree 처리)까지 가지 않게 여기서 멈춘다
+  document.querySelector('[data-faq-consult]')?.addEventListener('click', (e) => {
+    if (openConsult(lastQ || undefined)) e.stopPropagation();
   });
   document.querySelector('[data-faq-again]')?.addEventListener('click', () => {
     input?.select();
@@ -455,6 +470,7 @@ if (items.length) {
   .faq-chat__who { margin-bottom: 8px; font-size: 13px; font-weight: 700; letter-spacing: 0.02em; color: var(--br-teal); }
   .faq-chat__lead { font-size: 17px; font-weight: 700; line-height: 1.55; color: var(--br-ink); outline: none; }
   .faq-chat__alt { margin: 16px 0 14px; font-size: 15px; line-height: 1.7; color: var(--br-ink-sub); }
+  .faq-chat__alt + .faq-chat__chips--tight { margin-top: -6px; }
   .faq-chat__chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
   /* 칩은 스크립트가 만든다 — 스코프 속성이 없어 :global */
   .faq-chat__chips :global(button) {

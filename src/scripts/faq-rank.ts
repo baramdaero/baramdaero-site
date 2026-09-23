@@ -57,6 +57,95 @@ function run(a: string, b: string) {
   }
   return best;
 }
+// ── 오타 ─────────────────────────────────────────────────────
+// 한/영 전환을 잊고 친 말('dpdjzjs' → '에어컨')과 자모 한두 개 틀린 말('냄세'·'에어콘'·'실외귀')을
+// 문항 질문·검색어에 실제로 있는 말로 고친다. 어디에도 안 걸리는 말에만 쓴다.
+const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
+const JUNG = 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ';
+const JONG = ' ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ';
+const KEYS: Record<string, string> = Object.fromEntries(
+  [...'rㄱsㄴeㄷfㄹaㅁqㅂtㅅdㅇwㅈcㅊzㅋxㅌvㅍgㅎkㅏoㅐiㅑjㅓpㅔuㅕhㅗyㅛnㅜbㅠmㅡlㅣ'.matchAll(/(.)(.)/gu)].map((m) => [m[1], m[2]]));
+const VV: Record<string, string> = { ㅗㅏ: 'ㅘ', ㅗㅐ: 'ㅙ', ㅗㅣ: 'ㅚ', ㅜㅓ: 'ㅝ', ㅜㅔ: 'ㅞ', ㅜㅣ: 'ㅟ', ㅡㅣ: 'ㅢ' };
+const FF: Record<string, string> = { ㄱㅅ: 'ㄳ', ㄴㅈ: 'ㄵ', ㄴㅎ: 'ㄶ', ㄹㄱ: 'ㄺ', ㄹㅁ: 'ㄻ', ㄹㅂ: 'ㄼ', ㄹㅅ: 'ㄽ', ㄹㅌ: 'ㄾ', ㄹㅍ: 'ㄿ', ㄹㅎ: 'ㅀ', ㅂㅅ: 'ㅄ' };
+const isV = (c?: string) => !!c && JUNG.includes(c);
+
+// 두벌식 자판 순서대로 친 자모를 글자로 모은다 — 받침은 뒤에 모음이 오면 다음 글자 초성으로 넘긴다
+function compose(js: string[]): string {
+  let out = '', i = 0;
+  while (i < js.length) {
+    const c = js[i];
+    if (!CHO.includes(c) || !isV(js[i + 1])) { out += c; i++; continue; }
+    let v = js[i + 1], k = i + 2;
+    if (VV[v + js[k]]) v = VV[v + js[k++]];
+    let f = '';
+    if (js[k] && !isV(js[k]) && JONG.includes(js[k]) && !isV(js[k + 1])) {
+      f = js[k++];
+      if (js[k] && FF[f + js[k]] && !isV(js[k + 1])) f = FF[f + js[k++]];
+    }
+    out += String.fromCharCode(0xac00 + (CHO.indexOf(c) * 21 + JUNG.indexOf(v)) * 28 + (f ? JONG.indexOf(f) : 0));
+    i = k;
+  }
+  return out;
+}
+function jamo(s: string) {
+  let out = '';
+  for (const ch of s) {
+    const c = ch.charCodeAt(0) - 0xac00;
+    out += c < 0 || c > 11171 ? ch : CHO[Math.floor(c / 588)] + JUNG[Math.floor((c % 588) / 28)] + (c % 28 ? JONG[c % 28] : '');
+  }
+  return out;
+}
+function lev(a: string, b: string, cap: number) {
+  if (Math.abs(a.length - b.length) > cap) return cap + 1;
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    if (Math.min(...cur) > cap) return cap + 1;
+    prev = cur;
+  }
+  return prev[b.length];
+}
+// 고칠 후보 = 문항 질문·검색어 속 한글 구간(길이별). 문항 목록이 같으면 한 번만 만든다
+const vocabCache = new WeakMap<FaqDoc[], Map<number, Map<string, { j: string; n: number }>>>();
+function vocab(docs: FaqDoc[], len: number) {
+  let byLen = vocabCache.get(docs);
+  if (!byLen) vocabCache.set(docs, (byLen = new Map()));
+  let m = byLen.get(len);
+  if (!m) {
+    m = new Map();
+    for (const d of docs) for (const text of [d.q, d.kw]) {
+      for (let i = 0; i + len <= text.length; i++) {
+        const w = text.slice(i, i + len);
+        if (!/^[가-힣]+$/.test(w)) continue;
+        const e = m.get(w);
+        if (e) e.n++; else m.set(w, { j: jamo(w), n: 1 });
+      }
+    }
+    byLen.set(len, m);
+  }
+  return m;
+}
+function fix(t: string, docs: FaqDoc[]): string | null {
+  if (/^[a-z]+$/.test(t)) {
+    const h = compose([...t].map((c) => KEYS[c] ?? c));
+    return /^[가-힣]+$/.test(h) ? h : null;
+  }
+  const s = stem(t);
+  if (!/^[가-힣]{2,}$/.test(s)) return null;
+  const cap = s.length >= 3 ? 2 : 1;             // 두 글자 말은 자모 하나까지만 — 더 풀면 엉뚱한 말로 고친다
+  const js = jamo(s);
+  let best: string | null = null, bd = cap + 1, bn = 0;
+  for (const len of [s.length - 1, s.length, s.length + 1]) {
+    if (len < 2) continue;
+    for (const [w, e] of vocab(docs, len)) {
+      const d = lev(js, e.j, Math.min(cap, bd));
+      if (d < bd || (d === bd && e.n > bn)) { best = w; bd = d; bn = e.n; }
+    }
+  }
+  return bd <= cap ? best : null;
+}
+
 function hit(d: FaqDoc, fs: [string, number][]) {
   let best = 0;
   for (const [field, w] of W) for (const [f, k] of fs) if (d[field].includes(f)) best = Math.max(best, w * k);
@@ -76,10 +165,17 @@ export function decideFaq(query: string, docs: FaqDoc[]): FaqDecision {
   // 어느 문항에도 없는 말은 '문항 5%에 있는 말' 만큼만 친다. 버리면 '아이 건강' 처럼 질문의 핵심이 사라지고,
   //   드문 말처럼 무겁게 치면 긴 문장의 '나서부터·수십만 원씩' 같은 말 때문에 늘 고르기로 빠진다
   // 드문 정도는 온전한 꼴로만 센다 — '설치비' 를 끝 글자 뗀 '설치' 로 세면 거의 모든 문항에 걸려 흔한 말이 된다
+  const count = (fs: [string, number][]) => docs.filter((d) => hit(d, fs.filter(([, k]) => k === 1))).length;
   const measured = tokens.map((t) => {
-    const fs = forms(t);
-    const whole = fs.filter(([, k]) => k === 1);
-    return { fs, df: docs.filter((d) => hit(d, whole) > 0).length };
+    let fs = forms(t);
+    let df = count(fs);
+    if (!df) {                                        // 어디에도 없으면 오타로 보고 한 번 고쳐 본다. 고친 말은 조금 덜 친다
+      const f = fix(t, docs);
+      const ffs = f ? forms(f) : [];
+      const fdf = f ? count(ffs) : 0;
+      if (fdf) { fs = ffs.map(([w, k]) => [w, k * 0.9] as [string, number]); df = fdf; }
+    }
+    return { fs, df };
   });
   if (!measured.some((t) => t.df > 0)) return { kind: 'none' };
   const terms = measured.map((t) => ({ fs: t.fs, common: t.df > N * 0.3, idf: Math.log(1 + (t.df ? N / t.df : 20)) }));
