@@ -34,8 +34,8 @@ const nav = [
   { href: '/commercial/', label: '상업용', full: '상업용' },
   { href: '/care/', label: '세척', full: '세척·관리', name: '세척·관리' },
   { href: '/cases/', label: '사례', full: '시공사례', name: '시공사례' },
-  // wide: 641px+ 에서만 보인다. 메뉴 칸마다 44px 터치 폭이라 6칸이면 390px 에서 로고와 함께 54px 넘친다(2026-09-24 실측).
-  // 모바일은 홈·설치·세척·신축 하단 문의 띠의 '가격 안내 보기'와 푸터로 들어간다 — 모바일 메뉴 구조(햄버거 등)를 정할 때 다시 볼 것
+  // wide: JS 가 안 도는 모바일(한 줄 메뉴 폴백)에서만 숨는다 — 6칸이면 390px 에서 54px 넘친다(2026-09-24 실측).
+  // JS 가 돌면 640px 이하는 '메뉴' 버튼 펼침 목록이라 가격도 들어간다
   { href: '/price/', label: '가격', full: '가격', wide: true },
   { href: '/faq/', label: 'FAQ', full: '자주 묻는 질문', name: '자주 묻는 질문(FAQ)' },
 ];
@@ -60,16 +60,23 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
         <img src={wideReverseUrl} alt="" />
       </picture>
     </a>
+    {/* 주 메뉴 랜드마크는 늘 남는다 — 640px 이하 + JS 에서는 안의 '메뉴' 버튼이 링크 묶음(#site-nav)을 펼침 목록으로 연다.
+        버튼은 글자('메뉴'↔'닫기'): 아이콘은 koboyo 에서만 가져오는데 이 레포 세션에 연결이 없다. hidden 은 스크립트가 푼다 */}
     <nav class="bd-header__nav" aria-label="주 메뉴">
-      {nav.map((item) => (
-        <a
-          href={item.href}
-          class:list={['bd-header__link', item.wide && 'bd-header__link--wide']}
-          aria-label={item.name}
-          aria-current={isCurrent(item.href) ? 'page' : undefined}
-        ><span class="bd-header__label bd-header__label--short">{item.label}</span
-        ><span class="bd-header__label bd-header__label--full">{item.full}</span></a>
-      ))}
+      <button type="button" class="bd-header__menu-btn" aria-expanded="false" aria-controls="site-nav" hidden>
+        <span class="bd-header__menu-open">메뉴</span><span class="bd-header__menu-close">닫기</span>
+      </button>
+      <div class="bd-header__links" id="site-nav">
+        {nav.map((item) => (
+          <a
+            href={item.href}
+            class:list={['bd-header__link', item.wide && 'bd-header__link--wide']}
+            aria-label={item.name}
+            aria-current={isCurrent(item.href) ? 'page' : undefined}
+          ><span class="bd-header__label bd-header__label--short">{item.label}</span
+          ><span class="bd-header__label bd-header__label--full">{item.full}</span></a>
+        ))}
+      </div>
     </nav>
     {/* 우측 액션 슬롯 — 대표번호·CTA가 들어올 자리.
         SHOP_URL이 비면 슬롯째 미렌더한다: 빈 요소를 남기면 inner의 gap이 그대로 붙어
@@ -102,7 +109,7 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   }
   /* JS 초기화 완료(.is-ready) + 히어로 구간(:not(.is-scrolled))에서만 투명 오버레이.
      히어로를 지나면 .is-scrolled가 붙어 위 기본 솔리드로 복귀한다. */
-  .bd-header--overlay.is-ready:not(.is-scrolled) {
+  .bd-header--overlay.is-ready:not(.is-scrolled):not(.is-menu-open) {
     background: transparent;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
@@ -166,10 +173,12 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   /* 라이트 구간(서브페이지 솔리드 · 오버레이 스크롤 후) = teal 잉크 */
   .bd-header--solid .bd-header__logo--ink,
   .bd-header--overlay:not(.is-ready) .bd-header__logo--ink,
-  .bd-header--overlay.is-scrolled .bd-header__logo--ink { display: block; }
+  .bd-header--overlay.is-scrolled .bd-header__logo--ink,
+  .bd-header--overlay.is-menu-open .bd-header__logo--ink { display: block; }
   /* 다크 구간(JS 초기화 후 히어로 위 투명 오버레이) = 리버스 */
-  .bd-header--overlay.is-ready:not(.is-scrolled) .bd-header__logo--rev { display: block; }
-  .bd-header__nav {
+  .bd-header--overlay.is-ready:not(.is-scrolled):not(.is-menu-open) .bd-header__logo--rev { display: block; }
+  .bd-header__nav { display: flex; align-items: center; }
+  .bd-header__links {
     display: flex;
     gap: 22px;
   }
@@ -234,17 +243,107 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     .bd-header__logo img { height: 32px; aspect-ratio: 1 / 1; }
   }
 
+  /* ---- 모바일 메뉴(640px 이하 + JS: .has-menu) — 한 줄 메뉴를 접고 '메뉴' 버튼으로 편다 ---- */
+  .bd-header__menu-btn {
+    display: none;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 16px;
+    border-radius: var(--radius-pill);
+    background: var(--tint-fill);
+    color: var(--br-ink);
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: background-color var(--dur-color) ease, transform 160ms var(--ease-out);
+  }
+  .bd-header__menu-btn:active { transform: scale(0.96); }
+  .bd-header__menu-close,
+  .bd-header.is-menu-open .bd-header__menu-open { display: none; }
+  .bd-header.is-menu-open .bd-header__menu-close { display: inline; }
+  .bd-header--overlay.is-ready:not(.is-scrolled):not(.is-menu-open) .bd-header__menu-btn { color: #fff; background: rgba(255, 255, 255, 0.14); }
   @media (max-width: 640px) {
-    .bd-header__link--wide { display: none; }
+    .bd-header.has-menu .bd-header__menu-btn { display: inline-flex; }
+    .bd-header.has-menu .bd-header__links { display: none; }
+    /* 펼침 목록 — 헤더 바로 아래 전체 폭. 글자는 전체 명칭, 한 줄 52px */
+    .bd-header.has-menu.is-menu-open .bd-header__links {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      padding: 4px 20px 16px;
+      background: var(--br-base);
+      border-bottom: 1px solid var(--glass-line);
+      box-shadow: var(--glass-shadow);
+      /* 화면 높이가 낮으면(가로 모드·확대) 목록 안에서 스크롤 — sticky 헤더에 붙어 페이지 스크롤로는 못 내린다 */
+      max-height: calc(100dvh - 56px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    .bd-header.has-menu.is-menu-open .bd-header__link {
+      justify-content: flex-start;
+      min-height: 52px;
+      padding: 0 4px;
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--br-ink);
+      opacity: 1;
+      border-bottom: 1px solid color-mix(in srgb, var(--br-ink) 8%, transparent);
+    }
+    .bd-header.has-menu.is-menu-open .bd-header__link:last-child { border-bottom: 0; }
+    .bd-header.has-menu.is-menu-open .bd-header__link[aria-current='page'] { color: var(--br-teal); }
+    .bd-header.has-menu.is-menu-open .bd-header__label--short { display: none; }
+    .bd-header.has-menu.is-menu-open .bd-header__label--full { display: inline; }
+    /* 투명 오버레이 위에서 열면 헤더도 솔리드로 — 흰 글자 버튼이 밝은 목록 위에 뜨지 않게 */
+    .bd-header--overlay.is-menu-open { background: var(--br-base); color: var(--br-ink); }
+  }
+
+  @media (max-width: 640px) {
+    .bd-header:not(.has-menu) .bd-header__link--wide { display: none; }
     /* 기존 로고 크기와 헤더 높이를 유지한다. */
     .bd-header__inner { gap: 10px; padding: 0 8px; height: 56px; }
-    .bd-header__nav { gap: 10px; }
+    .bd-header__links { gap: 10px; }
     .bd-header__link { font-size: 12px; padding: 12px 0; }
     .bd-header__cta { padding: 8px 11px; font-size: 12px; }
   }
 </style>
 
 <script>
+  // 모바일 메뉴 — 버튼이 nav 를 펼친다. JS 가 안 돌면 버튼은 hidden 그대로, 한 줄 메뉴가 남는다
+  const header = document.querySelector<HTMLElement>('.bd-header');
+  const menuBtn = header?.querySelector<HTMLButtonElement>('.bd-header__menu-btn');
+  if (header && menuBtn) {
+    const narrow = window.matchMedia('(max-width: 640px)');
+    const setOpen = (open: boolean, returnFocus = false) => {
+      header.classList.toggle('is-menu-open', open);
+      menuBtn.setAttribute('aria-expanded', String(open));
+      if (!open && returnFocus) menuBtn.focus();
+    };
+    menuBtn.hidden = false;
+    header.classList.add('has-menu');
+    menuBtn.addEventListener('click', () => setOpen(!header.classList.contains('is-menu-open')));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && header.classList.contains('is-menu-open')) setOpen(false, header.contains(document.activeElement));
+    });
+    // 바깥을 누르면 닫는다(목록 안 링크는 이동하면서 닫힌다)
+    document.addEventListener('click', (e) => {
+      if (header.classList.contains('is-menu-open') && !header.contains(e.target as Node)) setOpen(false);
+    });
+    // 3D·영상 iframe 안을 누르면 클릭이 이 문서로 오지 않는다 — 포커스가 iframe 으로 넘어가며 창 blur 가 난다
+    window.addEventListener('blur', () => { if (header.classList.contains('is-menu-open')) setOpen(false); });
+    // Tab 으로 헤더 밖으로 나가면 닫는다 — 열린 목록이 다음 초점 요소를 가리지 않게(WCAG 2.4.11)
+    header.addEventListener('focusout', (e) => {
+      if (header.classList.contains('is-menu-open') && !header.contains(e.relatedTarget as Node | null)) setOpen(false);
+    });
+    // 뒤로 가기로 캐시에서 되살아난 페이지가 열린 채 보이지 않게
+    window.addEventListener('pageshow', (e) => { if (e.persisted) setOpen(false); });
+    // 데스크톱 폭으로 넓어지면 펼침 상태를 풀어 둔다
+    narrow.addEventListener('change', (e) => { if (!e.matches) setOpen(false); });
+  }
+
   // 오버레이 헤더 — 히어로 구간을 벗어나면 솔리드 전환 (rAF 스로틀)
   const overlay = document.querySelector('.bd-header--overlay');
   if (overlay) {
