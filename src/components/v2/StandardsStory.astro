@@ -1,16 +1,15 @@
 ---
-import type { BaselineBlock, PromiseBlock } from '../../lib/standards.ts';
+// 작업 기준(약속 3항목) 섹션 — /install/ · /care/ · /situation/* 공용.
+// 기준가·가격표는 /price/ 로 옮겼다(2026-09-24). 이 컴포넌트는 금액 이야기를 하지 않는다.
+import type { PromiseBlock } from '../../lib/standards.ts';
 import StoryRow from './StoryRow.astro';
 import ImageSlot from './ImageSlot.astro';
 
 interface Props {
   promise: PromiseBlock | null;
-  baseline: BaselineBlock | null;
   slotPrefix: string;
   startSide?: 'left' | 'right';
   startTone?: 'base' | 'mist';
-  pricingEyebrow?: string;
-  pricingHeading?: string;
   /** 기준 항목마다 사진 한 장(슬롯 `${slotPrefix}-standards-01` …). 끄면 큰 사진 한 장 + 목록.
    *  /install/ 이 켠다 — 사진 한 장으로는 세 기준이 무슨 뜻인지 안 읽혔다(2026-09-23 대표 지적) */
   itemPhotos?: boolean;
@@ -18,34 +17,17 @@ interface Props {
 
 const {
   promise,
-  baseline,
   slotPrefix,
   startSide = 'left',
   startTone = 'base',
-  pricingEyebrow = '',
-  pricingHeading = '',
   itemPhotos = false,
 } = Astro.props;
-
-// 슬롯을 넘겨도 내용이 비면(확정가 0건) 블록째 빼야 한다 — has() 는 조건부로 비운 슬롯도 true 다
-const pricingHtml = Astro.slots.has('pricing') ? (await Astro.slots.render('pricing')).trim() : '';
-const hasPricing = pricingHtml !== '';
-// 제목의 '\n' 은 줄바꿈 자리 — 제목은 2줄·줄당 12자 안팎 (DESIGN.md §2)
-const lines = (t: string) => t.split('\n');
-const sideAt = (index: number) => {
-  const isStart = index % 2 === 0;
-  return isStart ? startSide : (startSide === 'left' ? 'right' : 'left');
-};
-const toneAt = (index: number) => {
-  const isStart = index % 2 === 0;
-  return isStart ? startTone : (startTone === 'base' ? 'mist' : 'base');
-};
 ---
-{(promise || baseline || hasPricing) && (
-  <section class="v2-standards-story" aria-label={promise?.heading || baseline?.title.replaceAll('\n', ' ') || pricingHeading}>
+{promise && (
+  <section class="v2-standards-story" aria-label={promise.heading}>
     {promise && itemPhotos && (
       <article
-        class:list={['bd-section', 'v2-standards-story__message', `v2-standards-story__message--${toneAt(0)}`]}
+        class:list={['bd-section', 'v2-standards-story__message', `v2-standards-story__message--${startTone}`]}
         data-layout-section="standard"
       >
         <div class="bd-container">
@@ -72,14 +54,14 @@ const toneAt = (index: number) => {
 
     {promise && !itemPhotos && (
       <article
-        class:list={['bd-section', 'v2-standards-story__message', `v2-standards-story__message--${toneAt(0)}`]}
+        class:list={['bd-section', 'v2-standards-story__message', `v2-standards-story__message--${startTone}`]}
         data-layout-section="standard"
       >
         <div class="bd-container">
           <StoryRow
             slotId={`${slotPrefix}-standards-scope`}
             slotLabel={`${slotPrefix}-standards-scope`}
-            imageSide={sideAt(0)}
+            imageSide={startSide}
             glass
           >
             <h2 class="br-h br-reveal">{promise.heading}</h2>
@@ -96,68 +78,6 @@ const toneAt = (index: number) => {
                 </li>
               ))}
             </ol>
-          </StoryRow>
-        </div>
-      </article>
-    )}
-
-    {baseline && (
-      <article
-        class:list={['bd-section', 'v2-standards-story__message', `v2-standards-story__message--${toneAt(1)}`]}
-        data-layout-section="pricing-basis"
-      >
-        <div class="bd-container">
-          <StoryRow
-            slotId={`${slotPrefix}-pricing-basis`}
-            slotLabel={`${slotPrefix}-pricing-basis`}
-            imageSide={sideAt(1)}
-            glass
-          >
-            <h2 class="br-h br-reveal">{lines(baseline.title).map((l, i) => <Fragment>{i > 0 && <br />}{l}</Fragment>)}</h2>
-            <p class="br-body br-reveal">
-              {baseline.bodyLines.map((line, i) => <Fragment>{i > 0 && <br />}{line}</Fragment>)}
-            </p>
-            {baseline.formulaLine && <p class="v2-standards-story__formula br-reveal">{baseline.formulaLine}</p>}
-            {baseline.policyLines.length > 0 && (
-              <details class="v2-standards-story__policy-details br-reveal">
-                <summary>{baseline.policyLines[0]}</summary>
-                {baseline.policyLines.length > 1 && (
-                  <ul class="v2-standards-story__policy">
-                    {baseline.policyLines.slice(1).map((line) => <li>{line}</li>)}
-                  </ul>
-                )}
-              </details>
-            )}
-            {baseline.updated && <p class="v2-standards-story__updated br-reveal">기준가 최종 갱신: {baseline.updated}</p>}
-            {hasPricing && (
-              <div class="v2-standards-story__pricing br-reveal">
-                {pricingEyebrow && <span class="br-eyebrow">{pricingEyebrow}</span>}
-                <details class="v2-standards-story__pricing-details">
-                  {pricingHeading && <summary>{pricingHeading}</summary>}
-                  <div class="v2-standards-story__pricing-content"><Fragment set:html={pricingHtml} /></div>
-                </details>
-              </div>
-            )}
-          </StoryRow>
-        </div>
-      </article>
-    )}
-
-    {hasPricing && !baseline && (
-      <article
-        class:list={['bd-section', 'v2-standards-story__message', `v2-standards-story__message--${toneAt(2)}`]}
-        data-layout-section="pricing-table"
-      >
-        <div class="bd-container">
-          <StoryRow
-            slotId={`${slotPrefix}-pricing-basis`}
-            slotLabel={`${slotPrefix}-pricing-basis`}
-            imageSide={sideAt(2)}
-            glass
-          >
-            {pricingEyebrow && <span class="br-eyebrow br-reveal">{pricingEyebrow}</span>}
-            {pricingHeading && <h2 class="br-h br-reveal">{pricingHeading}</h2>}
-            <Fragment set:html={pricingHtml} />
           </StoryRow>
         </div>
       </article>
@@ -215,72 +135,4 @@ const toneAt = (index: number) => {
     .v2-standards-story__steps { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
   }
   .v2-standards-story__promise p { margin-top: 6px; font-size: 14px; line-height: 1.65; }
-
-  .v2-standards-story__formula {
-    margin-top: 24px;
-    padding: 14px 16px;
-    border-left: 3px solid var(--br-teal);
-    background: var(--br-ice);
-    color: var(--br-ink);
-    border-radius: 0 var(--radius) var(--radius) 0;
-    font-size: 14px;
-    font-weight: 700;
-  }
-
-  .v2-standards-story__policy-details {
-    margin-top: 20px;
-    border-top: 1px solid var(--br-teal);
-    border-bottom: 1px solid var(--br-teal);
-  }
-
-  .v2-standards-story__policy-details summary {
-    min-height: 44px;
-    padding: 12px 0;
-    cursor: pointer;
-    color: var(--br-teal);
-    font-size: 14px;
-    font-weight: 700;
-  }
-
-  .v2-standards-story__policy {
-    margin-bottom: 14px;
-    list-style: none;
-    display: grid;
-    gap: 7px;
-  }
-
-  .v2-standards-story__policy li {
-    position: relative;
-    padding-left: 16px;
-    font-size: 14px;
-  }
-
-  .v2-standards-story__policy li::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0.72em;
-    width: 8px;
-    height: 1px;
-    background: var(--br-teal);
-  }
-
-  .v2-standards-story__updated { margin-top: 18px; font-size: 13px; }
-
-  .v2-standards-story__pricing {
-    margin-top: 28px;
-    padding-top: 28px;
-    border-top: 1px solid var(--br-teal);
-  }
-
-  .v2-standards-story__pricing-details { margin-top: 16px; }
-  .v2-standards-story__pricing-details summary {
-    min-height: 44px;
-    cursor: pointer;
-    color: var(--br-teal);
-    font-size: 18px;
-    font-weight: 700;
-    line-height: 1.45;
-  }
-  .v2-standards-story__pricing-content { padding-top: 4px; }
 </style>

@@ -8,8 +8,10 @@ interface Props {
   buttonLabel?: string;
   /** 링 스윕 모션 — 홈 1곳 전용. 기본 꺼짐 (모든 CTA가 돌면 포인트가 아니다) */
   ring?: boolean;
+  /** 문의 버튼 옆 보조 알약 '가격 안내 보기' — 금액 이야기는 /price/ 한 곳에만 있어서 그리로 가는 길(모바일 메뉴에 가격 칸이 없다) */
+  priceLink?: boolean;
 }
-const { chatTree = 'menu', buttonLabel = '견적 문의', ring = false } = Astro.props;
+const { chatTree = 'menu', buttonLabel = '견적 문의', ring = false, priceLink = false } = Astro.props;
 // 슬롯을 안 넘기고 부르는 페이지(/story/, 블로그 글)가 있다. 빈 <h2>·<p> 를 내보내면
 // 스크린리더가 'empty heading' 으로 읽고 화면엔 빈 면만 남는다 — 있을 때만 그린다.
 const hasTitle = Astro.slots.has('default');
@@ -26,6 +28,7 @@ const hasSub = Astro.slots.has('sub');
         data-chat-tree={chatTree}
         data-specular
       >{buttonLabel}</button>
+      {priceLink && <a class="br-pill" href="/price/">가격 안내 보기 <span aria-hidden="true">→</span></a>}
       {SITE_CONFIG.PHONE && (
         <a class="v2-cta__phone" href={`tel:${SITE_CONFIG.PHONE}`}>{SITE_CONFIG.PHONE}</a>
       )}
@@ -71,6 +74,8 @@ const hasSub = Astro.slots.has('sub');
      면 안쪽에 그려 teal/ice 7.10:1 을 쓴다 (DESIGN.md §1 대비표). */
   .v2-cta__btn:focus-visible { outline-offset: -5px; outline-color: var(--br-teal); }
   .v2-cta__phone { font-weight: 700; color: var(--br-ice); }
+  /* 보조 알약 — 밴드 합성색(#4F6C78) 위에서 ice 글자는 3.6:1 로 미달. 흰 글자·흰 틴트로 4.5 이상 */
+  .v2-cta { --pill-fg: #fff; --pill-fg-hover: #fff; --pill-bg: rgba(255, 255, 255, 0.08); --pill-bg-hover: rgba(0, 41, 58, 0.2); --pill-dot: rgba(255, 255, 255, 0.14); } /* hover 는 밝히지 않고 어둡게 — 밝히면 4.4:1 */
   @media (min-width: 768px) { .v2-cta__sub { font-size: 17px; } }
 
   /* ---------- 링 스윕 (홈 전용, ring prop) ----------

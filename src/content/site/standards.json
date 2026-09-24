@@ -1,13 +1,13 @@
 {
   "_설명": {
-    "baseline_common": "기준가 블록의 공통부 — updated(비면 갱신일 줄 미노출), policy_lines(정책 줄). /install/·/care/가 함께 씁니다.",
-    "baseline_install": "설치 페이지 기준가 도입부. title·body_lines·formula_line. ⚠️ 세척 문구를 쓰지 마세요(설치 페이지에 세척 얘기가 나오는 게 이 분리의 이유).",
-    "baseline_care": "세척 페이지 기준가 도입부. title·body_lines·formula_line.",
+    "baseline_common": "기준가 블록의 공통부 — updated(비면 갱신일 줄 미노출), policy_lines(정책 줄). /price/ 가격 페이지가 씁니다(정책 줄은 한 번만 보임).",
+    "baseline_install": "/price/ 가격 페이지의 설치 기준가. title·body_lines·formula_line. ⚠️ 세척 문구를 쓰지 마세요(설치·세척을 나눠 보여 주는 게 이 분리의 이유).",
+    "baseline_care": "/price/ 가격 페이지 첫 화면 제목(title)·부제(body_lines 첫 줄)와 세척 산출 근거(formula_line).",
     "제목 줄바꿈": "baseline_install·baseline_care 의 title 에서 \\n 은 화면 줄바꿈 자리입니다. 제목은 2줄, 줄당 12자 안팎으로 둡니다(DESIGN.md §2). 지우면 한 줄로 흐릅니다.",
     "promise_heading": "기준 블록 공통 제목. /care/·/install/·/situation/ 세 곳이 같이 씁니다.",
     "promise_install": "설치 기준 3항목. /install/ 와 /situation/[slug] 가 소비합니다(신축 입주 맥락이라 설치 쪽).",
     "promise_care": "세척 기준 3항목. /care/ 가 소비합니다.",
-    "이 파일은": "기준가 철학(바람대로 기준가)과 세척·설치 견적 비교 체크리스트의 콘텐츠 원본입니다. 이 파일만 수정하면 /care/·/install/ 페이지에 반영됩니다 (GitHub 웹에서 연필 아이콘으로 편집 → Commit).",
+    "이 파일은": "기준가 철학(바람대로 기준가)과 세척·설치 견적 비교 체크리스트의 콘텐츠 원본입니다. 이 파일만 수정하면 /price/(기준가·정책)와 /care/·/install/·/situation/(작업 기준) 페이지에 반영됩니다 (GitHub 웹에서 연필 아이콘으로 편집 → Commit).",
     "공통 규칙": "필수 값이 비어 있으면 그 항목/줄만 조용히 빠집니다. 문법(쉼표·따옴표·괄호)이 깨지면 배포가 멈추니 수정 후 미리보기에서 빨간 표시가 없는지 확인하세요.",
     "care_checklist / install_checklist (보류)": "견적 비교 체크리스트 — 현재 items를 비워 두어 화면에 나오지 않습니다. 다시 쓰려면 items에 항목을 채우면 그 자리에 복귀합니다. 스키마·컴포넌트는 그대로 남아 있습니다. 원래 설명: 견적 비교 체크리스트. q=확인 질문(강조 표시), why=왜 중요한지(서브텍스트), ours=바람대로의 이행 방식. ⚠️ ours는 매뉴얼 확정 후 기입 — 비워두면 '바람대로는 —' 줄이 그 항목에서 안 나옵니다. 전 항목이 비어도 체크리스트 자체는 소비자 가이드로 노출됩니다. 번호는 자동이지만 title의 개수 표현(다섯·여섯…)은 수동이니 항목을 늘리면 함께 고치세요. 현재 세척 6항목 / 설치 7항목."
   },
