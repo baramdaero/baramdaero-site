@@ -2,6 +2,7 @@
 // 브랜드이야기
 import Base from '../../layouts/Base.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
+import ImageSlot from '../../components/v2/ImageSlot.astro';
 
 const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? '';
 const breadcrumb = {
@@ -19,6 +20,7 @@ const breadcrumb = {
       <div class="story__card br-glass br-glass--medium">
       <p class="bd-microlabel">Story</p>
       <h1 class="story__headline">당신의 바람대로.</h1>
+      <div class="story__photo"><ImageSlot id="story-materials" ratio="wide" /></div>
 
       <div class="story__body">
         <p>바람대로의 바람은 두 가지입니다. 에어컨이 만드는 바람, 그리고 고객이 바라는 바람. 시원했으면 하는 바람, 냄새가 없었으면 하는 바람, 신경 쓸 일이 없었으면 하는 바람.</p>
@@ -45,6 +47,9 @@ const breadcrumb = {
 </Base>
 
 <style>
+  /* 자재 사진 — 글만 있던 카드에 한 장. 제목과 본문 사이 */
+  .story__photo { margin: 28px 0 32px; }
+  .story__photo :global(.br-image-slot) { max-width: none; --slot-radius: calc(var(--radius) - 4px); }
   .story { background: transparent; } /* 유리 카드 호스트 */
   .story .bd-container { max-width: 680px; }
   .story__card { padding: 32px 28px; }

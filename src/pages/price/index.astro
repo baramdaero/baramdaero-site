@@ -109,13 +109,12 @@ if (prices.length) {
         )}
         {baselineCare?.formulaLine && <p class="price-formula br-reveal">{baselineCare.formulaLine}</p>}
       </StoryRow>
-      {/* 기준가 정책 — 두 카드 공통이라 한 번만, 예전 기준가 카드처럼 접어 둔다(첫 줄이 요약) */}
+      {/* 기준가 정책 — 두 카드 공통이라 한 번만. 두 줄이라 접지 않는다 */}
       {policyLines.length > 0 && (
-        <details class="price-policy br-reveal">
-          <summary>{policyLines[0]}</summary>
-          {policyLines.length > 1 && <ul>{policyLines.slice(1).map((line) => <li>{line}</li>)}</ul>}
+        <div class="price-policy br-reveal">
+          <ul>{policyLines.map((line) => <li>{line}</li>)}</ul>
           {updated && <p class="price-policy__updated">기준가 최종 갱신: {updated}</p>}
-        </details>
+        </div>
       )}
     </div>
   </section>
@@ -174,17 +173,12 @@ if (prices.length) {
   .price-table__value span { margin-left: 2px; font-size: 13px; }
   .price-conditions { margin-top: 16px; padding-left: 18px; color: var(--br-ink-sub); font-size: 13px; }
 
-  /* 기준가 정책 — 접힘. 예전 기준가 카드의 정책 펼침과 같은 모양 */
-  .price-policy {
-    margin-top: 24px;
-    border-top: 1px solid var(--br-teal);
-    border-bottom: 1px solid var(--br-teal);
-  }
-  .price-policy summary { min-height: 44px; padding: 12px 0; cursor: pointer; color: var(--br-teal); font-size: 14px; font-weight: 700; }
-  .price-policy ul { margin-bottom: 14px; list-style: none; display: grid; gap: 7px; }
+  /* 기준가 정책 — 카드 아래 짧은 두 줄 */
+  .price-policy { margin-top: 24px; padding-top: 16px; border-top: 1px solid color-mix(in srgb, var(--br-ink) 12%, transparent); }
+  .price-policy ul { list-style: none; display: grid; gap: 7px; }
   .price-policy li { position: relative; padding-left: 16px; font-size: 14px; color: var(--br-ink); }
   .price-policy li::before { content: ''; position: absolute; left: 0; top: 0.72em; width: 8px; height: 1px; background: var(--br-teal); }
-  .price-policy__updated { margin-bottom: 14px; font-size: 13px; color: var(--br-ink-sub); }
+  .price-policy__updated { margin-top: 10px; font-size: 13px; color: var(--br-ink-sub); }
 
   .price-faq { background: transparent; }
   .price-faq__list { margin-top: var(--head-gap); display: grid; gap: 10px; max-width: 860px; }

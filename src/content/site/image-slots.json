@@ -48,6 +48,7 @@
     "newhome-prewired": { "src": "/media/newhome-prewired.webp", "alt": "벽에서 나온 마개 처리된 선배관 끝과 보온재 상태" },
     "newhome-standards-scope": { "src": "/media/newhome-standards-scope.webp", "alt": "천장 내부 배관 경로와 점검구의 관계" },
     "newhome-pricing-basis": { "src": "/media/newhome-pricing-basis.webp", "alt": "신축 설치 자재와 장비 구성" },
+    "story-materials": { "src": "/media/newhome-pricing-basis.webp", "alt": "설치 자재와 장비를 규격별로 펼쳐 놓은 모습 — 동배관, 보온재, 진공펌프, 매니폴드 게이지" },
     "newhome-group-buy": { "src": "/media/newhome-group-buy.webp", "alt": "단지 지하 적치 구역에 세대 분량씩 정돈한 동일 규격 자재" }
   }
 }
