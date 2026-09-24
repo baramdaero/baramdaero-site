@@ -60,21 +60,23 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
         <img src={wideReverseUrl} alt="" />
       </picture>
     </a>
-    {/* 모바일 메뉴 버튼 — 640px 이하 + JS 에서만 보인다(hidden 은 스크립트가 푼다). 아이콘 대신 글자:
-        아이콘은 koboyo 에서만 가져오는데 이 레포 세션에 연결이 없다. 누르면 아래 nav 가 펼침 목록이 된다 */}
-    <button type="button" class="bd-header__menu-btn" aria-expanded="false" aria-controls="site-nav" hidden>
-      <span class="bd-header__menu-open">메뉴</span><span class="bd-header__menu-close">닫기</span>
-    </button>
-    <nav class="bd-header__nav" id="site-nav" aria-label="주 메뉴">
-      {nav.map((item) => (
-        <a
-          href={item.href}
-          class:list={['bd-header__link', item.wide && 'bd-header__link--wide']}
-          aria-label={item.name}
-          aria-current={isCurrent(item.href) ? 'page' : undefined}
-        ><span class="bd-header__label bd-header__label--short">{item.label}</span
-        ><span class="bd-header__label bd-header__label--full">{item.full}</span></a>
-      ))}
+    {/* 주 메뉴 랜드마크는 늘 남는다 — 640px 이하 + JS 에서는 안의 '메뉴' 버튼이 링크 묶음(#site-nav)을 펼침 목록으로 연다.
+        버튼은 글자('메뉴'↔'닫기'): 아이콘은 koboyo 에서만 가져오는데 이 레포 세션에 연결이 없다. hidden 은 스크립트가 푼다 */}
+    <nav class="bd-header__nav" aria-label="주 메뉴">
+      <button type="button" class="bd-header__menu-btn" aria-expanded="false" aria-controls="site-nav" hidden>
+        <span class="bd-header__menu-open">메뉴</span><span class="bd-header__menu-close">닫기</span>
+      </button>
+      <div class="bd-header__links" id="site-nav">
+        {nav.map((item) => (
+          <a
+            href={item.href}
+            class:list={['bd-header__link', item.wide && 'bd-header__link--wide']}
+            aria-label={item.name}
+            aria-current={isCurrent(item.href) ? 'page' : undefined}
+          ><span class="bd-header__label bd-header__label--short">{item.label}</span
+          ><span class="bd-header__label bd-header__label--full">{item.full}</span></a>
+        ))}
+      </div>
     </nav>
     {/* 우측 액션 슬롯 — 대표번호·CTA가 들어올 자리.
         SHOP_URL이 비면 슬롯째 미렌더한다: 빈 요소를 남기면 inner의 gap이 그대로 붙어
@@ -107,7 +109,7 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   }
   /* JS 초기화 완료(.is-ready) + 히어로 구간(:not(.is-scrolled))에서만 투명 오버레이.
      히어로를 지나면 .is-scrolled가 붙어 위 기본 솔리드로 복귀한다. */
-  .bd-header--overlay.is-ready:not(.is-scrolled) {
+  .bd-header--overlay.is-ready:not(.is-scrolled):not(.is-menu-open) {
     background: transparent;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
@@ -171,10 +173,12 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   /* 라이트 구간(서브페이지 솔리드 · 오버레이 스크롤 후) = teal 잉크 */
   .bd-header--solid .bd-header__logo--ink,
   .bd-header--overlay:not(.is-ready) .bd-header__logo--ink,
-  .bd-header--overlay.is-scrolled .bd-header__logo--ink { display: block; }
+  .bd-header--overlay.is-scrolled .bd-header__logo--ink,
+  .bd-header--overlay.is-menu-open .bd-header__logo--ink { display: block; }
   /* 다크 구간(JS 초기화 후 히어로 위 투명 오버레이) = 리버스 */
-  .bd-header--overlay.is-ready:not(.is-scrolled) .bd-header__logo--rev { display: block; }
-  .bd-header__nav {
+  .bd-header--overlay.is-ready:not(.is-scrolled):not(.is-menu-open) .bd-header__logo--rev { display: block; }
+  .bd-header__nav { display: flex; align-items: center; }
+  .bd-header__links {
     display: flex;
     gap: 22px;
   }
@@ -243,7 +247,7 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   .bd-header__menu-btn {
     display: none;
     align-items: center;
-    min-height: 40px;
+    min-height: 44px;
     padding: 0 16px;
     border-radius: var(--radius-pill);
     background: var(--tint-fill);
@@ -260,9 +264,9 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   .bd-header--overlay.is-ready:not(.is-scrolled):not(.is-menu-open) .bd-header__menu-btn { color: #fff; background: rgba(255, 255, 255, 0.14); }
   @media (max-width: 640px) {
     .bd-header.has-menu .bd-header__menu-btn { display: inline-flex; }
-    .bd-header.has-menu .bd-header__nav { display: none; }
+    .bd-header.has-menu .bd-header__links { display: none; }
     /* 펼침 목록 — 헤더 바로 아래 전체 폭. 글자는 전체 명칭, 한 줄 52px */
-    .bd-header.has-menu.is-menu-open .bd-header__nav {
+    .bd-header.has-menu.is-menu-open .bd-header__links {
       display: flex;
       flex-direction: column;
       gap: 0;
@@ -274,6 +278,10 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
       background: var(--br-base);
       border-bottom: 1px solid var(--glass-line);
       box-shadow: var(--glass-shadow);
+      /* 화면 높이가 낮으면(가로 모드·확대) 목록 안에서 스크롤 — sticky 헤더에 붙어 페이지 스크롤로는 못 내린다 */
+      max-height: calc(100dvh - 56px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
     .bd-header.has-menu.is-menu-open .bd-header__link {
       justify-content: flex-start;
@@ -297,7 +305,7 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     .bd-header:not(.has-menu) .bd-header__link--wide { display: none; }
     /* 기존 로고 크기와 헤더 높이를 유지한다. */
     .bd-header__inner { gap: 10px; padding: 0 8px; height: 56px; }
-    .bd-header__nav { gap: 10px; }
+    .bd-header__links { gap: 10px; }
     .bd-header__link { font-size: 12px; padding: 12px 0; }
     .bd-header__cta { padding: 8px 11px; font-size: 12px; }
   }
@@ -318,7 +326,7 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     header.classList.add('has-menu');
     menuBtn.addEventListener('click', () => setOpen(!header.classList.contains('is-menu-open')));
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && header.classList.contains('is-menu-open')) setOpen(false, true);
+      if (e.key === 'Escape' && header.classList.contains('is-menu-open')) setOpen(false, header.contains(document.activeElement));
     });
     // 바깥을 누르면 닫는다(목록 안 링크는 이동하면서 닫힌다)
     document.addEventListener('click', (e) => {
@@ -326,6 +334,12 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     });
     // 3D·영상 iframe 안을 누르면 클릭이 이 문서로 오지 않는다 — 포커스가 iframe 으로 넘어가며 창 blur 가 난다
     window.addEventListener('blur', () => { if (header.classList.contains('is-menu-open')) setOpen(false); });
+    // Tab 으로 헤더 밖으로 나가면 닫는다 — 열린 목록이 다음 초점 요소를 가리지 않게(WCAG 2.4.11)
+    header.addEventListener('focusout', (e) => {
+      if (header.classList.contains('is-menu-open') && !header.contains(e.relatedTarget as Node | null)) setOpen(false);
+    });
+    // 뒤로 가기로 캐시에서 되살아난 페이지가 열린 채 보이지 않게
+    window.addEventListener('pageshow', (e) => { if (e.persisted) setOpen(false); });
     // 데스크톱 폭으로 넓어지면 펼침 상태를 풀어 둔다
     narrow.addEventListener('change', (e) => { if (!e.matches) setOpen(false); });
   }
