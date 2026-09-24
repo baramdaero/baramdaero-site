@@ -8,7 +8,7 @@ interface Props {
   buttonLabel?: string;
   /** 링 스윕 모션 — 홈 1곳 전용. 기본 꺼짐 (모든 CTA가 돌면 포인트가 아니다) */
   ring?: boolean;
-  /** 문의 버튼 옆 보조 알약 '가격 안내 보기' — 금액 이야기는 /price/ 한 곳에만 있어서 그리로 가는 길(모바일 메뉴에 가격 칸이 없다) */
+  /** 문의 버튼 옆 보조 알약 '가격 안내 보기' — 금액 이야기는 /price/ 한 곳에만 있어서, 금액을 떼어 낸 페이지에서 그리로 가는 길 */
   priceLink?: boolean;
 }
 const { chatTree = 'menu', buttonLabel = '견적 문의', ring = false, priceLink = false } = Astro.props;

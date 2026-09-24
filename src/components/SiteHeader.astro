@@ -34,8 +34,8 @@ const nav = [
   { href: '/commercial/', label: '상업용', full: '상업용' },
   { href: '/care/', label: '세척', full: '세척·관리', name: '세척·관리' },
   { href: '/cases/', label: '사례', full: '시공사례', name: '시공사례' },
-  // wide: 641px+ 에서만 보인다. 메뉴 칸마다 44px 터치 폭이라 6칸이면 390px 에서 로고와 함께 54px 넘친다(2026-09-24 실측).
-  // 모바일은 홈·설치·세척·신축 하단 문의 띠의 '가격 안내 보기'와 푸터로 들어간다 — 모바일 메뉴 구조(햄버거 등)를 정할 때 다시 볼 것
+  // wide: JS 가 안 도는 모바일(한 줄 메뉴 폴백)에서만 숨는다 — 6칸이면 390px 에서 54px 넘친다(2026-09-24 실측).
+  // JS 가 돌면 640px 이하는 '메뉴' 버튼 펼침 목록이라 가격도 들어간다
   { href: '/price/', label: '가격', full: '가격', wide: true },
   { href: '/faq/', label: 'FAQ', full: '자주 묻는 질문', name: '자주 묻는 질문(FAQ)' },
 ];
@@ -60,7 +60,12 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
         <img src={wideReverseUrl} alt="" />
       </picture>
     </a>
-    <nav class="bd-header__nav" aria-label="주 메뉴">
+    {/* 모바일 메뉴 버튼 — 640px 이하 + JS 에서만 보인다(hidden 은 스크립트가 푼다). 아이콘 대신 글자:
+        아이콘은 koboyo 에서만 가져오는데 이 레포 세션에 연결이 없다. 누르면 아래 nav 가 펼침 목록이 된다 */}
+    <button type="button" class="bd-header__menu-btn" aria-expanded="false" aria-controls="site-nav" hidden>
+      <span class="bd-header__menu-open">메뉴</span><span class="bd-header__menu-close">닫기</span>
+    </button>
+    <nav class="bd-header__nav" id="site-nav" aria-label="주 메뉴">
       {nav.map((item) => (
         <a
           href={item.href}
@@ -234,8 +239,62 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     .bd-header__logo img { height: 32px; aspect-ratio: 1 / 1; }
   }
 
+  /* ---- 모바일 메뉴(640px 이하 + JS: .has-menu) — 한 줄 메뉴를 접고 '메뉴' 버튼으로 편다 ---- */
+  .bd-header__menu-btn {
+    display: none;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 16px;
+    border-radius: var(--radius-pill);
+    background: var(--tint-fill);
+    color: var(--br-ink);
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: background-color var(--dur-color) ease, transform 160ms var(--ease-out);
+  }
+  .bd-header__menu-btn:active { transform: scale(0.96); }
+  .bd-header__menu-close,
+  .bd-header.is-menu-open .bd-header__menu-open { display: none; }
+  .bd-header.is-menu-open .bd-header__menu-close { display: inline; }
+  .bd-header--overlay.is-ready:not(.is-scrolled):not(.is-menu-open) .bd-header__menu-btn { color: #fff; background: rgba(255, 255, 255, 0.14); }
   @media (max-width: 640px) {
-    .bd-header__link--wide { display: none; }
+    .bd-header.has-menu .bd-header__menu-btn { display: inline-flex; }
+    .bd-header.has-menu .bd-header__nav { display: none; }
+    /* 펼침 목록 — 헤더 바로 아래 전체 폭. 글자는 전체 명칭, 한 줄 52px */
+    .bd-header.has-menu.is-menu-open .bd-header__nav {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      padding: 4px 20px 16px;
+      background: var(--br-base);
+      border-bottom: 1px solid var(--glass-line);
+      box-shadow: var(--glass-shadow);
+    }
+    .bd-header.has-menu.is-menu-open .bd-header__link {
+      justify-content: flex-start;
+      min-height: 52px;
+      padding: 0 4px;
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--br-ink);
+      opacity: 1;
+      border-bottom: 1px solid color-mix(in srgb, var(--br-ink) 8%, transparent);
+    }
+    .bd-header.has-menu.is-menu-open .bd-header__link:last-child { border-bottom: 0; }
+    .bd-header.has-menu.is-menu-open .bd-header__link[aria-current='page'] { color: var(--br-teal); }
+    .bd-header.has-menu.is-menu-open .bd-header__label--short { display: none; }
+    .bd-header.has-menu.is-menu-open .bd-header__label--full { display: inline; }
+    /* 투명 오버레이 위에서 열면 헤더도 솔리드로 — 흰 글자 버튼이 밝은 목록 위에 뜨지 않게 */
+    .bd-header--overlay.is-menu-open { background: var(--br-base); color: var(--br-ink); }
+  }
+
+  @media (max-width: 640px) {
+    .bd-header:not(.has-menu) .bd-header__link--wide { display: none; }
     /* 기존 로고 크기와 헤더 높이를 유지한다. */
     .bd-header__inner { gap: 10px; padding: 0 8px; height: 56px; }
     .bd-header__nav { gap: 10px; }
@@ -245,6 +304,32 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
 </style>
 
 <script>
+  // 모바일 메뉴 — 버튼이 nav 를 펼친다. JS 가 안 돌면 버튼은 hidden 그대로, 한 줄 메뉴가 남는다
+  const header = document.querySelector<HTMLElement>('.bd-header');
+  const menuBtn = header?.querySelector<HTMLButtonElement>('.bd-header__menu-btn');
+  if (header && menuBtn) {
+    const narrow = window.matchMedia('(max-width: 640px)');
+    const setOpen = (open: boolean, returnFocus = false) => {
+      header.classList.toggle('is-menu-open', open);
+      menuBtn.setAttribute('aria-expanded', String(open));
+      if (!open && returnFocus) menuBtn.focus();
+    };
+    menuBtn.hidden = false;
+    header.classList.add('has-menu');
+    menuBtn.addEventListener('click', () => setOpen(!header.classList.contains('is-menu-open')));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && header.classList.contains('is-menu-open')) setOpen(false, true);
+    });
+    // 바깥을 누르면 닫는다(목록 안 링크는 이동하면서 닫힌다)
+    document.addEventListener('click', (e) => {
+      if (header.classList.contains('is-menu-open') && !header.contains(e.target as Node)) setOpen(false);
+    });
+    // 3D·영상 iframe 안을 누르면 클릭이 이 문서로 오지 않는다 — 포커스가 iframe 으로 넘어가며 창 blur 가 난다
+    window.addEventListener('blur', () => { if (header.classList.contains('is-menu-open')) setOpen(false); });
+    // 데스크톱 폭으로 넓어지면 펼침 상태를 풀어 둔다
+    narrow.addEventListener('change', (e) => { if (!e.matches) setOpen(false); });
+  }
+
   // 오버레이 헤더 — 히어로 구간을 벗어나면 솔리드 전환 (rAF 스로틀)
   const overlay = document.querySelector('.bd-header--overlay');
   if (overlay) {
