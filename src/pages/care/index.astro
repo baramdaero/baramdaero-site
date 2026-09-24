@@ -16,7 +16,7 @@ import { isImageSlotVisible } from '../../lib/image-slots.ts';
 
 const pricing = loadPricing();
 const standards = loadStandards();
-const { prices, conditions, process, processIntro, processSource, symptoms, seasons } = pricing;
+const { process, processIntro, processSource, symptoms, seasons } = pricing;
 const visibleSymptoms = symptoms.filter((s) => !s.hidden);
 const visibleSeasons = seasons
   .map((season, index) => ({ ...season, slotId: `care-season-${String(index + 1).padStart(2, '0')}` }))
@@ -43,30 +43,14 @@ const symptomSlot = (icon: string, index: number) => ({
   drip: 'care-symptom-drip',
 }[icon] ?? `care-symptom-${String(index + 1).padStart(2, '0')}`);
 
-/* ---------- JSON-LD (v1과 동일 유지) ---------- */
+/* ---------- JSON-LD ---------- */
 const serviceJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Service',
   serviceType: '에어컨 분해세척·유지관리',
   provider: { '@type': 'HVACBusiness', name: SITE_CONFIG.SITE_NAME, url: siteUrl },
   areaServed: { '@type': 'AdministrativeArea', name: '수도권' },
-  ...(prices.length
-    ? {
-        offers: prices.map((p) => ({
-          '@type': 'Offer',
-          itemOffered: { '@type': 'Service', name: `${p.type} 분해세척` },
-          ...(p.unit.includes('만원')
-            ? {
-                priceSpecification: {
-                  '@type': 'UnitPriceSpecification',
-                  minPrice: p.base * 10000,
-                  priceCurrency: 'KRW',
-                },
-              }
-            : {}),
-        })),
-      }
-    : {}),
+  // 가격(offers)은 /price/ 가 낸다 — 기준가는 가격 페이지 한 곳에서만 말한다(2026-09-24)
 };
 
 const breadcrumbJsonLd = {
@@ -185,36 +169,10 @@ if (careFaq.length) {
 
   <StandardsStory
     promise={standards.promiseCare}
-    baseline={standards.baselineCare}
     slotPrefix="care"
     startSide="right"
     startTone="base"
-    pricingHeading="기종별 기준가"
-  >
-    {/* 확정가가 한 줄이라도 있을 때만 표를 그린다. 없으면 블록째 빠진다 —
-        '챗봇으로 안내합니다' 대기 문구는 아래 CTA 밴드와 같은 말이었다 */}
-    <Fragment slot="pricing">
-      {prices.length > 0 && (
-        <Fragment>
-          <div class="care-prices__wrap br-reveal">
-            <table class="care-prices__table">
-              <thead><tr><th scope="col">기종</th><th scope="col">기준가</th><th scope="col">비고</th></tr></thead>
-              <tbody>
-                {prices.map((p) => (
-                  <tr>
-                    <th scope="row">{p.type}</th>
-                    <td class="care-prices__value">{p.base.toLocaleString('ko-KR')}<span>{p.unit}</span></td>
-                    <td>{p.note}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {conditions.length > 0 && <ul class="care-prices__conditions br-reveal">{conditions.map((c) => <li>{c}</li>)}</ul>}
-        </Fragment>
-      )}
-    </Fragment>
-  </StandardsStory>
+  />
 
   {visibleSeasons.length > 0 && (
   <section class="bd-section care-close">
@@ -255,7 +213,7 @@ if (careFaq.length) {
     </section>
   )}
 
-  <CtaBand chatTree="clean" buttonLabel="견적 문의">
+  <CtaBand chatTree="clean" buttonLabel="견적 문의" priceLink>
     <em>견적</em>은 방문 전에<br />나옵니다
     <Fragment slot="sub">기종과 대수만 알려주시면 됩니다.</Fragment>
   </CtaBand>
@@ -354,16 +312,6 @@ if (careFaq.length) {
   .care-process__steps p { margin-top: 6px; color: var(--br-ink); font-size: 14px; line-height: 1.65; }
   .care-process__source { margin-top: 24px; color: var(--br-ink); font-size: 13px; line-height: 1.75; }
 
-  .care-prices__wrap { margin-top: 32px; overflow-x: auto; border: 1px solid var(--br-teal); border-radius: var(--radius); }
-  .care-prices__table { width: 100%; min-width: 480px; border-collapse: collapse; font-size: 14px; }
-  .care-prices__table th,
-  .care-prices__table td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--br-mist); }
-  .care-prices__table tr:last-child th,
-  .care-prices__table tr:last-child td { border-bottom: 0; }
-  .care-prices__table thead th { color: var(--br-ink); }
-  .care-prices__value { color: var(--br-teal); font-size: 18px; font-weight: 700; white-space: nowrap; }
-  .care-prices__value span { margin-left: 2px; font-size: 13px; }
-  .care-prices__conditions { margin-top: 16px; padding-left: 18px; color: var(--br-ink); font-size: 13px; }
   .care-close { background: var(--br-teal-deep); }
   .care-close :global(.br-h) { color: var(--br-base); }
   .care-seasons__grid { grid-template-columns: 1fr; }

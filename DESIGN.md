@@ -101,7 +101,9 @@ v2(그린 듀오톤 canopy/lime) 체계는 폐기 — 본 v3 틸 토큰이 대�
 - 홈 구조 고정: S1 풀블리드 히어로(92vh, 영상+teal-deep 60% 오버레이) → S2 다크 스크럽(teal-deep 풀블리드)
   → S3~S5 서비스 지그재그 → S6 시공 마퀴(teal-deep 풀폭) → S7 신뢰 지표 카운트업
   → S8 진행 절차(mist) → (S9 후기 — 실후기 확보 전 미노출) → S10 CTA 밴드(teal) → 푸터(teal-deep)
-- 서브페이지(/care/ /install/ /cases/ /faq/): 짧은 히어로(teal-deep, 40vh) + 콘텐츠 + CTA 밴드
+- 서브페이지(/care/ /install/ /cases/ /faq/ /price/): 짧은 히어로(teal-deep, 40vh) + 콘텐츠 + CTA 밴드
+- **금액 이야기는 /price/ 한 곳에서만** (2026-09-24). 기준가 산출·정책·가격표·비용 FAQ 는 가격 페이지에 모으고,
+  설치·세척·신축 페이지에는 기준가 카드를 두지 않는다. '견적은 방문 전에' 같은 진행 약속(CTA·절차)은 각 페이지에 둔다
 - 섹션 배경은 base ↔ mist ↔ 딥(teal·teal-deep) 교차로 리듬
 - 슬로건: **"당신의 바람대로."**
 

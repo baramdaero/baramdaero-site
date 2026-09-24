@@ -136,7 +136,7 @@ const cta = home.ctaBand;
   {/* ring(링 스윕)은 뺐다(2026-08-28). 밴드가 단색 teal일 땐 광택이었지만 Dark 유리 위에서는
       ice 버튼과 회청 밴드 사이에 teal 반쪽이 정지 스트로크로 읽힌다. 컴포넌트 기능은 남겨 둔다. */}
   {cta && (
-    <CtaBand buttonLabel={cta.buttonLabel}>
+    <CtaBand buttonLabel={cta.buttonLabel} priceLink>
       {cta.heading.map((line, i) => (
         <Fragment>
           {i > 0 && <br />}

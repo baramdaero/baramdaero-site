@@ -59,13 +59,13 @@ public/media/care-process-01.jpg   ← 여기에 그 이름으로 저장(드래�
 | `care-process-05` | 분해세척 05 조립 | 1:1 | 조립이 끝난 커버와 체결부, 수평을 맞춘 정면 구도 1장 |
 | `care-process-06` | 분해세척 06 시운전·기록 | 1:1 | 작업 후 실내기 전체, `care-process-01`과 같은 거리·각도 1장 |
 | `care-standards-scope` | 세척 기준 | 16:10 | 분해 범위를 보여 주는 부품 전체 배열, 위에서 내려다본 구도 1장 |
-| `care-pricing-basis` | 세척 가격 기준 | 16:10 | 세척 장비·보양재·소모품 구성, 상표와 개인정보가 드러나지 않는 배열 1장 |
+| `care-pricing-basis` | 가격 페이지 `/price/` — 세척 기준가 | 16:10 | 세척 장비·보양재·소모품 구성, 상표와 개인정보가 드러나지 않는 배열 1장 |
 | `care-season-01` | 세척 시기 — 봄 | 4:3 | 첫 가동 전 정돈된 필터와 토출부, 근접 구도 1장 |
 | `care-season-02` | 세척 시기 — 여름 | 4:3 | 가동 중인 실내기의 토출부와 배수 상태, 장비만 보이는 근접 구도 1장 |
 | `care-season-03` | 세척 시기 — 가을 | 4:3 | 사용 직후 열교환기와 배수부의 습기 상태, 근접 구도 1장 |
 | `care-season-04` | 세척 시기 — 겨울 | 4:3 | 비가동기 점검을 위해 열린 실내기, 정면 구도 1장 |
 
-`care-process-01`부터 `care-process-06`까지는 `src/content/site/pricing.json`의 `process[].image`에 연결된다. 나머지 정적 슬롯 38개는 `src/content/site/image-slots.json`의 `src`·`alt`만 채우면 전 페이지에 반영된다. 모든 사진은 `public/media/`의 공개 동의 이미지만 사용한다.
+`care-process-01`부터 `care-process-06`까지는 `src/content/site/pricing.json`의 `process[].image`에 연결된다. 나머지 정적 슬롯 39개는 `src/content/site/image-slots.json`의 `src`·`alt`만 채우면 전 페이지에 반영된다. 모든 사진은 `public/media/`의 공개 동의 이미지만 사용한다.
 
 ## 설치 `/install/`
 
@@ -80,7 +80,7 @@ public/media/care-process-01.jpg   ← 여기에 그 이름으로 저장(드래�
 | `install-standards-02` | 작업 기준 02 천장 안 기록 | 4:3 | 매립 전 천장 속 배관을 촬영하는 장면 1장 |
 | `install-standards-03` | 작업 기준 03 연락 한 곳 | 4:3 | 상담부터 시공 기록까지 한 대화에 이어진 휴대폰 화면 1장 |
 | `install-standards-scope` | 작업 기준(항목별 사진을 끈 경우) | 16:10 | 천장 안 배관·전선·드레인 경로가 함께 보이는 구도 1장 |
-| `install-pricing-basis` | 설치 가격 기준 | 16:10 | 배관·보온재·체결 부속을 규격별로 정돈한 구도 1장 |
+| `install-pricing-basis` | 가격 페이지 `/price/` — 설치 기준가 | 16:10 | 배관·보온재·체결 부속을 규격별로 정돈한 구도 1장 |
 | `install-aftercare` | 설치 이후 | 16:10 | 완공된 실내기와 점검구가 함께 보이는 공간 전경 1장 |
 
 ## 신축 입주 `/situation/newhome/`
@@ -93,8 +93,14 @@ public/media/care-process-01.jpg   ← 여기에 그 이름으로 저장(드래�
 | `newhome-timeline-04` | 타임라인 — 입주 후 | 16:10 | 완공된 실내기와 토출·배수 확인 지점, 정면 구도 1장 |
 | `newhome-prewired` | 선배관 현장 확인 | 16:10 | 마개 처리된 선배관 끝과 보온재 상태, 근접 구도 1장 |
 | `newhome-standards-scope` | 신축 설치 기준 | 16:10 | 천장 내부 배관 경로와 점검구 관계, 넓은 구도 1장 |
-| `newhome-pricing-basis` | 신축 가격 기준 | 16:10 | 설치 자재와 장비 구성을 정돈한 구도, 고객정보 없이 1장 |
+| `newhome-pricing-basis` | (현재 미사용 — 신축 기준가 카드는 `/price/` 로 합쳤다. 같은 사진을 `story-materials` 가 쓴다) | 16:10 | 설치 자재와 장비 구성을 정돈한 구도, 고객정보 없이 1장 |
 | `newhome-group-buy` | 단지 공동구매 | 16:10 | 동일 규격 자재를 여러 세대 분량으로 정돈한 구도, 단지·세대 식별 없이 1장 |
+
+## 브랜드이야기 `/story/`
+
+| 식별자 | 위치 | 규격 | 권장 촬영 내용 |
+|---|---|---|---|
+| `story-materials` | 제목 아래 대표 사진 | 16:10 | 설치 자재와 장비를 규격별로 펼쳐 놓은 구도 1장(지금은 신축 자재 사진과 같은 파일) |
 
 ## 홈 스크럽 에셋
 

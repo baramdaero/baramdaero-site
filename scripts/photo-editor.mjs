@@ -11,7 +11,7 @@ import sharp from 'sharp';
 const MAX_BYTES = 20 * 1024 * 1024;
 const MAX_PIXELS = 40_000_000;
 const PROCESS_IDS = Array.from({length:6}, (_,i)=>`care-process-0${i+1}`);
-const GROUPS = [['care-process-', '세척 · 진행 절차'], ['care-symptom-', '세척 · 증상'], ['care-', '세척'], ['home-', '홈'], ['install-', '설치'], ['newhome-', '신축 입주'], ['commercial-', '상업용']];
+const GROUPS = [['care-pricing-basis', '가격'], ['install-pricing-basis', '가격'], ['newhome-pricing-basis', '미사용'], ['story-', '브랜드이야기'], ['care-process-', '세척 · 진행 절차'], ['care-symptom-', '세척 · 증상'], ['care-', '세척'], ['home-', '홈'], ['install-', '설치'], ['newhome-', '신축 입주'], ['commercial-', '상업용']];
 const MIME = { '.webp':'image/webp', '.png':'image/png', '.jpg':'image/jpeg', '.jpeg':'image/jpeg' };
 const err = (status, message) => Object.assign(new Error(message), {status});
 const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

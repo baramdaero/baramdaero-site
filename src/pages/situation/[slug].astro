@@ -116,7 +116,6 @@ const jsonLd: object[] = [
 
   <StandardsStory
     promise={standards.promiseInstall}
-    baseline={standards.baselineInstall}
     slotPrefix={situation.slug}
     startSide="right"
     startTone="mist"
@@ -174,7 +173,7 @@ const jsonLd: object[] = [
     </section>
   )}
 
-  <CtaBand chatTree="install" buttonLabel="설치 상담 시작">
+  <CtaBand chatTree="install" buttonLabel="설치 상담 시작" priceLink>
     <em>견적</em>은 방문 전에<br />나옵니다
     <Fragment slot="sub">기종과 대수만 알려주시면 됩니다.</Fragment>
   </CtaBand>

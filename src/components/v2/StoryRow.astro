@@ -58,7 +58,7 @@ const renderVisual = hasCustomVisual ? (hasVisual ?? true) : isImageSlotVisible(
 <style>
   .br-story-row {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr); /* 1fr 은 넓은 내용(표 min-width)에 맞춰 트랙이 늘어나 카드 밖으로 넘친다 */
     gap: 24px;
     align-items: start;
   }

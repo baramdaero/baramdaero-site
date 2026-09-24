@@ -1,0 +1,195 @@
+---
+// 가격 — 기준가·가격표를 한 곳에 모은 페이지(2026-09-24). 설치·세척·신축 페이지는 금액 이야기를 하지 않는다.
+// 문구는 standards.json(기준가 산출·정책) · pricing.json(가격표) · faq.json(비용 문항) 정본을 그대로 쓴다 — 하드코딩 금지.
+// 확정가가 없는 동안(pricing.json prices 가 전부 sample)은 표 자리가 비고 산출 근거만 보인다 — 대기 안내 문구는 두지 않는다
+// (예전 /care/ 대기 문구는 CTA 밴드와 같은 말이라 #126 에서 뺐다. 되살리지 말 것).
+import Base from '../../layouts/Base.astro';
+import PageHero from '../../components/v2/PageHero.astro';
+import StoryRow from '../../components/v2/StoryRow.astro';
+import CtaBand from '../../components/v2/CtaBand.astro';
+import { SITE_CONFIG } from '../../config.js';
+import { loadStandards } from '../../lib/standards.ts';
+import { loadPricing } from '../../lib/pricing.ts';
+import { loadFaqPage, renderFaqMd } from '../../lib/faq.ts';
+
+const { baselineInstall, baselineCare } = loadStandards();
+const { prices, conditions } = loadPricing();
+const costFaq = loadFaqPage().filter((f) => f.category === '비용');
+// 정책 줄은 두 기준가 블록이 같은 값을 갖는다(baseline_common) — 한 번만 보인다
+const policyLines = (baselineInstall ?? baselineCare)?.policyLines ?? [];
+const updated = (baselineInstall ?? baselineCare)?.updated ?? '';
+const lines = (t: string) => t.split('\n');
+
+const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? '';
+const jsonLd: object[] = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: '홈', item: `${siteUrl}/` },
+      { '@type': 'ListItem', position: 2, name: '가격', item: `${siteUrl}/price/` },
+    ],
+  },
+];
+// 확정가가 생기면 그때만 Offer 를 낸다(/care/ 에 있던 것을 옮김)
+if (prices.length) {
+  jsonLd.push({
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    serviceType: '에어컨 분해세척',
+    provider: { '@type': 'HVACBusiness', name: SITE_CONFIG.SITE_NAME, url: siteUrl },
+    areaServed: { '@type': 'AdministrativeArea', name: '수도권' },
+    offers: prices.map((p) => ({
+      '@type': 'Offer',
+      itemOffered: { '@type': 'Service', name: `${p.type} 분해세척` },
+      ...(p.unit.includes('만원')
+        ? { priceSpecification: { '@type': 'UnitPriceSpecification', minPrice: p.base * 10000, priceCurrency: 'KRW' } }
+        : {}),
+    })),
+  });
+}
+---
+<Base
+  title="가격 안내"
+  description="에어컨 설치·분해세척 기준가 산출 방식. 기종과 대수만 알려주시면 방문 전에 금액을 확정해 드립니다."
+  jsonLd={jsonLd}
+>
+  {/* 첫 화면은 사이트 공통 약속(설치 히어로·CTA 밴드와 같은 말). 기준가 설명은 아래 두 카드가 맡는다 */}
+  <PageHero eyebrow="가격" lead>
+    견적은 방문 전에<br />나옵니다
+    <Fragment slot="sub">기종과 대수만 알려주시면 됩니다.</Fragment>
+  </PageHero>
+
+  {baselineInstall && (
+    <section class="bd-section price-sec" data-layout-section="price-install">
+      <div class="bd-container">
+        <StoryRow slotId="install-pricing-basis" slotLabel="install-pricing-basis" imageSide="right" glass>
+          <span class="br-eyebrow br-reveal">설치</span>
+          <h2 class="br-h br-reveal">{lines(baselineInstall.title).map((l, i) => <Fragment>{i > 0 && <br />}{l}</Fragment>)}</h2>
+          <p class="br-body br-reveal">
+            {baselineInstall.bodyLines.map((line, i) => <Fragment>{i > 0 && <br />}{line}</Fragment>)}
+          </p>
+          {baselineInstall.formulaLine && <p class="price-formula br-reveal">{baselineInstall.formulaLine}</p>}
+        </StoryRow>
+      </div>
+    </section>
+  )}
+
+  <section class="bd-section price-sec" data-layout-section="price-care">
+    <div class="bd-container">
+      <StoryRow slotId="care-pricing-basis" slotLabel="care-pricing-basis" imageSide="left" glass>
+        <span class="br-eyebrow br-reveal">세척</span>
+        {baselineCare && (
+          <Fragment>
+            <h2 class="br-h br-reveal">{lines(baselineCare.title).map((l, i) => <Fragment>{i > 0 && <br />}{l}</Fragment>)}</h2>
+            <p class="br-body br-reveal">
+              {baselineCare.bodyLines.map((line, i) => <Fragment>{i > 0 && <br />}{line}</Fragment>)}
+            </p>
+          </Fragment>
+        )}
+        {prices.length > 0 && (
+          <Fragment>
+            {/* 좁은 폭에서는 표 안에서 가로로 민다 — 키보드로도 스크롤되게 포커스·이름을 준다 */}
+            <div class="price-table br-reveal" tabindex="0" role="region" aria-label="기종별 기준가">
+              <table>
+                <thead><tr><th scope="col">기종</th><th scope="col">기준가</th><th scope="col">비고</th></tr></thead>
+                <tbody>
+                  {prices.map((p) => (
+                    <tr>
+                      <th scope="row">{p.type}</th>
+                      <td class="price-table__value">{p.base.toLocaleString('ko-KR')}<span>{p.unit}</span></td>
+                      <td>{p.note}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {conditions.length > 0 && <ul class="price-conditions br-reveal">{conditions.map((c) => <li>{c}</li>)}</ul>}
+          </Fragment>
+        )}
+        {baselineCare?.formulaLine && <p class="price-formula br-reveal">{baselineCare.formulaLine}</p>}
+      </StoryRow>
+      {/* 기준가 정책 — 두 카드 공통이라 한 번만. 두 줄이라 접지 않는다 */}
+      {policyLines.length > 0 && (
+        <div class="price-policy br-reveal">
+          <ul>{policyLines.map((line) => <li>{line}</li>)}</ul>
+          {updated && <p class="price-policy__updated">기준가 최종 갱신: {updated}</p>}
+        </div>
+      )}
+    </div>
+  </section>
+
+  {costFaq.length > 0 && (
+    <section class="bd-section price-faq" data-layout-section="price-faq">
+      <div class="bd-container">
+        <h2 class="br-h br-reveal">자주 묻는 질문</h2>
+        <div class="price-faq__list br-reveal">
+          {costFaq.map((f) => (
+            <details class="price-faq__item br-glass br-glass--medium">
+              <summary>{f.q}</summary>
+              <div class="price-faq__a" set:html={renderFaqMd(f.a)} />
+              {f.priceNote && <p class="price-faq__note">{f.priceNote}</p>}
+            </details>
+          ))}
+        </div>
+        <p class="price-more br-reveal">
+          <a class="br-pill" href="/faq/#cat-비용">전체 질문 보기 <span aria-hidden="true">→</span></a>
+        </p>
+      </div>
+    </section>
+  )}
+
+  {/* 비용 질문 바로 뒤라 /faq/ 와 같은 밴드 — 첫 화면(견적은 방문 전에)을 다시 말하지 않는다 */}
+  <CtaBand buttonLabel="견적 문의">
+    답이 없는 질문은<br />직접 <em>답</em>해 드립니다
+  </CtaBand>
+</Base>
+
+<style>
+  .price-sec { background: transparent; } /* 유리 카드 호스트 */
+  .price-sec + .price-sec { padding-top: 0; } /* 설치·세척 두 장을 한 묶음으로 */
+
+  /* 산출 근거 한 줄 — 예전 기준가 카드와 같은 모양 */
+  .price-formula {
+    margin-top: 24px;
+    padding: 14px 16px;
+    border-left: 3px solid var(--br-teal);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    background: var(--br-ice);
+    color: var(--br-ink);
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .price-more { margin-top: 24px; }
+  .price-table:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; }
+
+  .price-table { margin-top: 28px; overflow-x: auto; border: 1px solid var(--br-line); border-radius: var(--radius); }
+  .price-table table { width: 100%; min-width: 420px; border-collapse: collapse; font-size: 14px; }
+  .price-table th,
+  .price-table td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--br-line); color: var(--br-ink); }
+  .price-table tr:last-child th,
+  .price-table tr:last-child td { border-bottom: 0; }
+  .price-table__value { color: var(--br-teal); font-size: 18px; font-weight: 700; white-space: nowrap; }
+  .price-table__value span { margin-left: 2px; font-size: 13px; }
+  .price-conditions { margin-top: 16px; padding-left: 18px; color: var(--br-ink-sub); font-size: 13px; }
+
+  /* 기준가 정책 — 카드 아래 짧은 두 줄 */
+  .price-policy { margin-top: 24px; padding-top: 16px; border-top: 1px solid color-mix(in srgb, var(--br-ink) 12%, transparent); }
+  .price-policy ul { list-style: none; display: grid; gap: 7px; }
+  .price-policy li { position: relative; padding-left: 16px; font-size: 14px; color: var(--br-ink); }
+  .price-policy li::before { content: ''; position: absolute; left: 0; top: 0.72em; width: 8px; height: 1px; background: var(--br-teal); }
+  .price-policy__updated { margin-top: 10px; font-size: 13px; color: var(--br-ink-sub); }
+
+  .price-faq { background: transparent; }
+  .price-faq__list { margin-top: var(--head-gap); display: grid; gap: 10px; max-width: 860px; }
+  .price-faq__item { color: var(--br-ink); }
+  .price-faq__item summary { min-height: 44px; padding: 16px 18px; cursor: pointer; font-weight: 700; color: var(--br-ink); }
+  .price-faq__a { padding: 0 18px 18px; font-size: 15px; line-height: 1.8; color: var(--br-ink); }
+  .price-faq__a :global(p) { margin-bottom: 12px; }
+  .price-faq__a :global(p:last-child) { margin-bottom: 0; }
+  .price-faq__a :global(h3) { margin: 18px 0 8px; font-size: 15px; }
+  .price-faq__note { padding: 0 18px 18px; font-size: 14px; color: var(--br-ink-sub); }
+  .price-faq__a :global(ul) { margin: 0 0 12px 18px; }
+  .price-faq__a :global(table) { width: 100%; border-collapse: collapse; font-size: 14px; margin: 12px 0; }
+  .price-faq__a :global(th), .price-faq__a :global(td) { padding: 8px 10px; border-bottom: 1px solid var(--br-line); text-align: left; }
+</style>

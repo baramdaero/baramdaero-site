@@ -75,6 +75,8 @@ if (qa.length) {
     <div class="bd-container">
       <p class="post__date">{dateLabel(date)}</p>
       <h1 class="post__title">{heading}</h1>
+      {/* 대표 사진(frontmatter cover) — 본문이 설명하므로 장식 이미지로 둔다 */}
+      {cover && <img class="post__cover" src={cover} alt="" loading="eager" decoding="async" />}
 
       {answer && (
         <div class="post__answer br-glass br-glass--medium">
@@ -163,6 +165,7 @@ if (qa.length) {
 </Base>
 
 <style>
+  .post__cover { width: 100%; max-width: 760px; aspect-ratio: 16 / 10; object-fit: cover; margin-top: 24px; border-radius: var(--radius); box-shadow: var(--glass-shadow); }
   .post { background: transparent; } /* 유리 카드 호스트 */
   .post .bd-container { max-width: 680px; }
   .post__card { padding: 28px 24px; }

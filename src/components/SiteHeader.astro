@@ -34,6 +34,9 @@ const nav = [
   { href: '/commercial/', label: '상업용', full: '상업용' },
   { href: '/care/', label: '세척', full: '세척·관리', name: '세척·관리' },
   { href: '/cases/', label: '사례', full: '시공사례', name: '시공사례' },
+  // wide: 641px+ 에서만 보인다. 메뉴 칸마다 44px 터치 폭이라 6칸이면 390px 에서 로고와 함께 54px 넘친다(2026-09-24 실측).
+  // 모바일은 홈·설치·세척·신축 하단 문의 띠의 '가격 안내 보기'와 푸터로 들어간다 — 모바일 메뉴 구조(햄버거 등)를 정할 때 다시 볼 것
+  { href: '/price/', label: '가격', full: '가격', wide: true },
   { href: '/faq/', label: 'FAQ', full: '자주 묻는 질문', name: '자주 묻는 질문(FAQ)' },
 ];
 const path = Astro.url.pathname;
@@ -61,7 +64,7 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
       {nav.map((item) => (
         <a
           href={item.href}
-          class="bd-header__link"
+          class:list={['bd-header__link', item.wide && 'bd-header__link--wide']}
           aria-label={item.name}
           aria-current={isCurrent(item.href) ? 'page' : undefined}
         ><span class="bd-header__label bd-header__label--short">{item.label}</span
@@ -232,6 +235,7 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   }
 
   @media (max-width: 640px) {
+    .bd-header__link--wide { display: none; }
     /* 기존 로고 크기와 헤더 높이를 유지한다. */
     .bd-header__inner { gap: 10px; padding: 0 8px; height: 56px; }
     .bd-header__nav { gap: 10px; }
