@@ -39,7 +39,8 @@ export function parseFolder(name) {
   const r = /^(서울|경기|인천)(.+)$/.exec(region ?? '');
   return {
     date, region: r ? `${r[1]} ${r[2]}` : region, space, brand, type, units: n,
-    slug: `${date}-${(space ?? '').toLowerCase()}-${type}`.replace(/[^\w가-힣-]/g, ''),
+    // 지역까지 넣는다 — 같은 날 같은 공간 유형 현장이 둘이면 이름이 겹쳐 두 번째를 거절하던 것
+    slug: `${date}-${region ?? ''}-${(space ?? '').toLowerCase()}-${type}`.replace(/[^\w가-힣-]/g, ''),
   };
 }
 
