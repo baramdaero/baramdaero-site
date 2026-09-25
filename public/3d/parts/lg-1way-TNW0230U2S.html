@@ -149,7 +149,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-const DATA = {"title":"LG전자 SINGLE 천장형 카세트 1Way 냉난방용 (Set) TNW0230U2S 분해도","brand":"LG전자","form":"1way","model_code":"TNW0230U2S","spec":{"body_size_mm":"860×132×450","panel_size_mm":"1100×34×500","weight_kg":"실내기 본체 11.8, 실외기 35.5","cooling_kw":"2.30","series_ko":"SINGLE 천장형 카세트 1Way 냉난방용 (Set)","lineup":null},"envelope":{"body":[-430.0,-225.0,0,430.0,225.0,132.0],"panel":[-550.0,-250.0,-34.0,550.0,250.0,0],"basis":"제원표 외형 치수. 원점 = 판넬 중심의 천장 마감면, z+ = 천장 속"},"local_axes":"x=긴 변, y=짧은 변, z=위(천장 속)+","discharge_dir_local":"y-","steps":["흡입 그릴","필터","프론트 판넬","드레인팬","전장·드레인펌프","송풍팬(관류팬)","팬모터","열교환기"],"parts":[{"id":"panel_frame","name_ko":"프론트 판넬","name_en":"","kind":"panel","shape":"frame","size_mm":[1100.0,500.0,34.0],"center_mm":[0,0,-17.0],"step":2,"step_name":"프론트 판넬","explode_dir":[0,0,-1],"explode_mm":251.0,"soil":"토출구 둘레에 결로 자국과 먼지","clean":"탈거 후 물세척","wash":true,"hole_mm":[880.0,260.0]},{"id":"grille_inlet","name_ko":"흡입 그릴","name_en":"","kind":"grille","shape":"grid","size_mm":[836.0,210.0,14],"center_mm":[0,90.0,-24.0],"step":0,"step_name":"흡입 그릴","explode_dir":[0,0,-1],"explode_mm":317.0,"soil":"흡입면이라 먼지가 가장 먼저 쌓인다","clean":"분해 첫 단계에서 떼어낸다(프론트그릴 분리). 세척 후 송풍 건조","wash":true},{"id":"filter","name_ko":"먼지 필터","name_en":"","kind":"filter","shape":"plate","size_mm":[792.0,190.0,8],"center_mm":[0,90.0,-10.0],"step":1,"step_name":"필터","explode_dir":[0,0,-1],"explode_mm":264.0,"soil":"먼지가 여기서 걸린다. 막히면 풍량이 떨어진다","clean":"분리해 물로 헹군 뒤 완전히 말려 다시 끼운다","wash":true},{"id":"blade","name_ko":"토출 블레이드","name_en":"","kind":"blade","shape":"plate","size_mm":[814.0,80.0,14],"center_mm":[0,-140.0,-17.0],"step":2,"step_name":"프론트 판넬","explode_dir":[0,-0.4,-1],"explode_mm":224.0,"soil":"찬 바람이 지나 결로가 생기고 그 위에 먼지가 붙어 검게 된다","clean":"판넬과 함께 분리해 세척한다","wash":true},{"id":"drain_tray","name_ko":"드레인팬 (물받이)","name_en":"","kind":"drain","shape":"box","size_mm":[808.4,198.0,39.6],"center_mm":[0,-99.0,23.8],"step":3,"step_name":"드레인팬","explode_dir":[0,0,-1],"explode_mm":158.0,"soil":"응축수가 고이는 곳. 슬라임·곰팡이가 자라고 냄새의 주범","clean":"드레인판으로 분리한다. 고압을 직분사하지 않고 압력을 낮춰 세척한다(균열·누수 방지)","wash":true},{"id":"drain_pan_sub","name_ko":"보조 드레인팬","name_en":"","kind":"drain","shape":"box","size_mm":[258.0,135.0,31.7],"center_mm":[258.0,72.0,26.4],"step":3,"step_name":"드레인팬","explode_dir":[0,0,-1],"explode_mm":198.0,"soil":"열교환기 배관측 물받이. 눈에 안 보여 방치되기 쉽다","clean":"후크로 빠진다. 같이 세척","wash":true},{"id":"drain_pump","name_ko":"드레인 펌프","name_en":"","kind":"drain","shape":"box","size_mm":[120.4,117.0,60.7],"center_mm":[-292.4,-54.0,44.9],"step":4,"step_name":"전장·드레인펌프","explode_dir":[0,-1,0],"explode_mm":198.0,"soil":"응축수 경로. 슬라임이 끼면 물이 안 빠져 누수로 간다","clean":"펌프 내부·드레인 호스까지 세척. 누수 민원의 실제 원인","wash":true},{"id":"crossflow_fan","name_ko":"송풍팬 (관류팬)","name_en":"","kind":"fan","shape":"crossflow","size_mm":[636.4,68.6,68.6],"center_mm":[0,-9.0,60.7],"step":5,"step_name":"송풍팬(관류팬)","explode_dir":[0,0,1],"explode_mm":132.0,"soil":"날개 사이에 먼지가 굳어 붙는다. 막히면 풍량이 눈에 띄게 준다","clean":"송풍팬으로 분리해 세척한다. 세척약품을 살포해 오염에 침투할 때까지 기다린 뒤 고압 세척","wash":true},{"id":"fan_bearing","name_ko":"팬 베어링","name_en":"","kind":"bracket","shape":"cylinder","size_mm":[34.3,34.3,43.0],"center_mm":[344.0,-9.0,60.7],"step":5,"step_name":"송풍팬(관류팬)","explode_dir":[1,0,0],"explode_mm":158.0,"soil":"—","clean":"세척 대상 아님","wash":false},{"id":"fan_motor","name_ko":"팬 모터","name_en":"","kind":"motor","shape":"cylinder","size_mm":[60.7,60.7,103.2],"center_mm":[-361.2,-9.0,60.7],"step":6,"step_name":"팬모터","explode_dir":[-1,0,0],"explode_mm":172.0,"soil":"전장 부품. 물이 닿으면 안 된다","clean":"세척 대상 아님. 보양해서 물을 막는다","wash":false},{"id":"evaporator","name_ko":"열교환기","name_en":"","kind":"heat_exchanger","shape":"coil_flat","size_mm":[739.6,135.0,87.1],"center_mm":[0,99.0,66.0],"step":7,"step_name":"열교환기","explode_dir":[0,1,0],"explode_mm":145.0,"soil":"핀 사이에 먼지가 끼고 결로와 만나 곰팡이가 된다. 냉방 능력이 여기서 떨어진다","clean":"세척가대 설치 후 약품 살포·고압 세척. 핀이 눌리지 않게 한다","wash":true},{"id":"cabinet","name_ko":"본체 캐비닛","name_en":"","kind":"case","shape":"shell","size_mm":[860.0,450.0,132.0],"center_mm":[0,0,66.0],"step":7,"step_name":"열교환기","explode_dir":[0,0,1],"explode_mm":66.0,"soil":"단열재 표면에 먼지가 붙고 결로가 생기면 곰팡이가 번진다","clean":"세척가대 설치 후 약품 살포·고압 세척","wash":true},{"id":"control_box","name_ko":"전장박스 (메인 PCB)","name_en":"","kind":"electric","shape":"box","size_mm":[361.2,90.0,52.8],"center_mm":[223.6,-135.0,44.9],"step":4,"step_name":"전장·드레인펌프","explode_dir":[0,-1,0],"explode_mm":224.0,"soil":"전장 부품","clean":"작업 전 배전반 전원을 차단한다. 분리되지 않는 PCB·단자대는 보양한 뒤 세척한다","wash":false},{"id":"plate_hanger","name_ko":"행거 브래킷 (4개)","name_en":"","kind":"bracket","shape":"hanger4","size_mm":[894.4,468.0,40],"center_mm":[0,0,105.6],"step":7,"step_name":"열교환기","explode_dir":[0,0,1],"explode_mm":53.0,"soil":"—","clean":"세척 대상 아님(천장 고정부)","wash":false}],"public_note":"실제 제품 제원으로 만든 3D 예시입니다. 내부 부품 형상은 실물과 다를 수 있습니다."};
+const DATA = {"title":"LG전자 SINGLE 천장형 카세트 1Way 냉난방용 (Set) TNW0230U2S 분해도","brand":"LG전자","form":"1way","model_code":"TNW0230U2S","spec":{"body_size_mm":"860×132×450","panel_size_mm":"1100×34×500","weight_kg":"실내기 본체 11.8, 실외기 35.5","cooling_kw":"2.30","series_ko":"SINGLE 천장형 카세트 1Way 냉난방용 (Set)","lineup":null},"envelope":{"body":[-430.0,-225.0,0,430.0,225.0,132.0],"panel":[-550.0,-250.0,-34.0,550.0,250.0,0],"basis":"제원표 외형 치수. 원점 = 판넬 중심의 천장 마감면, z+ = 천장 속"},"local_axes":"x=긴 변, y=짧은 변, z=위(천장 속)+","discharge_dir_local":"y-","steps":["흡입 그릴","필터","프론트 판넬","드레인팬","전장·드레인펌프","송풍팬(관류팬)","팬모터","열교환기"],"parts":[{"id":"panel_frame","name_ko":"프론트 판넬","name_en":"","kind":"panel","shape":"frame","size_mm":[1100.0,500.0,34.0],"center_mm":[0,0,-17.0],"step":2,"step_name":"프론트 판넬","explode_dir":[0,0,-1],"explode_mm":251.0,"soil":"토출구 둘레에 결로 자국과 먼지","clean":"탈거 후 물세척","wash":true,"holes_mm":[{"c":[0,90.0],"size":[858.0,230.0]},{"c":[0,-140.0],"size":[836.0,90.0]}]},{"id":"grille_inlet","name_ko":"흡입 그릴","name_en":"","kind":"grille","shape":"grid","size_mm":[836.0,210.0,14],"center_mm":[0,90.0,-24.0],"step":0,"step_name":"흡입 그릴","explode_dir":[0,0,-1],"explode_mm":317.0,"soil":"흡입면이라 먼지가 가장 먼저 쌓인다","clean":"분해 첫 단계에서 떼어낸다(프론트그릴 분리). 세척 후 송풍 건조","wash":true},{"id":"filter","name_ko":"먼지 필터","name_en":"","kind":"filter","shape":"plate","size_mm":[825.0,200.0,8],"center_mm":[0,90.0,-10.0],"step":1,"step_name":"필터","explode_dir":[0,0,-1],"explode_mm":264.0,"soil":"먼지가 여기서 걸린다. 막히면 풍량이 떨어진다","clean":"분리해 물로 헹군 뒤 완전히 말려 다시 끼운다","wash":true},{"id":"blade","name_ko":"토출 블레이드","name_en":"","kind":"blade","shape":"plate","size_mm":[814.0,80.0,14],"center_mm":[0,-140.0,-17.0],"step":2,"step_name":"프론트 판넬","explode_dir":[0,-0.4,-1],"explode_mm":224.0,"soil":"찬 바람이 지나 결로가 생기고 그 위에 먼지가 붙어 검게 된다","clean":"판넬과 함께 분리해 세척한다","wash":true},{"id":"drain_tray","name_ko":"드레인팬 (물받이)","name_en":"","kind":"drain","shape":"box","size_mm":[808.4,198.0,39.6],"center_mm":[0,-99.0,23.8],"step":3,"step_name":"드레인팬","explode_dir":[0,0,-1],"explode_mm":158.0,"soil":"응축수가 고이는 곳. 슬라임·곰팡이가 자라고 냄새의 주범","clean":"드레인판으로 분리한다. 고압을 직분사하지 않고 압력을 낮춰 세척한다(균열·누수 방지)","wash":true},{"id":"drain_pan_sub","name_ko":"보조 드레인팬","name_en":"","kind":"drain","shape":"box","size_mm":[258.0,135.0,31.7],"center_mm":[258.0,72.0,26.4],"step":3,"step_name":"드레인팬","explode_dir":[0,0,-1],"explode_mm":198.0,"soil":"열교환기 배관측 물받이. 눈에 안 보여 방치되기 쉽다","clean":"후크로 빠진다. 같이 세척","wash":true},{"id":"drain_pump","name_ko":"드레인 펌프","name_en":"","kind":"drain","shape":"box","size_mm":[120.4,117.0,60.7],"center_mm":[-292.4,-54.0,44.9],"step":4,"step_name":"전장·드레인펌프","explode_dir":[0,-1,0],"explode_mm":198.0,"soil":"응축수 경로. 슬라임이 끼면 물이 안 빠져 누수로 간다","clean":"펌프 내부·드레인 호스까지 세척. 누수 민원의 실제 원인","wash":true},{"id":"crossflow_fan","name_ko":"송풍팬 (관류팬)","name_en":"","kind":"fan","shape":"crossflow","size_mm":[636.4,68.6,68.6],"center_mm":[0,-9.0,60.7],"step":5,"step_name":"송풍팬(관류팬)","explode_dir":[0,0,1],"explode_mm":132.0,"soil":"날개 사이에 먼지가 굳어 붙는다. 막히면 풍량이 눈에 띄게 준다","clean":"송풍팬으로 분리해 세척한다. 세척약품을 살포해 오염에 침투할 때까지 기다린 뒤 고압 세척","wash":true},{"id":"fan_bearing","name_ko":"팬 베어링","name_en":"","kind":"bracket","shape":"cylinder","size_mm":[34.3,34.3,43.0],"center_mm":[344.0,-9.0,60.7],"step":5,"step_name":"송풍팬(관류팬)","explode_dir":[1,0,0],"explode_mm":158.0,"soil":"—","clean":"세척 대상 아님","wash":false},{"id":"fan_motor","name_ko":"팬 모터","name_en":"","kind":"motor","shape":"cylinder","size_mm":[60.7,60.7,103.2],"center_mm":[-361.2,-9.0,60.7],"step":6,"step_name":"팬모터","explode_dir":[-1,0,0],"explode_mm":172.0,"soil":"전장 부품. 물이 닿으면 안 된다","clean":"세척 대상 아님. 보양해서 물을 막는다","wash":false},{"id":"evaporator","name_ko":"열교환기","name_en":"","kind":"heat_exchanger","shape":"coil_flat","size_mm":[739.6,135.0,87.1],"center_mm":[0,99.0,66.0],"step":7,"step_name":"열교환기","explode_dir":[0,1,0],"explode_mm":145.0,"soil":"핀 사이에 먼지가 끼고 결로와 만나 곰팡이가 된다. 냉방 능력이 여기서 떨어진다","clean":"세척가대 설치 후 약품 살포·고압 세척. 핀이 눌리지 않게 한다","wash":true},{"id":"cabinet","name_ko":"본체 캐비닛","name_en":"","kind":"case","shape":"shell","size_mm":[860.0,450.0,132.0],"center_mm":[0,0,66.0],"step":7,"step_name":"열교환기","explode_dir":[0,0,1],"explode_mm":66.0,"soil":"단열재 표면에 먼지가 붙고 결로가 생기면 곰팡이가 번진다","clean":"세척가대 설치 후 약품 살포·고압 세척","wash":true},{"id":"control_box","name_ko":"전장박스 (메인 PCB)","name_en":"","kind":"electric","shape":"box","size_mm":[361.2,90.0,52.8],"center_mm":[223.6,-135.0,44.9],"step":4,"step_name":"전장·드레인펌프","explode_dir":[0,-1,0],"explode_mm":224.0,"soil":"전장 부품","clean":"작업 전 배전반 전원을 차단한다. 분리되지 않는 PCB·단자대는 보양한 뒤 세척한다","wash":false},{"id":"plate_hanger","name_ko":"행거 브래킷 (4개)","name_en":"","kind":"bracket","shape":"hanger4","size_mm":[894.4,468.0,40],"center_mm":[0,0,105.6],"step":7,"step_name":"열교환기","explode_dir":[0,0,1],"explode_mm":53.0,"soil":"—","clean":"세척 대상 아님(천장 고정부)","wash":false}],"public_note":"실제 제품 제원으로 만든 3D 예시입니다. 내부 부품 형상은 실물과 다를 수 있습니다."};
 const S = 0.001;                                   // mm -> m
 const $ = q => document.querySelector(q);
 const Q = new URLSearchParams(location.search);
@@ -277,17 +277,34 @@ function matFor(p) {
   return M.plastic;
 }
 
-function roundedPlate(w, d, h, r) {                // 모서리 둥근 판 (판넬)
-  const s = new THREE.Shape();
-  const x = -w/2, y = -d/2;
+function rrect(s, cx, cy, w, d, r) {             // 모서리 둥근 사각 경로(Shape·Path 공용)
+  const x = cx - w/2, y = cy - d/2;
   s.moveTo(x + r, y);
   s.lineTo(x + w - r, y);      s.quadraticCurveTo(x + w, y, x + w, y + r);
   s.lineTo(x + w, y + d - r);  s.quadraticCurveTo(x + w, y + d, x + w - r, y + d);
   s.lineTo(x + r, y + d);      s.quadraticCurveTo(x, y + d, x, y + d - r);
   s.lineTo(x, y + r);          s.quadraticCurveTo(x, y, x + r, y);
-  const g = new THREE.ExtrudeGeometry(s, {depth:h, bevelEnabled:false, curveSegments:6});
+  return s;
+}
+function extrudeFlat(s, h, seg=6) {                // 판 모양을 두께 h 로 세운다(모양 y = 부품 로컬 y)
+  const g = new THREE.ExtrudeGeometry(s, {depth:h, bevelEnabled:false, curveSegments:seg});
   g.rotateX(-Math.PI/2); g.translate(0, -h/2, 0);   // y: 0..h → -h/2..h/2
   return g;
+}
+function roundedPlate(w, d, h, r) {                // 모서리 둥근 판 (판넬)
+  return extrudeFlat(rrect(new THREE.Shape(), 0, 0, w, d, r), h);
+}
+// 구멍 뚫린 한 장짜리 판(판넬·드레인팬). 막대 4개로 테를 만들면 막대가 만나는 모서리에 홈이 파인다.
+// holes: [{c:[x,y], size:[w,d], shape:'rect'|'circle'}] — mm, 부품 로컬 좌표(x 긴 변, y 짧은 변)
+function plateWithHoles(w, d, h, holes) {
+  const s = rrect(new THREE.Shape(), 0, 0, w*S, d*S, Math.min(w, d)*0.05*S);
+  for (const o of holes) {
+    const [cx, cy] = o.c || [0, 0], [hw, hd] = o.size, path = new THREE.Path();
+    if (o.shape === 'circle') path.absarc(cx*S, cy*S, hw/2*S, 0, Math.PI*2, false);
+    else rrect(path, cx*S, cy*S, hw*S, hd*S, Math.min(hw, hd)*0.1*S);
+    s.holes.push(path);
+  }
+  return extrudeFlat(s, h*S, holes.some(o => o.shape === 'circle') ? 64 : 6);   // 원 구멍은 각이 보이지 않게
 }
 function bladeGeo(len, chord, thick) {             // 휘어진 팬 날개
   const s = new THREE.Shape();
@@ -343,9 +360,8 @@ function meshFor(p) {
   };
 
   switch (p.shape) {
-    case 'frame':                                   // 판넬·드레인팬: 둥근 테
-      ringOf(w, d, h, hw || w*.6, hd || d*.6,
-             (a, b, c) => roundedPlate(a*S, b*S, c*S, Math.min(a, b)*S*0.16));
+    case 'frame':                                   // 판넬·드레인팬: 구멍 뚫린 한 장(흡입·토출 구멍은 holes_mm)
+      add(plateWithHoles(w, d, h, p.holes_mm || [{c:[0, 0], size:[hw || w*.6, hd || d*.6]}]));
       break;
     case 'plate': add(roundedPlate(w*S, d*S, h*S, 24*S)); break;
     case 'box':   add(roundedPlate(w*S, d*S, h*S, 12*S)); break;
@@ -410,13 +426,17 @@ function meshFor(p) {
                      [t, d-2*t, (w-t)/2, 0], [t, d-2*t, -(w-t)/2, 0]];
       for (const [bw, bd, cx, cz] of sides) add(boxG(bw, bd, h), [cx, 0, cz]);
       break; }
-    case 'blade4': {                                // 4면 토출 블레이드
+    case 'blade4': {                                // 4면 토출 블레이드: 판넬 테의 네 토출구에 변과 나란히 눕는다
+      const L = w*0.64, c = w*0.073, off = w/2 - w*0.043;   // w = 네 날개 바깥 둘레(판넬 토출구 위치와 짝)
       for (let i = 0; i < 4; i++) {
-        const a = i*Math.PI/2, off = w*0.39;
-        const b = add(roundedPlate(w*0.72*S, d*0.42*S, h*S, 8*S),
-                      [Math.cos(a)*off, 0, Math.sin(a)*off]);
-        b.rotation.y = -a; b.rotation.x = 0.2;
+        const a = i*Math.PI/2;
+        const b = add(roundedPlate(L*S, c*S, h*S, 6*S), [Math.cos(a)*off, 0, Math.sin(a)*off]);
+        b.rotation.set(0.25, -a + Math.PI/2, 0, 'YXZ');    // 제 긴 축으로 기운다 — 판넬 면 밖으로 나가지 않는 각
       }
+      break; }
+    case 'blade2': {                                // 2면 토출 블레이드: 양쪽 긴 변 토출구에 하나씩
+      const c = d*0.16;                             // d = 두 날개 바깥 폭
+      for (const sy of [-1, 1]) add(roundedPlate(w*S, c*S, h*S, 6*S), [0, 0, sy*(d/2 - c/2)]).rotation.x = sy*0.2;
       break; }
     case 'crossflow': {          // 관류팬(1Way·벽걸이): 길게 누운 드럼. 축은 x(긴 변)
       const len = w*S, r = d/2*S, blades = 34, segs = Math.max(2, Math.round(w/220));
@@ -503,11 +523,9 @@ function meshFor(p) {
             [Math.cos(a)*rr, 0, Math.sin(a)*rr], M.motor);
       }
       break; }
-    case 'hanger4':
-      for (let i = 0; i < 4; i++) {
-        const a = i*Math.PI/2 + Math.PI/4, r = w*0.45;
-        add(boxG(w*0.16, 26, h), [Math.cos(a)*r, 0, Math.sin(a)*r]);
-      }
+    case 'hanger4':                                 // 행거 4개: 외곽(w×d) 긴 변 양 끝 — 원형 배치는 직사각(1Way)에서 본체 밖에 뜬다
+      for (const sx of [-1, 1]) for (const sz of [-1, 1])
+        add(boxG(w*0.16, 26, h), [sx*(w/2 - w*0.08), 0, sz*(d/2 - 13)]);
       break;
     default: add(boxG(w, d, h));
   }
@@ -550,23 +568,27 @@ const LAST = p => (p.kind === 'case' ? 2 : /hanger/.test(p.id) ? 3 : 0);
 const order = [...items].sort((a, b) => a.p.step - b.p.step || LAST(a.p) - LAST(b.p) || a.home.x - b.home.x);
 const hMax = Math.max(...items.map(it => it.size.y));
 const GAP = Math.max(0.09, hMax * 0.16);
-let cursor = 0;
-order.forEach((it, i) => {
-  it.n = i + 1;
-  cursor += it.size.x / 2;
-  it.slot.set(cursor, 0, 0);
-  cursor += it.size.x / 2 + GAP;
-});
-const lineLen = cursor - GAP;
-order.forEach(it => { it.slot.x -= lineLen / 2; });
 // 조립 상태는 가운데로 모은다
 const homeC = new THREE.Box3(); items.forEach(it => homeC.expandByPoint(it.home));
 const hc = homeC.getCenter(new THREE.Vector3());
 items.forEach(it => it.home.sub(hc));
+let cursor = 0;
+order.forEach((it, i) => {
+  it.n = i + 1;
+  cursor += it.size.x / 2;
+  // 천장형은 가로·깊이 자리를 지킨 채 분해 축으로만 빠진다 — 1Way 블레이드는 제 토출구, 그릴은 흡입구 위에 온다
+  it.slot.set(cursor, CEILING ? it.home.y : 0, CEILING ? it.home.z : 0);
+  cursor += it.size.x / 2 + GAP;
+});
+const lineLen = cursor - GAP;
+order.forEach(it => { it.slot.x -= lineLen / 2; });
+// 분해 줄의 실제 위아래·앞뒤 폭(천장형은 가로 자리 포함) — 화면 맞춤과 바닥 높이에 쓴다
+const ext = k => [Math.min(...items.map(it => it.slot[k] - it.size[k]/2)), Math.max(...items.map(it => it.slot[k] + it.size[k]/2))];
+const [yLo, yHi] = ext('y'), [zLo, zHi] = ext('z');
 
 // 바닥 그림자만 받는 판
 const ground = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.ShadowMaterial({opacity:.32}));
-ground.rotation.x = -Math.PI/2; ground.position.y = -hMax/2 - 0.02; ground.receiveShadow = true;
+ground.rotation.x = -Math.PI/2; ground.position.y = yLo - 0.02; ground.receiveShadow = true;
 scene.add(ground);
 key.shadow.camera.left = -lineLen; key.shadow.camera.right = lineLen;
 key.shadow.camera.top = lineLen; key.shadow.camera.bottom = -lineLen;
@@ -576,9 +598,8 @@ key.shadow.normalBias = Math.min(lineLen / 512, 0.006);
 
 // 카메라: 줄이 화면을 비스듬히 가로지르는 3/4 — 레퍼런스식 분해도 구도
 const DIR = new THREE.Vector3(0.52, 0.30, 0.80).normalize();   // 비스듬한 3/4 — 줄이 대각선으로 들어간다
-const zMax = Math.max(...items.map(it => it.size.z));
 const CORNERS = [];
-for (const x of [-lineLen/2, lineLen/2]) for (const y of [-hMax/2, hMax/2]) for (const z of [-zMax/2, zMax/2])
+for (const x of [-lineLen/2, lineLen/2]) for (const y of [yLo, yHi]) for (const z of [zLo, zHi])
   CORNERS.push(new THREE.Vector3(x, y, z));
 function fits(dist) {
   camera.position.copy(DIR).multiplyScalar(dist); camera.lookAt(0, 0, 0); camera.updateMatrixWorld();
