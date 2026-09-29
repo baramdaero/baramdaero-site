@@ -65,7 +65,7 @@ public/media/care-process-01.jpg   ← 여기에 그 이름으로 저장(드래�
 | `care-season-03` | 세척 시기 — 가을 | 4:3 | 사용 직후 열교환기와 배수부의 습기 상태, 근접 구도 1장 |
 | `care-season-04` | 세척 시기 — 겨울 | 4:3 | 비가동기 점검을 위해 열린 실내기, 정면 구도 1장 |
 
-`care-process-01`부터 `care-process-06`까지는 `src/content/site/pricing.json`의 `process[].image`에 연결된다. 나머지 정적 슬롯 39개는 `src/content/site/image-slots.json`의 `src`·`alt`만 채우면 전 페이지에 반영된다. 모든 사진은 `public/media/`의 공개 동의 이미지만 사용한다.
+`care-process-01`부터 `care-process-06`까지는 `src/content/site/pricing.json`의 `process[].image`에 연결된다. 나머지 정적 슬롯 41개는 `src/content/site/image-slots.json`의 `src`·`alt`만 채우면 전 페이지에 반영된다. 모든 사진은 `public/media/`의 공개 동의 이미지만 사용한다.
 
 ## 설치 `/install/`
 
@@ -76,7 +76,7 @@ public/media/care-process-01.jpg   ← 여기에 그 이름으로 저장(드래�
 | `install-process-02` | 설치 03 시공 | 1:1 | 마감 전 배관 경로와 실외기 연결 방향, 30~45도 사선 구도 1장 |
 | `install-process-03` | (현재 미사용) | 1:1 | 천장형 실내기 체결 상태, 작업자 없이 하부 정면 구도 1장 |
 | `install-process-04` | 설치 04 시운전·기록 | 1:1 | 시운전 측정 기록 화면과 창가 천장의 실내기가 함께 보이는 1장 |
-| `install-plan3d-room` | 설계 3D 예시 — 방 | 16:10 | 예시 평면으로 만든 3D 렌더(사진처럼 다듬음). 실제 현장 구성도가 생기면 교체 |
+| `install-plan3d-room` | 설계 3D 예시 — 방 | 16:10 | 예시 평면으로 그린 3D 렌더(AI 보정 없음). 실제 현장 구성도가 생기면 교체 — 샘플 줄·제목·본문도 함께 |
 | `install-plan3d-aerial` | 설계 3D 예시 — 조감 | 16:10 | 천장을 걷어 낸 조감(실내기·천장 속 배관). 실제 현장 구성도가 생기면 교체 |
 | `install-standards-01` | 작업 기준 01 범위 확정 | 4:3 | 실내기 위치·배관 경로를 표시한 평면도와 견적서 1장 |
 | `install-standards-02` | 작업 기준 02 천장 안 기록 | 4:3 | 매립 전 천장 속 배관을 촬영하는 장면 1장 |

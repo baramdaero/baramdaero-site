@@ -112,23 +112,24 @@ const breadcrumbJsonLd = {
     </div>
   </section>
 
-  {/* 설계 단계의 3D 구성도 — 도면에서 방·실내기·천장 속 배관을 짓는 사내 도구의 결과 예시.
-      예시 평면(실제 세대 아님)으로 만든 것이라 샘플 표시를 둔다(발화기준 §2 표기·상태 규칙). 실제 현장 구성도가 생기면 같은 파일명으로 교체 */}
+  {/* 설계 3D 예시 — 예시 평면(실제 세대 아님)으로 그린 3D 구성도. 자사 이행 주장이 아니라 예시 설명만 한다(발화기준 §1).
+      샘플 표시를 둔다(§2 표기·상태 규칙). 실제 현장 구성도로 바꿀 때는 이미지(같은 파일명)와 함께 샘플 줄·제목·본문도 고친다.
+      방 이미지는 AI 보정 없는 3D 렌더 그대로(실제 시공 사진으로 읽히지 않게) */}
   <section class="bd-section install-plan3d" data-layout-section="install-plan3d">
     <div class="bd-container">
-      <h2 class="br-h br-reveal">설치 모습을<br />도면으로 먼저 봅니다</h2>
-      <p class="br-body br-reveal">실내기 자리와 천장 속 배관 경로를 3D로 그려 설계를 확인합니다.</p>
+      <h2 class="br-h br-reveal">도면으로 그린<br />설치 3D 예시</h2>
+      <p class="br-body br-reveal">예시 평면에 실내기 자리와 천장 속 배관 경로를 3D로 그렸습니다.</p>
       <div class="install-plan3d__grid br-reveal">
         <figure class="install-plan3d__card br-glass br-glass--medium">
           <ImageSlot id="install-plan3d-room" ratio="wide" />
-          <figcaption>방에서 본 실내기 자리</figcaption>
+          <figcaption>3D 렌더 · 방에서 본 실내기 자리</figcaption>
         </figure>
         <figure class="install-plan3d__card br-glass br-glass--medium">
           <ImageSlot id="install-plan3d-aerial" ratio="wide" />
-          <figcaption>천장을 걷어 낸 배관 경로</figcaption>
+          <figcaption>3D 렌더 · 천장을 걷어 낸 배관 경로</figcaption>
         </figure>
       </div>
-      <p class="install-plan3d__note">[샘플 — 실제 사례로 교체 예정] 예시 평면으로 만든 구성도입니다. 방 사진은 3D 렌더를 AI로 다듬은 것입니다.</p>
+      <p class="install-plan3d__note">[샘플 — 실제 사례로 교체 예정] 예시 평면으로 그린 3D 구성도입니다.</p>
     </div>
   </section>
 
@@ -219,8 +220,8 @@ const breadcrumbJsonLd = {
   .install-plan3d { background: transparent; } /* 유리 카드 호스트 */
   .install-plan3d__grid { margin-top: var(--head-gap); display: grid; gap: 16px; }
   .install-plan3d__card { margin: 0; padding: 12px 12px 16px; }
-  .install-plan3d__card :global(.br-image-slot) { max-width: none; --slot-radius: calc(var(--radius) - 4px); }
-  .install-plan3d__card figcaption { margin-top: 12px; font-size: 15px; font-weight: 700; color: var(--br-ink); }
+  .install-plan3d__card :global(.br-image-slot) { max-width: none; --slot-radius: calc(var(--radius) - 12px); } /* 동심원: 카드 12 − 여백 12 */
+  .install-plan3d__card figcaption { margin-top: 12px; font-size: 15px; line-height: 1.6; color: var(--br-ink-sub); } /* 캡션 = ink-sub(§1 글자색 3단) */
   .install-plan3d__note { margin-top: 16px; font-size: 13px; line-height: 1.6; color: var(--br-ink-sub); }
   @media (min-width: 768px) {
     .install-plan3d__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
