@@ -4,17 +4,20 @@
 import Base from '../../layouts/Base.astro';
 import PageHero from '../../components/v2/PageHero.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
-import StandardsStory from '../../components/v2/StandardsStory.astro';
-import StoryRow from '../../components/v2/StoryRow.astro';
+import SpaceViewer from '../../components/v2/SpaceViewer.astro';
 import ImageSlot from '../../components/v2/ImageSlot.astro';
 import Exploded from '../../components/v2/Exploded.astro';   // 2026-09-21 기종 소개 분해 3D
-import { loadStandards } from '../../lib/standards.ts';
 import { loadSituations } from '../../lib/situations.ts';
 
-const standards = loadStandards();
+// 배관 확인 항목 — situations.json(newhome.prewired) 원문. 입주 전·교체 모두에 해당한다
+const prewired = loadSituations().find((x) => x.slug === 'newhome')?.prewired ?? null;
 
-// 상황별 안내 — situations.json에 준비된 페이지만 (없으면 링크 목록 미노출)
-const situations = loadSituations();
+// 집의 조건 — 신축·구축을 페이지로 나누지 않고 조건으로만 가른다(2026-09-30 대표 "신축이든 구축이든 다 한다")
+const HOMES = [
+  { title: '입주 전', body: '천장을 덮기 전에 배관 경로를 정하고, 매립 구간을 사진으로 남깁니다.' },
+  { title: '살고 있는 집', body: '가구와 바닥을 보양한 뒤 작업합니다.' },
+  { title: '교체', body: '기존 배관의 규격과 상태를 먼저 확인하고, 다시 쓸지 정합니다.' },
+];
 
 // 순서는 견적(방문 없이) → 설계(시공 전) → 시공 → 시운전·기록.
 // "실측"은 견적 단계로 읽혀 CTA·히어로의 "방문 전 견적"과 부딪히므로 쓰지 않는다.
@@ -38,7 +41,7 @@ const CEILING_MODELS = [
 const STEP_SLOTS = ['install-consult', 'install-process-01', 'install-process-02', 'install-process-04'];
 const STEPS = [
 // 단계마다 한 문장 — 범위 확정·매립 구간 사진 같은 약속은 바로 아래 '작업 기준'이 맡는다
-  { title: '상담·견적', body: '기종과 대수, 설치 위치를 확인해 견적을 확정합니다.' },
+  { title: '상담·견적', body: '기종과 대수, 설치 위치를 확인해 견적을 드립니다.' },
   { title: '설계', body: '도면과 현장 조건을 확인해 배관 경로와 실외기 위치를 정합니다.' },
   { title: '시공', body: '견적서에 적은 범위대로 배관과 실내기를 시공합니다.' },
   { title: '시운전·기록', body: '냉방과 배수 상태를 확인하고 작업 사진을 남겨 전달합니다.' },
@@ -56,16 +59,69 @@ const breadcrumbJsonLd = {
 ---
 <Base
   title="시스템에어컨 설치"
-  description="시스템에어컨 신규 설치. 견적은 방문 전에 나옵니다. 설치한 기록이 세척·정기관리로 그대로 이어집니다."
+  description="시스템에어컨 설치 — 입주 전 아파트부터 살고 있는 집, 교체까지. 방마다 들어갈 실내기 자리부터 정합니다."
   jsonLd={breadcrumbJsonLd}
 >
   <PageHero eyebrow="시스템에어컨 설치" lead>
     에어컨은 사라지고<br />공간만 남습니다
-    <Fragment slot="sub">견적은 방문 전에 나옵니다.</Fragment>
+    <Fragment slot="sub">천장 매립 설계로 벽걸이와 스탠드가 차지하던 자리를 돌려드립니다.</Fragment>
   </PageHero>
 
-  {/* 기종 소개. 제품 영상은 제목과 3D 안내 사이 — 히어로 맨 아래에 있을 때는 첫 화면 밖이라
-      큰 빈 다크 면 뒤에 묻혔다(2026-09-23 대표 지적 "위치가 별로") */}
+  {/* 2026-09-30 재기획: 신축·구축으로 나누지 않는다(업계 13곳 모두 같은 방식) — 집의 조건으로만 가른다.
+      순서: 주거용 3D → 어떤 집이든 → 설치 4단계 → 배관 확인 → 설계 3D 예시 → 1Way 속 구조 → 문의 */}
+  <SpaceViewer
+    id="install-space"
+    hint="실내기를 눌러 보세요"
+    views={[{ label: '아파트', src: '/3d/house.html?embed', title: '아파트 구성도' }]}
+  />
+
+  <section class="bd-section install-homes" data-layout-section="install-homes">
+    <div class="bd-container">
+      <h2 class="br-h br-reveal">입주 전이든<br />살고 있는 집이든</h2>
+      <ul class="install-homes__list">
+        {HOMES.map((h) => (
+          <li class="install-homes__item br-glass br-glass--medium br-reveal">
+            <h3>{h.title}</h3>
+            <p>{h.body}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+
+  {/* 절차 4단계를 한 섹션에 둔다 — 스텝마다 섹션을 쪼개면 「설치 절차」 눈썹이 네 번 반복된다.
+      리듬은 배경 줄무늬 대신 이미지 좌우 교차(지그재그)가 맡는다. */}
+  <section class="bd-section install-step install-step--mist" data-layout-section="install-process">
+    <div class="bd-container">
+      <h2 class="br-h br-reveal">설치 {STEPS.length}단계</h2>
+      {/* 네 단계를 한 판에 — 사진 위·글 아래. 1024px+ 한 줄, 그 아래는 2열·1열 */}
+      <ol class="install-steps__list">
+        {STEPS.map((st, i) => (
+          <li class="install-step__card br-glass br-glass--medium br-reveal" data-glow>
+            <ImageSlot id={STEP_SLOTS[i]} label={STEP_SLOTS[i]} ratio="square" />
+            <span class="install-step__no">{String(i + 1).padStart(2, '0')}</span>
+            <h3 class="install-step__title">{st.title}</h3>
+            <p>{st.body}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  {prewired && (
+    <section class="bd-section install-pipes" id="pipes" data-layout-section="install-pipes">
+      <div class="bd-container">
+        <h2 class="br-h br-reveal">{prewired.title}</h2>
+        {/* 첫 줄(신축 골조 이야기)은 뺀다 — 신축·구축을 가르지 않는다 */}
+        <p class="br-body br-reveal">{prewired.bodyLines.slice(1).map((l, i) => <Fragment>{i > 0 && <br />}{l}</Fragment>)}</p>
+        <ul class="install-pipes__list br-reveal">{prewired.checkItems.map((c) => <li>{c}</li>)}</ul>
+      </div>
+    </section>
+  )}
+
+
+  {/* 기종 속 구조 — 페이지 뒤쪽(2026-09-30 구조: 절차·설계 다음). 제품 영상은 제목과 3D 안내 사이 */}
   <Exploded
     id="install-exploded"
     tone="base"
@@ -93,78 +149,32 @@ const breadcrumbJsonLd = {
     )}
   </Exploded>
 
-  {/* 절차 4단계를 한 섹션에 둔다 — 스텝마다 섹션을 쪼개면 「설치 절차」 눈썹이 네 번 반복된다.
-      리듬은 배경 줄무늬 대신 이미지 좌우 교차(지그재그)가 맡는다. */}
-  <section class="bd-section install-step install-step--mist" data-layout-section="install-process">
+  <section class="bd-section install-next">
     <div class="bd-container">
-      <h2 class="br-h br-reveal">설치 {STEPS.length}단계</h2>
-      {/* 네 단계를 한 판에 — 사진 위·글 아래. 1024px+ 한 줄, 그 아래는 2열·1열 */}
-      <ol class="install-steps__list">
-        {STEPS.map((st, i) => (
-          <li class="install-step__card br-glass br-glass--medium br-reveal" data-glow>
-            <ImageSlot id={STEP_SLOTS[i]} label={STEP_SLOTS[i]} ratio="square" />
-            <span class="install-step__no">{String(i + 1).padStart(2, '0')}</span>
-            <h3 class="install-step__title">{st.title}</h3>
-            <p>{st.body}</p>
-          </li>
-        ))}
-      </ol>
-    </div>
-  </section>
-
-  {/* 설계 3D 예시 — 예시 평면(실제 세대 아님)으로 그린 3D 구성도. 자사 이행 주장이 아니라 예시 설명만 한다(발화기준 §1).
-      샘플 표시를 둔다(§2 표기·상태 규칙). 실제 현장 구성도로 바꿀 때는 이미지(같은 파일명)와 함께 샘플 줄·제목·본문도 고친다.
-      방 이미지는 AI 보정 없는 3D 렌더 그대로(실제 시공 사진으로 읽히지 않게) */}
-  <section class="bd-section install-plan3d" data-layout-section="install-plan3d">
-    <div class="bd-container">
-      <h2 class="br-h br-reveal">도면으로 그린<br />설치 3D 예시</h2>
-      <p class="br-body br-reveal">예시 평면에 실내기 자리와 천장 속 배관 경로를 3D로 그렸습니다.</p>
-      <div class="install-plan3d__grid br-reveal">
-        <figure class="install-plan3d__card br-glass br-glass--medium">
-          <ImageSlot id="install-plan3d-room" ratio="wide" />
-          <figcaption>3D 렌더 · 방에서 본 실내기 자리</figcaption>
-        </figure>
-        <figure class="install-plan3d__card br-glass br-glass--medium">
-          <ImageSlot id="install-plan3d-aerial" ratio="wide" />
-          <figcaption>3D 렌더 · 천장을 걷어 낸 배관 경로</figcaption>
-        </figure>
-      </div>
-      <p class="install-plan3d__note">[샘플 — 실제 사례로 교체 예정] 예시 평면으로 그린 3D 구성도입니다.</p>
-    </div>
-  </section>
-
-  <StandardsStory
-    promise={standards.promiseInstall}
-    slotPrefix="install"
-    startSide="left"
-    startTone="base"
-    itemPhotos
-  />
-
-  <section class="bd-section install-after" data-layout-section="install-after">
-    <div class="bd-container">
-      <StoryRow slotId="install-aftercare" slotLabel="install-aftercare" imageSide="left" glass>
-        <h2 class="br-h br-reveal">설치한 기록이<br />그대로 이어집니다</h2>
-        <p class="br-body br-reveal">배관 경로와 시공 이력이 남아 있어, 분해세척과 정기 점검 때 어디를 어떻게 다뤄야 하는지 알고 갑니다.</p>
-        <ul class="install-after__links br-pills br-reveal">
-          <li><a class="br-pill" href="/care/">세척·정기관리 안내 보기 <span aria-hidden="true">→</span></a></li>
-          <li><a class="br-pill" href="/commercial/">상가·관공서·대형빌딩 안내 보기 <span aria-hidden="true">→</span></a></li>
-          {situations.map((s) => (
-            <li><a class="br-pill" href={`/situation/${s.slug}/`}>{s.meta.title} <span aria-hidden="true">→</span></a></li>
-          ))}
-        </ul>
-      </StoryRow>
+      <p class="install-next__line br-reveal">설치한 에어컨의 세척·관리도 같은 팀이 맡습니다. <a class="br-pill" href="/care/">세척 안내 보기 <span aria-hidden="true">→</span></a></p>
     </div>
   </section>
 
   <CtaBand chatTree="install" buttonLabel="설치 상담 시작" priceLink>
-    <em>견적</em>은 방문 전에<br />나옵니다
-    <Fragment slot="sub">기종과 대수만 알려주시면 됩니다.</Fragment>
+    다음 현장이<br /><em>우리 집</em>이어도 됩니다
+    <Fragment slot="sub">기종과 대수, 설치 위치. 이 정도면 됩니다.</Fragment>
   </CtaBand>
 </Base>
 
 
 <style>
+  .install-homes { background: var(--br-mist); }
+  .install-homes__list { margin-top: var(--head-gap); list-style: none; display: grid; gap: 16px; }
+  .install-homes__item { padding: 24px; }
+  .install-homes__item h3 { font-size: 20px; color: var(--br-ink); }
+  .install-homes__item p { margin-top: 8px; font-size: 15px; line-height: 1.7; color: var(--br-ink); }
+  @media (min-width: 768px) { .install-homes__list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .install-pipes { background: transparent; }
+  .install-pipes :global(.br-body) { margin-top: 16px; }
+  .install-pipes__list { margin-top: 24px; list-style: none; display: grid; gap: 10px; max-width: 720px; }
+  .install-pipes__list li { position: relative; padding-left: 18px; font-size: 15px; line-height: 1.7; color: var(--br-ink); }
+  .install-pipes__list li::before { content: ''; position: absolute; left: 0; top: 0.8em; width: 8px; height: 1px; background: var(--br-teal); }
+
   /* 제품 영상 — 분해 3D 섹션 제목 아래(lead 슬롯). 16:9 고정, 768px+ 나란히.
      테두리 판은 없앤다(2026-09-23 대표: "테두리는 없애고 글래스 느낌 그림자 하나").
      그림자는 영상 바깥에만 — YouTube 임베드 정책상 플레이어 위에 겹치는 것은 두지 않는다 */
@@ -216,17 +226,9 @@ const breadcrumbJsonLd = {
     .install-steps__list { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
   }
 
-  /* 설계 3D 예시 — 사진 두 장을 유리 카드 두 장으로. 768px+ 나란히 */
-  .install-plan3d { background: transparent; } /* 유리 카드 호스트 */
-  .install-plan3d__grid { margin-top: var(--head-gap); display: grid; gap: 16px; }
-  .install-plan3d__card { margin: 0; padding: 12px 12px 16px; }
-  .install-plan3d__card :global(.br-image-slot) { max-width: none; --slot-radius: calc(var(--radius) - 12px); } /* 동심원: 카드 12 − 여백 12 */
-  .install-plan3d__card figcaption { margin-top: 12px; font-size: 15px; line-height: 1.6; color: var(--br-ink-sub); } /* 캡션 = ink-sub(§1 글자색 3단) */
-  .install-plan3d__note { margin-top: 16px; font-size: 13px; line-height: 1.6; color: var(--br-ink-sub); }
+  .install-next { background: transparent; padding-block: 0 var(--head-gap); }
+  .install-next__line { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; color: var(--br-ink); font-size: 16px; }
   @media (min-width: 768px) {
-    .install-plan3d__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
-  }
+    }
 
-  .install-after { background: transparent; } /* 유리 카드 호스트 */
-  .install-after__links { margin-top: 28px; list-style: none; }
 </style>

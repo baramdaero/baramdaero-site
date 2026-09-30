@@ -7,6 +7,7 @@
 // 따라 08-24 축소했다. 워드마크 14px 하한 규칙을 이번엔 의도적으로 깼다
 // (한 차례 마크 단독 전환 시도 후 되돌림 — 오독이었다. 지시는 "락업 유지, 크기만 축소").
 import { SITE_CONFIG } from '../config.js';
+import { getCollection } from 'astro:content';
 import wideUrl from '../assets/logo/baramdaero-wide.svg?url';
 import wideReverseUrl from '../assets/logo/baramdaero-wide-reverse.svg?url';
 import markUrl from '../assets/logo/baramdaero-mark.svg?url';
@@ -29,11 +30,14 @@ const { variant = 'solid' } = Astro.props;
 // 좁은 폭에서 화면에 보이는 "FAQ"로도 잡혀야 하기 때문 (WCAG 2.5.3 Label in Name).
 // 두 라벨은 CSS display로만 전환한다: 숨은 쪽은 접근성 트리에서도 빠져 중복 낭독이 없고,
 // 링크에 aria-label이 있어 낭독은 어차피 name 한 번뿐이다.
+const realCases = (await getCollection('cases')).filter((e) => !e.data.sample).length;
 const nav = [
-  { href: '/install/', label: '가정용', full: '가정용' },
+  // 2026-09-30 구조: 설치 · 세척 · 상업용 · 가격 · FAQ. 시공사례는 실사례가 들어올 때까지 메뉴에서 뺀다
+  { href: '/install/', label: '설치', full: '설치' },
+  { href: '/care/', label: '세척', full: '세척' },
   { href: '/commercial/', label: '상업용', full: '상업용' },
-  { href: '/care/', label: '세척', full: '세척·관리', name: '세척·관리' },
-  { href: '/cases/', label: '사례', full: '시공사례', name: '시공사례' },
+  // 시공사례 — 실제(sample 아닌) 사례 3건부터 메뉴에 나타난다(홈 '말보다 현장으로.'와 같은 기준)
+  ...(realCases >= 3 ? [{ href: '/cases/', label: '사례', full: '시공사례', name: '시공사례' }] : []),
   // wide: JS 가 안 도는 모바일(한 줄 메뉴 폴백)에서만 숨는다 — 6칸이면 390px 에서 54px 넘친다(2026-09-24 실측).
   // JS 가 돌면 640px 이하는 '메뉴' 버튼 펼침 목록이라 가격도 들어간다
   { href: '/price/', label: '가격', full: '가격', wide: true },
@@ -82,11 +86,12 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
         SHOP_URL이 비면 슬롯째 미렌더한다: 빈 요소를 남기면 inner의 gap이 그대로 붙어
         메뉴가 이유 없이 왼쪽으로 밀린다. 슬롯이 생기면 메뉴는 gap만큼 밀릴 뿐이고,
         폭은 flex가 알아서 나눈다 (고정값 재조정 불요). */}
-    {SITE_CONFIG.SHOP_URL && (
-      <div class="bd-header__actions">
-        <a href={SITE_CONFIG.SHOP_URL} class="bd-header__cta" rel="noopener">예약·구매</a>
-      </div>
-    )}
+    {/* 견적 문의 — 모든 페이지 오른쪽 위에 고정(2026-09-30 대표: "시공문의·견적문의로 잘 유도되게").
+        채팅창 첫 메뉴(설치 견적·세척 견적·A/S)를 연다 → 채널톡 상담. 채팅 스크립트가 켜기 전까지는 비활성 */}
+    <div class="bd-header__actions">
+      <button type="button" class="bd-header__quote" data-chat-tree="menu" disabled aria-describedby="chat-unavailable">견적 문의</button>
+      {SITE_CONFIG.SHOP_URL && <a href={SITE_CONFIG.SHOP_URL} class="bd-header__cta" rel="noopener">예약·구매</a>}
+    </div>
   </div>
 </header>
 
@@ -209,6 +214,16 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     transition: background-color var(--dur-color) ease, transform 160ms var(--ease-out);
   }
   .bd-header__cta:hover { background: var(--copper-deep); }
+  .bd-header__actions { display: flex; align-items: center; gap: 8px; margin-left: 12px; flex: none; }
+  .bd-header__quote {
+    min-height: 40px; padding: 0 16px; border: 0; border-radius: 999px;
+    background: var(--br-teal-deep); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: background-color var(--dur-color) ease, transform 160ms var(--ease-out);
+  }
+  .bd-header__quote:hover { background: var(--br-teal); }
+  .bd-header__quote:active { transform: scale(0.96); }
+  .bd-header__quote:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; }
+  .bd-header__quote:disabled { opacity: 0.6; }
   .bd-header__cta:active { transform: scale(0.96); }
 
   .bd-header__link,

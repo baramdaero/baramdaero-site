@@ -9,7 +9,7 @@ const { entries } = Astro.props;
 
 // 샘플 사례 제외 — 무한 루프라 한 건이 화면에 여러 번 박혀 노출이 증폭된다
 const real = entries.filter((e) => !e.data.sample);
-// 실사례가 적으면 같은 카드가 눈에 띄게 반복돼 오히려 빈약해 보인다 → 3건 미만이면 섹션째 숨김
+// 실사례가 적으면 같은 카드가 눈에 띄게 반복돼 오히려 빈약해 보인다 → 3건 미만이면 섹션째 숨김(2026-09-30 대표 확정 기준 3건 — 메뉴 '시공사례'도 같은 기준)
 const MIN_CASES = 3;
 
 const MIN_CARDS = 6;
@@ -28,8 +28,7 @@ const label = (e: CollectionEntry<'cases'>) =>
 {real.length >= MIN_CASES && (
   <section class="bd-section v2-mq">
     <div class="bd-container v2-mq__head">
-      <span class="br-eyebrow br-reveal">시공 기록</span>
-      <h2 class="br-h v2-mq__title br-reveal">현장이 증명합니다</h2>
+      <h2 class="br-h v2-mq__title br-reveal">말보다 현장으로.</h2>
     </div>
     {[row1, row2].map((row, i) => (
       <div class="v2-mq__row">

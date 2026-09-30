@@ -9,6 +9,7 @@ import StoryRow from '../../components/v2/StoryRow.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
 import { SITE_CONFIG } from '../../config.js';
 import { loadStandards } from '../../lib/standards.ts';
+import S from '../../content/site/standards.json';
 import { loadPricing } from '../../lib/pricing.ts';
 import { loadFaqPage, renderFaqMd } from '../../lib/faq.ts';
 
@@ -51,14 +52,52 @@ if (prices.length) {
 ---
 <Base
   title="가격 안내"
-  description="에어컨 설치·분해세척 기준가 산출 방식. 기종과 대수만 알려주시면 방문 전에 금액을 확정해 드립니다."
+  description="에어컨 설치·분해세척 기준가 산출 방식. 비용 구성과 달라지는 조건, 견적 받는 법. 사전에 말씀드리지 않은 추가금은 없습니다."
   jsonLd={jsonLd}
 >
-  {/* 첫 화면은 사이트 공통 약속(설치 히어로·CTA 밴드와 같은 말). 기준가 설명은 아래 두 카드가 맡는다 */}
-  <PageHero eyebrow="가격" lead>
-    견적은 방문 전에<br />나옵니다
-    <Fragment slot="sub">기종과 대수만 알려주시면 됩니다.</Fragment>
+    <PageHero eyebrow="가격" lead>
+    비용은<br />이렇게 정해집니다
+    <Fragment slot="sub">사전에 말씀드리지 않은 추가금은 없습니다.</Fragment>
   </PageHero>
+
+  {/* 2026-09-30 재기획: 비용 구성 → 달라지는 조건 → 견적 받는 법 → 기준가 → 질문. 금액 칸은 확정가가 나오기 전까지 두지 않는다 */}
+  <section class="bd-section price-parts" data-layout-section="price-parts">
+    <div class="bd-container">
+      <h2 class="br-h br-reveal">비용 구성</h2>
+      <div class="price-grid br-reveal" tabindex="0" role="region" aria-label="비용 구성">
+        <table>
+          <thead><tr><th scope="col">항목</th><th scope="col">무엇</th><th scope="col">정하는 것</th></tr></thead>
+          <tbody>{S.cost_parts.rows.map((r) => <tr><th scope="row">{r.item}</th><td>{r.what}</td><td>{r.by}</td></tr>)}</tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="bd-section price-conds" data-layout-section="price-conditions">
+    <div class="bd-container">
+      <h2 class="br-h br-reveal">금액이 달라지는 조건</h2>
+      <dl class="price-conds__list">
+        {S.cost_conditions.rows.map((r) => (
+          <div class="price-conds__item br-reveal"><dt>{r.cond}</dt><dd>{r.affects}</dd></div>
+        ))}
+      </dl>
+    </div>
+  </section>
+
+  <section class="bd-section price-quote" data-layout-section="price-quote">
+    <div class="bd-container">
+      <h2 class="br-h br-reveal">견적 받는 법</h2>
+      <ol class="price-quote__list">
+        {S.quote_steps.items.map((q, i) => (
+          <li class="price-quote__item br-glass br-glass--medium br-reveal">
+            <span class="price-quote__no">{String(i + 1).padStart(2, '0')}</span>
+            <h3>{q.title}</h3>
+            <p>{q.body}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
 
   {baselineInstall && (
     <section class="bd-section price-sec" data-layout-section="price-install">
@@ -109,13 +148,7 @@ if (prices.length) {
         )}
         {baselineCare?.formulaLine && <p class="price-formula br-reveal">{baselineCare.formulaLine}</p>}
       </StoryRow>
-      {/* 기준가 정책 — 두 카드 공통이라 한 번만. 두 줄이라 접지 않는다 */}
-      {policyLines.length > 0 && (
-        <div class="price-policy br-reveal">
-          <ul>{policyLines.map((line) => <li>{line}</li>)}</ul>
-          {updated && <p class="price-policy__updated">기준가 최종 갱신: {updated}</p>}
-        </div>
-      )}
+      {/* 기준가 정책 줄은 뺐다(2026-09-30) — 첫 화면·'견적 받는 법'과 같은 말이었다 */}
     </div>
   </section>
 
@@ -139,13 +172,34 @@ if (prices.length) {
     </section>
   )}
 
-  {/* 비용 질문 바로 뒤라 /faq/ 와 같은 밴드 — 첫 화면(견적은 방문 전에)을 다시 말하지 않는다 */}
+  {/* 비용 질문 바로 뒤라 /faq/ 와 같은 밴드 — 첫 화면(비용 구성)을 다시 말하지 않는다 */}
   <CtaBand buttonLabel="견적 문의">
     답이 없는 질문은<br />직접 <em>답</em>해 드립니다
   </CtaBand>
 </Base>
 
 <style>
+  .price-parts, .price-quote { background: transparent; }
+  .price-conds { background: var(--br-mist); }
+  .price-grid { margin-top: var(--head-gap); overflow-x: auto; }
+  .price-grid table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .price-grid th, .price-grid td { text-align: left; padding: 14px 10px; border-bottom: 1px solid rgba(11, 32, 39, 0.14); color: var(--br-ink); vertical-align: top; }
+  .price-grid thead th { font-size: 13px; color: var(--br-ink-sub); font-weight: 600; }
+  .price-grid tbody th { font-weight: 700; white-space: nowrap; }
+  .price-conds__list { margin-top: var(--head-gap); display: grid; gap: 0 48px; }
+  .price-conds__item { display: flex; justify-content: space-between; gap: 16px; border-top: 1px solid var(--br-ink-sub); padding: 16px 0; }
+  .price-conds__item dt { font-weight: 700; color: var(--br-ink); }
+  .price-conds__item dd { margin: 0; color: var(--br-ink-sub); text-align: right; }
+  .price-quote__list { margin-top: var(--head-gap); list-style: none; display: grid; gap: 16px; }
+  .price-quote__item { padding: 24px; }
+  .price-quote__no { font-size: 13px; font-weight: 700; letter-spacing: 0.14em; color: var(--br-ink-sub); }
+  .price-quote__item h3 { margin-top: 6px; font-size: 19px; color: var(--br-ink); }
+  .price-quote__item p { margin-top: 8px; font-size: 15px; line-height: 1.7; color: var(--br-ink); }
+  @media (min-width: 768px) {
+    .price-conds__list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .price-quote__list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
   .price-sec { background: transparent; } /* 유리 카드 호스트 */
   .price-sec + .price-sec { padding-top: 0; } /* 설치·세척 두 장을 한 묶음으로 */
 

@@ -1,6 +1,6 @@
 ---
 // 홈 v2 — 스크롤 스토리텔링 (1뷰포트 1메시지). 구 홈은 src/legacy/index-v1.astro.txt 보존.
-// 순서: S1 히어로 → S2 다크 스크럽 → S3~S5 서비스 2트랙 → S5b 상황별 안내 → S6 마퀴 → S7 지표 → S8 절차 → (S9 후기 — 실후기 확보 전 미노출) → S10 CTA → 푸터
+// 순서(2026-09-30 구조): 히어로 3D → 왜 바람대로(약속 셋) → 어떤 일로 오셨나요(설치·세척·상업용) → 천장 속 3D → (마퀴: 실사례 3건부터) → 네 단계 → 문의
 // 섹션 문구는 전부 src/content/site/home.json (하드코딩 금지). 히어로·다크구간은 각자 다른 소스.
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
@@ -10,19 +10,17 @@ import Exploded from '../components/v2/Exploded.astro';   // 2026-09-21 히어�
 // import Problem from '../components/v2/Problem.astro'; // 구 S2 — DarkScrub이 동일 메시지를 대체 (비포 사진 확보 후 재검토)
 import ServiceSplit from '../components/v2/ServiceSplit.astro';
 import Marquee from '../components/v2/Marquee.astro';
-import Stats from '../components/v2/Stats.astro';
 import Process from '../components/v2/Process.astro';
 // import Reviews from '../components/v2/Reviews.astro'; // S9 — [실후기교체] 확보 후 주석 해제
 import CtaBand from '../components/v2/CtaBand.astro';
-import NeedTriage from '../components/v2/NeedTriage.astro';
-import { loadTrust } from '../lib/trust.ts';
+import StandardsStory from '../components/v2/StandardsStory.astro';
+import BrandLine from '../components/v2/BrandLine.astro';
+import homeRaw from '../content/site/home.json';
 import { loadHome } from '../lib/home.ts';
 
 // 홈 섹션 문구 — home.json 단일 소스
 const home = loadHome();
 
-// 신뢰 지표 — trust.json 단일 소스 (하드코딩 금지)
-const trust = loadTrust();
 
 
 // 마퀴 카드 — cases 컬렉션 최신순
@@ -34,9 +32,8 @@ const hasMarquee = cases.filter((entry) => !entry.data.sample).length >= 3;
    home.json의 services 순서와 짝지어 쓰며, 카드가 더 늘면 id 없이 렌더된다. */
 const SERVICE_LAYOUT = [
   { id: 'install', slotId: 'home-service-install', flip: true, tone: 'base' as const },
-  { id: 'care', slotId: 'home-service-record', flip: false, tone: 'mist' as const },
-  { id: 'clean', slotId: 'home-service-clean', flip: true, tone: 'base' as const },
-  { id: 'commercial', slotId: 'commercial-building', flip: false, tone: 'mist' as const },
+  { id: 'clean', slotId: 'home-service-clean', flip: false, tone: 'mist' as const },
+  { id: 'commercial', slotId: 'commercial-building', flip: true, tone: 'base' as const },
 ];
 
 /** CTA 헤드라인에서 강조 단어만 <em>으로 감싼다 (색 강조는 .br-h em이 처리) */
@@ -50,28 +47,20 @@ const cta = home.ctaBand;
 <Base headerVariant="solid">
   <Hero3D />
 
-  {/* 히어로 다음: 천장 속을 연다. 문구는 home.json(exploded), 기종 목록만 여기서 정한다.
-      대표 1Way 두 대만 둔다 — 기종 전체는 /care/ */}
-  {home.exploded && (
-    <Exploded
-      id="home-exploded"
-      tone="mist"
-      eyebrow={home.exploded.eyebrow}
-      title={home.exploded.heading}
-      body={home.exploded.body.join(' ')}
-      photoNote="제품 사진: 삼성전자·LG전자 공식 제품 이미지"
-      items={[
-        // 기종 단위 — 부품 구성은 브랜드가 아니라 기종이 정한다.
-        // 사진은 두 제조사를 한 장씩 둔다: 한쪽만 걸면 그 브랜드만 한다는 뜻으로 읽힌다.
-        { label: '1Way', file: 'samsung-1way-AC023CN1PBH1.html',
-          photos: [
-            { src: 'ac-1way-samsung-front.webp', alt: '삼성 무풍 1Way 판넬 정면', caption: '삼성 무풍 1Way' },
-            { src: 'ac-1way-lg-angle.webp', alt: 'LG 휘센 1Way 실내기 입체', caption: 'LG 휘센 1Way' },
-          ],
-          caption: '천장형 1Way · 부품 14개 · 치수는 AC023CN1PBH1(냉방 2.3kW) 기준' },
-      ]}
+  {/* 우리가 어떤 곳인지 — about 블록(2026-09-30). 스토리 페이지 문장 */}
+  {homeRaw.brand && <BrandLine lines={homeRaw.brand.lines} partners={homeRaw.brand.partners} />}
+
+  {/* 왜 바람대로 — 약속 셋. 스토리 페이지를 합쳤다(2026-09-30). 문구 home.json(why), 사진은 설치 기준 사진 재사용 */}
+  {homeRaw.why && (
+    <StandardsStory
+      promise={{ heading: homeRaw.why.heading, items: homeRaw.why.items }}
+      slotPrefix="install"
+      startSide="left"
+      startTone="base"
+      itemPhotos
     />
   )}
+
 
   {/* 다크 스크럽 미노출 (2026-08-27) — 이 카피는 히어로 영상 자막으로 들어간다.
       화면에 큰 글자로 또 쓰면 같은 말을 두 번 하는 셈이라 뺐다.
@@ -82,6 +71,9 @@ const cta = home.ctaBand;
 
   {/* 서비스 2트랙 (IA v3) — 세척·관리 트랙(정돈→기록) / 설치 트랙(설계).
       리드 문장이 다크 구간의 착지점을 받아 3카드로 나눈다 */}
+  {/* 말보다 현장으로 — 약속 바로 뒤에 증거(2026-09-30). 실제 사례 3건부터 저절로 나타난다 */}
+  <Marquee entries={cases} />
+
   {home.services.leadHeading.length > 0 && (
     <section class="bd-section v2-svc-lead">
       <div class="bd-container">
@@ -95,6 +87,7 @@ const cta = home.ctaBand;
   )}
 
   {home.services.cards.map((svc, i) => (
+    <Fragment>
     <ServiceSplit
       id={SERVICE_LAYOUT[i]?.id}
       eyebrow={svc.eyebrow}
@@ -117,15 +110,35 @@ const cta = home.ctaBand;
         ))}
       </Fragment>
     </ServiceSplit>
+    {/* 세척 카드 바로 아래 분해 3D — 홈의 세척 이야기(2026-09-30). 문구 home.json(exploded) */}
+    {SERVICE_LAYOUT[i]?.id === 'clean' && home.exploded && (
+      <Exploded
+          id="home-exploded"
+          tone="mist"
+          eyebrow={home.exploded.eyebrow}
+          title={home.exploded.heading}
+          body={home.exploded.body.join(' ') || undefined}
+          photoNote="제품 사진: 삼성전자·LG전자 공식 제품 이미지"
+          items={[
+            // 기종 단위 — 부품 구성은 브랜드가 아니라 기종이 정한다.
+            // 사진은 두 제조사를 한 장씩 둔다: 한쪽만 걸면 그 브랜드만 한다는 뜻으로 읽힌다.
+            { label: '1Way', file: 'samsung-1way-AC023CN1PBH1.html',
+              photos: [
+                { src: 'ac-1way-samsung-front.webp', alt: '삼성 무풍 1Way 판넬 정면', caption: '삼성 무풍 1Way' },
+                { src: 'ac-1way-lg-angle.webp', alt: 'LG 휘센 1Way 실내기 입체', caption: 'LG 휘센 1Way' },
+              ],
+              caption: '천장형 1Way · 부품 14개 · 치수는 AC023CN1PBH1(냉방 2.3kW) 기준' },
+          ]}
+        />
+    )}
+    </Fragment>
   ))}
 
-  {home.triage && (
-    <NeedTriage heading={home.triage.heading} cards={home.triage.cards} tone={hasMarquee ? 'light' : 'deep'} />
-  )}
 
-  <Marquee entries={cases} />
+  {/* '어떤 일로 오셨나요'(NeedTriage)는 서비스 카드 제목으로 합쳤다(2026-09-30). 증상 상담은 채팅 위젯에 그대로 있다 */}
 
-  <Stats stats={trust.stats} />
+
+  {/* 숫자(Stats)는 전부 샘플이라 뺐다(2026-09-30). 실적이 확인되면 trust.json 을 채우고 되살린다 */}
 
   {home.process && (
     <Process eyebrow={home.process.eyebrow} heading={home.process.heading} steps={home.process.steps} />
