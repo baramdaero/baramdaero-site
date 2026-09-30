@@ -18,6 +18,10 @@ for (const f of readdirSync(OUT).filter((f) => /^\d{4}-\d{2}-\d{2}-.+\.md$/.test
   const dest = join(DEST, f);
   if (existsSync(dest) && !/^sample: true$/m.test(readFileSync(dest, 'utf8'))) { console.log('건너뜀(공개됨)', id); continue; }
   let md = readFileSync(join(OUT, f), 'utf8');
+  if (!/^title:/m.test(md)) { console.log('건너뜀(옛 짧은 형식)', id); continue; }
+  // 480~540 같은 범위의 ~ 가 GFM 취소선으로 읽히지 않게 이스케이프
+  const end = md.indexOf('\n---', 4) + 4; // 본문만 (frontmatter YAML 은 그대로)
+  md = md.slice(0, end) + md.slice(end).replace(/(?<!\\)~/g, '\\~');
   if (!/^sample: true$/m.test(md)) md = md.replace(/^---\n/, '---\nsample: true\n');
   writeFileSync(dest, md);
   console.log('가져옴', id);
