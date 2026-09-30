@@ -4,11 +4,11 @@ import { glob } from 'astro/loaders';
 // 시공사례 — md 1건 = 사례 레코드 1건. 글이 아니라 데이터로 쌓아
 // 사례 목록·마퀴·블로그 related_cases·상황 페이지에서 재사용한다.
 // 신규 필드는 전부 선택 — 기존 사례 md와 소비처(마퀴·목록·상세)는 그대로 동작한다.
-// ⚠️ 개인정보 규칙은 src/content/cases/README.txt 참조 (단지명·동호수·상세주소·고객명 기재 금지).
+// ⚠️ 개인정보 규칙은 src/content/cases/README.txt 참조 (동호수·상세주소·고객명·업체명 기재 금지 — 단지명·평형 타입은 허용, 2026-09-30).
 const cases = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/cases' }),
   schema: z.object({
-    region: z.string(), // 시·구까지만 (예: 서울 강서, 경기 부천) — 단지명 금지
+    region: z.string(), // 시·구까지만 (예: 서울 강서, 경기 부천) — 단지명은 title·본문에
     space: z.string(), // 아파트/상가/사무실 등
     brand: z.string(),
     type: z.enum(['설치', '세척', '복원']),
@@ -17,7 +17,7 @@ const cases = defineCollection({
     cover: z.string().optional(),
     sample: z.boolean().default(false), // 더미 표시 — 실제 사례로 교체 시 제거
     // ---- 레코드 확장 (전부 선택 — 값이 없으면 관련 블록이 조용히 빠진다) ----
-    building: z.string().default(''), // 건물 유형 상세 (예: 구축 아파트 30평형대) — 단지명 금지
+    building: z.string().default(''), // 건물 유형 상세 (예: 구축 아파트 84A)
     size: z.string().default(''), // 평형·면적 (예: 24평)
     model: z.string().default(''), // 기종 (예: 4way 카세트)
     condition: z.string().default(''), // 작업 전 상태 요약
