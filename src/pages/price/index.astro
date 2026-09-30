@@ -148,13 +148,7 @@ if (prices.length) {
         )}
         {baselineCare?.formulaLine && <p class="price-formula br-reveal">{baselineCare.formulaLine}</p>}
       </StoryRow>
-      {/* 기준가 정책 — 두 카드 공통이라 한 번만. 두 줄이라 접지 않는다 */}
-      {policyLines.length > 0 && (
-        <div class="price-policy br-reveal">
-          <ul>{policyLines.map((line) => <li>{line}</li>)}</ul>
-          {updated && <p class="price-policy__updated">기준가 최종 갱신: {updated}</p>}
-        </div>
-      )}
+      {/* 기준가 정책 줄은 뺐다(2026-09-30) — 첫 화면·'견적 받는 법'과 같은 말이었다 */}
     </div>
   </section>
 

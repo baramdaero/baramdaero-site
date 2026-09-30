@@ -203,16 +203,12 @@ export function loadHome(): HomeData {
   const rawEx = (raw as Record<string, unknown> | undefined)?.exploded as
     Record<string, unknown> | undefined;
   if (rawEx) {
-    const heading = strArray(rawEx.heading);
-    if (heading.length > 0) {
-      exploded = {
-        eyebrow: isNonEmptyString(rawEx.eyebrow) ? rawEx.eyebrow.trim() : '',
-        heading,
-        body: strArray(rawEx.body),
-      };
-    } else {
-      warn('"exploded.heading"이 비어 분해 3D 섹션을 건너뜁니다.');
-    }
+    // 제목이 비어도 섹션은 낸다(2026-09-30) — 홈에서는 세척 카드 바로 아래 붙어 카드 제목이 제목 역할을 한다
+    exploded = {
+      eyebrow: isNonEmptyString(rawEx.eyebrow) ? rawEx.eyebrow.trim() : '',
+      heading: strArray(rawEx.heading),
+      body: strArray(rawEx.body),
+    };
   }
 
   return { services: { leadHeading, cards }, exploded, triage, process, ctaBand };

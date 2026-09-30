@@ -7,11 +7,8 @@ import SpaceViewer from '../../components/v2/SpaceViewer.astro';
 import Exploded from '../../components/v2/Exploded.astro';   // 2026-09-21 상업용 기종 분해 3D
 
 const spaces = [
-  { title: '카페', detail: '좌석과 주방 배치, 공간을 사용하는 시간' },
   { title: '매장·상가', detail: '출입구와 진열 공간, 실외기 설치 위치' },
   { title: '사무실', detail: '좌석과 회의실 구획, 건물 운영 시간' },
-  { title: '학원·교육시설', detail: '강의실 구성과 수업 시간, 공간별 사용 방식' },
-  { title: '관공서·공공시설', detail: '담당 부서와 협의 창구, 출입·작업 조건' },
   { title: '대형빌딩', detail: '층별 공간 구성과 기존 설비, 건물 관리 조건' },
 ];
 // 관리하는 것 — 금액·주기 숫자는 넣지 않는다(확정 전). 세척 범위는 /care/ 의 기종별 3D 가 정본
@@ -46,7 +43,7 @@ const jsonLd = {
 };
 ---
 <Base title="상업용 에어컨 관리·설치" description="상가·오피스 천장형 에어컨의 정기 점검과 분해세척, 신규·교체 설치." jsonLd={jsonLd}>
-  <PageHero eyebrow="상업용 · 상가 · 오피스">
+  <PageHero eyebrow="상업용">
     운영 중인 공간의 에어컨,<br />관리까지 맡습니다
     <Fragment slot="sub">용도와 운영 조건을 바탕으로 점검·세척·설치를 이야기합니다.</Fragment>
     <Fragment slot="extra"><button disabled aria-describedby="chat-unavailable" type="button" class="bd-cta bd-cta--deep" data-chat-tree="menu">상담 종류 선택</button></Fragment>

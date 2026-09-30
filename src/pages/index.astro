@@ -14,6 +14,7 @@ import Process from '../components/v2/Process.astro';
 // import Reviews from '../components/v2/Reviews.astro'; // S9 — [실후기교체] 확보 후 주석 해제
 import CtaBand from '../components/v2/CtaBand.astro';
 import StandardsStory from '../components/v2/StandardsStory.astro';
+import BrandLine from '../components/v2/BrandLine.astro';
 import homeRaw from '../content/site/home.json';
 import { loadHome } from '../lib/home.ts';
 
@@ -45,6 +46,9 @@ const cta = home.ctaBand;
 ---
 <Base headerVariant="solid">
   <Hero3D />
+
+  {/* 우리가 어떤 곳인지 — about 블록(2026-09-30). 스토리 페이지 문장 */}
+  {homeRaw.brand && <BrandLine lines={homeRaw.brand.lines} partners={homeRaw.brand.partners} />}
 
   {/* 왜 바람대로 — 약속 셋. 스토리 페이지를 합쳤다(2026-09-30). 문구 home.json(why), 사진은 설치 기준 사진 재사용 */}
   {homeRaw.why && (
@@ -80,6 +84,7 @@ const cta = home.ctaBand;
   )}
 
   {home.services.cards.map((svc, i) => (
+    <Fragment>
     <ServiceSplit
       id={SERVICE_LAYOUT[i]?.id}
       eyebrow={svc.eyebrow}
@@ -102,30 +107,30 @@ const cta = home.ctaBand;
         ))}
       </Fragment>
     </ServiceSplit>
+    {/* 세척 카드 바로 아래 분해 3D — 홈의 세척 이야기(2026-09-30). 문구 home.json(exploded) */}
+    {SERVICE_LAYOUT[i]?.id === 'clean' && home.exploded && (
+      <Exploded
+          id="home-exploded"
+          tone="mist"
+          eyebrow={home.exploded.eyebrow}
+          title={home.exploded.heading}
+          body={home.exploded.body.join(' ') || undefined}
+          photoNote="제품 사진: 삼성전자·LG전자 공식 제품 이미지"
+          items={[
+            // 기종 단위 — 부품 구성은 브랜드가 아니라 기종이 정한다.
+            // 사진은 두 제조사를 한 장씩 둔다: 한쪽만 걸면 그 브랜드만 한다는 뜻으로 읽힌다.
+            { label: '1Way', file: 'samsung-1way-AC023CN1PBH1.html',
+              photos: [
+                { src: 'ac-1way-samsung-front.webp', alt: '삼성 무풍 1Way 판넬 정면', caption: '삼성 무풍 1Way' },
+                { src: 'ac-1way-lg-angle.webp', alt: 'LG 휘센 1Way 실내기 입체', caption: 'LG 휘센 1Way' },
+              ],
+              caption: '천장형 1Way · 부품 14개 · 치수는 AC023CN1PBH1(냉방 2.3kW) 기준' },
+          ]}
+        />
+    )}
+    </Fragment>
   ))}
 
-  {/* 고르기 다음: 천장 속을 연다(2026-09-30 구조 — 히어로 바로 뒤에선 맥락 없이 나왔다). 문구는 home.json(exploded), 기종 목록만 여기서 정한다.
-      대표 1Way 두 대만 둔다 — 기종 전체는 /care/ */}
-  {home.exploded && (
-    <Exploded
-      id="home-exploded"
-      tone="mist"
-      eyebrow={home.exploded.eyebrow}
-      title={home.exploded.heading}
-      body={home.exploded.body.join(' ')}
-      photoNote="제품 사진: 삼성전자·LG전자 공식 제품 이미지"
-      items={[
-        // 기종 단위 — 부품 구성은 브랜드가 아니라 기종이 정한다.
-        // 사진은 두 제조사를 한 장씩 둔다: 한쪽만 걸면 그 브랜드만 한다는 뜻으로 읽힌다.
-        { label: '1Way', file: 'samsung-1way-AC023CN1PBH1.html',
-          photos: [
-            { src: 'ac-1way-samsung-front.webp', alt: '삼성 무풍 1Way 판넬 정면', caption: '삼성 무풍 1Way' },
-            { src: 'ac-1way-lg-angle.webp', alt: 'LG 휘센 1Way 실내기 입체', caption: 'LG 휘센 1Way' },
-          ],
-          caption: '천장형 1Way · 부품 14개 · 치수는 AC023CN1PBH1(냉방 2.3kW) 기준' },
-      ]}
-    />
-  )}
 
   {/* '어떤 일로 오셨나요'(NeedTriage)는 서비스 카드 제목으로 합쳤다(2026-09-30). 증상 상담은 채팅 위젯에 그대로 있다 */}
 

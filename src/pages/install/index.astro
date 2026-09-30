@@ -113,32 +113,13 @@ const breadcrumbJsonLd = {
     <section class="bd-section install-pipes" id="pipes" data-layout-section="install-pipes">
       <div class="bd-container">
         <h2 class="br-h br-reveal">{prewired.title}</h2>
-        <p class="br-body br-reveal">{prewired.bodyLines.map((l, i) => <Fragment>{i > 0 && <br />}{l}</Fragment>)}</p>
+        {/* 첫 줄(신축 골조 이야기)은 뺀다 — 신축·구축을 가르지 않는다 */}
+        <p class="br-body br-reveal">{prewired.bodyLines.slice(1).map((l, i) => <Fragment>{i > 0 && <br />}{l}</Fragment>)}</p>
         <ul class="install-pipes__list br-reveal">{prewired.checkItems.map((c) => <li>{c}</li>)}</ul>
       </div>
     </section>
   )}
 
-  {/* 설계 3D 예시 — 예시 평면(실제 세대 아님)으로 그린 3D 구성도. 자사 이행 주장이 아니라 예시 설명만 한다(발화기준 §1).
-      샘플 표시를 둔다(§2 표기·상태 규칙). 실제 현장 구성도로 바꿀 때는 이미지(같은 파일명)와 함께 샘플 줄·제목·본문도 고친다.
-      방 이미지는 AI 보정 없는 3D 렌더 그대로(실제 시공 사진으로 읽히지 않게) */}
-  <section class="bd-section install-plan3d" data-layout-section="install-plan3d">
-    <div class="bd-container">
-      <h2 class="br-h br-reveal">도면으로 그린<br />설치 예시</h2>
-      <p class="br-body br-reveal">예시 평면에 실내기 자리와 천장 속 배관 경로를 그렸습니다.</p>
-      <div class="install-plan3d__grid br-reveal">
-        <figure class="install-plan3d__card br-glass br-glass--medium">
-          <ImageSlot id="install-plan3d-room" ratio="wide" />
-          <figcaption>방에서 본 실내기 자리</figcaption>
-        </figure>
-        <figure class="install-plan3d__card br-glass br-glass--medium">
-          <ImageSlot id="install-plan3d-aerial" ratio="wide" />
-          <figcaption>천장을 걷어 낸 배관 경로</figcaption>
-        </figure>
-      </div>
-      <p class="install-plan3d__note">[샘플 — 실제 사례로 교체 예정] 예시 평면으로 그린 구성도입니다.</p>
-    </div>
-  </section>
 
   {/* 기종 속 구조 — 페이지 뒤쪽(2026-09-30 구조: 절차·설계 다음). 제품 영상은 제목과 3D 안내 사이 */}
   <Exploded
@@ -167,6 +148,12 @@ const breadcrumbJsonLd = {
       </Fragment>
     )}
   </Exploded>
+
+  <section class="bd-section install-next">
+    <div class="bd-container">
+      <p class="install-next__line br-reveal">설치한 에어컨의 세척·관리도 같은 팀이 맡습니다. <a class="br-pill" href="/care/">세척 안내 보기 <span aria-hidden="true">→</span></a></p>
+    </div>
+  </section>
 
   <CtaBand chatTree="install" buttonLabel="설치 상담 시작" priceLink>
     다음 현장이<br /><em>우리 집</em>이어도 됩니다
@@ -239,15 +226,9 @@ const breadcrumbJsonLd = {
     .install-steps__list { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
   }
 
-  /* 설계 3D 예시 — 사진 두 장을 유리 카드 두 장으로. 768px+ 나란히 */
-  .install-plan3d { background: transparent; } /* 유리 카드 호스트 */
-  .install-plan3d__grid { margin-top: var(--head-gap); display: grid; gap: 16px; }
-  .install-plan3d__card { margin: 0; padding: 12px 12px 16px; }
-  .install-plan3d__card :global(.br-image-slot) { max-width: none; --slot-radius: calc(var(--radius) - 12px); } /* 동심원: 카드 12 − 여백 12 */
-  .install-plan3d__card figcaption { margin-top: 12px; font-size: 15px; line-height: 1.6; color: var(--br-ink-sub); } /* 캡션 = ink-sub(§1 글자색 3단) */
-  .install-plan3d__note { margin-top: 16px; font-size: 13px; line-height: 1.6; color: var(--br-ink-sub); }
+  .install-next { background: transparent; padding-block: 0 var(--head-gap); }
+  .install-next__line { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; color: var(--br-ink); font-size: 16px; }
   @media (min-width: 768px) {
-    .install-plan3d__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
-  }
+    }
 
 </style>
