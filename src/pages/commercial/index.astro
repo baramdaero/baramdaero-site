@@ -13,10 +13,10 @@ const spaces = [
   { title: '관공서·공공시설', detail: '담당 부서와 협의 창구, 출입·작업 조건' },
   { title: '대형빌딩', detail: '층별 공간 구성과 기존 설비, 건물 관리 조건' },
 ];
-const services = [
-  { title: '신규·교체 설치', body: '공간 용도와 설치 조건부터 확인합니다.', tree: 'install', label: '설치 상담 시작' },
-  { title: '세척·관리', body: '운영 중인 공간은 작업 가능한 시간을 함께 이야기합니다.', tree: 'clean', label: '세척 상담 시작' },
-  { title: '고장·증상 확인', body: '바람대로에서 시공·관리를 받은 고객의 AS 안내입니다.', tree: 'as', label: '기존 고객 AS 안내' },
+// 설치·세척 두 갈래. 고장·증상(AS)은 채팅 위젯 메뉴에 있다
+const tracks = [
+  { id: 'install', eyebrow: '설치', title: '신규·교체 설치', body: '공간 용도와 설치 조건부터 확인합니다.', tree: 'install', label: '설치 상담 시작', slot: 'commercial-building' },
+  { id: 'clean', eyebrow: '세척', title: '세척·관리', body: '운영 중인 공간은 작업 가능한 시간을 함께 이야기합니다.', tree: 'clean', label: '세척 상담 시작', slot: 'home-service-clean' },
 ];
 const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? 'https://baramdaero.com';
 const jsonLd = {
@@ -35,32 +35,11 @@ const jsonLd = {
     <Fragment slot="extra"><button disabled aria-describedby="chat-unavailable" type="button" class="bd-cta bd-cta--deep" data-chat-tree="menu">상담 종류 선택</button></Fragment>
   </PageHero>
 
-  {/* 상업용에 실제로 들어가는 기종 — 히어로 바로 아래(/install/·/care/ 와 같은 자리). 말로 적기 전에 기종부터 보여 준다 */}
-  <Exploded
-    id="commercial-exploded"
-    tone="mist"
-    eyebrow=""
-    title={['4Way와 360,', '속은 이렇게 생겼습니다']}
-    items={[
-      { label: '4Way', file: 'samsung-4way-AC060CN4PBH1.html',
-        caption: '부품 15개 · 3D 분해 8단계 · 치수는 AC060CN4PBH1 기준' },
-      { label: '360', file: 'samsung-360-AC110CN6PBH1.html',
-        caption: '부품 16개 · 원형 토출 프레임에 부스터팬 3개가 들어간다 · 치수는 AC110CN6PBH1 기준' },
-    ]}
-  />
-
-  <section class="bd-section commercial-intro">
-    <div class="bd-container">
-      <StoryRow slotId="commercial-building" imageSide="right">
-        <h2 class="br-h br-reveal">공간의 크기보다<br />쓰임부터 봅니다</h2>
-        <p class="br-body br-reveal">신규 설치와 교체 설치, 사용 중인 에어컨의 세척·관리를 상담합니다. 현재 상태와 필요한 작업부터 확인합니다.</p>
-      </StoryRow>
-    </div>
-  </section>
-
+  {/* 2026-09-30 구조: 쓰임과 조건 → 설치 → 세척 → 운영 중 상담 → 기종 속 구조(뒤쪽, /install/·/care/ 와 같은 자리) */}
   <section class="bd-section commercial-spaces" id="spaces" aria-labelledby="spaces-title">
     <div class="bd-container">
-      <h2 class="br-h br-reveal" id="spaces-title">공간마다<br />살펴볼 조건이 다릅니다</h2>
+      <h2 class="br-h br-reveal" id="spaces-title">공간의 크기보다<br />쓰임부터 봅니다</h2>
+      <p class="br-body br-reveal commercial-spaces__lead">공간마다 살펴볼 조건이 다릅니다. 현재 상태와 필요한 작업부터 확인합니다.</p>
       <dl class="commercial-spaces__list">
         {spaces.map((space) => (
           <div class="commercial-spaces__item br-reveal">
@@ -72,29 +51,44 @@ const jsonLd = {
     </div>
   </section>
 
+  {/* 설치 · 세척 두 갈래(대표 지시 2026-09-30) */}
+  {tracks.map((t, i) => (
+    <section class:list={['bd-section', 'commercial-track', i % 2 ? 'commercial-track--mist' : '']} id={t.id} aria-labelledby={`${t.id}-title`}>
+      <div class="bd-container">
+        <StoryRow slotId={t.slot} imageSide={i % 2 ? 'left' : 'right'}>
+          <span class="br-eyebrow br-reveal">{t.eyebrow}</span>
+          <h2 class="br-h br-reveal" id={`${t.id}-title`}>{t.title}</h2>
+          <p class="br-body br-reveal">{t.body}</p>
+          <p class="commercial-track__cta br-reveal">
+            <button type="button" class="br-pill" disabled aria-describedby="chat-unavailable" data-chat-tree={t.tree}>{t.label} <span aria-hidden="true">→</span></button>
+          </p>
+        </StoryRow>
+      </div>
+    </section>
+  ))}
+
   <section class="bd-section commercial-operating">
     <div class="bd-container">
-      <StoryRow slotId="commercial-cafe" imageSide="left">
+      <StoryRow slotId="commercial-cafe" imageSide="right">
         <h2 class="br-h br-reveal">영업 중인 공간도<br />준비 중인 공간도 상담합니다</h2>
         <p class="br-body br-reveal">현재 운영 상태와 희망 일정을 바탕으로 상담합니다. 사전에 말씀드리지 않은 추가금 없이, 작업 사진과 단일 연락 창구를 통해 기록을 이어갑니다.</p>
       </StoryRow>
     </div>
   </section>
 
-  <section class="bd-section commercial-services" id="services" aria-labelledby="services-title">
-    <div class="bd-container">
-      <h2 class="br-h br-reveal" id="services-title">필요한 일부터<br />시작하세요</h2>
-      <div class="commercial-services__list">
-        {services.map((service) => (
-          <article class="commercial-services__item br-reveal">
-            <h3>{service.title}</h3>
-            <p>{service.body}</p>
-            <button type="button" class="br-pill" disabled aria-describedby="chat-unavailable" data-chat-tree={service.tree}>{service.label} <span aria-hidden="true">→</span></button>
-          </article>
-        ))}
-      </div>
-    </div>
-  </section>
+  {/* 상업용에 들어가는 기종 — 속 구조는 페이지 뒤쪽 */}
+  <Exploded
+    id="commercial-exploded"
+    tone="mist"
+    eyebrow=""
+    title={['4Way와 360(원형),', '속은 이렇게 생겼습니다']}
+    items={[
+      { label: '4Way', file: 'samsung-4way-AC060CN4PBH1.html',
+        caption: '부품 15개 · 3D 분해 8단계 · 치수는 AC060CN4PBH1 기준' },
+      { label: '360(원형)', file: 'samsung-360-AC110CN6PBH1.html',
+        caption: '부품 16개 · 원형 토출 프레임에 부스터팬 3개가 들어간다 · 치수는 AC110CN6PBH1 기준' },
+    ]}
+  />
 
   <CtaBand chatTree="install" buttonLabel="상업용 설치 상담">
     공간을 알려주세요<br />함께 시작하겠습니다
@@ -102,22 +96,19 @@ const jsonLd = {
 </Base>
 
 <style>
-  .commercial-intro, .commercial-operating { background: var(--br-base); }
-  .commercial-intro :global(.br-body), .commercial-operating :global(.br-body) { margin-top: 24px; }
+  .commercial-operating { background: var(--br-base); }
+  .commercial-operating :global(.br-body) { margin-top: 24px; }
+  .commercial-track { background: var(--br-base); scroll-margin-top: 24px; }
+  .commercial-track--mist { background: var(--br-mist); }
+  .commercial-track :global(.br-body) { margin-top: 20px; }
+  .commercial-track__cta { margin-top: 28px; }
   .commercial-spaces { background: var(--br-mist); }
+  .commercial-spaces__lead { margin-top: 20px; }
   .commercial-spaces__list { display: grid; gap: 0 48px; margin-top: var(--head-gap); }
   .commercial-spaces__item { border-top: 1px solid var(--br-ink-sub); padding: 24px 0; }
   .commercial-spaces__item dt { font-size: 22px; font-weight: 700; color: var(--br-ink); }
   .commercial-spaces__item dd { margin: 10px 0 0; line-height: 1.7; color: var(--br-ink-sub); }
-  .commercial-services { background: var(--br-teal-deep); color: var(--br-base); scroll-margin-top: 24px; }
-  .commercial-services :global(.br-h) { color: var(--br-base); }
-  .commercial-services__list { display: grid; gap: 40px; margin-top: var(--head-gap); }
-  .commercial-services__item { display: flex; flex-direction: column; align-items: flex-start; border-top: 1px solid var(--br-ice); padding-top: 24px; }
-  .commercial-services__item h3 { font-size: 24px; }
-  .commercial-services__item p { margin: 16px 0 28px; line-height: 1.7; }
-  .commercial-services__item .br-pill { margin-top: auto; }
   @media (min-width: 768px) {
     .commercial-spaces__list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .commercial-services__list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   }
 </style>
