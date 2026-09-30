@@ -11,4 +11,8 @@ export default defineConfig({
   site,
   trailingSlash: 'ignore',
   integrations: [sitemap()],
+  // 2026-09-30 구조 정리 — 합친 페이지의 옛 주소는 새 자리로 보낸다(외부 링크·검색 결과 보존)
+  redirects: {
+    '/story': '/',
+  },
 });
