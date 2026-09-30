@@ -59,7 +59,7 @@ const breadcrumbJsonLd = {
 ---
 <Base
   title="시스템에어컨 설치"
-  description="시스템에어컨 설치 — 입주 전 아파트부터 살고 있는 집, 교체까지. 방마다 들어갈 자리를 3D로 먼저 그립니다."
+  description="시스템에어컨 설치 — 입주 전 아파트부터 살고 있는 집, 교체까지. 방마다 들어갈 실내기 자리부터 정합니다."
   jsonLd={breadcrumbJsonLd}
 >
   <PageHero eyebrow="시스템에어컨 설치" lead>
@@ -71,9 +71,8 @@ const breadcrumbJsonLd = {
       순서: 주거용 3D → 어떤 집이든 → 설치 4단계 → 배관 확인 → 설계 3D 예시 → 1Way 속 구조 → 문의 */}
   <SpaceViewer
     id="install-space"
-    heading={['방마다 들어갈 자리를', '3D로 그렸습니다']}
-    body="실내기를 누르면 그 방으로 들어갑니다."
-    views={[{ label: '아파트', src: '/3d/house.html?embed', title: '3D 구성도 · 아파트' }]}
+    hint="실내기를 눌러 보세요"
+    views={[{ label: '아파트', src: '/3d/house.html?embed', title: '아파트 구성도' }]}
   />
 
   <section class="bd-section install-homes" data-layout-section="install-homes">
@@ -125,19 +124,19 @@ const breadcrumbJsonLd = {
       방 이미지는 AI 보정 없는 3D 렌더 그대로(실제 시공 사진으로 읽히지 않게) */}
   <section class="bd-section install-plan3d" data-layout-section="install-plan3d">
     <div class="bd-container">
-      <h2 class="br-h br-reveal">도면으로 그린<br />설치 3D 예시</h2>
-      <p class="br-body br-reveal">예시 평면에 실내기 자리와 천장 속 배관 경로를 3D로 그렸습니다.</p>
+      <h2 class="br-h br-reveal">도면으로 그린<br />설치 예시</h2>
+      <p class="br-body br-reveal">예시 평면에 실내기 자리와 천장 속 배관 경로를 그렸습니다.</p>
       <div class="install-plan3d__grid br-reveal">
         <figure class="install-plan3d__card br-glass br-glass--medium">
           <ImageSlot id="install-plan3d-room" ratio="wide" />
-          <figcaption>3D 렌더 · 방에서 본 실내기 자리</figcaption>
+          <figcaption>방에서 본 실내기 자리</figcaption>
         </figure>
         <figure class="install-plan3d__card br-glass br-glass--medium">
           <ImageSlot id="install-plan3d-aerial" ratio="wide" />
-          <figcaption>3D 렌더 · 천장을 걷어 낸 배관 경로</figcaption>
+          <figcaption>천장을 걷어 낸 배관 경로</figcaption>
         </figure>
       </div>
-      <p class="install-plan3d__note">[샘플 — 실제 사례로 교체 예정] 예시 평면으로 그린 3D 구성도입니다.</p>
+      <p class="install-plan3d__note">[샘플 — 실제 사례로 교체 예정] 예시 평면으로 그린 구성도입니다.</p>
     </div>
   </section>
 

@@ -31,7 +31,7 @@ const PLAN = [
 const STEPS = [
   { title: '상담', body: '공간 용도와 대수, 운영 시간을 듣습니다.' },
   { title: '현장 확인', body: '천장과 실외기 자리, 기존 설비를 봅니다.' },
-  { title: '3D 구성도·관리 계획', body: '실내기 자리와 관리 범위를 정리해 드립니다.' },
+  { title: '관리 계획', body: '실내기 자리와 관리 범위를 정리해 드립니다.' },
   { title: '작업', body: '정한 범위대로 점검·세척·설치를 합니다.' },
   { title: '기록 전달', body: '작업 사진과 점검 기록을 전달합니다.' },
 ];
@@ -45,7 +45,7 @@ const jsonLd = {
   ],
 };
 ---
-<Base title="상업용 에어컨 관리·설치" description="상가·오피스 천장형 에어컨의 정기 점검과 분해세척, 신규·교체 설치. 층과 구역마다 들어갈 자리를 3D로 먼저 그립니다." jsonLd={jsonLd}>
+<Base title="상업용 에어컨 관리·설치" description="상가·오피스 천장형 에어컨의 정기 점검과 분해세척, 신규·교체 설치." jsonLd={jsonLd}>
   <PageHero eyebrow="상업용 · 상가 · 오피스">
     운영 중인 공간의 에어컨,<br />관리까지 맡습니다
     <Fragment slot="sub">용도와 운영 조건을 바탕으로 점검·세척·설치를 이야기합니다.</Fragment>
@@ -56,11 +56,10 @@ const jsonLd = {
       순서: 3D 공간 제안 → 관리 항목 → 관리 범위 → 공간 조건 → 신규·교체 설치 → 진행 절차 → 기종 속 구조 → 문의 */}
   <SpaceViewer
     id="commercial-space"
-    heading={['층마다, 구역마다', '먼저 그려 봅니다']}
-    body="실내기를 누르면 그 구역으로 들어갑니다."
+    hint="층을 눌러 보세요"
     views={[
-      { label: '상가 빌딩', src: '/3d/commercial.html?embed', title: '3D 구성도 · 상가 빌딩' },
-      { label: '오피스 빌딩', src: '/3d/office.html?embed', title: '3D 구성도 · 오피스 빌딩' },
+      { label: '상가 빌딩', src: '/3d/commercial.html?embed', title: '상가 빌딩 구성도' },
+      { label: '오피스 빌딩', src: '/3d/office.html?embed', title: '오피스 빌딩 구성도' },
     ]}
   />
 
@@ -110,7 +109,7 @@ const jsonLd = {
       <StoryRow slotId="commercial-building" imageSide="right">
         <span class="br-eyebrow br-reveal">설치</span>
         <h2 class="br-h br-reveal" id="install-title">신규·교체 설치</h2>
-        <p class="br-body br-reveal">공간 용도와 설치 조건부터 확인합니다. 층과 구역마다 실내기 자리와 배관 경로를 3D로 먼저 그립니다.</p>
+        <p class="br-body br-reveal">공간 용도와 설치 조건부터 확인합니다.</p>
         <p class="commercial-track__cta br-reveal">
           <button type="button" class="br-pill" disabled aria-describedby="chat-unavailable" data-chat-tree="install">설치 상담 시작 <span aria-hidden="true">→</span></button>
         </p>
@@ -141,7 +140,7 @@ const jsonLd = {
     title={['4Way와 360(원형),', '속은 이렇게 생겼습니다']}
     items={[
       { label: '4Way', file: 'samsung-4way-AC060CN4PBH1.html',
-        caption: '부품 15개 · 3D 분해 8단계 · 치수는 AC060CN4PBH1 기준' },
+        caption: '부품 15개 · 분해 8단계 · 치수는 AC060CN4PBH1 기준' },
       { label: '360(원형)', file: 'samsung-360-AC110CN6PBH1.html',
         caption: '부품 16개 · 원형 토출 프레임에 부스터팬 3개가 들어간다 · 치수는 AC110CN6PBH1 기준' },
     ]}
