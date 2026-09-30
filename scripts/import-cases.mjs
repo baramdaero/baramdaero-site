@@ -14,7 +14,7 @@ copyFileSync('src/content/site/faq.json', join(HW, 'ref/site-faq.json'));
 for (const f of readdirSync(OUT).filter((f) => /^\d{4}-\d{2}-\d{2}-.+\.md$/.test(f))) {
   const id = f.slice(0, -3);
   const review = join(OUT, `review-${f}`);
-  if (!existsSync(review) || !/판정:\s*통과/.test(readFileSync(review, 'utf8'))) { console.log('건너뜀(검수 전)', id); continue; }
+  if (!existsSync(review) || !/판정:\s*통과|검수 — 통과/.test(readFileSync(review, 'utf8'))) { console.log('건너뜀(검수 전)', id); continue; }
   const dest = join(DEST, f);
   if (existsSync(dest) && !/^sample: true$/m.test(readFileSync(dest, 'utf8'))) { console.log('건너뜀(공개됨)', id); continue; }
   let md = readFileSync(join(OUT, f), 'utf8');
