@@ -2,6 +2,8 @@
 // 푸터 v2 — teal-deep. 구 버전은 src/legacy/SiteFooter-v1.astro.txt 보존.
 // 배경이 다크라 로고는 reverse 고정 (톤 전환 없음).
 import { SITE_CONFIG } from '../config.js';
+import { getCollection } from 'astro:content';
+const realCases = (await getCollection('cases')).filter((e) => !e.data.sample).length;
 import wideReverseUrl from '../assets/logo/baramdaero-wide-reverse.svg?url';
 const year = new Date().getFullYear();
 ---
@@ -15,6 +17,7 @@ const year = new Date().getFullYear();
       <a href="/install/">설치</a>
       <a href="/care/">세척</a>
       <a href="/commercial/">상업용</a>
+      {realCases >= 3 && <a href="/cases/">시공사례</a>}
       <a href="/price/">가격</a>
       <a href="/faq/">자주 묻는 질문</a>
       <a href="/blog/">블로그</a>
