@@ -33,6 +33,11 @@ const cases = defineCollection({
     tags: z.array(z.string()).default([]),
     related_articles: z.array(z.string()).default([]), // 블로그 글 id
     related_situations: z.array(z.string()).default([]), // situation slug
+    // ---- 검색·AI 답변용 (2026-09-30 — 비면 region·space·brand·type·units 로 만든 제목, 요약 없음) ----
+    title: z.string().default(''), // 예: 경기 성남 아파트 삼성 무풍 1Way 4대 설치
+    answer: z.string().default(''), // 첫 2문장 — meta description·AI 인용용
+    qa: z.array(z.object({ q: z.string(), a: z.string() })).default([]), // 원본 근거 있는 질문만 → FAQPage
+    updated: z.coerce.date().optional(),
   }),
 });
 

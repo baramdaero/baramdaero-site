@@ -34,3 +34,15 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  # 배포가 끝나면 바뀐 주소를 검색엔진에 바로 알린다 (Bing → ChatGPT 검색, Naver). 실패해도 배포는 유지.
+  indexnow:
+    needs: deploy
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/indexnow.mjs
