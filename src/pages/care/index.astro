@@ -5,17 +5,13 @@ import Base from '../../layouts/Base.astro';
 import PageHero from '../../components/v2/PageHero.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
 import ImageSlot from '../../components/v2/ImageSlot.astro';
-import StandardsStory from '../../components/v2/StandardsStory.astro';
-import StoryRow from '../../components/v2/StoryRow.astro';
 import Exploded from '../../components/v2/Exploded.astro';   // 2026-09-21 기종별 분해 3D
 import { SITE_CONFIG } from '../../config.js';
 import { loadPricing } from '../../lib/pricing.ts';
 import { loadFaq } from '../../lib/faq.ts';
-import { loadStandards } from '../../lib/standards.ts';
 import { isImageSlotVisible } from '../../lib/image-slots.ts';
 
 const pricing = loadPricing();
-const standards = loadStandards();
 const { process, processIntro, processSource, symptoms, seasons } = pricing;
 const visibleSymptoms = symptoms.filter((s) => !s.hidden);
 const visibleSeasons = seasons
@@ -30,8 +26,9 @@ const headline = pricing.headline || '세척·유지관리';
 const intro = pricing.intro;
 
 // faq_ref=true → faq.json에서 '세척' 관련 항목만 이 페이지에 노출 + FAQPage 마크업
+// 세척 질문 세 개만 — 전체는 /faq/ (2026-09-30 구조)
 const careFaq = pricing.faqRef
-  ? loadFaq().filter((f) => f.q.includes('세척') || f.a.includes('세척'))
+  ? loadFaq().filter((f) => f.q.includes('세척') || f.a.includes('세척')).slice(0, 3)
   : [];
 
 const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? '';
@@ -81,29 +78,6 @@ if (careFaq.length) {
     {intro && <Fragment slot="sub">{intro}</Fragment>}
   </PageHero>
 
-  {/* 분해 세척 페이지의 첫 설명: 말로 적기 전에 기종별로 어디까지 열리는지 보여준다 */}
-  <Exploded
-    id="care-exploded"
-    tone="mist"
-    eyebrow=""
-    title={['기종마다 열리는', '깊이가 다릅니다']}
-    items={[
-      // 기종 단위다. 부품 구성·분해 순서는 브랜드가 아니라 기종이 정하고, 3D 도 그렇게 만들었다.
-      // 기종마다 근거 문서가 가장 분명한 모델 하나를 치수 기준으로 쓴다.
-      { label: '1Way', file: 'samsung-1way-AC023CN1PBH1.html',
-        caption: '부품 14개 · 3D 분해 8단계 · 치수는 AC023CN1PBH1 기준' },
-      { label: '2Way', file: 'lg-2way-RNW0721G2S.html',
-        caption: '부품 14개 · 3D 분해 9단계 · 열교환기가 좌·우 두 조, 송풍팬은 관류팬 1본 · 치수는 LG RNW0721G2S 기준' },
-      { label: '4Way', file: 'samsung-4way-AC060CN4PBH1.html',
-        caption: '부품 15개 · 3D 분해 8단계 · 치수는 AC060CN4PBH1 기준' },
-      { label: '360', file: 'samsung-360-AC110CN6PBH1.html',
-        caption: '부품 16개 · 원형 토출 프레임에 부스터팬 3개가 들어간다 · 치수는 AC110CN6PBH1 기준' },
-      { label: '벽걸이', file: 'samsung-wall-AR06T9170HNQ.html',
-        caption: '부품 13개 · 배관은 분해하지 않고 세척한다 · 치수는 AR06T9170HNQ 기준' },
-      { label: '스탠드', file: 'samsung-stand-AF25DX934WAN.html',
-        caption: '부품 13개 · 치수는 AF25DX934WAN 기준' },
-    ]}
-  />
 
   {visibleSymptoms.length > 0 && (
     <section class="bd-section care-symptoms" data-layout-section="care-symptoms">
@@ -122,6 +96,24 @@ if (careFaq.length) {
             );
           })}
         </div>
+        {/* 세척 시기 — 증상과 같은 질문(언제 하나)이라 한 섹션으로 합쳤다(2026-09-30) */}
+        {visibleSeasons.length > 0 && (
+          <div class="care-seasons" data-layout-section="care-seasons">
+            <h3 class="care-seasons__title br-reveal">세척 시기</h3>
+            <div class="care-seasons__grid">
+              {visibleSeasons.map((s) => (
+                <article class="care-seasons__card br-glass br-glass--medium br-reveal">
+                  <div class="care-seasons__heading">
+                    {s.months && <span class="care-seasons__months">{s.months}</span>}
+                    <h4>{s.season}</h4>
+                  </div>
+                  <ImageSlot id={s.slotId} label={s.slotId} ratio="card" />
+                  <p>{s.body}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        )}
         {/* 같은 접수가 카드마다 반복되던 버튼 4개를 하나로 (한 화면 한 동작, 2026-09-23) */}
         <p class="care-symptoms__more br-reveal">
           <button disabled aria-describedby="chat-unavailable" type="button" class="br-pill" data-chat-tree="clean">
@@ -167,34 +159,31 @@ if (careFaq.length) {
     </section>
   )}
 
-  <StandardsStory
-    promise={standards.promiseCare}
-    slotPrefix="care"
-    startSide="right"
-    startTone="base"
-  />
 
-  {visibleSeasons.length > 0 && (
-  <section class="bd-section care-close">
-    <div class="bd-container">
-        <div class="care-seasons" data-layout-section="care-seasons">
-          <h2 class="br-h br-reveal">세척 시기</h2>
-          <div class="care-seasons__grid">
-            {visibleSeasons.map((s) => (
-              <article class="care-seasons__card br-glass br-glass--heavy br-reveal">
-                <div class="care-seasons__heading">
-                  {s.months && <span class="care-seasons__months">{s.months}</span>}
-                  <h3>{s.season}</h3>
-                </div>
-                <ImageSlot id={s.slotId} label={s.slotId} ratio="card" />
-                <p>{s.body}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-    </div>
-  </section>
-  )}
+
+  {/* 기종별로 어디까지 열리는지 — 속 구조는 페이지 뒤쪽(2026-09-30 구조: 증상·절차 다음) */}
+  <Exploded
+    id="care-exploded"
+    tone="mist"
+    eyebrow=""
+    title={['기종마다 열리는', '깊이가 다릅니다']}
+    items={[
+      // 기종 단위다. 부품 구성·분해 순서는 브랜드가 아니라 기종이 정하고, 3D 도 그렇게 만들었다.
+      // 기종마다 근거 문서가 가장 분명한 모델 하나를 치수 기준으로 쓴다.
+      { label: '1Way', file: 'samsung-1way-AC023CN1PBH1.html',
+        caption: '부품 14개 · 3D 분해 8단계 · 치수는 AC023CN1PBH1 기준' },
+      { label: '2Way', file: 'lg-2way-RNW0721G2S.html',
+        caption: '부품 14개 · 3D 분해 9단계 · 열교환기가 좌·우 두 조, 송풍팬은 관류팬 1본 · 치수는 LG RNW0721G2S 기준' },
+      { label: '4Way', file: 'samsung-4way-AC060CN4PBH1.html',
+        caption: '부품 15개 · 3D 분해 8단계 · 치수는 AC060CN4PBH1 기준' },
+      { label: '360', file: 'samsung-360-AC110CN6PBH1.html',
+        caption: '부품 16개 · 원형 토출 프레임에 부스터팬 3개가 들어간다 · 치수는 AC110CN6PBH1 기준' },
+      { label: '벽걸이', file: 'samsung-wall-AR06T9170HNQ.html',
+        caption: '부품 13개 · 배관은 분해하지 않고 세척한다 · 치수는 AR06T9170HNQ 기준' },
+      { label: '스탠드', file: 'samsung-stand-AF25DX934WAN.html',
+        caption: '부품 13개 · 치수는 AF25DX934WAN 기준' },
+    ]}
+  />
 
   {/* 자주 묻는 질문 — 세척 시기와 한 섹션이던 것을 나눴다(섹션 하나에 제목 하나). 전부 닫아 둔다 */}
   {careFaq.length > 0 && (
@@ -214,8 +203,7 @@ if (careFaq.length) {
   )}
 
   <CtaBand chatTree="clean" buttonLabel="견적 문의" priceLink>
-    <em>견적</em>은 방문 전에<br />나옵니다
-    <Fragment slot="sub">기종과 대수만 알려주시면 됩니다.</Fragment>
+    <em>기종</em>과 대수만<br />알려주시면 됩니다
   </CtaBand>
 </Base>
 
@@ -263,7 +251,7 @@ if (careFaq.length) {
     display: flex;
     flex-direction: column;
     padding: 16px;
-    /* 증상(Medium, 밝은 호스트) / 세척시기(Heavy, 딥 호스트) — 면은 .br-glass 등급이 맡는다 */
+    /* 증상·세척시기 모두 밝은 호스트 위 Medium — 면은 .br-glass 등급이 맡는다 */
   }
 
   .care-symptoms__card :global(.br-image-slot) { max-width: none; margin-bottom: 20px; }
@@ -282,7 +270,7 @@ if (careFaq.length) {
     font-variant-numeric: tabular-nums;
     color: var(--br-ink);
   }
-  .care-seasons__card h3 { margin-top: 8px; color: var(--br-ink); font-size: 20px; line-height: 1.45; }
+  .care-seasons__card h4 { margin-top: 8px; color: var(--br-ink); font-size: 20px; line-height: 1.45; }
   .care-symptoms__card p,
   .care-seasons__card p { margin-top: 8px; color: var(--br-ink); font-size: 14px; line-height: 1.65; }
 
@@ -312,8 +300,9 @@ if (careFaq.length) {
   .care-process__steps p { margin-top: 6px; color: var(--br-ink); font-size: 14px; line-height: 1.65; }
   .care-process__source { margin-top: 24px; color: var(--br-ink); font-size: 13px; line-height: 1.75; }
 
-  .care-close { background: var(--br-teal-deep); }
-  .care-close :global(.br-h) { color: var(--br-base); }
+  /* 세척 시기 — 증상 섹션 안 두 번째 묶음(2026-09-30) */
+  .care-seasons { margin-top: 56px; }
+  .care-seasons__title { font-size: clamp(20px, 2.4vw, 24px); color: var(--br-ink); }
   .care-seasons__grid { grid-template-columns: 1fr; }
   .care-faq { background: transparent; } /* 유리 카드 호스트 */
   .care-faq__list { margin-top: var(--head-gap); display: grid; gap: 10px; }
@@ -332,7 +321,7 @@ if (careFaq.length) {
   @media (max-width: 520px) {
     .care-seasons__card { grid-template-columns: minmax(0, 1fr) 128px; padding: 20px; gap: 12px; }
     .care-seasons__card :global(.br-image-slot) { width: 128px; }
-    .care-seasons__card h3 { font-size: 18px; }
+    .care-seasons__card h4 { font-size: 18px; }
     .care-process__visual-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 </style>
