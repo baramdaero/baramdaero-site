@@ -82,11 +82,12 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
         SHOP_URL이 비면 슬롯째 미렌더한다: 빈 요소를 남기면 inner의 gap이 그대로 붙어
         메뉴가 이유 없이 왼쪽으로 밀린다. 슬롯이 생기면 메뉴는 gap만큼 밀릴 뿐이고,
         폭은 flex가 알아서 나눈다 (고정값 재조정 불요). */}
-    {SITE_CONFIG.SHOP_URL && (
-      <div class="bd-header__actions">
-        <a href={SITE_CONFIG.SHOP_URL} class="bd-header__cta" rel="noopener">예약·구매</a>
-      </div>
-    )}
+    {/* 견적 문의 — 모든 페이지 오른쪽 위에 고정(2026-09-30 대표: "시공문의·견적문의로 잘 유도되게").
+        채팅창 첫 메뉴(설치 견적·세척 견적·A/S)를 연다 → 채널톡 상담. 채팅 스크립트가 켜기 전까지는 비활성 */}
+    <div class="bd-header__actions">
+      <button type="button" class="bd-header__quote" data-chat-tree="menu" disabled aria-describedby="chat-unavailable">견적 문의</button>
+      {SITE_CONFIG.SHOP_URL && <a href={SITE_CONFIG.SHOP_URL} class="bd-header__cta" rel="noopener">예약·구매</a>}
+    </div>
   </div>
 </header>
 
@@ -209,6 +210,16 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     transition: background-color var(--dur-color) ease, transform 160ms var(--ease-out);
   }
   .bd-header__cta:hover { background: var(--copper-deep); }
+  .bd-header__actions { display: flex; align-items: center; gap: 8px; margin-left: 12px; flex: none; }
+  .bd-header__quote {
+    min-height: 40px; padding: 0 16px; border: 0; border-radius: 999px;
+    background: var(--br-teal-deep); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: background-color var(--dur-color) ease, transform 160ms var(--ease-out);
+  }
+  .bd-header__quote:hover { background: var(--br-teal); }
+  .bd-header__quote:active { transform: scale(0.96); }
+  .bd-header__quote:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; }
+  .bd-header__quote:disabled { opacity: 0.6; }
   .bd-header__cta:active { transform: scale(0.96); }
 
   .bd-header__link,
