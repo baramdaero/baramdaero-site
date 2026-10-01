@@ -15,6 +15,7 @@ import Process from '../components/v2/Process.astro';
 import CtaBand from '../components/v2/CtaBand.astro';
 import StandardsStory from '../components/v2/StandardsStory.astro';
 import BrandLine from '../components/v2/BrandLine.astro';
+import CompanyIntro from '../components/v2/CompanyIntro.astro';
 import homeRaw from '../content/site/home.json';
 import { loadHome } from '../lib/home.ts';
 
@@ -46,6 +47,9 @@ const cta = home.ctaBand;
 ---
 <Base headerVariant="solid">
   <Hero3D />
+
+  {/* 회사소개 — 히어로 다음 바로(2026-10-01 대표). 문구 home.json intro */}
+  {homeRaw.intro && <CompanyIntro eyebrow={homeRaw.intro.eyebrow} heading={homeRaw.intro.heading} cols={homeRaw.intro.cols} />}
 
   {/* about 블록 — 2026-10-01 문장은 아래 약속 제목으로 합쳐 비었다. 협력사 로고가 들어오면 다시 나타난다 */}
   {(homeRaw.brand?.lines?.length || homeRaw.brand?.partners?.length) ? <BrandLine lines={homeRaw.brand.lines} partners={homeRaw.brand.partners} /> : null}
