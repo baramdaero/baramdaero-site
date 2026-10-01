@@ -34,8 +34,8 @@ export interface HomeData {
   exploded: HomeExploded | null;
   triage: { heading: string[]; cards: HomeTriageCard[] } | null;
   process: { eyebrow: string; lead: string; heading: string[]; steps: HomeProcessStep[] } | null;
-  /** '말보다 현장으로' 머리 — 라벨 · 제목 · 한 줄 */
-  marquee: { label: string; heading: string; lead: string };
+  /** 맨 아래 '우리와 함께한 공간' 머리 — 비면 띠를 건너뛴다 */
+  brands: { label: string; heading: string; lead: string } | null;
   ctaBand: {
     label: string;
     heading: string[];
@@ -50,7 +50,7 @@ const EMPTY: HomeData = {
   exploded: null,
   triage: null,
   process: null,
-  marquee: { label: '', heading: '말보다 현장으로.', lead: '' },
+  brands: null,
   ctaBand: null,
 };
 
@@ -219,12 +219,10 @@ export function loadHome(): HomeData {
     };
   }
 
-  const mq = raw?.marquee;
-  const marquee = {
-    label: isNonEmptyString(mq?.label) ? mq.label.trim() : '',
-    heading: isNonEmptyString(mq?.heading) ? mq.heading.trim() : '말보다 현장으로.',
-    lead: isNonEmptyString(mq?.lead) ? mq.lead.trim() : '',
-  };
+  const rb = raw?.brands;
+  const brands = isNonEmptyString(rb?.heading)
+    ? { label: isNonEmptyString(rb.label) ? rb.label.trim() : '', heading: rb.heading.trim(), lead: isNonEmptyString(rb.lead) ? rb.lead.trim() : '' }
+    : null;
 
-  return { services: { leadHeading, eyebrow: svcEyebrow, lead: svcLead, cards }, exploded, triage, process, marquee, ctaBand };
+  return { services: { leadHeading, eyebrow: svcEyebrow, lead: svcLead, cards }, exploded, triage, process, brands, ctaBand };
 }
