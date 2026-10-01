@@ -23,6 +23,14 @@
       </div>
     </div>
 
+    <button class="h3-invite h3-glass" id="invite" type="button">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M5 3l14 8-6.2 1.8L10.4 19 5 3z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+      </svg>
+      <span class="h3-invite__t"><strong>아래 도면을 눌러 보세요</strong>
+      <span id="inviteWhy">방마다 에어컨 자리와 천장 속 배관 경로가 보입니다</span></span>
+    </button>
+
     <div class="h3-spacer" aria-hidden="true"></div>
 
     <div class="h3-dock-wrap h3-wrap" id="dockWrap">
@@ -44,13 +52,6 @@
           </div>
         </div>
       </div>
-      <button class="h3-invite h3-glass" id="invite" type="button">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M5 3l14 8-6.2 1.8L10.4 19 5 3z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
-        </svg>
-        <span class="h3-invite__t"><strong>도면을 눌러 보세요</strong>
-        <span id="inviteWhy">방마다 에어컨 자리와 천장 속 배관 경로가 보입니다</span></span>
-      </button>
       <p class="h3-note" id="hint" role="status">구성도에서 공간이나 에어컨을 누르면 그 시점으로 이동합니다</p>
     </div>
     <p class="h3-sr-only" id="live" aria-live="polite"></p>
@@ -82,7 +83,7 @@
     const hdr = (document.querySelector('.bd-header')?.offsetHeight || 64), b = Math.round(hr.bottom - dock.getBoundingClientRect().top + 16);
     const m = wide.matches
       ? { l: Math.round(hi.right - hr.left + 32), r: 0, t: Math.max(hdr, TIP_BAND), b } // 오른쪽은 뷰어가 빈 영역 폭의 8%를 여백으로 둔다
-      : { l: 0, r: 0, t: Math.round(hi.bottom - hr.top + 12), b };
+      : { l: 0, r: 0, t: Math.round(Math.max(hi.bottom, $('invite').getBoundingClientRect().bottom) - hr.top + 12), b }; // 좁은 화면: 안내 버튼 아래부터
     return { type: 'inset', ...m, rt: hdr, rb: b };
   }
   const lastInset = {};
@@ -95,7 +96,7 @@
     }
   }
   const ro = new ResizeObserver(() => sendInset());
-  for (const el of [hero, headIn, dock]) ro.observe(el);
+  for (const el of [hero, headIn, dock, $('invite')]) ro.observe(el);
 
   function ensureFrame(viewer) {
     if (frames[viewer]) return frames[viewer];
@@ -465,7 +466,7 @@
 /* 도크 맨 윗줄 안내 — 누르는 버튼들과 한 덩어리로 둔다(따로 떠 있는 카드는 붙여 넣은 툴팁처럼 보였다).
    목적은 '눌러 보고 싶게' — 무엇이 보이는지(에어컨 자리·천장 속 배관)를 말해 호기심을 건다 */
 .h3-invite {
-  display: flex; align-items: center; gap: 10px; margin-left: auto; min-height: 56px;
+  display: flex; align-items: center; gap: 10px; margin: 16px var(--h3-gutter) 0 auto; min-height: 56px; /* 도면 위 오른쪽(2026-10-01 대표) */
   padding: 10px 16px; text-align: left;
   font-size: 13px; line-height: 1.35; color: var(--br-ink-sub);
   transition: background-color var(--dur-color) var(--ease-out);
@@ -608,7 +609,6 @@
   /* 휴대폰: 주석은 탭 위 한 줄, 직접 돌리기 버튼은 숨김, 안내 버튼은 도면을 가리지 않게 도크 아래로(2026-10-01 대표) */
   .h3-disclaimer { order: -1; flex: 1 1 100%; padding: 2px 8px 6px; font-size: 12px; white-space: nowrap; }
   .h3-touch-toggle { display: none !important; }
-  .h3-invite { order: 1; margin-left: auto; }
   .h3-here__t { white-space: normal; }
   .h3-here__t small { display: block; margin-left: 0; }
 }
