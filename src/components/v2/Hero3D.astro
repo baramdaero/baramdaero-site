@@ -66,7 +66,7 @@
   const wide = matchMedia('(min-width: 1024px)'), coarse = matchMedia('(any-pointer: coarse)'), reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const frames = { house: $('f-house') };
   const VIEWERS = [...new Set(SPACES.map(s => s.viewer))];   // house · commercial(상가) · office(오피스)
-  const st = { space: 'house', viewer: 'house', ready: {}, failed: {}, entries: {}, bldKey: {}, pendingKey: null, dipTimer: 0, room: null, touchLive: false, notice: '' };
+  const st = { space: 'house', viewer: 'house', ready: {}, failed: {}, entries: {}, bldKey: {}, pendingKey: null, dipTimer: 0, room: null, touchLive: false, notice: '', pick: {} };
   const FAIL_MSG = '3D 구성도를 불러오지 못했습니다. 잠시 뒤 새로고침해 주세요.';
   const RETRY_MSG = '구성도를 불러오지 못했습니다. 탭을 다시 누르면 다시 불러옵니다.';
   const TOUCH_HINT = '다 보셨으면 3D 직접 돌리기를 한 번 더 눌러 끄세요. 끄면 페이지가 다시 스크롤됩니다.';
@@ -77,12 +77,15 @@
   // 3D 가 문구·도크·헤더를 피해서 자리 잡도록 가려지는 픽셀을 알린다 (전체 보기 l,r,t,b / 방 시점 rt,rb)
   // 안내 칩은 도크 바로 위(도크와 같은 왼쪽 선)에 둔다. 위 띠를 비워 둘 필요가 없어
   // 3D 가 헤더 아래 전부를 쓴다. 칩이 차지하는 높이는 아래 b(도크 위 여백)에 포함된다.
-  const TIP_BAND = 218; // 오른쪽 위 안내 버튼(top 146 + 높이 56 + 여유) 아래로만 도면을 그린다
+  const TIP_BAND = 218; // 안내 버튼 위치를 못 잴 때만 쓰는 값 — 평소엔 버튼 아래 16px 부터 도면을 그린다
   function insetMsg() {
     const hr = hero.getBoundingClientRect(), hi = headIn.getBoundingClientRect();
+    // PC: 안내 버튼 세로 가운데를 업종 줄(시스템에어컨 설치 · 분해세척 · 관리) 가운데에 맞춘다(2026-10-01 대표)
+    const kr = document.querySelector('.h3-kicker')?.getBoundingClientRect();
+    if (kr && kr.height) hero.style.setProperty('--kick-c', Math.round(kr.top + kr.height / 2 - hr.top) + 'px');
     const hdr = (document.querySelector('.bd-header')?.offsetHeight || 64), b = Math.round(hr.bottom - dock.getBoundingClientRect().top + 16);
     const m = wide.matches
-      ? { l: Math.round(hi.right - hr.left + 32), r: 0, t: Math.max(hdr, TIP_BAND), b } // 오른쪽은 뷰어가 빈 영역 폭의 8%를 여백으로 둔다
+      ? { l: Math.round(hi.right - hr.left + 32), r: 0, t: Math.max(hdr, Math.round($('invite').getBoundingClientRect().bottom - hr.top + 16) || TIP_BAND), b } // 오른쪽은 뷰어가 빈 영역 폭의 8%를 여백으로 둔다
       : { l: 0, r: 0, t: Math.round(Math.max(hi.bottom, $('invite').getBoundingClientRect().bottom) - hr.top + 12), b }; // 좁은 화면: 안내 버튼 아래부터
     return { type: 'inset', ...m, rt: hdr, rb: b };
   }
@@ -96,7 +99,7 @@
     }
   }
   const ro = new ResizeObserver(() => sendInset());
-  for (const el of [hero, headIn, dock, $('invite')]) ro.observe(el);
+  for (const el of [hero, headIn, dock, $('invite'), document.querySelector('.h3-kicker')].filter(Boolean)) ro.observe(el);
 
   function ensureFrame(viewer) {
     if (frames[viewer]) return frames[viewer];
@@ -151,7 +154,11 @@
         ? (up ? `<button type="button" class="h3-spot h3-spot--up" data-id="${esc(up.id)}">`
               + `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
               + `${esc(up.name)}</button>` : '')
-          + rest.map(e => `<button type="button" class="h3-spot" data-id="${esc(e.id)}">${esc(e.name)} <small>${esc(e.sub || '')}</small></button>`).join('')
+          + rest.map((e, i) => {
+              // 고른 칸 하나만 흰 판(세그먼트) — 처음엔 첫 칸, 들어갔다 나오면 마지막으로 본 칸. 안내 버튼은 이 칸으로 들어간다
+              const sel = (st.pick[st.space] ?? rest[0]?.id) === e.id;
+              return `<button type="button" class="h3-spot${sel ? ' is-sel' : ''}" aria-pressed="${sel}" data-id="${esc(e.id)}">${esc(e.name)} <small>${esc(e.sub || '')}</small></button>`;
+            }).join('')
         : `<span class="h3-spots__load" role="status">구성도를 불러오는 중입니다</span>`;
       syncMore();
     }
@@ -265,10 +272,11 @@
     if (reground) groundFirst(vw);
   }
 
-  $('invite').addEventListener('click', () => $('spots').querySelector('.h3-spot:not(.h3-spot--up)')?.click());
+  $('invite').addEventListener('click', () => ($('spots').querySelector('.h3-spot.is-sel') || $('spots').querySelector('.h3-spot:not(.h3-spot--up)'))?.click());
   $('spaces').addEventListener('click', e => { const b = e.target.closest('[data-space]'); if (b) selectSpace(b.dataset.space); });
   $('spots').addEventListener('click', e => {
     const b = e.target.closest('[data-id]');
+    if (b && !b.classList.contains('h3-spot--up')) st.pick[st.space] = b.dataset.id;
     if (b) send(st.viewer, st.viewer === 'house' ? { type: 'goRoom', id: b.dataset.id } : { type: 'goUnit', id: b.dataset.id });
   });
   // 목록에 올리면 3D 에서 그 자리를 짚어 준다 (라벨이 없는 화면이라 '창가 1'이 어디인지 알게)
@@ -530,14 +538,15 @@
 .h3-spots[data-less][data-more] { -webkit-mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 48px), transparent); mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 48px), transparent); }
 .h3-spots:focus-within { -webkit-mask-image: none; mask-image: none; }
 .h3-spot {
-  display: inline-flex; align-items: center; gap: 6px; flex: none;
-  min-height: 44px; padding-inline: 14px; border-radius: 6px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: 1 0 auto;
+  min-height: 44px; padding-inline: 14px; border-radius: 8px;
   background: transparent;
-  font-size: 15px; font-weight: 600; color: var(--br-ink);
+  font-size: 15px; font-weight: 500; color: var(--br-ink-sub);
   transition: background-color var(--dur-color) var(--ease-out), color var(--dur-color) var(--ease-out),
               border-color var(--dur-color) var(--ease-out);
 }
 /* 처음 온 사람에게 한 번 짚어 주는 칩 (startTour) — 마우스를 올렸을 때와 같은 모양 */
+.h3-spot.is-sel { background: #fff; color: var(--br-ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0, 41, 58, .08); }
 .h3-spot.is-demo { background: #fff; color: var(--br-teal); box-shadow: 0 1px 2px rgba(0, 41, 58, .08); }
 .h3-spot:focus-visible { outline-offset: -2px; }
 .h3-spot small { font-size: 13px; font-weight: 500; color: var(--br-ink-sub); }
@@ -581,7 +590,7 @@
   /* 안내는 히어로 오른쪽 위. 도면은 --free-t(TIP_BAND)로 이 띠를 비워 두므로 서로 간섭하지 않는다 */
 
   /* 안내 버튼 — 도면 위 오른쪽 정렬(2026-10-01 대표) */
-  .h3-invite { position: absolute; z-index: 2; top: 146px; right: var(--h3-gutter); margin: 0; }
+  .h3-invite { position: absolute; z-index: 2; top: var(--kick-c, 103px); translate: 0 -50%; right: var(--h3-gutter); margin: 0; }
   .h3-note { position: absolute; z-index: 1; top: 146px; right: var(--h3-gutter);
     max-width: 26em; margin: 0; padding: 0; text-align: right; pointer-events: none; }
   /* 넓은 화면: 문구는 왼쪽 단 가운데, 3D 는 그 오른쪽 빈 영역(inset.l)에 맞춘다 */
