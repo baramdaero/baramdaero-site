@@ -22,6 +22,8 @@ const {
   startTone = 'base',
   itemPhotos = false,
 } = Astro.props;
+// 회사소개 설명 — 문자열이든 배열이든 한 칸 = 한 줄, 빈 칸은 버린다(home.ts 서비스 리드와 같은 규칙)
+const lead = ([] as string[]).concat(promise?.lead ?? []).map((l) => String(l).trim()).filter(Boolean);
 ---
 {promise && (
   <section class="v2-standards-story" aria-label={promise.heading}>
@@ -32,9 +34,9 @@ const {
       >
         <div class="bd-container">
           <div class="v2-standards-story__card br-glass br-glass--medium">
-            {promise.eyebrow && <p class="v2-standards-story__eyebrow">{promise.eyebrow}</p>}
+            {promise.eyebrow && <p class="br-sec-label">{promise.eyebrow}</p>}
             <h2 class="br-h br-reveal">{promise.heading}</h2>
-            {promise.lead && <p class="v2-standards-story__lead br-reveal">{promise.lead}</p>}
+            {lead.length > 0 && <p class="br-sec-lead br-reveal">{lead.map((l, i) => <Fragment>{i > 0 && <br />}{l}</Fragment>)}</p>}
             <ol class="v2-standards-story__steps br-reveal">
               {promise.items.map((item) => (
                 <li>
@@ -50,6 +52,8 @@ const {
               ))}
             </ol>
           </div>
+          {/* 판 아래 링크 자리(홈: 시공사례 보러가기, 2026-10-01) */}
+          <slot name="after" />
         </div>
       </article>
     )}
@@ -88,10 +92,7 @@ const {
 )}
 
 <style>
-  /* 홈 회사소개(2026-10-01) — 라벨 · 제목 · 짧은 설명 다음에 사진 세 장 */
-  .v2-standards-story__eyebrow { font-size: 14px; font-weight: 700; color: var(--br-ink-sub); }
-  .v2-standards-story__eyebrow + .br-h { margin-top: 10px; }
-  .v2-standards-story__lead { margin-top: 16px; max-width: 40em; font-size: 16px; line-height: 1.75; color: var(--br-ink-sub); }
+  /* 홈 회사소개(2026-10-01) — 라벨 · 제목 · 짧은 설명(global.css .br-sec-label/.br-sec-lead) 다음에 사진 세 장 */
   /* 유리 카드 호스트 — 투명해야 앰비언트가 비친다 (tone 교차는 카드 도입 전 유산, 클래스만 유지) */
   .v2-standards-story__message--base { background: transparent; }
   .v2-standards-story__message--mist { background: transparent; }

@@ -8,8 +8,9 @@
 // (한 차례 마크 단독 전환 시도 후 되돌림 — 오독이었다. 지시는 "락업 유지, 크기만 축소").
 import { SITE_CONFIG } from '../config.js';
 import { getCollection } from 'astro:content';
+import wideUrl from '../assets/logo/baramdaero-wide.svg?url';
 import wideReverseUrl from '../assets/logo/baramdaero-wide-reverse.svg?url';
-import DepthLogo from './v2/DepthLogo.astro';
+import markUrl from '../assets/logo/baramdaero-mark.svg?url';
 import markReverseUrl from '../assets/logo/baramdaero-mark-reverse.svg?url';
 
 /** 이 폭 이하는 마크 단독 강등 (변경 없음 — 320~389px는 이번 축소 대상 아님). */
@@ -54,11 +55,10 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   <div class="bd-header__inner">
     <a href="/" class="bd-header__brand" aria-label="바람대로 홈">
       {/* alt는 빈 값 — 링크의 aria-label이 이름을 이미 읽는다 (중복 읽기 방지) */}
-      {/* 입체 로고(2026-10-01 대표) — 포인터·손가락을 따라 기운다. 좁은 폭은 마크 단독(아래 CSS 389px) */}
-      <span class="bd-header__logo bd-header__logo--ink bd-header__depth">
-        <DepthLogo variant="wide" class="bd-header__depth-wide" />
-        <DepthLogo variant="mark" class="bd-header__depth-mark" />
-      </span>
+      <picture class="bd-header__logo bd-header__logo--ink">
+        <source media={`(max-width: ${MARK_MAX}px)`} srcset={markUrl} />
+        <img src={wideUrl} alt="" />
+      </picture>
       <picture class="bd-header__logo bd-header__logo--rev">
         <source media={`(max-width: ${MARK_MAX}px)`} srcset={markReverseUrl} />
         <img src={wideReverseUrl} alt="" />
@@ -168,9 +168,6 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
      08-24 축소: 기존 36/40px의 2/3 — "커 보인다"는 실물 판단을 워드마크 14px
      하한보다 우선했다(의도적으로 하한 이하로 내려간다). */
   .bd-header__logo { display: none; flex-shrink: 0; }
-  /* 입체 로고 — 높이는 기존 img 와 같게(24 / 26.667 / 마크 32) */
-  .bd-header__depth :global(.depth-logo) { height: 24px; }
-  .bd-header__depth :global(.bd-header__depth-mark) { display: none !important; }
   .bd-header__logo img {
     display: block;
     height: 24px;
@@ -241,7 +238,6 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   /* 데스크톱 헤더(64px)는 여유가 있어 40px의 2/3 = 26.667px */
   @media (min-width: 641px) {
     .bd-header__logo img { height: 26.667px; }
-    .bd-header__depth :global(.depth-logo) { height: 26.667px; }
 
     /* 641px+는 폭이 충분하므로 전체 명칭 — 축약은 좁은 폭에서 로고 자리를 벌려던 것이다 */
     .bd-header__label--short { display: none; }
@@ -260,9 +256,6 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
      define:vars로 묶을 수 없다 — 한쪽만 고치면 파일은 마크인데 크기는 가로형이 된다 */
   @media (max-width: 389px) {
     .bd-header__logo img { height: 32px; aspect-ratio: 1 / 1; }
-    .bd-header__depth :global(.depth-logo) { height: 32px; }
-    .bd-header__depth :global(.bd-header__depth-wide) { display: none !important; }
-    .bd-header__depth :global(.bd-header__depth-mark) { display: inline-block !important; }
   }
 
   /* ---- 모바일 메뉴(640px 이하 + JS: .has-menu) — 한 줄 메뉴를 접고 '메뉴' 버튼으로 편다 ---- */

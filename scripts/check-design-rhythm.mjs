@@ -38,7 +38,8 @@ async function walk(dir, ext, acc = []) {
 /** 눈썹을 '바로 앞 여는 태그'와 '바로 뒤 .br-h 유무'까지 같이 뽑는다 */
 function eyebrows(html) {
   const out = [];
-  const re = /<span[^>]*class="[^"]*br-eyebrow[^"]*"[^>]*>([\s\S]*?)<\/span>/g;
+  // .br-sec-label(섹션 머리 라벨, <p>, 2026-10-01)도 같은 눈썹으로 센다
+  const re = /<(?:span|p)[^>]*class="[^"]*(?:br-eyebrow|br-sec-label)[^"]*"[^>]*>([\s\S]*?)<\/(?:span|p)>/g;
   for (const m of html.matchAll(re)) {
     const before = html.slice(Math.max(0, m.index - 400), m.index);
     out.push({

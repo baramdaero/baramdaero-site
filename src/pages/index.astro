@@ -14,6 +14,7 @@ import Process from '../components/v2/Process.astro';
 // import Reviews from '../components/v2/Reviews.astro'; // S9 — [실후기교체] 확보 후 주석 해제
 import CtaBand from '../components/v2/CtaBand.astro';
 import StandardsStory from '../components/v2/StandardsStory.astro';
+import ArrowLink from '../components/v2/ArrowLink.astro';
 import BrandLine from '../components/v2/BrandLine.astro';
 import homeRaw from '../content/site/home.json';
 import { loadHome } from '../lib/home.ts';
@@ -59,7 +60,12 @@ const cta = home.ctaBand;
       startSide="left"
       startTone="base"
       itemPhotos
-    />
+    >
+      {/* 회사소개 판 아래 — 공개된 사례가 한 건이라도 있을 때만(빈 목록으로 보내지 않는다) */}
+      {cases.some((e) => !e.data.sample) && (
+        <div slot="after" class="home-cases-link"><ArrowLink href="/cases/" label="시공사례 보러가기" /></div>
+      )}
+    </StandardsStory>
   )}
 
 
@@ -78,11 +84,14 @@ const cta = home.ctaBand;
   {home.services.leadHeading.length > 0 && (
     <section class="bd-section v2-svc-lead">
       <div class="bd-container">
+        {/* 회사소개와 같은 머리 구조(2026-10-01 대표) — 라벨 · 제목 · 짧은 설명 */}
+        {home.services.eyebrow && <p class="br-sec-label">{home.services.eyebrow}</p>}
         <h2 class="br-h br-reveal">
           {home.services.leadHeading.map((line, i) => (
             <Fragment>{i > 0 && <br />}{line}</Fragment>
           ))}
         </h2>
+        {home.services.lead.length > 0 && <p class="br-sec-lead br-reveal">{home.services.lead.map((l, i) => <Fragment>{i > 0 && <br />}{l}</Fragment>)}</p>}
       </div>
     </section>
   )}
@@ -167,6 +176,7 @@ const cta = home.ctaBand;
 <style>
   /* 리드 제목과 첫 카드를 묶는다 — 아래 여백은 카드 사이 간격(ServiceSplit --svc-gap 24/40)과 같은 값.
      카드 사이 간격과 마지막 카드 뒤 섹션 간격은 ServiceSplit 이 갖는다. */
+  .home-cases-link { display: flex; justify-content: flex-end; margin-top: 28px; }
   .v2-svc-lead { background: transparent; padding-bottom: var(--head-gap); } /* 장 제목 → 첫 카드 = 제목 묶음 → 본 블록 */
   .v2-svc-lead + :global(.v2-svc) { padding-top: 0; }
 </style>

@@ -29,7 +29,7 @@ export interface HomeExploded {
   body: string[];
 }
 export interface HomeData {
-  services: { leadHeading: string[]; cards: HomeService[] };
+  services: { leadHeading: string[]; eyebrow: string; lead: string[]; cards: HomeService[] };
   /** 히어로 다음 분해 3D 섹션 문구. 비면 섹션을 건너뛴다 */
   exploded: HomeExploded | null;
   triage: { heading: string[]; cards: HomeTriageCard[] } | null;
@@ -43,7 +43,7 @@ export interface HomeData {
 }
 
 const EMPTY: HomeData = {
-  services: { leadHeading: [], cards: [] },
+  services: { leadHeading: [], eyebrow: '', lead: [], cards: [] },
   exploded: null,
   triage: null,
   process: null,
@@ -85,6 +85,8 @@ export function loadHome(): HomeData {
   /* ---------- services (도입 문장 + 카드 목록) ---------- */
   const cards: HomeService[] = [];
   const leadHeading = strArray(raw?.services?.lead_heading);
+  const svcEyebrow = typeof raw?.services?.eyebrow === 'string' ? raw.services.eyebrow.trim() : '';
+  const svcLead = typeof raw?.services?.lead === 'string' ? [raw.services.lead.trim()].filter(Boolean) : strArray(raw?.services?.lead); // 한 칸 = 한 문장 = 한 줄
   const rawCards = Array.isArray(raw?.services?.cards) ? raw.services.cards : [];
   if (raw?.services?.cards !== undefined && !Array.isArray(raw.services.cards)) {
     warn('"services.cards"는 배열([ ])이어야 합니다 — 서비스 카드를 건너뜁니다.');
@@ -211,5 +213,5 @@ export function loadHome(): HomeData {
     };
   }
 
-  return { services: { leadHeading, cards }, exploded, triage, process, ctaBand };
+  return { services: { leadHeading, eyebrow: svcEyebrow, lead: svcLead, cards }, exploded, triage, process, ctaBand };
 }
