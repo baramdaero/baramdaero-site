@@ -33,8 +33,11 @@ export interface HomeData {
   /** 히어로 다음 분해 3D 섹션 문구. 비면 섹션을 건너뛴다 */
   exploded: HomeExploded | null;
   triage: { heading: string[]; cards: HomeTriageCard[] } | null;
-  process: { eyebrow: string; heading: string[]; steps: HomeProcessStep[] } | null;
+  process: { eyebrow: string; lead: string; heading: string[]; steps: HomeProcessStep[] } | null;
+  /** '말보다 현장으로' 머리 — 라벨 · 제목 · 한 줄 */
+  marquee: { label: string; heading: string; lead: string };
   ctaBand: {
+    label: string;
     heading: string[];
     headingEmphasis: string;
     body: string;
@@ -47,6 +50,7 @@ const EMPTY: HomeData = {
   exploded: null,
   triage: null,
   process: null,
+  marquee: { label: '', heading: '말보다 현장으로.', lead: '' },
   ctaBand: null,
 };
 
@@ -175,6 +179,7 @@ export function loadHome(): HomeData {
     if (heading.length && steps.length) {
       process = {
         eyebrow: isNonEmptyString(raw.process.eyebrow) ? raw.process.eyebrow.trim() : '',
+        lead: isNonEmptyString(raw.process.lead) ? raw.process.lead.trim() : '',
         heading,
         steps,
       };
@@ -189,6 +194,7 @@ export function loadHome(): HomeData {
     const heading = strArray(raw.cta_band.heading);
     if (heading.length) {
       ctaBand = {
+        label: isNonEmptyString(raw.cta_band.label) ? raw.cta_band.label.trim() : '',
         heading,
         headingEmphasis: isNonEmptyString(raw.cta_band.heading_emphasis)
           ? raw.cta_band.heading_emphasis.trim()
@@ -213,5 +219,12 @@ export function loadHome(): HomeData {
     };
   }
 
-  return { services: { leadHeading, eyebrow: svcEyebrow, lead: svcLead, cards }, exploded, triage, process, ctaBand };
+  const mq = raw?.marquee;
+  const marquee = {
+    label: isNonEmptyString(mq?.label) ? mq.label.trim() : '',
+    heading: isNonEmptyString(mq?.heading) ? mq.heading.trim() : '말보다 현장으로.',
+    lead: isNonEmptyString(mq?.lead) ? mq.lead.trim() : '',
+  };
+
+  return { services: { leadHeading, eyebrow: svcEyebrow, lead: svcLead, cards }, exploded, triage, process, marquee, ctaBand };
 }

@@ -7,23 +7,26 @@ import { isImageSlotVisible } from '../../lib/image-slots.ts';
 
 interface Props {
   eyebrow: string;
+  /** 제목 아래 한 줄(2026-10-01) */
+  lead?: string;
   heading: string[];
   steps: HomeProcessStep[];
   slotId?: string;
 }
-const { eyebrow, heading, steps, slotId = 'home-process-overview' } = Astro.props;
+const { eyebrow, lead = '', heading, steps, slotId = 'home-process-overview' } = Astro.props;
 const hasVisual = isImageSlotVisible(slotId);
 ---
 <section class="bd-section v2-process" data-layout-section="home-process" data-image-side={hasVisual ? 'right' : undefined}>
   <div class="bd-container">
     <div class:list={['v2-process__card', 'br-glass', 'br-glass--medium', { 'v2-process__card--copy-only': !hasVisual }]}>
       <div class="v2-process__copy">
-        {eyebrow && <span class="br-eyebrow br-reveal">{eyebrow}</span>}
+        {eyebrow && <p class="br-sec-label">{eyebrow}</p>}
         <h2 class="br-h br-reveal">
           {heading.map((line, i) => (
             <Fragment>{i > 0 && <br />}{line}</Fragment>
           ))}
         </h2>
+        {lead && <p class="br-sec-lead br-reveal">{lead}</p>}
         <ol class="v2-process__steps">
           {steps.map((s) => (
             <li class="v2-process__step br-reveal">
@@ -68,6 +71,7 @@ const hasVisual = isImageSlotVisible(slotId);
     font-size: clamp(26px, 0.9rem + 1.9vw, 36px);
     line-height: 1.25;
   }
+  .v2-process__copy :global(.br-sec-label + .br-h) { margin-top: 10px; } /* 다른 섹션 머리와 같은 간격 */
   .v2-process__steps {
     margin-top: 28px;
     list-style: none;

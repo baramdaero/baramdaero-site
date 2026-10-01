@@ -10,8 +10,10 @@ interface Props {
   ring?: boolean;
   /** 문의 버튼 옆 보조 알약 '가격 안내 보기' — 금액 이야기는 /price/ 한 곳에만 있어서, 금액을 떼어 낸 페이지에서 그리로 가는 길 */
   priceLink?: boolean;
+  /** 제목 위 라벨(2026-10-01 대표: 섹션마다 소제목) */
+  label?: string;
 }
-const { chatTree = 'menu', buttonLabel = '견적 문의', ring = false, priceLink = false } = Astro.props;
+const { chatTree = 'menu', buttonLabel = '견적 문의', ring = false, priceLink = false, label = '' } = Astro.props;
 // 슬롯을 안 넘기고 부르는 페이지(/story/, 블로그 글)가 있다. 빈 <h2>·<p> 를 내보내면
 // 스크린리더가 'empty heading' 으로 읽고 화면엔 빈 면만 남는다 — 있을 때만 그린다.
 const hasTitle = Astro.slots.has('default');
@@ -19,6 +21,7 @@ const hasSub = Astro.slots.has('sub');
 ---
 <section class="bd-section v2-cta">
   <div class="bd-container">
+    {label && <p class="br-sec-label v2-cta__label">{label}</p>}
     {hasTitle && <h2 class="br-h v2-cta__title br-reveal"><slot /></h2>}
     {hasSub && <p class="v2-cta__sub br-reveal"><slot name="sub" /></p>}
     <div class="v2-cta__row br-reveal">
@@ -46,6 +49,9 @@ const hasSub = Astro.slots.has('sub');
     text-align: center;
   }
   .v2-cta__title { color: #fff; margin-top: 0; }
+  /* 반투명 유리 위 합성색(#4F6C78)에서 흰 75% 는 대비가 모자라 sub 와 같은 base 를 쓴다 */
+  .v2-cta__label { color: var(--br-base); }
+  .v2-cta__label + .v2-cta__title { margin-top: 10px; }
   /* 밴드는 반투명 유리라 실제 합성색이 #4F6C78 이다. 알파 82% 흰색은 그 위에서 4.40:1 로
      AA(4.5) 미달이었다 — 불투명 base 로 5.32:1. 페이지별 :global 패치 4개를 이걸로 대체. */
   .v2-cta__sub { margin-top: 18px; font-size: 16px; line-height: 1.7; color: var(--br-base); }
