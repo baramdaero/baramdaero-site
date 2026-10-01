@@ -78,22 +78,27 @@
   // 안내 칩은 도크 바로 위(도크와 같은 왼쪽 선)에 둔다. 위 띠를 비워 둘 필요가 없어
   // 3D 가 헤더 아래 전부를 쓴다. 칩이 차지하는 높이는 아래 b(도크 위 여백)에 포함된다.
   const TIP_BAND = 218; // 안내 버튼 위치를 못 잴 때만 쓰는 값 — 평소엔 버튼 아래 16px 부터 도면을 그린다
-  function insetMsg() {
+  // 상업공간·오피스(뷰어 commercial·office)는 문구를 숨기고 건물을 크게 — 헤더 아래 전부를 쓴다(2026-10-01 대표: '상가·오피스는 글씨 없애고 건물 크게').
+  // 아파트(house)만 문구 옆에 그린다. 뷰어마다 따로 계산해 보내므로 공간을 바꿔도 집 카메라는 다시 잡히지 않는다.
+  function insetMsg(viewer = 'house') {
     const hr = hero.getBoundingClientRect(), hi = headIn.getBoundingClientRect();
     // PC: 안내 버튼 세로 가운데를 업종 줄(시스템에어컨 설치 · 분해세척 · 관리) 가운데에 맞춘다(2026-10-01 대표)
     const kr = document.querySelector('.h3-kicker')?.getBoundingClientRect();
     if (kr && kr.height) hero.style.setProperty('--kick-c', Math.round(kr.top + kr.height / 2 - hr.top) + 'px');
     const hdr = (document.querySelector('.bd-header')?.offsetHeight || 64), b = Math.round(hr.bottom - dock.getBoundingClientRect().top + 16);
-    const m = wide.matches
+    const m = viewer !== 'house'
+      ? { l: 0, r: 0, t: hdr + 8, b }                      // 건물 — 문구·안내 판이 없으니 헤더 아래 전부
+      : wide.matches
       ? { l: Math.round(hi.right - hr.left + 32), r: 0, t: Math.max(hdr, Math.round($('invite').getBoundingClientRect().bottom - hr.top + 16) || TIP_BAND), b } // 오른쪽은 뷰어가 빈 영역 폭의 8%를 여백으로 둔다
       : { l: 0, r: 0, t: Math.round(Math.max(hi.bottom, $('invite').getBoundingClientRect().bottom) - hr.top + 12), b }; // 좁은 화면: 안내 버튼 아래부터
     return { type: 'inset', ...m, rt: hdr, rb: b };
   }
   const lastInset = {};
   function sendInset(force) {
-    const m = insetMsg(), key = JSON.stringify(m);
-    for (const [k, v] of Object.entries({ l: m.l, t: m.t, r: m.r, b: m.b })) stage.style.setProperty('--free-' + k, v + 'px');
+    const cur = insetMsg(st.viewer);
+    for (const [k, v] of Object.entries({ l: cur.l, t: cur.t, r: cur.r, b: cur.b })) stage.style.setProperty('--free-' + k, v + 'px');
     for (const v of VIEWERS) {
+      const m = insetMsg(v), key = JSON.stringify(m);
       if (!st.ready[v] || (!force && lastInset[v] === key)) continue; // 같은 값을 또 보내면 뷰어가 카메라를 다시 잡는다(인트로가 깨진다)
       lastInset[v] = key; send(v, m);
     }
@@ -139,6 +144,7 @@
     const deep = inRoom || !!st.entries[st.space]?.some(e => e.id === 'building');
     hero.toggleAttribute('data-room', inRoom);
     hero.toggleAttribute('data-deep', deep);
+    if (hero.dataset.space !== st.space) { hero.dataset.space = st.space; requestAnimationFrame(() => sendInset()); } // 문구가 숨거나 나타난 뒤 자리를 다시 잰다
     $('spots').hidden = inRoom;
     $('here').hidden = !inRoom;
     for (const b of $('spaces').children) b.setAttribute('aria-pressed', String(b.dataset.space === st.space));
@@ -457,6 +463,10 @@
 }
 .h3-spacer { flex: 1; min-height: 200px; pointer-events: none; }
 .h3-hero[data-room] .h3-head, .h3-hero[data-deep] .h3-head { opacity: 0; }
+/* 상업공간·오피스는 문구 없이 건물만(2026-10-01 대표) — 문구·업종 줄·안내 판을 숨기고 그 자리를 도면이 쓴다 */
+.h3-hero[data-space]:not([data-space="house"]) .h3-head,
+.h3-hero[data-space]:not([data-space="house"]) .h3-kicker,
+.h3-hero[data-space]:not([data-space="house"]) .h3-invite { opacity: 0; visibility: hidden; pointer-events: none; }
 /* 좁은 화면은 도면이 글자 뒤를 지나간다 — 만지기 시작하면 헤드라인을 비운다.
    넓은 화면은 도면이 오른쪽 빈 영역(--free-l)에 갇혀 겹치지 않으므로 문구를 그대로 둔다 */
 @media (max-width: 1023px) { .h3-hero[data-touch3d] .h3-head { opacity: 0; } }
