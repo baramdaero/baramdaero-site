@@ -413,8 +413,9 @@
   display: flex;
   flex-direction: column;
   padding-top: 64px;
-  overflow: hidden;
-  background: var(--br-base);
+  overflow-x: clip; overflow-y: visible; /* 세로로 자르면 도크 그림자가 히어로 끝에서 칼같이 끊겨 경계선이 생긴다(2026-10-01) */
+  /* 아래 20%는 투명으로 풀어 페이지 앰비언트(.br-ambient)가 이어지게 — 단색으로 끊기던 경계(2026-10-01 대표) */
+  background: linear-gradient(to bottom, var(--br-base) 0%, var(--br-base) 78%, color-mix(in srgb, var(--br-base) 0%, transparent) 100%);
 }
 @media (max-width: 640px) { .h3-hero { padding-top: 56px; } }
 .h3-stage { position: absolute; inset: 0; z-index: -1; }

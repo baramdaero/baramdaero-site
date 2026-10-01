@@ -1,0 +1,69 @@
+---
+// 입체 로고 — React Bits DepthText(JS-CSS) 방식을 React 없이 옮겼다(2026-10-01 대표 요청).
+// 같은 로고를 뒤로 겹겹이 쌓아(translateZ) 두께를 만들고, 마우스(PC)·스크롤(휴대폰)을 따라 살짝 기운다.
+// 원본의 autoOrbit(끝없이 도는 모션)은 넣지 않았다 — DESIGN.md §4 무한 루프 모션 금지. 멈춰 있으면 rAF 도 멈춘다.
+// 모션 감소 설정이면 기본 기울기로 고정. 로고 모양은 src/assets/logo/baramdaero-wide.svg 와 같은 path.
+interface Props { layers?: number; depth?: number; tilt?: number }
+const { layers = 22, depth = 1.6, tilt = 8 } = Astro.props;
+const D = 'M0 0 L161 0 L161 47 L162 47 L162 48 L238 48 L238 0 L399 0 L399 341 L0 341 Z M421 0 L787 0 L787 135 L587 135 L587 206 L787 206 L787 341 L421 341 Z M162 168 L162 169 L161 169 L161 215 L162 215 L162 216 L238 216 L238 168 Z M918 203 L950 203 L950 256 L960 256 L960 203 L992 203 L992 341 L918 341 Z M1006 203 L1038 203 L1038 227 L1039 227 L1039 228 L1054 228 L1054 249 L1038 249 L1038 341 L1006 341 Z M1058 203 L1140 203 L1140 249 L1090 249 L1090 254 L1140 254 L1140 275 L1057 275 L1057 230 L1108 230 L1108 225 L1057 225 L1057 204 L1058 204 Z M1145 203 L1178 203 L1178 228 L1193 228 L1193 249 L1178 249 L1178 275 L1145 275 Z M1197 203 L1265 203 L1265 229 L1230 229 L1230 316 L1265 316 L1265 341 L1197 341 Z M1270 203 L1295 203 L1295 204 L1296 204 L1296 228 L1307 228 L1307 203 L1333 203 L1333 341 L1307 341 L1307 249 L1296 249 L1296 341 L1270 341 Z M1339 203 L1470 203 L1470 258 L1371 258 L1371 267 L1470 267 L1470 291 L1339 291 L1339 236 L1438 236 L1438 227 L1339 227 Z M1062 280 L1178 280 L1178 341 L1062 341 Z M950 282 L950 315 L951 315 L951 316 L959 316 L959 315 L960 315 L960 282 Z M806 282 L878 282 L878 341 L806 341 Z M1392 296 L1417 296 L1417 315 L1418 315 L1418 316 L1472 316 L1472 341 L1337 341 L1337 316 L1391 316 L1391 315 L1392 315 Z M1094 304 L1094 317 L1095 317 L1095 318 L1145 318 L1145 304 Z';
+const stack = Array.from({ length: layers }, (_, k) => {
+  const i = layers - k; // 뒤에서 앞으로
+  const t = (i / layers) ** 2;
+  return { z: -i * depth, mix: Math.round((1 - t) * 72 + 4) };
+});
+---
+<div class="depth-logo" data-depth-logo data-tilt={tilt}>
+  <svg width="0" height="0" aria-hidden="true" style="position:absolute"><symbol id="bd-depth-logo" viewBox="0 0 1472 341"><path d={D} fill-rule="nonzero" /></symbol></svg>
+  <div class="depth-logo__stage">
+    {stack.map((l) => (
+      <svg class="depth-logo__layer" viewBox="0 0 1472 341" aria-hidden="true"
+        style={`transform:translateZ(${l.z}px);fill:color-mix(in srgb, var(--br-teal) ${l.mix}%, var(--br-teal-deep))`}><use href="#bd-depth-logo" /></svg>
+    ))}
+    <svg class="depth-logo__face" viewBox="0 0 1472 341" role="img" aria-label="바람대로"><use href="#bd-depth-logo" /></svg>
+  </div>
+</div>
+
+<script>
+  for (const root of document.querySelectorAll<HTMLElement>('[data-depth-logo]')) {
+    const stage = root.querySelector<HTMLElement>('.depth-logo__stage')!;
+    const T = Number(root.dataset.tilt) || 8;
+    const base = { x: -T * 0.32, y: T * 0.42 };
+    const cur = { ...base }, tgt = { ...base };
+    const apply = () => { stage.style.transform = `rotateX(${cur.x.toFixed(3)}deg) rotateY(${cur.y.toFixed(3)}deg)`; };
+    apply();
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) continue;
+    const clamp = (v: number) => Math.max(-1, Math.min(1, v));
+    let raf = 0, inView = false;
+    const tick = () => {
+      cur.x += (tgt.x - cur.x) * 0.14; cur.y += (tgt.y - cur.y) * 0.14; apply();
+      raf = Math.abs(tgt.x - cur.x) + Math.abs(tgt.y - cur.y) > 0.01 ? requestAnimationFrame(tick) : 0; // 다 따라가면 멈춘다
+    };
+    const aim = (nx: number, ny: number) => { tgt.x = base.x - ny * T; tgt.y = base.y + nx * T; if (!raf) raf = requestAnimationFrame(tick); };
+    new IntersectionObserver((es) => { inView = es.some((e) => e.isIntersecting); }).observe(root);
+    if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      addEventListener('pointermove', (e) => {
+        if (!inView) return;
+        const r = root.getBoundingClientRect();
+        aim(clamp((e.clientX - (r.left + r.width / 2)) / (r.width * 0.8)), clamp((e.clientY - (r.top + r.height / 2)) / (r.height * 0.8)));
+      }, { passive: true });
+      root.addEventListener('pointerleave', () => aim(0, 0));
+    } else {
+      // 휴대폰: 화면 안에서 위아래로 지나갈 때 따라 기운다
+      addEventListener('scroll', () => {
+        if (!inView) return;
+        const r = root.getBoundingClientRect();
+        aim(0.35, clamp((r.top + r.height / 2 - innerHeight / 2) / (innerHeight / 2)));
+      }, { passive: true });
+    }
+  }
+</script>
+
+<style>
+  .depth-logo { perspective: 900px; perspective-origin: 50% 48%; isolation: isolate; width: min(100%, 720px); }
+  .depth-logo__stage { position: relative; display: grid; transform-style: preserve-3d; will-change: transform; }
+  .depth-logo__stage > svg { grid-area: 1 / 1; width: 100%; height: auto; display: block; backface-visibility: hidden; }
+  .depth-logo__layer { pointer-events: none; }
+  .depth-logo__face { position: relative; fill: var(--br-teal); transform: translateZ(0.6px);
+    filter: drop-shadow(0 18px 28px color-mix(in srgb, var(--br-teal-deep) 22%, transparent)); }
+  @media (prefers-reduced-motion: reduce) { .depth-logo__stage { will-change: auto; } }
+</style>
