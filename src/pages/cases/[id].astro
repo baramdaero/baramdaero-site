@@ -12,19 +12,31 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const { Content } = await render(entry);
-const { region, space, brand, type, units, date, cover, sample } = entry.data;
-const title = `${region} ${space} ${brand} ${type} ${units}대`;
+const { region, space, brand, type, units, date, cover, sample, photos, answer, qa, updated } = entry.data;
+const title = entry.data.title || `${region} ${space} ${brand} ${type} ${units}대`;
+const description = answer || `${title} 시공 기록.`;
+// 본문 아래 사진 — cover 와 본문에 이미 넣은 사진은 뺀다
+const gallery = photos.filter((p) => p.file !== cover && !entry.body?.includes(p.file));
 const dateLabel = date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
 
 const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? '';
-const jsonLd = [
+const pageUrl = `${siteUrl}/cases/${entry.id}/`;
+const org = { '@type': 'Organization', name: '바람대로', url: `${siteUrl}/` };
+const images = photos.length ? photos.map((p) => `${siteUrl}${p.file}`) : cover ? [`${siteUrl}${cover}`] : [];
+const jsonLd: object[] = [
   {
     '@context': 'https://schema.org',
     '@type': 'Article',
     headline: title,
+    description,
     datePublished: date.toISOString(),
-    author: { '@type': 'Organization', name: '바람대로' },
-    ...(cover ? { image: `${siteUrl}${cover}` } : {}),
+    dateModified: (updated ?? date).toISOString(),
+    author: org,
+    publisher: org,
+    mainEntityOfPage: pageUrl,
+    inLanguage: 'ko-KR',
+    about: { '@type': 'Service', name: `에어컨 ${type}`, areaServed: region, provider: org },
+    ...(images.length ? { image: images } : {}),
   },
   {
     '@context': 'https://schema.org',
@@ -32,10 +44,17 @@ const jsonLd = [
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: '홈', item: `${siteUrl}/` },
       { '@type': 'ListItem', position: 2, name: '시공사례', item: `${siteUrl}/cases/` },
-      { '@type': 'ListItem', position: 3, name: title, item: `${siteUrl}/cases/${entry.id}/` },
+      { '@type': 'ListItem', position: 3, name: title, item: pageUrl },
     ],
   },
 ];
+if (qa.length) {
+  jsonLd.push({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: qa.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+  });
+}
 
 const specs = [
   ['지역', region],
@@ -46,7 +65,7 @@ const specs = [
   ['작업일', dateLabel],
 ];
 ---
-<Base title={title} description={`${title} 시공 기록.`} jsonLd={jsonLd} ogImage={cover}>
+<Base title={title} description={description} jsonLd={jsonLd} ogImage={cover}>
   <article class="bd-section case-detail">
     <div class="bd-container">
       <p class="bd-microlabel">{type} · {region}</p>
@@ -67,6 +86,29 @@ const specs = [
       <div class="case-detail__body">
         <Content />
       </div>
+
+      {gallery.length > 0 && (
+        <div class="case-detail__photos">
+          {gallery.map((p) => (
+            <figure>
+              <img src={p.file} alt={p.caption ? `${title} — ${p.caption}` : `${title} 현장`} loading="lazy" decoding="async" />
+              {p.caption && <figcaption>{p.caption}</figcaption>}
+            </figure>
+          ))}
+        </div>
+      )}
+
+      {qa.length > 0 && (
+        <section class="case-detail__qa">
+          <h2>이 현장 질문</h2>
+          {qa.map((f) => (
+            <details>
+              <summary>{f.q}</summary>
+              <p>{f.a}</p>
+            </details>
+          ))}
+        </section>
+      )}
 
       <p class="case-detail__back"><a class="br-pill" href="/cases/">목록으로</a></p>
     </div>
@@ -113,6 +155,16 @@ const specs = [
     color: var(--ink-soft);
     margin-bottom: 18px;
   }
+  .case-detail__body :global(a) { color: var(--br-teal-deep); text-decoration: underline; text-underline-offset: 3px; }
+  .case-detail__body :global(h2) { font-size: 20px; margin: 32px 0 12px; }
+  .case-detail__photos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 32px; }
+  .case-detail__photos img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--radius); }
+  .case-detail__photos figcaption { font-size: 13px; color: var(--ink-soft); margin-top: 6px; }
+  .case-detail__qa { margin-top: 40px; }
+  .case-detail__qa h2 { font-size: 20px; margin-bottom: 8px; }
+  .case-detail__qa details { border-bottom: 1px solid var(--line); }
+  .case-detail__qa summary { cursor: pointer; font-weight: 700; font-size: 16px; padding: 16px 4px; }
+  .case-detail__qa p { font-size: 15px; color: var(--ink-soft); padding: 0 4px 16px; line-height: 1.8; }
   .case-detail__back { margin-top: 40px; }
   @media (max-width: 600px) {
     .case-detail__specs { grid-template-columns: repeat(2, 1fr); }

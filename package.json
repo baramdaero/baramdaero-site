@@ -13,7 +13,8 @@
     "case:new": "node scripts/new-case.mjs",
     "test:case": "node scripts/new-case.mjs --selfcheck",
     "test:rhythm": "astro build && node scripts/check-design-rhythm.mjs",
-    "test:faq": "node scripts/check-faq-search.mjs"
+    "test:faq": "node scripts/check-faq-search.mjs",
+    "case:import": "node scripts/import-cases.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",

@@ -1,5 +1,5 @@
 ---
-// S1 히어로(3D) — 아파트·상가 빌딩·오피스 빌딩 3D 구성도. 2026-09-18 영상 히어로(Hero.astro)에서 교체.
+// S1 히어로(3D) — 아파트·상업공간·오피스 3D 구성도(탭 이름 2026-10-01 대표). 2026-09-18 영상 히어로(Hero.astro)에서 교체.
 // 뷰어는 public/3d/ 의 공개 사본(근거·가정 문구를 비운 것)이다.
 // 클래스는 h3- 접두사로 다른 섹션과 분리한다(도크 목록을 JS 가 만들어서 전역 스타일로 둔다).
 ---
@@ -23,18 +23,19 @@
       </div>
     </div>
 
+    <button class="h3-invite h3-glass" id="invite" type="button">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M5 3l14 8-6.2 1.8L10.4 19 5 3z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+      </svg>
+      <span class="h3-invite__t"><strong>아래 도면을 눌러 보세요</strong>
+      <span id="inviteWhy">방마다 에어컨 자리와 천장 속 배관 경로를 확인할 수 있습니다</span></span>
+    </button>
+
     <div class="h3-spacer" aria-hidden="true"></div>
 
     <div class="h3-dock-wrap h3-wrap" id="dockWrap">
 
       <div class="h3-dock h3-glass" id="dock">
-        <p class="h3-invite" id="invite">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M5 3l14 8-6.2 1.8L10.4 19 5 3z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
-          </svg>
-          <strong>눌러서 들어가 보세요</strong>
-          <span id="inviteWhy">방마다 에어컨 자리와 천장 속 배관 경로가 보입니다</span>
-        </p>
         <div class="h3-dock__row h3-dock__row--top">
           <div class="h3-spaces" role="group" aria-label="공간 선택" id="spaces"></div>
           <p class="h3-disclaimer">실제 시공사례를 기반으로 제작한 3D 예시입니다.</p>
@@ -58,7 +59,7 @@
 
 <script is:inline>
 (() => {
-  const SPACES = [{"key": "house", "viewer": "house", "name": "아파트"}, {"key": "building", "viewer": "commercial", "name": "상가 빌딩"}, {"key": "ob", "viewer": "office", "name": "오피스 빌딩"}]; // [{ key, viewer, name }] — 빌드 때 채운다
+  const SPACES = [{"key": "house", "viewer": "house", "name": "아파트"}, {"key": "building", "viewer": "commercial", "name": "상업공간"}, {"key": "ob", "viewer": "office", "name": "오피스"}]; // [{ key, viewer, name }] — 빌드 때 채운다
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const hero = $('hero'), headIn = $('headIn'), dock = $('dock'), stage = $('stage');
@@ -76,13 +77,13 @@
   // 3D 가 문구·도크·헤더를 피해서 자리 잡도록 가려지는 픽셀을 알린다 (전체 보기 l,r,t,b / 방 시점 rt,rb)
   // 안내 칩은 도크 바로 위(도크와 같은 왼쪽 선)에 둔다. 위 띠를 비워 둘 필요가 없어
   // 3D 가 헤더 아래 전부를 쓴다. 칩이 차지하는 높이는 아래 b(도크 위 여백)에 포함된다.
-  const TIP_BAND = 0;
+  const TIP_BAND = 218; // 오른쪽 위 안내 버튼(top 146 + 높이 56 + 여유) 아래로만 도면을 그린다
   function insetMsg() {
     const hr = hero.getBoundingClientRect(), hi = headIn.getBoundingClientRect();
     const hdr = (document.querySelector('.bd-header')?.offsetHeight || 64), b = Math.round(hr.bottom - dock.getBoundingClientRect().top + 16);
     const m = wide.matches
       ? { l: Math.round(hi.right - hr.left + 32), r: 0, t: Math.max(hdr, TIP_BAND), b } // 오른쪽은 뷰어가 빈 영역 폭의 8%를 여백으로 둔다
-      : { l: 0, r: 0, t: Math.round(hi.bottom - hr.top + 12), b };
+      : { l: 0, r: 0, t: Math.round(Math.max(hi.bottom, $('invite').getBoundingClientRect().bottom) - hr.top + 12), b }; // 좁은 화면: 안내 버튼 아래부터
     return { type: 'inset', ...m, rt: hdr, rb: b };
   }
   const lastInset = {};
@@ -95,7 +96,7 @@
     }
   }
   const ro = new ResizeObserver(() => sendInset());
-  for (const el of [hero, headIn, dock]) ro.observe(el);
+  for (const el of [hero, headIn, dock, $('invite')]) ro.observe(el);
 
   function ensureFrame(viewer) {
     if (frames[viewer]) return frames[viewer];
@@ -158,7 +159,7 @@
     $('inviteWhy').textContent = deep
       ? '에어컨을 누르면 그 자리에서 봅니다'
       : st.space === 'house'
-        ? '방마다 에어컨 자리와 천장 속 배관 경로가 보입니다'
+        ? '방마다 에어컨 자리와 천장 속 배관 경로를 확인할 수 있습니다'
         : '층을 누르면 안으로 들어갑니다. 층마다 에어컨 자리와 배관이 보입니다';
     const failed = st.failed.house && !st.ready.house;
     hero.toggleAttribute('data-fail', !!failed);
@@ -264,6 +265,7 @@
     if (reground) groundFirst(vw);
   }
 
+  $('invite').addEventListener('click', () => $('spots').querySelector('.h3-spot:not(.h3-spot--up)')?.click());
   $('spaces').addEventListener('click', e => { const b = e.target.closest('[data-space]'); if (b) selectSpace(b.dataset.space); });
   $('spots').addEventListener('click', e => {
     const b = e.target.closest('[data-id]');
@@ -411,8 +413,9 @@
   display: flex;
   flex-direction: column;
   padding-top: 64px;
-  overflow: hidden;
-  background: var(--br-base);
+  overflow-x: clip; overflow-y: visible; /* 세로로 자르면 도크 그림자가 히어로 끝에서 칼같이 끊겨 경계선이 생긴다(2026-10-01) */
+  /* 아래 20%는 투명으로 풀어 페이지 앰비언트(.br-ambient)가 이어지게 — 단색으로 끊기던 경계(2026-10-01 대표) */
+  background: linear-gradient(to bottom, var(--br-base) 0%, var(--br-base) 78%, color-mix(in srgb, var(--br-base) 0%, transparent) 100%);
 }
 @media (max-width: 640px) { .h3-hero { padding-top: 56px; } }
 .h3-stage { position: absolute; inset: 0; z-index: -1; }
@@ -464,11 +467,16 @@
 /* 도크 맨 윗줄 안내 — 누르는 버튼들과 한 덩어리로 둔다(따로 떠 있는 카드는 붙여 넣은 툴팁처럼 보였다).
    목적은 '눌러 보고 싶게' — 무엇이 보이는지(에어컨 자리·천장 속 배관)를 말해 호기심을 건다 */
 .h3-invite {
-  display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; row-gap: 2px;
-  padding: 8px 12px 6px; font-size: 14px; line-height: 1.4; color: var(--br-ink-sub);
+  display: flex; align-items: center; gap: 10px; margin: 16px var(--h3-gutter) 0 auto; min-height: 56px; /* 도면 위 오른쪽(2026-10-01 대표) */
+  padding: 10px 16px; text-align: left;
+  font-size: 13px; line-height: 1.35; color: var(--br-ink-sub);
+  transition: background-color var(--dur-color) var(--ease-out);
 }
 .h3-invite svg { width: 16px; height: 16px; flex: none; color: var(--br-teal); }
-.h3-invite strong { color: var(--br-teal); font-weight: 700; } /* 누르라는 안내 — teal 은 누르는 것에(§1) */
+.h3-invite__t { display: grid; }
+.h3-invite strong { font-size: 14px; color: var(--br-teal); font-weight: 700; } /* 누르라는 안내 — teal 은 누르는 것에(§1) */
+@media (hover: hover) { .h3-invite:hover strong { text-decoration: underline; text-underline-offset: 3px; } }
+.h3-invite:active { transform: scale(.98); }
 /* ⚠️ [data-touch="off"] 를 여기 다시 넣지 말 것 — 터치 기기에서 안내가 0개가 된다(2026-09-22).
    도면을 직접 못 누르는 상태라도 '아래 목록에서 누른다'는 건 알려 줘야 한다. */
 .h3-head h1 { font-size: clamp(36px, 7.4vw, 72px); color: var(--br-ink); }
@@ -477,7 +485,7 @@
   position: relative; z-index: 1;
   padding-top: 24px; margin-block: 0;   /* margin:0 이면 .h3-wrap 의 가운데 정렬이 지워진다 */
   /* 부제형 — 15px 자간 라벨은 작고 장식처럼 읽혔다(2026-09-23 대표 지적). 자간 없이 크게 */
-  font-size: clamp(17px, 1.6vw, 20px); font-weight: 700; letter-spacing: -0.01em;
+  font-size: clamp(20px, 2vw, 25px); font-weight: 700; letter-spacing: -0.01em; /* 2026-10-01 대표: 좀 더 크게 */
   color: var(--br-ink-sub); /* 라벨 — 제목(ink)과 경쟁하지 않게 */
   pointer-events: none;
 }
@@ -486,7 +494,8 @@
 .h3-head p { margin-top: 20px; font-size: 17px; line-height: 1.7; color: var(--br-ink-sub); max-width: 34em; }
 
 /* 도크: 공간 전환 + 공간 목록. 히어로 안의 유리는 이것 하나 */
-.h3-dock-wrap { padding-bottom: 24px; }
+.h3-dock-wrap { padding-bottom: 24px; display: flex; flex-wrap: wrap; align-items: flex-start; /* 위쪽 정렬 — 아래 오른쪽은 챗봇 버튼 자리 */ gap: 12px 16px; }
+.h3-dock-wrap > .h3-note { flex: 1 1 100%; }
 .h3-dock { display: grid; padding: 6px; width: fit-content; max-width: 100%; }
 .h3-dock__row { display: flex; align-items: center; column-gap: 16px; min-width: 0; }
 .h3-dock__row--go { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--tint-line); min-height: 57px; }
@@ -511,7 +520,9 @@
 }
 .h3-touch-toggle[aria-pressed="true"] { color: var(--br-ink); border-bottom-color: var(--br-teal); }
 
-.h3-spots { display: flex; gap: 6px; padding: 4px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+/* 방 목록 — 회색 판 위 칸, 짚은 칸만 흰 판(세그먼트, 2026-10-01 대표 지정) */
+.h3-spots { display: flex; gap: 2px; padding: 4px; min-width: 0; overflow-x: auto; scrollbar-width: none;
+  border-radius: 8px; background: var(--br-mist); box-shadow: 0 0 0 1px var(--tint-line); }
 .h3-spots::-webkit-scrollbar { display: none; }
 /* 옆으로 더 있으면 끝을 흐려서 알린다 (포커스가 안에 있으면 흐림을 뺀다) */
 .h3-spots[data-more] { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent); }
@@ -520,19 +531,17 @@
 .h3-spots:focus-within { -webkit-mask-image: none; mask-image: none; }
 .h3-spot {
   display: inline-flex; align-items: center; gap: 6px; flex: none;
-  min-height: 44px; padding-inline: 14px; border-radius: 999px;
-  /* 글자만 있으면 라벨로 읽힌다 — 테두리 알약으로 '눌리는 것'이라는 걸 보여 준다 */
-  border: 1px solid color-mix(in srgb, var(--br-teal) 22%, transparent);
-  background: color-mix(in srgb, #fff 55%, transparent);
+  min-height: 44px; padding-inline: 14px; border-radius: 6px;
+  background: transparent;
   font-size: 15px; font-weight: 600; color: var(--br-ink);
   transition: background-color var(--dur-color) var(--ease-out), color var(--dur-color) var(--ease-out),
               border-color var(--dur-color) var(--ease-out);
 }
 /* 처음 온 사람에게 한 번 짚어 주는 칩 (startTour) — 마우스를 올렸을 때와 같은 모양 */
-.h3-spot.is-demo { border-color: var(--br-teal); background: var(--br-ice); color: var(--br-teal); }
+.h3-spot.is-demo { background: #fff; color: var(--br-teal); box-shadow: 0 1px 2px rgba(0, 41, 58, .08); }
 .h3-spot:focus-visible { outline-offset: -2px; }
 .h3-spot small { font-size: 13px; font-weight: 500; color: var(--br-ink-sub); }
-@media (hover: hover) { .h3-spot:hover { color: var(--br-teal); background: var(--br-ice); border-color: var(--br-teal); } }
+@media (hover: hover) { .h3-spot:hover { color: var(--br-teal); background: #fff; box-shadow: 0 1px 2px rgba(0, 41, 58, .08); } }
 /* 층 → 건물 전경 되돌아가기. 옆 방 칩들과 확실히 다르게 — 채운 면 + 화살표 + 구분선 */
 .h3-spot--up {
   gap: 4px; padding-left: 10px; font-weight: 700; color: var(--br-teal);
@@ -571,6 +580,8 @@
 @media (min-width: 1024px) {
   /* 안내는 히어로 오른쪽 위. 도면은 --free-t(TIP_BAND)로 이 띠를 비워 두므로 서로 간섭하지 않는다 */
 
+  /* 안내 버튼 — 도면 위 오른쪽 정렬(2026-10-01 대표) */
+  .h3-invite { position: absolute; z-index: 2; top: 146px; right: var(--h3-gutter); margin: 0; }
   .h3-note { position: absolute; z-index: 1; top: 146px; right: var(--h3-gutter);
     max-width: 26em; margin: 0; padding: 0; text-align: right; pointer-events: none; }
   /* 넓은 화면: 문구는 왼쪽 단 가운데, 3D 는 그 오른쪽 빈 영역(inset.l)에 맞춘다 */
@@ -593,7 +604,9 @@
   .h3-dock__row--top { flex-wrap: wrap; column-gap: 8px; }
   .h3-spaces { flex: 1 1 100%; }
   .h3-spaces button { flex: 1; padding-inline: 6px; }
-  .h3-disclaimer { flex: 1; min-width: 0; padding: 6px 8px 4px; font-size: 12px; }
+  /* 휴대폰: 주석은 탭 위 한 줄, 직접 돌리기 버튼은 숨김, 안내 버튼은 도면을 가리지 않게 도크 아래로(2026-10-01 대표) */
+  .h3-disclaimer { order: -1; flex: 1 1 100%; padding: 2px 8px 6px; font-size: 12px; white-space: nowrap; }
+  .h3-touch-toggle { display: none !important; }
   .h3-here__t { white-space: normal; }
   .h3-here__t small { display: block; margin-left: 0; }
 }

@@ -4,8 +4,8 @@
 // JS 가 돌 때만 숨겼다가 올린다. 반짝임 없이 투명도·위치만.
 // 협력사 로고는 파일이 들어오면(home.json brand.partners: [{name, src}]) 아래 한 줄로 흐른다. 비면 안 보인다.
 interface Partner { name: string; src: string }
-interface Props { lines: string[]; partners?: Partner[] }
-const { lines, partners = [] } = Astro.props;
+interface Props { lines?: string[]; partners?: Partner[] }
+const { lines = [], partners = [] } = Astro.props;
 ---
 <section class="bd-section brandline" data-brandline>
   <div class="bd-container">
