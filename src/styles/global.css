@@ -347,6 +347,12 @@ html.br-js .br-reveal.br-h { transform: none; }
 .br-h:not(.v2-phero__title) { margin-top: 0; }
 .br-eyebrow + .br-h { margin-top: 14px; }
 
+/* 섹션 머리 — 라벨 · 제목 · 짧은 설명 (2026-10-01 대표: 홈 회사소개 구조를 '어떤 일로 오셨나요'에도).
+   회사소개(StandardsStory)와 서비스 리드가 같이 쓴다 — 한쪽만 고치지 말 것 */
+.br-sec-label { font-size: 14px; font-weight: 700; color: var(--br-ink-sub); }
+.br-sec-label + .br-h { margin-top: 10px; }
+.br-sec-lead { margin-top: 16px; max-width: 46em; text-wrap: pretty; font-size: 16px; line-height: 1.75; color: var(--br-ink-sub); }
+
 /* ══════════════════════════════════════════════════════════════════
    글래스 시스템 1차 (2026-08-27) — 팔레트 v3 토큰만 쓴다. 신규 색 금지.
    등급은 커스텀 프로퍼티로 정의하고, 클래스와 컴포넌트가 그 값을 소비한다.

@@ -6,7 +6,9 @@ interface Props {
   entry: CollectionEntry<'cases'>;
 }
 const { entry } = Astro.props;
-const { region, space, brand, type, units, date, cover } = entry.data;
+const { region, space, brand, type, units, date, cover, title } = entry.data;
+// 제목에 단지명이 있으면 그걸 크게(검색어와 같은 말이 보이게). '｜' 뒤는 작은 줄로
+const [main, sub] = title ? title.split(/\s*[｜|]\s*/) : [`${space} ${brand} ${units}대`, ''];
 const dateLabel = date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long' });
 ---
 <a
@@ -17,12 +19,13 @@ const dateLabel = date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'lo
 >
   <div class="bd-case-card__media">
     {cover
-      ? <img src={cover} alt={`${region} ${space} ${type} 현장`} loading="lazy" />
+      ? <img src={cover} alt="" loading="lazy" />
       : <div class="bd-case-card__placeholder" aria-hidden="true"></div>}
   </div>
   <div class="bd-case-card__body">
     <p class="bd-microlabel bd-case-card__meta">{type} · {region}</p>
-    <h3 class="bd-case-card__title">{space} {brand} {units}대</h3>
+    <h3 class="bd-case-card__title">{main}</h3>
+    {sub && <p class="bd-case-card__sub">{sub}</p>}
     <p class="bd-case-card__date">{dateLabel}</p>
   </div>
 </a>
@@ -53,5 +56,6 @@ const dateLabel = date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'lo
     font-size: 17px;
     margin: 8px 0 6px;
   }
+  .bd-case-card__sub { font-size: 14px; color: var(--br-ink-sub); margin-bottom: 6px; }
   .bd-case-card__date { font-size: 13px; color: var(--ink-soft); }
 </style>

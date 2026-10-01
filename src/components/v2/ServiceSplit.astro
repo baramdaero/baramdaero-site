@@ -95,6 +95,8 @@ const hasVisual = isImageSlotVisible(slotId, image);
 
   /* 카드 안 위계 — 전역 .br-h(최대 46px)는 단독 섹션 제목용. 반폭 열에서는 36px까지만.
      390px 26px / 768px 29px / 900px 31.5px / 1024px 34px / 1280px+ 36px */
+  /* 카드 라벨(설치·세척·상업용) — 2026-10-01 대표 '좀 더 크게'. 전역 15.5px·자간 0.14em 은 작은 라벨용이라 여기서만 키우고 자간을 줄인다 */
+  .v2-svc__txt :global(.br-eyebrow) { font-size: clamp(19px, 0.9rem + 0.8vw, 23px); letter-spacing: 0.04em; }
   .v2-svc__txt :global(.br-h) {
     margin-top: 18px;
     font-size: clamp(26px, 0.9rem + 1.9vw, 36px);
