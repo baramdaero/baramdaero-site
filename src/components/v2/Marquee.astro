@@ -4,8 +4,8 @@
 // 사례가 적으면 세트 안에서 순환 반복해 최소 6카드를 채운다.
 import type { CollectionEntry } from 'astro:content';
 
-interface Props { entries: CollectionEntry<'cases'>[] }
-const { entries } = Astro.props;
+interface Props { entries: CollectionEntry<'cases'>[]; label?: string; heading?: string; lead?: string }
+const { entries, label: secLabel = '', heading = '말보다 현장으로.', lead = '' } = Astro.props;
 
 // 샘플 사례 제외 — 무한 루프라 한 건이 화면에 여러 번 박혀 노출이 증폭된다
 const real = entries.filter((e) => !e.data.sample);
@@ -28,7 +28,10 @@ const label = (e: CollectionEntry<'cases'>) =>
 {real.length >= MIN_CASES && (
   <section class="bd-section v2-mq">
     <div class="bd-container v2-mq__head">
-      <h2 class="br-h v2-mq__title br-reveal">말보다 현장으로.</h2>
+      {/* 머리 — 라벨 · 제목 · 한 줄(2026-10-01 대표: 섹션마다 소제목) */}
+      {secLabel && <p class="br-sec-label v2-mq__label-top">{secLabel}</p>}
+      <h2 class="br-h v2-mq__title br-reveal">{heading}</h2>
+      {lead && <p class="br-sec-lead v2-mq__lead br-reveal">{lead}</p>}
     </div>
     {[row1, row2].map((row, i) => (
       <div class="v2-mq__row">
@@ -60,6 +63,9 @@ const label = (e: CollectionEntry<'cases'>) =>
   .v2-mq { background: var(--br-teal-deep); overflow: hidden; }
   .v2-mq__head { text-align: center; margin-bottom: 48px; }
   .v2-mq__title { color: #fff; }
+  /* 어두운 판 — 라벨은 흰 75%(DESIGN.md §2 다크 구간), 설명은 base(밝은 회백) */
+  .v2-mq__label-top { color: color-mix(in srgb, #fff 75%, transparent); }
+  .v2-mq__lead { color: var(--br-base); margin-inline: auto; }
   .v2-mq__row { overflow: hidden; margin-top: 16px; }
   .v2-mq__track {
     display: flex;

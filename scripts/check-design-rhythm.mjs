@@ -47,6 +47,9 @@ function eyebrows(html) {
       parentTag: (before.match(/<[a-z][^>]*>\s*$/i) ?? [''])[0],
       // 정원은 '제목을 이끄는 눈썹'만 센다 — 뒤에 .br-h 가 없으면 그 블록의 유일한 이름표다
       leadsHeadline: /^[\s\S]{0,400}?class="[^"]*\bbr-h\b/.test(html.slice(m.index + m[0].length)),
+      isSecLabel: /br-sec-label/.test(m[0].slice(0, m[0].indexOf('>'))),
+      headline: ((html.slice(m.index + m[0].length).match(/^[\s\S]{0,400}?class="[^"]*\bbr-h\b[^"]*"[^>]*>([\s\S]*?)<\/h[1-6]>/) ?? [])[1] ?? '')
+        .replace(/<[^>]+>/g, '').replace(/\s+/g, ''),
     });
   }
   return out;
@@ -61,7 +64,15 @@ function check(file, html) {
   for (const e of eb) if (DASH.test(e.text)) fails.push(`${file}: 눈썹에 대시 — "${e.text}"`);
 
   // ② 섹션 제목 눈썹 정원 = ceil(섹션 수 / 3)
-  const counted = eb.filter((e) => e.leadsHeadline && !EXEMPT_PARENT.test(e.parentTag));
+  //    섹션 머리 라벨(.br-sec-label)은 정원 밖이다 — 2026-10-01 대표: 홈은 섹션마다 '라벨 · 제목 · 한 줄' 머리를 둔다
+  //    ("소제목 없이 덜렁 있으니 뭐라는지 모르겠다"). 대신 제목과 같은 말을 되풀이하는 라벨은 막는다(③).
+  const isHome = /(^|\/)dist\/index\.html$/.test(file) || file === 'home';
+  const counted = eb.filter((e) => e.leadsHeadline && !(e.isSecLabel && isHome) && !EXEMPT_PARENT.test(e.parentTag));
+  for (const e of eb) {
+    // 낱말 하나라도 겹치면 걸린다('속 구조' / '천장 속 1Way' — 같은 '속'이 다른 뜻으로 읽힌다)
+    const hit = e.isSecLabel && e.text.split(/\s+/).filter(Boolean).find((w) => e.headline.includes(w));
+    if (hit) fails.push(`${file}: 라벨이 제목 낱말을 되풀이 — "${e.text}"의 '${hit}' ⊂ "${e.headline}"`);
+  }
   const allow = Math.ceil(secs / 3);
   if (counted.length > allow) {
     fails.push(`${file}: 섹션 눈썹 ${counted.length}개 > 정원 ${allow}개 (섹션 ${secs}) — ${counted.map((e) => e.text).join(' / ')}`);
@@ -101,6 +112,10 @@ assert.equal(check('x', '<section></section><span class="br-eyebrow">설치 — 
 assert.equal(check('x', '<section></section><span class="br-eyebrow">설치 – 설계</span>').length, 1, 'en-dash 로 우회된다');
 assert.equal(check('x', '<section></section><span class="br-eyebrow">가</span><h2 class="br-h">A</h2><span class="br-eyebrow">나</span><h2 class="br-h">B</h2>').length, 1, '정원 초과를 못 잡는다');
 assert.equal(check('x', '<section></section><div class="v2-svc__txt"><span class="br-eyebrow">설치</span><h2 class="br-h">A</h2></div>').length, 0, '카드 분류 라벨은 정원 밖이다');
+assert.equal(check('home', '<section></section><p class="br-sec-label">가</p><h2 class="br-h">A</h2><p class="br-sec-label">나</p><h2 class="br-h">B</h2>').length, 0, '홈 섹션 머리 라벨은 정원 밖이다');
+assert.equal(check('x', '<section></section><p class="br-sec-label">가</p><h2 class="br-h">A</h2><p class="br-sec-label">나</p><h2 class="br-h">B</h2>').length, 1, '홈이 아닌 페이지는 섹션 머리 라벨도 정원에 센다');
+assert.equal(check('home', '<section></section><p class="br-sec-label">속 구조</p><h2 class="br-h">천장 속 1Way</h2>').length, 1, '낱말 하나 겹침을 못 잡는다');
+assert.equal(check('x', '<section></section><p class="br-sec-label">진행</p><h2 class="br-h">네 단계로 진행합니다</h2>').length, 1, '제목을 되풀이하는 라벨을 못 잡는다');
 assert.equal(ruleGuard('.care-close :global(.br-h){border-top:1px solid #ccc}', 'x').length, 1, '컴포넌트 scoped 가로선을 못 잡는다');
 assert.equal(ruleGuard('.br-eyebrow--lead,.x{border-bottom:1px solid #ccc}', 'x').length, 1, '눈썹 수정자 밑줄을 못 잡는다');
 assert.equal(ruleGuard('.br-h{border-top:none}', 'x').length, 0, 'none 은 가로선이 아니다');
