@@ -110,6 +110,17 @@ const specs = [
         </section>
       )}
 
+      {/* 관련 안내 — 모든 사례에 같은 줄(내비게이션). 사례 본문에는 '비슷한 집이라면' 같은 공통 안내를 쓰지 않는다(2026-10-01 반복 문단 정리) */}
+      <nav class="case-detail__more" aria-label="관련 안내">
+        <p>관련 안내</p>
+        <ul>
+          {(type === '세척'
+            ? [['세척 안내', '/care/'], ['세척 범위', '/faq/#faq-clean-scope'], ['가격 안내', '/price/']]
+            : [['설치 안내', '/install/'], ['천장 설치 조건', '/faq/#faq-ceiling-check'], ['배관을 넣는 시기', '/faq/#faq-pre-post'], ['단배관과 다배관', '/faq/#faq-pipe-type'], ['가격 안내', '/price/']]
+          ).map(([t, h]) => <li><a href={h}>{t}</a></li>)}
+        </ul>
+      </nav>
+
       <p class="case-detail__back"><a class="br-pill" href="/cases/">목록으로</a></p>
     </div>
   </article>
@@ -165,6 +176,10 @@ const specs = [
   .case-detail__qa details { border-bottom: 1px solid var(--line); }
   .case-detail__qa summary { cursor: pointer; font-weight: 700; font-size: 16px; padding: 16px 4px; }
   .case-detail__qa p { font-size: 15px; color: var(--ink-soft); padding: 0 4px 16px; line-height: 1.8; }
+  .case-detail__more { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line); }
+  .case-detail__more p { font-size: 14px; font-weight: 700; color: var(--ink-soft); }
+  .case-detail__more ul { margin-top: 10px; list-style: none; display: flex; flex-wrap: wrap; gap: 8px 18px; }
+  .case-detail__more a { color: var(--br-teal-deep); text-decoration: underline; text-underline-offset: 3px; font-size: 15px; }
   .case-detail__back { margin-top: 40px; }
   @media (max-width: 600px) {
     .case-detail__specs { grid-template-columns: repeat(2, 1fr); }

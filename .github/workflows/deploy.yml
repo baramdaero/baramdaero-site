@@ -35,14 +35,19 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-  # 배포가 끝나면 바뀐 주소를 검색엔진에 바로 알린다 (Bing → ChatGPT 검색, Naver). 실패해도 배포는 유지.
+  # 배포가 끝나면 이번에 바뀐 공개 페이지만 검색엔진에 알린다 (api.indexnow.org → Bing·Naver 등 공유). 실패해도 배포는 유지.
   indexnow:
     needs: deploy
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # 이번 push 에서 바뀐 파일을 보려고
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: node scripts/indexnow.mjs
+      # 바뀐 페이지만 알린다(IndexNow: 바뀌지 않은 주소 재전송 금지). 수동 실행(workflow_dispatch)이면 before 가 없어 보내지 않는다
+      - run: CHANGED="$(git diff --name-only "$BEFORE" "$GITHUB_SHA" 2>/dev/null)" node scripts/indexnow.mjs
+        env:
+          BEFORE: ${{ github.event.before }}
