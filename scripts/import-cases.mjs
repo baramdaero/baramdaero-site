@@ -22,6 +22,7 @@ for (const f of readdirSync(OUT).filter((f) => /^\d{4}-\d{2}-\d{2}-.+\.md$/.test
   // 480~540 같은 범위의 ~ 가 GFM 취소선으로 읽히지 않게 이스케이프
   const end = md.indexOf('\n---', 4) + 4; // 본문만 (frontmatter YAML 은 그대로)
   md = md.slice(0, end) + md.slice(end).replace(/(?<!\\)~/g, '\\~');
+  md = md.replace(/^site_key:.*\n/m, '');   // hermes 내부 키(원본 현장 고르기용)는 사이트에 싣지 않는다
   if (!/^sample: true$/m.test(md)) md = md.replace(/^---\n/, '---\nsample: true\n');
   writeFileSync(dest, md);
   console.log('가져옴', id);
