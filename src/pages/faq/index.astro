@@ -35,13 +35,21 @@ EXAMPLES_ALL.filter((e) => !items.some((f) => f.id === e.id)).forEach((e) => con
 //   본문이 소제목으로 시작하는 문항에서 소제목 글자('네 단계로 진행합니다')가 답이 되던 것을 막는다.
 // 나머지에서는 짧은 답과 같은(앞 20자가 같은) 문단을 빼 같은 말이 두 번 나오지 않게 한다
 const isPara = (b: string) => !/^(##|-|\|)/.test(b);
+/** 문단에서 이미 한 말(said 에 통째로 든 문장)을 뺀다. 목록·표·소제목은 건드리지 않는다 */
+const trimSaid = (b: string, said: string) => {
+  if (!isPara(b)) return b;
+  const ss = b.split(/(?<=[.?!])\s+/);
+  return ss.filter((x) => { const t = norm(faqPlainText(x)); return t.length < 6 || !said.includes(t); }).join(' ');
+};
 const answers = items.map((f) => {
   const blocks = f.a.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
   const first = blocks[0] ?? '';
   const short = f.shortA || f.chatA || (isPara(first) ? faqPlainText(first) : f.hook || faqPlainText(blocks.find(isPara) ?? first));
   const head = norm(short).slice(0, 20);
-  const rest = blocks.filter((b) => norm(faqPlainText(b)).slice(0, 20) !== head).join('\n\n');
-  const hook = f.hook && norm(f.hook) !== norm(short) && !norm(short).startsWith(norm(f.hook)) ? f.hook : '';
+  const hook = f.hook && norm(f.hook) !== norm(short) && !norm(short).startsWith(norm(f.hook)) ? trimSaid(f.hook, norm(short)) : '';
+  // 짧은 답·굵은 첫 줄에서 이미 한 문장은 펼친 쪽 문단 앞머리에서 뗀다(문단 뒤쪽 새 정보는 남긴다)
+  const said = norm(short) + '|' + norm(hook);
+  const rest = blocks.map((b) => trimSaid(b, said)).filter((b) => b && norm(faqPlainText(b)).slice(0, 20) !== head).join('\n\n');
   return { f, short, rest, hook };
 });
 
@@ -208,7 +216,8 @@ if (items.length) {
                   >
                     <summary class="faq-item__q">{f.q}</summary>
                     <div class="faq-item__body">
-                      {f.hook && <p class="faq-item__hook">{f.hook}</p>}
+                      {/* 답이 굵은 첫 줄과 같은 문장으로 시작하면 첫 줄을 빼 같은 말을 두 번 하지 않는다 */}
+                      {f.hook && !norm(faqPlainText(f.a)).startsWith(norm(f.hook)) && <p class="faq-item__hook">{f.hook}</p>}
                       <div class="faq-item__a" set:html={renderFaqMd(f.a, 4)} />
                       {f.priceNote && <p class="faq-item__price">{f.priceNote}</p>}
                       {f.related.length > 0 && (
@@ -554,6 +563,7 @@ if (items.length) {
 
   .faq-nav { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 36px; }
   .faq-nav__chip {
+    background: var(--br-base);   /* 배경 번짐 위에서도 테두리가 보이게(채팅 칩과 같은 방식) */
     font-size: 13.5px;
     font-weight: 600;
     color: var(--br-teal);
@@ -629,6 +639,12 @@ if (items.length) {
     border-bottom: 1px solid var(--br-line);
   }
   .faq-item__a :global(th) { color: var(--br-ink); font-weight: 700; }
+  /* 좁은 화면 — 4열 표가 카드 밖으로 밀려나지 않게 표만 옆으로 넘긴다 */
+  @media (max-width: 640px) {
+    .faq-item__a :global(table) { display: block; overflow-x: auto; }
+    .faq-item__a :global(table) { font-size: 13px; }
+    .faq-item__a :global(th), .faq-item__a :global(td) { padding: 8px 6px; }
+  }
   .faq-item__a :global(strong) { color: var(--br-ink); }
 
   .faq-item__price {

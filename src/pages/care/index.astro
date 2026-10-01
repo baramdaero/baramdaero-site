@@ -318,6 +318,11 @@ if (careFaq.length) {
     .care-symptoms__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   }
 
+  /* 태블릿 2열 — 사진 176px 이면 제목 칸이 114px 로 좁아 세 줄로 쪼개졌다 */
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .care-seasons__card { grid-template-columns: minmax(0, 1fr) 128px; }
+    .care-seasons__card :global(.br-image-slot) { width: 128px; }
+  }
   @media (max-width: 520px) {
     .care-seasons__card { grid-template-columns: minmax(0, 1fr) 128px; padding: 20px; gap: 12px; }
     .care-seasons__card :global(.br-image-slot) { width: 128px; }

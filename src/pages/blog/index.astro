@@ -32,7 +32,8 @@ const breadcrumb = {
       <p class="bd-microlabel">Blog</p>
       <h1 class="bd-section-title">블로그</h1>
 
-      {grouped.length > 0 && (
+      {/* 칩은 주제 섹션이 렌더될 때만(2개 이상) — 하나뿐이면 갈 곳 없는 #topic-… 링크가 된다 */}
+      {grouped.length > 1 && (
         <nav class="blog__topics" aria-label="주제 필터">
           <a class="blog__topic-chip" href="#all">전체</a>
           {grouped.map((g) => (

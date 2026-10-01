@@ -93,7 +93,7 @@
   #head{position:absolute;top:14px;left:18px;right:18px;z-index:3;display:flex;justify-content:space-between;
     gap:12px;align-items:flex-start;pointer-events:none}
   #head .t{font-size:12px;color:var(--dim);line-height:1.4;max-width:60%;word-break:keep-all}
-  #head .t b{display:block;color:var(--ink);font-size:14px;font-weight:600;letter-spacing:-.01em}
+  #head .t b{display:block;color:var(--ink);font-size:14px;font-weight:600;letter-spacing:-.01em;text-wrap:balance}
   #head .t .ln{display:block;margin-top:3px;font-size:11px;color:var(--dim)}
   #note{font-size:11px;color:var(--dim);text-align:right;max-width:260px;line-height:1.4}
   #card{display:none;position:absolute;left:14px;right:14px;bottom:70px;z-index:4;background:var(--panel);
@@ -105,11 +105,13 @@
   body.embed #app{grid-template-columns:1fr;grid-template-rows:1fr}
   body.embed #bar{padding-right:88px}
   body.embed #side{display:none}
+  body.embed #note{display:none}   /* 사이트가 카드 아래에 같은 고지를 한다 — 겹치지 않게 */
   @media (max-width:880px){
     #app{grid-template-columns:1fr;grid-template-rows:60dvh 1fr}
     body.embed #app{grid-template-rows:1fr}
     #side{border-left:0;border-top:1px solid var(--line);padding:16px 16px 32px}
     #note{display:none}
+    #head .t{max-width:none}   /* 오른쪽 #note 가 숨으니 60% 로 묶을 이유가 없다 — '부품 / 14개' 꺾임 */
     .co span{display:none}   /* 폭 제한은 기본 규칙(min(252px,44%))에 맡긴다 — 120px 는 이름을 잘랐다 */
   }
   @media (prefers-reduced-motion: reduce){ .co{transition:none} }
@@ -181,6 +183,7 @@ if (renderer) {
   // three r160 은 scene.environmentIntensity 를 읽지 않는다(r163+). 환경광은 아래에서 재질별 envMapIntensity 로 내린다.
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true; controls.dampingFactor = 0.08; controls.minDistance = 0.3;   // near 0.15 보다 2배 밖
+  if (EMBED) controls.enableZoom = false;   // 사이트 안에서는 휠이 페이지를 내리게(모형 줌에 갇히지 않게)
 }
 const key = new THREE.DirectionalLight(0xffffff, 1.6);
 key.position.set(-3, 6, 5); key.castShadow = true;
@@ -776,7 +779,7 @@ function paint() {
     const kw = sp.cooling_kw ? ` · 냉방 ${kwTxt(sp.cooling_kw)}` : '';
     const lu = sp.lineup
       ? `<span class="ln">이 시리즈는 냉방 ${num(sp.lineup.kw_min)}~${num(sp.lineup.kw_max)}kW로 나옵니다 · 화면은 ${num(sp.cooling_kw)}kW 기준</span>` : '';
-    $('#headt').innerHTML = `<b>${esc(series)}</b>${esc(DATA.model_code)}${kw} · 부품 ${DATA.parts.length}개${lu}`;
+    $('#headt').innerHTML = `<b>${esc(series)}</b>${esc(DATA.model_code)}${kw} · 부품&nbsp;${DATA.parts.length}개${lu}`;
   }
   $('#sub').textContent = `${DATA.brand} · ${DATA.form.toUpperCase()} · 부품 ${DATA.parts.length}개`;
   const unitless = v => String(v ?? '').replace(/\s*(mm|kg|kW)\b/gi, '').trim();   // 원문에 단위가 붙어 온 행이 있다

@@ -26,6 +26,11 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
     <div class="space3d__stage br-glass br-glass--medium" data-touch="off">
       <iframe src={views[0].src} title={views[0].title} loading="lazy" tabindex="-1"></iframe>
       {hint && <p class="space3d__hint" aria-hidden="true">{hint}</p>}
+      {/* 방·층 안에 들어가면 나올 길 — 히어로의 '전체 보기'와 같은 말·같은 화살표(2026-10-01, 갇힘 제보) */}
+      <button type="button" class="space3d__back">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        전체 보기
+      </button>
       <button type="button" class="space3d__touch" aria-pressed="false">직접 둘러보기</button>
     </div>
     <p class="space3d__note">{NOTE}</p>
@@ -44,12 +49,36 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
       frame.tabIndex = on ? 0 : -1;
     };
     touch.addEventListener('click', () => setTouch(stage.dataset.touch !== 'on'));
+    // 휴대폰: 막이 걸린 채 도면을 누르면 '실내기를 눌러 보세요'대로 바로 조작이 켜지게(스크롤은 그대로 막아 둔다)
+    stage.addEventListener('click', (e) => {
+      if (stage.dataset.touch === 'off' && !(e.target as Element).closest('button') && matchMedia('(hover: none)').matches) setTouch(true);
+    });
+    // 방(아파트)·층(건물) 안이면 '전체 보기'를 띄운다. 뷰어가 알려 주는 bd3d 메시지로만 판단한다
+    const back = stage.querySelector<HTMLButtonElement>('.space3d__back')!;
+    let inRoom = false, level = '';
+    const sync = () => {
+      if (inRoom || (level && level !== '건물 정면')) stage.dataset.deep = ''; else delete stage.dataset.deep;
+    };
+    addEventListener('message', (e) => {
+      const m = e.data;
+      if (!m || m.ns !== 'bd3d' || e.source !== frame.contentWindow) return;
+      if (m.type === 'ready') { inRoom = false; level = ''; }
+      else if (m.type === 'enter') inRoom = true;
+      else if (m.type === 'home') inRoom = false;                     // 건물: 실내기 → 그 층 입구(층 안은 그대로)
+      else if (m.type === 'space') { level = m.title || ''; inRoom = false; }
+      sync();
+    });
+    back.addEventListener('click', () => {
+      const house = frame.src.includes('/house.html');
+      frame.contentWindow?.postMessage(house ? { ns: 'bd3d', type: 'home' } : { ns: 'bd3d', type: 'goUnit', id: 'building' }, '*');
+    });
     root.querySelectorAll<HTMLButtonElement>('.space3d__tab').forEach((tab, _, all) => {
       tab.addEventListener('click', () => {
         all.forEach((t) => t.setAttribute('aria-selected', String(t === tab)));
         frame.src = tab.dataset.src!;
         frame.title = tab.dataset.title!;
         setTouch(false);
+        inRoom = false; level = ''; sync();
       });
     });
   }
@@ -91,4 +120,13 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
     color: var(--br-ink); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
   }
   .space3d__note { margin-top: 12px; font-size: 13px; color: var(--br-ink-sub); }
+  .space3d__back {
+    position: absolute; left: 12px; top: 12px; display: none; align-items: center; gap: 2px;
+    min-height: 44px; padding: 0 14px 0 8px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, 0.92);
+    color: var(--br-teal); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+  }
+  .space3d__back svg { width: 20px; height: 20px; }
+  .space3d__back:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; }
+  .space3d__stage[data-deep] .space3d__back { display: inline-flex; }
+  .space3d__stage[data-deep] .space3d__hint { display: none; }
 </style>

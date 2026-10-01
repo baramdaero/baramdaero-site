@@ -1073,7 +1073,7 @@ const TEASER = [
 
   fab.addEventListener('click', () => (openState ? close() : open()));
 
-  /* ---------- 티저 — 세션당 1회, 1.5s 뒤 등장 · 12s 유지 ---------- */
+  /* ---------- 티저 — 세션당 1회, 1.5s 뒤 등장(홈은 히어로를 지난 뒤) · 12s 유지 ---------- */
   const teaser = root.querySelector<HTMLElement>('[data-chat-teaser]');
   function hideTeaser() {
     if (!teaser || teaser.hidden) return;
@@ -1084,16 +1084,25 @@ const TEASER = [
   try { teaserSeen = sessionStorage.getItem('bd_teaser') === '1'; } catch { /* 비공개 모드 등 — 표시 안 함 */ }
   if (teaser && !teaserSeen) {
     try { sessionStorage.setItem('bd_teaser', '1'); } catch { /* 무시 */ }
-    setTimeout(() => {
+    const show = () => {
       if (openState) return;
       teaser.hidden = false;
       void teaser.offsetHeight;
       teaser.classList.add('is-on');
       const narrow = matchMedia('(max-width: 640px)').matches;
       setTimeout(hideTeaser, narrow ? 8000 : 12000);
-      // 좁은 화면에서는 사람이 스크롤을 시작하면 바로 비킨다 (화면을 가리는 시간을 줄인다)
-      if (narrow) addEventListener('scroll', hideTeaser, { once: true, passive: true });
-    }, 1500);
+      // 좁은 화면에서는 사람이 스크롤을 시작하면 바로 비킨다 (화면을 가리는 시간을 줄인다).
+      // 홈은 스크롤 중에 뜨므로 잠깐 보인 뒤부터 센다
+      if (narrow || hero) setTimeout(() => addEventListener('scroll', hideTeaser, { once: true, passive: true }), hero ? 2500 : 0);
+    };
+    // 홈: 히어로 조작부(공간 칩·3D 버튼)를 덮지 않게 히어로를 대부분 지나간 뒤에 띄운다(2026-10-01 점검)
+    const hero = document.querySelector('.h3-hero');
+    if (hero && 'IntersectionObserver' in window) {
+      const io = new IntersectionObserver((es) => {
+        if (es.some((e) => e.intersectionRatio < 0.3)) { io.disconnect(); setTimeout(show, 400); }
+      }, { threshold: [0.3] });
+      io.observe(hero);
+    } else setTimeout(show, 1500);
   }
   root.querySelector('[data-chat-teaser-close]')?.addEventListener('click', hideTeaser);
   root.querySelector('[data-chat-close]')?.addEventListener('click', close);
