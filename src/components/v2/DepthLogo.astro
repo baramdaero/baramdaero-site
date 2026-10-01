@@ -1,10 +1,10 @@
 ---
-// 헤더 입체 로고 — React Bits DepthText(JS-CSS) 방식을 React 없이 옮겼다(2026-10-01 대표: "맨 위 로고 자리에").
-// 같은 로고를 뒤로 겹겹이 쌓아(translateZ) 두께를 만들고, 화면 위 마우스 위치(PC)·손가락(휴대폰)을 따라 살짝 기운다.
-// 원본의 autoOrbit(끝없이 도는 모션)은 넣지 않았다 — DESIGN.md §4 무한 루프 모션 금지. 다 따라가면 rAF 도 멈춘다.
-// 모션 감소 설정이면 기본 기울기로 고정. 로고 path 는 src/assets/logo/baramdaero-{wide,mark}.svg 와 같다.
-interface Props { variant: 'wide' | 'mark'; layers?: number; depth?: number; tilt?: number; class?: string }
-const { variant, layers = 8, depth = 0.3, tilt = 10, class: cls = '' } = Astro.props; // 헤더 크기(24~32px)에서 작은 글자가 뭉개지지 않는 두께
+// 헤더 입체 로고 — React Bits DepthText(JS-CSS)의 '겹겹이 쌓은 두께'를 React 없이 옮겼다(2026-10-01 대표: "맨 위 로고 자리에").
+// 3D 회전(rotateX/Y)은 쓰지 않는다 — 24~32px 로고에서 앞면이 흐려지고 작은 '바람대로' 글자가 뭉개졌다(1·2배율 실측).
+// 대신 앞면은 원래 로고 그대로 두고, 뒤 두께 층만 포인터(PC)·손가락(휴대폰) 반대쪽으로 늘어진다 — 빛이 움직이면 그림자가 도는 원리.
+// 끝없이 도는 모션은 없다(DESIGN.md §4). 다 따라가면 rAF 도 멈춘다. 모션 감소 설정이면 기본 방향으로 고정.
+interface Props { variant: 'wide' | 'mark'; layers?: number; class?: string }
+const { variant, layers = 8, class: cls = '' } = Astro.props;
 const WIDE = { vb: '0 0 1472 341', d: 'M0 0 L161 0 L161 47 L162 47 L162 48 L238 48 L238 0 L399 0 L399 341 L0 341 Z M421 0 L787 0 L787 135 L587 135 L587 206 L787 206 L787 341 L421 341 Z M162 168 L162 169 L161 169 L161 215 L162 215 L162 216 L238 216 L238 168 Z M918 203 L950 203 L950 256 L960 256 L960 203 L992 203 L992 341 L918 341 Z M1006 203 L1038 203 L1038 227 L1039 227 L1039 228 L1054 228 L1054 249 L1038 249 L1038 341 L1006 341 Z M1058 203 L1140 203 L1140 249 L1090 249 L1090 254 L1140 254 L1140 275 L1057 275 L1057 230 L1108 230 L1108 225 L1057 225 L1057 204 L1058 204 Z M1145 203 L1178 203 L1178 228 L1193 228 L1193 249 L1178 249 L1178 275 L1145 275 Z M1197 203 L1265 203 L1265 229 L1230 229 L1230 316 L1265 316 L1265 341 L1197 341 Z M1270 203 L1295 203 L1295 204 L1296 204 L1296 228 L1307 228 L1307 203 L1333 203 L1333 341 L1307 341 L1307 249 L1296 249 L1296 341 L1270 341 Z M1339 203 L1470 203 L1470 258 L1371 258 L1371 267 L1470 267 L1470 291 L1339 291 L1339 236 L1438 236 L1438 227 L1339 227 Z M1062 280 L1178 280 L1178 341 L1062 341 Z M950 282 L950 315 L951 315 L951 316 L959 316 L959 315 L960 315 L960 282 Z M806 282 L878 282 L878 341 L806 341 Z M1392 296 L1417 296 L1417 315 L1418 315 L1418 316 L1472 316 L1472 341 L1337 341 L1337 316 L1391 316 L1391 315 L1392 315 Z M1094 304 L1094 317 L1095 317 L1095 318 L1145 318 L1145 304 Z', tf: '' };
 const MARK = { vb: '0 0 1000 1000', d: 'M0 0 L161 0 L161 48 L238 48 L238 0 L399 0 L399 341 L0 341 Z M161 169 L161 216 L237 216 L237 215 L238 215 L238 169 Z M0 356 L399 356 L399 491 L166 491 L166 562 L399 562 L399 697 L0 697 Z M411 636 L484 636 L484 695 L411 695 Z', tf: 'translate(236.13 120.0) scale(1.090387)' };
 const L = variant === 'wide' ? WIDE : MARK;
@@ -12,47 +12,42 @@ const id = `bd-depth-${variant}`;
 const stack = Array.from({ length: layers }, (_, k) => {
   const i = layers - k; // 뒤에서 앞으로
   const t = (i / layers) ** 2;
-  return { z: -i * depth, mix: Math.round((1 - t) * 72 + 4) };
+  return { i, mix: Math.round(38 + t * 50) }; // 앞쪽 옆면은 ice 쪽으로 밝게, 뒤로 갈수록 teal — 굵은 글씨가 아니라 옆면으로 읽히게
 });
 ---
-<span class:list={['depth-logo', `depth-logo--${variant}`, cls]} data-depth-logo data-tilt={tilt}>
+<span class:list={['depth-logo', `depth-logo--${variant}`, cls]} data-depth-logo>
   <svg width="0" height="0" aria-hidden="true" style="position:absolute"><symbol id={id} viewBox={L.vb}><path d={L.d} transform={L.tf || undefined} /></symbol></svg>
   <span class="depth-logo__stage">
     {stack.map((l) => (
       <svg class="depth-logo__layer" viewBox={L.vb} aria-hidden="true"
-        style={`transform:translateZ(${l.z}px);fill:color-mix(in srgb, var(--br-teal) ${l.mix}%, var(--br-teal-deep))`}><use href={`#${id}`} /></svg>
+        style={`--i:${l.i};fill:color-mix(in srgb, var(--br-teal) ${l.mix}%, var(--br-ice))`}><use href={`#${id}`} /></svg>
     ))}
     <svg class="depth-logo__face" viewBox={L.vb} aria-hidden="true"><use href={`#${id}`} /></svg>
   </span>
 </span>
 
 <script>
-  // 로고는 헤더에 붙어 늘 화면 안이다 — 화면 전체 기준으로 포인터 위치를 -1..1 로 바꿔 기울인다
+  // 로고는 헤더에 붙어 늘 화면 안이다 — 포인터가 로고 기준 어느 쪽에 있는지로 두께 방향을 정한다
   const roots = [...document.querySelectorAll<HTMLElement>('[data-depth-logo]')];
-  const parts = roots.map((root) => {
-    const T = Number(root.dataset.tilt) || 12;
-    const base = { x: -T * 0.32, y: T * 0.42 };
-    return { stage: root.querySelector<HTMLElement>('.depth-logo__stage')!, T, base, cur: { ...base }, tgt: { ...base } };
-  });
-  const paint = (p: (typeof parts)[number]) => { p.stage.style.transform = `rotateX(${p.cur.x.toFixed(3)}deg) rotateY(${p.cur.y.toFixed(3)}deg)`; };
-  parts.forEach(paint);
-  if (parts.length && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    const clamp = (v: number) => Math.max(-1, Math.min(1, v));
+  const MAX = 0.3, BASE = { x: 0.16, y: 0.2 }; // 층 하나당 px. 8층이면 최대 약 2.4px
+  const cur = { ...BASE }, tgt = { ...BASE };
+  const paint = () => { for (const r of roots) { r.style.setProperty('--dx', `${cur.x.toFixed(3)}px`); r.style.setProperty('--dy', `${cur.y.toFixed(3)}px`); } };
+  paint();
+  if (roots.length && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
     let raf = 0;
     const tick = () => {
-      let moving = false;
-      for (const p of parts) {
-        p.cur.x += (p.tgt.x - p.cur.x) * 0.14; p.cur.y += (p.tgt.y - p.cur.y) * 0.14; paint(p);
-        moving ||= Math.abs(p.tgt.x - p.cur.x) + Math.abs(p.tgt.y - p.cur.y) > 0.01;
-      }
-      raf = moving ? requestAnimationFrame(tick) : 0;
+      cur.x += (tgt.x - cur.x) * 0.16; cur.y += (tgt.y - cur.y) * 0.16; paint();
+      raf = Math.abs(tgt.x - cur.x) + Math.abs(tgt.y - cur.y) > 0.002 ? requestAnimationFrame(tick) : 0;
     };
+    const go = () => { if (!raf) raf = requestAnimationFrame(tick); };
     const aim = (cx: number, cy: number) => {
-      const nx = clamp(cx / innerWidth * 2 - 1), ny = clamp(cy / innerHeight * 2 - 1);
-      for (const p of parts) { p.tgt.x = p.base.x - ny * p.T; p.tgt.y = p.base.y + nx * p.T; }
-      if (!raf) raf = requestAnimationFrame(tick);
+      const r = roots.find((e) => e.offsetWidth)?.getBoundingClientRect();
+      if (!r) return;
+      const vx = (r.left + r.width / 2) - cx, vy = (r.top + r.height / 2) - cy; // 포인터 반대쪽으로 늘어진다
+      const len = Math.hypot(vx, vy) || 1, k = MAX * Math.min(1, len / 600);
+      tgt.x = (vx / len) * k; tgt.y = (vy / len) * k; go();
     };
-    const rest = () => { for (const p of parts) p.tgt = { ...p.base }; if (!raf) raf = requestAnimationFrame(tick); };
+    const rest = () => { Object.assign(tgt, BASE); go(); };
     addEventListener('pointermove', (e) => aim(e.clientX, e.clientY), { passive: true });
     addEventListener('touchmove', (e) => { const t = e.touches[0]; if (t) aim(t.clientX, t.clientY); }, { passive: true });
     addEventListener('touchend', rest, { passive: true });
@@ -62,13 +57,13 @@ const stack = Array.from({ length: layers }, (_, k) => {
 </script>
 
 <style>
-  .depth-logo { display: inline-block; perspective: 320px; perspective-origin: 50% 48%; isolation: isolate; }
-  .depth-logo__stage { position: relative; display: grid; transform-style: preserve-3d; will-change: transform; height: 100%; }
-  .depth-logo__stage > svg { grid-area: 1 / 1; width: auto; height: 100%; display: block; backface-visibility: hidden; }
-  /* 두께는 큰 마크(BC.)에만 — 작은 '바람대로' 글자는 층이 빈틈을 메워 뭉개진다(헤더 1배율 실측). 806/1472 = 마크 끝 */
-  .depth-logo--wide .depth-logo__layer { clip-path: inset(0 45.2% 0 0); }
-  .depth-logo__face { position: relative; fill: var(--br-teal); transform: translateZ(0.3px); }
+  .depth-logo { display: inline-block; --dx: 0.16px; --dy: 0.2px; }
+  .depth-logo__stage { position: relative; display: grid; height: 100%; }
+  .depth-logo__stage > svg { grid-area: 1 / 1; width: auto; height: 100%; display: block; }
+  .depth-logo__layer { pointer-events: none; transform: translate(calc(var(--dx) * var(--i)), calc(var(--dy) * var(--i))); }
+  /* 두께는 큰 마크(BC.)에만 — 작은 '바람대로' 글자는 층이 빈틈을 메워 뭉개진다. 878/1472 = 점 끝 */
+  .depth-logo--wide .depth-logo__layer { clip-path: inset(-20% 40.3% -20% -20%); }
+  .depth-logo__face { position: relative; fill: var(--br-teal); }
   .depth-logo--wide { aspect-ratio: 1472 / 341; }
   .depth-logo--mark { aspect-ratio: 1 / 1; }
-  @media (prefers-reduced-motion: reduce) { .depth-logo__stage { will-change: auto; } }
 </style>
