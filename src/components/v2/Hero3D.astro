@@ -28,13 +28,6 @@
     <div class="h3-dock-wrap h3-wrap" id="dockWrap">
 
       <div class="h3-dock h3-glass" id="dock">
-        <p class="h3-invite" id="invite">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M5 3l14 8-6.2 1.8L10.4 19 5 3z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
-          </svg>
-          <strong>눌러서 들어가 보세요</strong>
-          <span id="inviteWhy">방마다 에어컨 자리와 천장 속 배관 경로가 보입니다</span>
-        </p>
         <div class="h3-dock__row h3-dock__row--top">
           <div class="h3-spaces" role="group" aria-label="공간 선택" id="spaces"></div>
           <p class="h3-disclaimer">실제 시공사례를 기반으로 제작한 3D 예시입니다.</p>
@@ -51,6 +44,13 @@
           </div>
         </div>
       </div>
+      <button class="h3-invite h3-glass" id="invite" type="button">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M5 3l14 8-6.2 1.8L10.4 19 5 3z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+        </svg>
+        <span class="h3-invite__t"><strong>눌러서 들어가 보세요</strong>
+        <span id="inviteWhy">방마다 에어컨 자리와 천장 속 배관 경로가 보입니다</span></span>
+      </button>
       <p class="h3-note" id="hint" role="status">구성도에서 공간이나 에어컨을 누르면 그 시점으로 이동합니다</p>
     </div>
     <p class="h3-sr-only" id="live" aria-live="polite"></p>
@@ -264,6 +264,7 @@
     if (reground) groundFirst(vw);
   }
 
+  $('invite').addEventListener('click', () => $('spots').querySelector('.h3-spot:not(.h3-spot--up)')?.click());
   $('spaces').addEventListener('click', e => { const b = e.target.closest('[data-space]'); if (b) selectSpace(b.dataset.space); });
   $('spots').addEventListener('click', e => {
     const b = e.target.closest('[data-id]');
@@ -464,11 +465,16 @@
 /* 도크 맨 윗줄 안내 — 누르는 버튼들과 한 덩어리로 둔다(따로 떠 있는 카드는 붙여 넣은 툴팁처럼 보였다).
    목적은 '눌러 보고 싶게' — 무엇이 보이는지(에어컨 자리·천장 속 배관)를 말해 호기심을 건다 */
 .h3-invite {
-  display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; row-gap: 2px;
-  padding: 8px 12px 6px; font-size: 14px; line-height: 1.4; color: var(--br-ink-sub);
+  display: flex; align-items: center; gap: 10px; margin-left: auto; min-height: 56px;
+  padding: 10px 16px; text-align: left;
+  font-size: 13px; line-height: 1.35; color: var(--br-ink-sub);
+  transition: background-color var(--dur-color) var(--ease-out);
 }
 .h3-invite svg { width: 16px; height: 16px; flex: none; color: var(--br-teal); }
-.h3-invite strong { color: var(--br-teal); font-weight: 700; } /* 누르라는 안내 — teal 은 누르는 것에(§1) */
+.h3-invite__t { display: grid; }
+.h3-invite strong { font-size: 14px; color: var(--br-teal); font-weight: 700; } /* 누르라는 안내 — teal 은 누르는 것에(§1) */
+@media (hover: hover) { .h3-invite:hover strong { text-decoration: underline; text-underline-offset: 3px; } }
+.h3-invite:active { transform: scale(.98); }
 /* ⚠️ [data-touch="off"] 를 여기 다시 넣지 말 것 — 터치 기기에서 안내가 0개가 된다(2026-09-22).
    도면을 직접 못 누르는 상태라도 '아래 목록에서 누른다'는 건 알려 줘야 한다. */
 .h3-head h1 { font-size: clamp(36px, 7.4vw, 72px); color: var(--br-ink); }
@@ -477,7 +483,7 @@
   position: relative; z-index: 1;
   padding-top: 24px; margin-block: 0;   /* margin:0 이면 .h3-wrap 의 가운데 정렬이 지워진다 */
   /* 부제형 — 15px 자간 라벨은 작고 장식처럼 읽혔다(2026-09-23 대표 지적). 자간 없이 크게 */
-  font-size: clamp(17px, 1.6vw, 20px); font-weight: 700; letter-spacing: -0.01em;
+  font-size: clamp(20px, 2vw, 25px); font-weight: 700; letter-spacing: -0.01em; /* 2026-10-01 대표: 좀 더 크게 */
   color: var(--br-ink-sub); /* 라벨 — 제목(ink)과 경쟁하지 않게 */
   pointer-events: none;
 }
@@ -486,19 +492,23 @@
 .h3-head p { margin-top: 20px; font-size: 17px; line-height: 1.7; color: var(--br-ink-sub); max-width: 34em; }
 
 /* 도크: 공간 전환 + 공간 목록. 히어로 안의 유리는 이것 하나 */
-.h3-dock-wrap { padding-bottom: 24px; }
+.h3-dock-wrap { padding-bottom: 24px; display: flex; flex-wrap: wrap; align-items: flex-start; /* 위쪽 정렬 — 아래 오른쪽은 챗봇 버튼 자리 */ gap: 12px 16px; }
+.h3-dock-wrap > .h3-note { flex: 1 1 100%; }
 .h3-dock { display: grid; padding: 6px; width: fit-content; max-width: 100%; }
 .h3-dock__row { display: flex; align-items: center; column-gap: 16px; min-width: 0; }
 .h3-dock__row--go { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--tint-line); min-height: 57px; }
 
-.h3-spaces { display: flex; gap: 4px; flex: none; }
-.h3-spaces button {
-  min-height: 44px; padding-inline: 14px;
-  border-bottom: 2px solid transparent; border-radius: 6px 6px 0 0;
-  font-size: 15px; font-weight: 600; color: var(--br-ink-sub);
-  transition: color var(--dur-color) var(--ease-out), border-color var(--dur-color) var(--ease-out);
+/* 공간 전환 — 회색 판 위 선택 칸만 흰 판(세그먼트, 2026-10-01 대표 지정) */
+.h3-spaces {
+  display: flex; gap: 2px; flex: none; padding: 4px; border-radius: 8px;
+  background: var(--br-mist); box-shadow: 0 0 0 1px var(--tint-line);
 }
-.h3-spaces button[aria-pressed="true"] { color: var(--br-ink); border-bottom-color: var(--br-teal); }
+.h3-spaces button {
+  flex: 1 1 auto; min-height: 40px; padding-inline: 16px; border-radius: 6px;
+  font-size: 15px; font-weight: 500; color: var(--br-ink-sub);
+  transition: background-color var(--dur-color) var(--ease-out), color var(--dur-color) var(--ease-out);
+}
+.h3-spaces button[aria-pressed="true"] { background: #fff; color: var(--br-ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0, 41, 58, .08); }
 @media (hover: hover) { .h3-spaces button[aria-pressed="false"]:hover { color: var(--br-ink); } }
 .h3-spaces button:active { transform: scale(.96); }
 .h3-hero[data-fail] .h3-spaces, .h3-hero[data-fail] .h3-dock__row--go { display: none; }
@@ -594,12 +604,16 @@
   .h3-spaces { flex: 1 1 100%; }
   .h3-spaces button { flex: 1; padding-inline: 6px; }
   .h3-disclaimer { flex: 1; min-width: 0; padding: 6px 8px 4px; font-size: 12px; }
+  .h3-invite { order: -1; margin-left: auto; }
   .h3-here__t { white-space: normal; }
   .h3-here__t small { display: block; margin-left: 0; }
 }
 
 
 .h3-sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-@media (forced-colors: active) { .h3-spaces button[aria-pressed="true"], .h3-touch-toggle[aria-pressed="true"] { border-bottom-color: CanvasText; } }
+@media (forced-colors: active) {
+  .h3-touch-toggle[aria-pressed="true"] { border-bottom-color: CanvasText; }
+  .h3-spaces button[aria-pressed="true"] { outline: 2px solid CanvasText; }
+}
 
 </style>
