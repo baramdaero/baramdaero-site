@@ -167,7 +167,7 @@
       ? '에어컨을 누르면 그 자리에서 봅니다'
       : st.space === 'house'
         ? '방마다 에어컨 자리와 천장 속 배관 경로를 확인할 수 있습니다'
-        : '층을 누르면 안으로 들어갑니다. 층마다 에어컨 자리와 배관이 보입니다';
+        : '층을 누르면 안으로 들어갑니다';   // 한 줄 — 휴대폰에서 두 줄째에 '보입니다'만 떨어지던 문장(2026-10-01 대표)
     const failed = st.failed.house && !st.ready.house;
     hero.toggleAttribute('data-fail', !!failed);
     $('hint').classList.toggle('fail', !!(failed || st.notice));
@@ -482,6 +482,7 @@
 }
 .h3-invite svg { width: 16px; height: 16px; flex: none; color: var(--br-teal); }
 .h3-invite__t { display: grid; }
+.h3-invite__t > span { text-wrap: balance; } /* 두 줄이 되면 고르게 나눈다 */
 .h3-invite strong { font-size: 14px; color: var(--br-teal); font-weight: 700; } /* 누르라는 안내 — teal 은 누르는 것에(§1) */
 @media (hover: hover) { .h3-invite:hover strong { text-decoration: underline; text-underline-offset: 3px; } }
 .h3-invite:active { transform: scale(.98); }
@@ -586,6 +587,14 @@
 .h3-hero[data-room] .h3-note:not(.fail), .h3-hero[data-deep] .h3-note:not(.fail) { visibility: hidden; }
 .h3-hero[data-touch="off"] .h3-note:not(.fail) { display: none; }
 
+/* 휴대폰·태블릿(2026-10-01 대표 지적 2건)
+   ① 건물·층 안(data-deep)·방 안에서는 제목처럼 안내 판도 숨긴다 — 3D 위에 그대로 떠 있었다
+   ② 판은 글자 길이만큼만(오른쪽 정렬) — 제목이 사라진 뒤 화면 폭을 꽉 채운 판이 어색했다 */
+@media (max-width: 1023px) {
+  .h3-invite { width: fit-content; max-width: calc(100% - 2 * var(--h3-gutter)); transition: opacity var(--dur-color) var(--ease-out); }
+  /* 제목이 숨는 때(건물·층·방 안, 3D 를 직접 만진 뒤)는 안내 판도 같이 숨는다 */
+  .h3-hero[data-deep] .h3-invite, .h3-hero[data-room] .h3-invite, .h3-hero[data-touch3d] .h3-invite { opacity: 0; visibility: hidden; pointer-events: none; }
+}
 @media (min-width: 1024px) {
   /* 안내는 히어로 오른쪽 위. 도면은 --free-t(TIP_BAND)로 이 띠를 비워 두므로 서로 간섭하지 않는다 */
 

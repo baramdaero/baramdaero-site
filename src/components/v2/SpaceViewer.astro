@@ -85,7 +85,8 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
     .space3d__touch { display: none; }
   }
   .space3d__touch {
-    position: absolute; right: 12px; bottom: 12px; min-height: 44px; padding: 0 16px;
+    /* 왼쪽 아래 — 오른쪽 아래는 고정 채팅 버튼이 덮었다(2026-10-01 휴대폰 실측) */
+    position: absolute; left: 12px; bottom: 12px; min-height: 44px; padding: 0 16px;
     border: 0; border-radius: 999px; background: rgba(255, 255, 255, 0.92);
     color: var(--br-ink); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
   }
