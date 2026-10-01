@@ -32,7 +32,9 @@ const {
       >
         <div class="bd-container">
           <div class="v2-standards-story__card br-glass br-glass--medium">
+            {promise.eyebrow && <p class="v2-standards-story__eyebrow">{promise.eyebrow}</p>}
             <h2 class="br-h br-reveal">{promise.heading}</h2>
+            {promise.lead && <p class="v2-standards-story__lead br-reveal">{promise.lead}</p>}
             <ol class="v2-standards-story__steps br-reveal">
               {promise.items.map((item) => (
                 <li>
@@ -86,6 +88,10 @@ const {
 )}
 
 <style>
+  /* 홈 회사소개(2026-10-01) — 라벨 · 제목 · 짧은 설명 다음에 사진 세 장 */
+  .v2-standards-story__eyebrow { font-size: 14px; font-weight: 700; color: var(--br-ink-sub); }
+  .v2-standards-story__eyebrow + .br-h { margin-top: 10px; }
+  .v2-standards-story__lead { margin-top: 16px; max-width: 40em; font-size: 16px; line-height: 1.75; color: var(--br-ink-sub); }
   /* 유리 카드 호스트 — 투명해야 앰비언트가 비친다 (tone 교차는 카드 도입 전 유산, 클래스만 유지) */
   .v2-standards-story__message--base { background: transparent; }
   .v2-standards-story__message--mist { background: transparent; }

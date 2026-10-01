@@ -8,7 +8,7 @@ const STANDARDS_PATH = join(process.cwd(), 'src/content/site/standards.json');
 export interface ChecklistItem { q: string; why: string; ours: string }
 export interface Checklist { title: string; items: ChecklistItem[] }
 export interface PromiseItem { no: string; title: string; lines: string[] }
-export interface PromiseBlock { heading: string; items: PromiseItem[] }
+export interface PromiseBlock { heading: string; items: PromiseItem[]; eyebrow?: string; lead?: string }
 export interface BaselineBlock {
   title: string;
   updated: string;

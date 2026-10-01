@@ -65,6 +65,8 @@ const stack = Array.from({ length: layers }, (_, k) => {
   .depth-logo { display: inline-block; perspective: 320px; perspective-origin: 50% 48%; isolation: isolate; }
   .depth-logo__stage { position: relative; display: grid; transform-style: preserve-3d; will-change: transform; height: 100%; }
   .depth-logo__stage > svg { grid-area: 1 / 1; width: auto; height: 100%; display: block; backface-visibility: hidden; }
+  /* 두께는 큰 마크(BC.)에만 — 작은 '바람대로' 글자는 층이 빈틈을 메워 뭉개진다(헤더 1배율 실측). 806/1472 = 마크 끝 */
+  .depth-logo--wide .depth-logo__layer { clip-path: inset(0 45.2% 0 0); }
   .depth-logo__face { position: relative; fill: var(--br-teal); transform: translateZ(0.3px); }
   .depth-logo--wide { aspect-ratio: 1472 / 341; }
   .depth-logo--mark { aspect-ratio: 1 / 1; }
