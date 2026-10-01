@@ -2,8 +2,8 @@ import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
 
 // 시공사례 — md 1건 = 사례 레코드 1건. 글이 아니라 데이터로 쌓아
-// 사례 목록·마퀴·블로그 related_cases·상황 페이지에서 재사용한다.
-// 신규 필드는 전부 선택 — 기존 사례 md와 소비처(마퀴·목록·상세)는 그대로 동작한다.
+// 사례 목록·상세·블로그 related_cases·llms.txt·홈 '시공사례 보러가기' 노출 조건에서 쓴다.
+// 신규 필드는 전부 선택 — 기존 사례 md와 소비처(목록·상세)는 그대로 동작한다.
 // ⚠️ 개인정보 규칙은 src/content/cases/README.txt 참조 (동호수·상세주소·고객명·업체명 기재 금지 — 단지명·평형 타입은 허용, 2026-09-30).
 const cases = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/cases' }),

@@ -3,7 +3,7 @@
 :root {
   /* 색 v3 — DESIGN.md §1. CTA=teal(라이트)·ice(다크) / 본문=ink / 섹션 교차=base↔mist */
   --br-teal: #004e64;        /* 주색: 헤드라인, CTA(라이트 구간), 딥섹션 배경 */
-  --br-teal-deep: #00293a;   /* 다크 구간 배경 (푸터·마퀴·서브 히어로·스크럽) */
+  --br-teal-deep: #00293a;   /* 다크 구간 배경 (푸터·서브 히어로·스크럽) */
   --br-ice: #bfe9f2;         /* 액센트: 눈썹 칩, 다크 구간 강조·CTA, hover */
   --br-base: #f7f9fa;
   --br-mist: #e0e5e9;        /* 교차 섹션 배경 겸 1px 라인 */
@@ -138,7 +138,6 @@ button {
    새로 어두운 섹션을 만들면 여기에 클래스를 추가한다(빠지면 라벨이 배경에 묻힌다). */
 .v2-phero,
 .v2-scrub,
-.v2-mq,
 .v2-triage--deep,
 .care-process__story--deep,
 .care-close,

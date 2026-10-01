@@ -1,6 +1,6 @@
 ---
 // 홈 v2 — 스크롤 스토리텔링 (1뷰포트 1메시지). 구 홈은 src/legacy/index-v1.astro.txt 보존.
-// 순서(2026-09-30 구조): 히어로 3D → 왜 바람대로(약속 셋) → 어떤 일로 오셨나요(설치·세척·상업용) → 천장 속 3D → (마퀴: 실사례 3건부터) → 네 단계 → 문의
+// 순서(2026-10-01): 히어로 3D → 회사소개(약속 셋 + 시공사례 링크) → 서비스 머리 → 설치·세척·상업용 → 내부 구조(분해 3D) → 절차 → 문의 → 우리와 함께한 공간(로고 띠)
 // 섹션 문구는 전부 src/content/site/home.json (하드코딩 금지). 히어로·다크구간은 각자 다른 소스.
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
@@ -9,7 +9,7 @@ import Exploded from '../components/v2/Exploded.astro';   // 2026-09-21 히어�
 // import DarkScrub from '../components/v2/DarkScrub.astro'; // 위 미노출 주석 참조
 // import Problem from '../components/v2/Problem.astro'; // 구 S2 — DarkScrub이 동일 메시지를 대체 (비포 사진 확보 후 재검토)
 import ServiceSplit from '../components/v2/ServiceSplit.astro';
-import Marquee from '../components/v2/Marquee.astro';
+import BrandBand from '../components/v2/BrandBand.astro';
 import Process from '../components/v2/Process.astro';
 // import Reviews from '../components/v2/Reviews.astro'; // S9 — [실후기교체] 확보 후 주석 해제
 import CtaBand from '../components/v2/CtaBand.astro';
@@ -24,10 +24,8 @@ const home = loadHome();
 
 
 
-// 마퀴 카드 — cases 컬렉션 최신순
-const cases = (await getCollection('cases'))
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
-const hasMarquee = cases.filter((entry) => !entry.data.sample).length >= 3;
+// 공개 사례 — 회사소개 아래 '시공사례 보러가기' 링크를 낼지 정한다
+const cases = await getCollection('cases');
 
 /* 서비스 카드의 앵커 id와 지그재그 방향은 문구가 아니라 레이아웃이라 여기 둔다.
    home.json의 services 순서와 짝지어 쓰며, 카드가 더 늘면 id 없이 렌더된다. */
@@ -78,8 +76,6 @@ const cta = home.ctaBand;
 
   {/* 서비스 2트랙 (IA v3) — 세척·관리 트랙(정돈→기록) / 설치 트랙(설계).
       리드 문장이 다크 구간의 착지점을 받아 3카드로 나눈다 */}
-  {/* 말보다 현장으로 — 약속 바로 뒤에 증거(2026-09-30). 실제 사례 3건부터 저절로 나타난다 */}
-  <Marquee entries={cases} label={home.marquee.label} heading={home.marquee.heading} lead={home.marquee.lead} />
 
   {home.services.leadHeading.length > 0 && (
     <section class="bd-section v2-svc-lead">
@@ -172,6 +168,9 @@ const cta = home.ctaBand;
       {cta.body && <Fragment slot="sub">{cta.body}</Fragment>}
     </CtaBand>
   )}
+
+  {/* 우리와 함께한 공간 — 홈 맨 아래(2026-10-01 대표). 로고 목록 src/content/site/brands.json */}
+  {home.brands && <BrandBand label={home.brands.label} heading={home.brands.heading} lead={home.brands.lead} />}
 </Base>
 
 <style>

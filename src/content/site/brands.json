@@ -1,0 +1,310 @@
+[
+ {
+  "slug": "lg",
+  "name": "LG",
+  "src": "/media/brands/lg.webp",
+  "w": 100,
+  "h": 44
+ },
+ {
+  "slug": "samsung",
+  "name": "삼성전자",
+  "src": "/media/brands/samsung.webp",
+  "w": 150,
+  "h": 26
+ },
+ {
+  "slug": "xi",
+  "name": "자이",
+  "src": "/media/brands/xi.webp",
+  "w": 91,
+  "h": 48
+ },
+ {
+  "slug": "raemian",
+  "name": "래미안",
+  "src": "/media/brands/raemian.webp",
+  "w": 81,
+  "h": 54
+ },
+ {
+  "slug": "prugio",
+  "name": "푸르지오",
+  "src": "/media/brands/prugio.webp",
+  "w": 150,
+  "h": 27
+ },
+ {
+  "slug": "hillstate",
+  "name": "힐스테이트",
+  "src": "/media/brands/hillstate.webp",
+  "w": 71,
+  "h": 56
+ },
+ {
+  "slug": "eplus",
+  "name": "e편한세상",
+  "src": "/media/brands/eplus.webp",
+  "w": 96,
+  "h": 46
+ },
+ {
+  "slug": "ipark",
+  "name": "아이파크",
+  "src": "/media/brands/ipark.webp",
+  "w": 125,
+  "h": 25
+ },
+ {
+  "slug": "lottecastle",
+  "name": "롯데캐슬",
+  "src": "/media/brands/lottecastle.webp",
+  "w": 92,
+  "h": 48
+ },
+ {
+  "slug": "weve",
+  "name": "두산위브",
+  "src": "/media/brands/weve.webp",
+  "w": 82,
+  "h": 54
+ },
+ {
+  "slug": "thesharp",
+  "name": "더샵",
+  "src": "/media/brands/thesharp.webp",
+  "w": 66,
+  "h": 56
+ },
+ {
+  "slug": "hoban-summit",
+  "name": "호반써밋",
+  "src": "/media/brands/hoban-summit.webp",
+  "w": 124,
+  "h": 35
+ },
+ {
+  "slug": "centreville",
+  "name": "센트레빌",
+  "src": "/media/brands/centreville.webp",
+  "w": 54,
+  "h": 56
+ },
+ {
+  "slug": "skview",
+  "name": "SK뷰",
+  "src": "/media/brands/skview.webp",
+  "w": 99,
+  "h": 45
+ },
+ {
+  "slug": "summit",
+  "name": "써밋",
+  "src": "/media/brands/summit.webp",
+  "w": 150,
+  "h": 24
+ },
+ {
+  "slug": "sujain",
+  "name": "수자인",
+  "src": "/media/brands/sujain.webp",
+  "w": 127,
+  "h": 35
+ },
+ {
+  "slug": "sclass",
+  "name": "중흥S-클래스",
+  "src": "/media/brands/sclass.webp",
+  "w": 56,
+  "h": 56
+ },
+ {
+  "slug": "starhills",
+  "name": "서희스타힐스",
+  "src": "/media/brands/starhills.webp",
+  "w": 117,
+  "h": 38
+ },
+ {
+  "slug": "forena",
+  "name": "포레나",
+  "src": "/media/brands/forena.webp",
+  "w": 150,
+  "h": 23
+ },
+ {
+  "slug": "thehue",
+  "name": "한신더휴",
+  "src": "/media/brands/thehue.webp",
+  "w": 125,
+  "h": 35
+ },
+ {
+  "slug": "pungkyungchae",
+  "name": "제일풍경채",
+  "src": "/media/brands/pungkyungchae.webp",
+  "w": 89,
+  "h": 49
+ },
+ {
+  "slug": "hanulche",
+  "name": "코오롱하늘채",
+  "src": "/media/brands/hanulche.webp",
+  "w": 55,
+  "h": 56
+ },
+ {
+  "slug": "vertium",
+  "name": "베르티움",
+  "src": "/media/brands/vertium.webp",
+  "w": 109,
+  "h": 40
+ },
+ {
+  "slug": "koaroo",
+  "name": "코아루",
+  "src": "/media/brands/koaroo.webp",
+  "w": 100,
+  "h": 44
+ },
+ {
+  "slug": "elif",
+  "name": "엘리프",
+  "src": "/media/brands/elif.webp",
+  "w": 114,
+  "h": 38
+ },
+ {
+  "slug": "efete",
+  "name": "에피트",
+  "src": "/media/brands/efete.webp",
+  "w": 125,
+  "h": 35
+ },
+ {
+  "slug": "royalduke",
+  "name": "동원로얄듀크",
+  "src": "/media/brands/royalduke.webp",
+  "w": 61,
+  "h": 56
+ },
+ {
+  "slug": "theliv",
+  "name": "더리브",
+  "src": "/media/brands/theliv.webp",
+  "w": 72,
+  "h": 56
+ },
+ {
+  "slug": "asterium",
+  "name": "센트레빌 아스테리움",
+  "src": "/media/brands/asterium.webp",
+  "w": 128,
+  "h": 34
+ },
+ {
+  "slug": "brighten",
+  "name": "브라이튼",
+  "src": "/media/brands/brighten.webp",
+  "w": 144,
+  "h": 31
+ },
+ {
+  "slug": "thehue-reserve",
+  "name": "한신더휴 리저브",
+  "src": "/media/brands/thehue-reserve.webp",
+  "w": 51,
+  "h": 56
+ },
+ {
+  "slug": "villiv",
+  "name": "빌리브",
+  "src": "/media/brands/villiv.webp",
+  "w": 99,
+  "h": 44
+ },
+ {
+  "slug": "winnersky",
+  "name": "제일풍경채 위너스카이",
+  "src": "/media/brands/winnersky.webp",
+  "w": 142,
+  "h": 31
+ },
+ {
+  "slug": "wepark",
+  "name": "위파크",
+  "src": "/media/brands/wepark.webp",
+  "w": 150,
+  "h": 28
+ },
+ {
+  "slug": "trivn",
+  "name": "트리븐",
+  "src": "/media/brands/trivn.webp",
+  "w": 126,
+  "h": 35
+ },
+ {
+  "slug": "leeinview",
+  "name": "경동리인",
+  "src": "/media/brands/leeinview.webp",
+  "w": 150,
+  "h": 13
+ },
+ {
+  "slug": "the-w",
+  "name": "더블유",
+  "src": "/media/brands/the-w.webp",
+  "w": 49,
+  "h": 56
+ },
+ {
+  "slug": "leel",
+  "name": "르엘",
+  "src": "/media/brands/leel.webp",
+  "w": 133,
+  "h": 33
+ },
+ {
+  "slug": "andante",
+  "name": "안단테",
+  "src": "/media/brands/andante.webp",
+  "w": 126,
+  "h": 35
+ },
+ {
+  "slug": "harrington",
+  "name": "해링턴 플레이스",
+  "src": "/media/brands/harrington.webp",
+  "w": 56,
+  "h": 56
+ },
+ {
+  "slug": "platinum",
+  "name": "쌍용 더 플래티넘",
+  "src": "/media/brands/platinum.webp",
+  "w": 99,
+  "h": 45
+ },
+ {
+  "slug": "hauterre",
+  "name": "오티에르",
+  "src": "/media/brands/hauterre.webp",
+  "w": 64,
+  "h": 56
+ },
+ {
+  "slug": "trimage",
+  "name": "트리마제",
+  "src": "/media/brands/trimage.webp",
+  "w": 43,
+  "h": 56
+ },
+ {
+  "slug": "detre",
+  "name": "디에트르",
+  "src": "/media/brands/detre.webp",
+  "w": 91,
+  "h": 49
+ }
+]
