@@ -48,6 +48,7 @@ jobs:
         with:
           node-version: 22
       # 바뀐 페이지만 알린다(IndexNow: 바뀌지 않은 주소 재전송 금지). 수동 실행(workflow_dispatch)이면 before 가 없어 보내지 않는다
-      - run: CHANGED="$(git diff --name-only "$BEFORE" "$GITHUB_SHA" 2>/dev/null)" node scripts/indexnow.mjs
+      # core.quotePath=false — 안 하면 한글 파일 이름이 "\354\204…" 로 나와 사례 주소를 못 찾는다(10-01 실측)
+      - run: CHANGED="$(git -c core.quotePath=false diff --name-only "$BEFORE" "$GITHUB_SHA" 2>/dev/null)" node scripts/indexnow.mjs
         env:
           BEFORE: ${{ github.event.before }}
