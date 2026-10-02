@@ -32,7 +32,8 @@ const dateLabel = date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'lo
 
 <style>
   .bd-case-card {
-    display: block;
+    display: flex;
+    flex-direction: column;
     border: 1px solid var(--glass-line);
     border-radius: var(--radius);
     overflow: hidden;
@@ -49,7 +50,7 @@ const dateLabel = date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'lo
   .bd-case-card__media { aspect-ratio: 4 / 3; background: var(--bg-soft); }
   .bd-case-card__media img { width: 100%; height: 100%; object-fit: cover; outline: 1px solid oklch(0 0 0 / 0.08); outline-offset: -1px; }
   .bd-case-card__placeholder { width: 100%; height: 100%; background: var(--bg-soft); }
-  .bd-case-card__body { padding: 18px 20px 20px; }
+  .bd-case-card__body { flex: 1; display: flex; flex-direction: column; padding: 18px 20px 20px; }
   /* 실제 정보(작업·지역)를 담는 메타 — 장식 라벨과 달리 대비 확보 (실버는 장식 전용 유지) */
   .bd-case-card__meta { color: var(--ink-soft); }
   .bd-case-card__title {
@@ -57,5 +58,5 @@ const dateLabel = date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'lo
     margin: 8px 0 6px;
   }
   .bd-case-card__sub { font-size: 14px; color: var(--br-ink-sub); margin-bottom: 6px; }
-  .bd-case-card__date { font-size: 13px; color: var(--ink-soft); }
+  .bd-case-card__date { margin-top: auto; font-size: 13px; color: var(--ink-soft); } /* 제목이 두 줄인 카드도 날짜는 옆 카드와 같은 높이 */
 </style>

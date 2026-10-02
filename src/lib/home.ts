@@ -34,7 +34,7 @@ export interface HomeData {
   exploded: HomeExploded | null;
   triage: { heading: string[]; cards: HomeTriageCard[] } | null;
   process: { eyebrow: string; lead: string; heading: string[]; steps: HomeProcessStep[] } | null;
-  /** 맨 아래 '우리와 함께한 공간' 머리 — 비면 띠를 건너뛴다 */
+  /** 맨 아래 '바람대로와 함께한 공간' 머리 — 비면 띠를 건너뛴다 */
   brands: { label: string; heading: string; lead: string } | null;
   ctaBand: {
     label: string;

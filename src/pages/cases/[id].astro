@@ -15,6 +15,9 @@ const { Content } = await render(entry);
 const { region, space, brand, type, units, date, cover, sample, photos, answer, qa, updated } = entry.data;
 const title = entry.data.title || `${region} ${space} ${brand} ${type} ${units}대`;
 const description = answer || `${title} 시공 기록.`;
+// 화면 제목은 '｜' 앞을 크게, 뒤를 작은 줄로(검색용 한 줄 제목이 막대에서 어색하게 꺾이던 것). <title>·JSON-LD 는 원문 그대로
+const [tMain, tSub] = title.split(/\s*[｜|]\s*/);
+const altTitle = tSub ? `${tMain} — ${tSub}` : tMain;   // 화면낭독기가 '｜'를 읽지 않게
 // 본문 아래 사진 — cover 와 본문에 이미 넣은 사진은 뺀다
 const gallery = photos.filter((p) => p.file !== cover && !entry.body?.includes(p.file));
 const dateLabel = date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -69,10 +72,10 @@ const specs = [
   <article class="bd-section case-detail">
     <div class="bd-container">
       <p class="bd-microlabel">{type} · {region}</p>
-      <h1 class="case-detail__title">{title}</h1>
+      <h1 class="case-detail__title">{tMain}{tSub && <span class="case-detail__sub">{tSub}</span>}</h1>
       {sample && <p class="case-detail__sample">샘플 콘텐츠 — 실제 사례로 교체 예정</p>}
 
-      {cover && <img class="case-detail__cover" src={cover} alt={`${title} 현장`} />}
+      {cover && <img class="case-detail__cover" src={cover} alt={`${altTitle} 현장`} />}
 
       <dl class="case-detail__specs">
         {specs.map(([k, v]) => (
@@ -91,7 +94,7 @@ const specs = [
         <div class="case-detail__photos">
           {gallery.map((p) => (
             <figure>
-              <img src={p.file} alt={p.caption ? `${title} — ${p.caption}` : `${title} 현장`} loading="lazy" decoding="async" />
+              <img src={p.file} alt={p.caption ? `${tMain} — ${p.caption}` : `${altTitle} 현장`} loading="lazy" decoding="async" />
               {p.caption && <figcaption>{p.caption}</figcaption>}
             </figure>
           ))}
@@ -128,7 +131,8 @@ const specs = [
 
 <style>
   .case-detail .bd-container { max-width: 760px; }
-  .case-detail__title { font-size: clamp(24px, 3.4vw, 34px); margin: 10px 0 14px; }
+  .case-detail__title { font-size: clamp(24px, 3.4vw, 34px); margin: 10px 0 14px; text-wrap: balance; }
+  .case-detail__sub { display: block; margin-top: 6px; font-size: 0.56em; font-weight: 600; line-height: 1.5; color: var(--ink-soft); }
   .case-detail__sample {
     display: inline-block;
     font-size: 12px;
@@ -158,6 +162,8 @@ const specs = [
   .case-detail__spec dt { font-size: 12px; color: var(--ink-soft); margin-bottom: 2px; }
   .case-detail__spec dd { font-size: 15px; font-weight: 600; }
   .case-detail__body { font-size: 15.5px; color: var(--ink); }
+  /* 본문 사진 — 아주 긴 세로 사진이 한 화면을 넘게 차지하지 않게 */
+  .case-detail__body :global(img) { max-height: min(80vh, 760px); width: auto; margin-inline: auto; border-radius: var(--radius); }
   .case-detail__body :global(p) { margin-bottom: 14px; }
   .case-detail__body :global(ul) { margin: 0 0 14px 20px; }
   .case-detail__body :global(blockquote) {
@@ -177,6 +183,7 @@ const specs = [
   .case-detail__qa summary { cursor: pointer; font-weight: 700; font-size: 16px; padding: 16px 4px; }
   .case-detail__qa p { font-size: 15px; color: var(--ink-soft); padding: 0 4px 16px; line-height: 1.8; }
   .case-detail__more { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line); }
+  .case-detail__qa + .case-detail__more { margin-top: 28px; padding-top: 0; border-top: 0; } /* 질문 마지막 선과 겹쳐 빈 칸처럼 보이던 두 줄 */
   .case-detail__more p { font-size: 14px; font-weight: 700; color: var(--ink-soft); }
   .case-detail__more ul { margin-top: 10px; list-style: none; display: flex; flex-wrap: wrap; gap: 8px 18px; }
   .case-detail__more a { color: var(--br-teal-deep); text-decoration: underline; text-underline-offset: 3px; font-size: 15px; }

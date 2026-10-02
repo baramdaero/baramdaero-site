@@ -117,15 +117,18 @@ const jsonLd = [
       cityOpts.forEach((o) => { o.hidden = !!p && o.dataset.prov !== p; });
       const n = cityOpts.filter((o) => !o.hidden).length;
       cityWrap.hidden = !p || n < 2;                 // 시·도를 골라야, 그 안에 시·구가 둘 이상일 때만
-      if (citySel.value && cityOpts.find((o) => o.value === citySel.value)?.hidden) citySel.value = '';
+      // 시·도를 '전체'로 돌리면 시·구도 푼다 — 숨긴 선택 상자에 값이 남아 1건에 갇히던 것(2026-10-01)
+      if (citySel.value && (!p || cityOpts.find((o) => o.value === citySel.value)?.hidden)) citySel.value = '';
     };
     const apply = (reset = true) => {
       if (reset) shown = PAGE;
       // 한글 조합 중 끝 홑자모는 떼고 본다 — 치는 동안 0건이 깜빡이지 않게
       const terms = input.value.replace(/[ㄱ-ㆎ]+$/, '').toLowerCase().split(/\s+/).filter(Boolean);
       const city = citySel.value;
+      // '성남시'·'구로구'처럼 행정구역 끝말을 붙여 쳐도 찾게 — 끝말을 뗀 꼴로 한 번 더 본다
+      const bare = (t: string) => (t.length > 2 ? t.replace(/(특별자치시|특별자치도|특별시|광역시|시|도|구|군)$/, '') : t);
       const hits = cells.filter((c) => (!prov || c.dataset.prov === prov) && (!city || c.dataset.city === city)
-        && terms.every((t) => (c.dataset.q ?? '').includes(t)));
+        && terms.every((t) => (c.dataset.q ?? '').includes(t) || (c.dataset.q ?? '').includes(bare(t))));
       cells.forEach((c) => { c.hidden = true; });
       hits.slice(0, shown).forEach((c) => { c.hidden = false; });
       const left = hits.length - Math.min(shown, hits.length);
@@ -194,6 +197,7 @@ const jsonLd = [
   .case-more button[hidden] { display: none; }
   .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .case-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .case-grid__cell { display: grid; }            /* 카드가 줄 높이만큼 늘어나 아래 끝선이 맞는다 */
   .case-grid__cell[hidden] { display: none; }
   .case-empty { color: var(--br-ink-sub); padding: 40px 0; }
   @media (max-width: 900px) { .case-grid { grid-template-columns: repeat(2, 1fr); } }

@@ -10,12 +10,14 @@ import { join } from 'node:path';
 // 빌드 번들 위치와 무관하게 프로젝트 루트 기준으로 고정 (astro는 항상 루트에서 실행)
 const TRUST_PATH = join(process.cwd(), 'src/content/site/trust.json');
 
-export interface TrustStat { label: string; value: number; suffix: string }
+export interface TrustStat { label: string; value: number; suffix: string; prefix: string }
 export interface TrustCredential { title: string; image: string; note: string }
 export interface TrustPromise { number: string; label: string }
 export interface TrustPrinciple { no: number; title: string; body: string }
 export interface TrustData {
   stats: TrustStat[];
+  /** 숫자 아래 기준 한 줄(예: 2026년 9월 기준) — 비면 안 나온다 */
+  statsNote: string;
   credentials: TrustCredential[];
   as_promises: TrustPromise[];
   principles: TrustPrinciple[];
@@ -23,7 +25,7 @@ export interface TrustData {
   videoId: string | null;
 }
 
-const EMPTY: TrustData = { stats: [], credentials: [], as_promises: [], principles: [], videoId: null };
+const EMPTY: TrustData = { stats: [], statsNote: '', credentials: [], as_promises: [], principles: [], videoId: null };
 
 const warn = (msg: string) => console.warn(`[trust.json 경고] ${msg}`);
 
@@ -91,7 +93,12 @@ export function loadTrust(): TrustData {
       if (it?.label || it?.value) warn(`stats[${i}] — label(문자)과 value(숫자)가 모두 필요합니다. 항목을 건너뜁니다.`);
       return null;
     }
-    return { label: it.label.trim(), value: it.value, suffix: isNonEmptyString(it.suffix) ? it.suffix.trim() : '' };
+    return {
+      label: it.label.trim(),
+      value: it.value,
+      suffix: isNonEmptyString(it.suffix) ? it.suffix.trim() : '',
+      prefix: isNonEmptyString(it.prefix) ? it.prefix.trim() : '',
+    };
   });
 
   const credentials = pickArray<TrustCredential>(raw.credentials, 'credentials', (it, i) => {
@@ -131,5 +138,7 @@ export function loadTrust(): TrustData {
     if (!videoId) warn(`video_embed — 유튜브 주소를 인식하지 못했습니다("${raw.video_embed}"). 영상 섹션을 건너뜁니다.`);
   }
 
-  return { stats, credentials, as_promises, principles, videoId };
+  const statsNote = isNonEmptyString(raw.stats_note) ? raw.stats_note.trim() : '';
+
+  return { stats, statsNote, credentials, as_promises, principles, videoId };
 }

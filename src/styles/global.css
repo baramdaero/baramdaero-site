@@ -69,10 +69,14 @@ body {
   line-height: 1.7;
   letter-spacing: -0.005em;
   word-break: keep-all;
+  /* 내용이 짧은 쪽(404 등)에서도 푸터가 화면 바닥에 닿게 — main 이 남는 높이를 먹는다 */
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 카드 바깥 글로우가 좁은 화면의 가로 스크롤을 만들지 않게 뷰포트 끝에서 자른다. */
-main { overflow-x: clip; }
+main { overflow-x: clip; flex: 1 0 auto; }
 
 img, video { max-width: 100%; height: auto; display: block; }
 
@@ -88,6 +92,8 @@ h1, h2, h3 {
   letter-spacing: -0.02em;
   text-wrap: balance;
 }
+/* 작은 제목·질문 줄도 마지막 낱말 하나만 다음 줄로 떨어지지 않게 */
+h4, summary { text-wrap: balance; }
 /* 카드·단계 제목 기본값. 더 큰 층위가 필요한 곳은 컴포넌트가 따로 정한다 */
 h3 { font-size: 19px; line-height: 1.35; }
 @media (min-width: 768px) { h3 { font-size: 20px; } }

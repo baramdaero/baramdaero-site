@@ -24,6 +24,7 @@ const {
 } = Astro.props;
 // 회사소개 설명 — 문자열이든 배열이든 한 칸 = 한 줄, 빈 칸은 버린다(home.ts 서비스 리드와 같은 규칙)
 const lead = ([] as string[]).concat(promise?.lead ?? []).map((l) => String(l).trim()).filter(Boolean);
+const facts = (promise?.facts ?? []).map((f) => String(f).trim()).filter(Boolean);
 ---
 {promise && (
   <section class="v2-standards-story" aria-label={promise.heading}>
@@ -36,7 +37,12 @@ const lead = ([] as string[]).concat(promise?.lead ?? []).map((l) => String(l).t
           <div class="v2-standards-story__card br-glass br-glass--medium">
             {promise.eyebrow && <p class="br-sec-label">{promise.eyebrow}</p>}
             <h2 class="br-h br-reveal">{promise.heading}</h2>
+            {promise.sub && <p class="v2-standards-story__sub br-reveal">{promise.sub}</p>}
             {lead.length > 0 && <p class="br-sec-lead br-reveal">{lead.map((l, i) => <Fragment>{i > 0 && <br />}{l}</Fragment>)}</p>}
+            {/* 사실 한 줄 — 항목마다 앞에 점, 좁으면 항목째 다음 줄로(줄 첫머리에 구분점만 남지 않게) */}
+            {facts.length > 0 && <ul class="v2-standards-story__facts br-reveal">{facts.map((f) => <li>{f}</li>)}</ul>}
+            {/* 제목 묶음 아래 자리(홈: 실적 숫자, 2026-10-01) */}
+            <slot name="head" />
             <ol class="v2-standards-story__steps br-reveal">
               {promise.items.map((item) => (
                 <li>
@@ -127,7 +133,13 @@ const lead = ([] as string[]).concat(promise?.lead ?? []).map((l) => String(l).t
 
   /* 항목별 사진 — 사진 위, 번호·제목·설명 아래. 좁은 화면은 한 줄에 하나 */
   .v2-standards-story__card { padding: 24px 20px 28px; }
-  .v2-standards-story__card .br-h { font-size: clamp(26px, 0.9rem + 1.9vw, 36px); line-height: 1.25; }
+  .v2-standards-story__card .br-h { font-size: clamp(26px, 0.9rem + 1.9vw, 36px); line-height: 1.25; text-wrap: balance; }
+  /* 부제 — 제목(장점) 다음 회사 한 문장. 리드보다 한 단 크고 진하게 */
+  .v2-standards-story__sub { margin-top: 12px; font-size: clamp(17px, 0.85rem + 0.5vw, 20px); font-weight: 600; line-height: 1.5; color: var(--br-ink); text-wrap: balance; }
+  .v2-standards-story__sub + :global(.br-sec-lead) { margin-top: 8px; }
+  .v2-standards-story__facts { margin-top: 12px; list-style: none; display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 15px; line-height: 1.6; color: var(--br-ink-sub); }
+  .v2-standards-story__facts > li { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .v2-standards-story__facts > li::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--br-teal); flex: none; }
   .v2-standards-story__steps { margin-top: var(--head-gap); list-style: none; display: grid; gap: 28px; }
   .v2-standards-story__steps > li { display: grid; gap: 16px; align-content: start; }
   .v2-standards-story__steps > li :global(.br-image-slot) { --slot-radius: calc(var(--radius) - 4px); }
@@ -136,7 +148,7 @@ const lead = ([] as string[]).concat(promise?.lead ?? []).map((l) => String(l).t
     font-variant-numeric: tabular-nums;
   }
   .v2-standards-story__steps h3 { margin-top: 4px; color: var(--br-ink); font-size: 19px; }
-  .v2-standards-story__steps p { margin-top: 8px; font-size: 14px; line-height: 1.65; color: var(--br-ink-sub); }
+  .v2-standards-story__steps p { margin-top: 8px; font-size: 14px; line-height: 1.65; color: var(--br-ink-sub); text-wrap: balance; }
   @media (min-width: 768px) {
     .v2-standards-story__card { padding: var(--panel-pad); }
     .v2-standards-story__steps { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
