@@ -166,6 +166,7 @@ export function decideFaq(query: string, docs: FaqDoc[]): FaqDecision {
   //   드문 말처럼 무겁게 치면 긴 문장의 '나서부터·수십만 원씩' 같은 말 때문에 늘 고르기로 빠진다
   // 드문 정도는 온전한 꼴로만 센다 — '설치비' 를 끝 글자 뗀 '설치' 로 세면 거의 모든 문항에 걸려 흔한 말이 된다
   const count = (fs: [string, number][]) => docs.filter((d) => hit(d, fs.filter(([, k]) => k === 1))).length;
+  const fixed = new Map<string, string>();
   const measured = tokens.map((t) => {
     let fs = forms(t);
     let df = count(fs);
@@ -173,10 +174,12 @@ export function decideFaq(query: string, docs: FaqDoc[]): FaqDecision {
       const f = fix(t, docs);
       const ffs = f ? forms(f) : [];
       const fdf = f ? count(ffs) : 0;
-      if (fdf) { fs = ffs.map(([w, k]) => [w, k * 0.9] as [string, number]); df = fdf; }
+      if (fdf) { fs = ffs.map(([w, k]) => [w, k * 0.9] as [string, number]); df = fdf; fixed.set(t, f!); }
     }
     return { fs, df };
   });
+  // 모든 말을 고쳤으면(한/영 전환을 잊고 친 문장 등) 고친 문장으로 처음부터 다시 찾는다 — 바르게 친 것과 같은 결과가 되게
+  if (fixed.size && tokens.every((t) => fixed.has(t))) return decideFaq(tokens.map((t) => fixed.get(t)).join(' '), docs);
   if (!measured.some((t) => t.df > 0)) return { kind: 'none' };
   const terms = measured.map((t) => ({ fs: t.fs, common: t.df > N * 0.3, idf: Math.log(1 + (t.df ? N / t.df : 20)) }));
   const total = terms.reduce((a, t) => a + t.idf, 0);

@@ -53,6 +53,20 @@ const answers = items.map((f) => {
   return { f, short, rest, hook };
 });
 
+// 처음 온 분이 순서대로 읽는 길 — 알아보는 순서(달 수 있나 → … → 관리)대로 한 문항씩. 문항이 없으면(hold 등) 그 단계는 뺀다
+const GUIDE_ALL = [
+  { id: 'faq-ceiling-check', label: '달 수 있나' },
+  { id: 'faq-capacity-rooms', label: '몇 대·크기' },
+  { id: 'faq-price-how', label: '비용' },
+  { id: 'faq-brand-choice', label: '브랜드' },
+  { id: 'faq-ask-first', label: '견적' },
+  { id: 'faq-install-flow', label: '설치 날' },
+  { id: 'faq-install-check', label: '끝나고 확인' },
+  { id: 'faq-filter-cycle', label: '관리' },
+];
+const GUIDE = GUIDE_ALL.flatMap((g) => answers.filter((a) => a.f.id === g.id).map((a) => ({ ...a, label: g.label })));
+GUIDE_ALL.filter((g) => !items.some((f) => f.id === g.id)).forEach((g) => console.warn(`[faq 순서대로] live 문항 없음, 단계에서 뺌: ${g.id}`));
+
 // 카테고리 순서 고정 (비용 먼저) — 문항이 있는 카테고리만 섹션 생성
 const sections = FAQ_CATEGORIES
   .map((cat) => ({ cat, items: items.filter((i) => i.category === cat) }))
@@ -88,6 +102,8 @@ if (items.length) {
     <Fragment slot="extra">
       {items.length > 0 && (
         <Fragment>
+          {/* 첫 화면에서 바로 보이게 히어로에 둔다 — 누르면 아래 '순서대로 보기' 를 펼쳐 1단계로 */}
+          {GUIDE.length > 0 && <a class="faq-guide-go" href="#faq-guide" data-faq-guide-go>처음이세요? 순서대로 보기 <span aria-hidden="true">→</span></a>}
           {/* 입력에 name 이 없다 — 적은 말(연락처 등)이 주소창·서버 기록에 남지 않게. JS 가 없어도 전 문항은 아래에 있다 */}
           <form class="faq-ask" role="search" data-faq-form>
             <label class="faq-ask__label" for="faq-q">궁금한 걸 물어보세요</label>
@@ -126,6 +142,42 @@ if (items.length) {
     <div class="bd-container">
       {items.length > 0 ? (
         <Fragment>
+          {/* 순서대로 보기 — JS 가 없으면 펼쳤을 때 전 단계가 차례로 다 보인다. JS 가 있으면 한 화면에 한 문항 + 이전/다음 */}
+          {GUIDE.length > 0 && (
+            <details class="faq-guide" id="faq-guide" data-faq-guide>
+              <summary class="faq-guide__open">처음이세요? 순서대로 보기 <span aria-hidden="true">→</span></summary>
+              <ol class="faq-guide__list">
+                {GUIDE.map(({ f, short, rest, hook, label }, i) => (
+                  <li class="faq-guide__step br-glass br-glass--medium" data-faq-step>
+                    <p class="faq-guide__n">{i + 1} / {GUIDE.length} · {label}</p>
+                    <h2 class="faq-guide__q" tabindex="-1" data-faq-step-q>{f.q}</h2>
+                    <p class="faq-guide__short">{short}</p>
+                    {(rest || f.priceNote) && (
+                      <details class="faq-ans__more">
+                        <summary class="faq-ans__toggle">자세히 보기</summary>
+                        <div class="faq-ans__full">
+                          {hook && rest && <p class="faq-item__hook">{hook}</p>}
+                          {rest && <div class="faq-item__a" set:html={renderFaqMd(rest)} />}
+                          {f.priceNote && <p class="faq-item__price">{f.priceNote}</p>}
+                        </div>
+                      </details>
+                    )}
+                    {i === GUIDE.length - 1 && (
+                      <div class="faq-guide__end">
+                        <p>다 읽으셨습니다. 궁금한 게 남았으면 물어보세요.</p>
+                        <button disabled aria-describedby="chat-unavailable" type="button" class="bd-cta" data-chat-tree="etc">상담으로 묻기</button>
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ol>
+              <div class="faq-guide__nav" data-faq-guide-nav hidden>
+                <button type="button" class="faq-guide__btn" data-faq-guide-prev>◀ 이전</button>
+                <button type="button" class="faq-guide__btn faq-guide__btn--next" data-faq-guide-next>다음 ▶</button>
+              </div>
+            </details>
+          )}
+
           {/* 묻고 답하기 — 물으면 나타난다. 가장 최근 질문 하나만 보여 준다 */}
           <div class="faq-chat" data-faq-chat hidden>
             <p class="faq-chat__me"><span class="visually-hidden">물어본 질문: </span><span data-faq-me></span></p>
@@ -260,6 +312,38 @@ if (items.length) {
 </Base>
 
 <script>
+  // 순서대로 보기 — 한 화면에 한 단계. 이전/다음으로 넘기고, 넘길 때 질문으로 초점을 옮긴다
+  {
+    const guide = document.querySelector<HTMLDetailsElement>('[data-faq-guide]');
+    const steps = Array.from(document.querySelectorAll<HTMLElement>('[data-faq-step]'));
+    const nav = document.querySelector<HTMLElement>('[data-faq-guide-nav]');
+    const prev = document.querySelector<HTMLButtonElement>('[data-faq-guide-prev]');
+    const nextBtn = document.querySelector<HTMLButtonElement>('[data-faq-guide-next]');
+    let at = 0;
+    const go = (i: number, focus = true) => {
+      at = Math.max(0, Math.min(steps.length - 1, i));
+      steps.forEach((s, k) => { s.hidden = k !== at; });
+      if (prev) prev.disabled = at === 0;
+      if (nextBtn) nextBtn.hidden = at === steps.length - 1;
+      if (focus) {
+        const q = steps[at]?.querySelector<HTMLElement>('[data-faq-step-q]');
+        q?.focus({ preventScroll: true });
+        guide?.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      }
+    };
+    if (guide && steps.length && nav) {
+      nav.hidden = false;
+      go(0, false);
+      prev?.addEventListener('click', () => go(at - 1));
+      nextBtn?.addEventListener('click', () => go(at + 1));
+      guide.addEventListener('toggle', () => { if (guide.open) go(0); });
+      document.querySelector('[data-faq-guide-go]')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (guide.open) go(0); else guide.open = true;   // toggle 이벤트가 go(0) 을 부른다
+      });
+    }
+  }
+
   // 묻고 답하기 — 물어본 말에 가장 가까운 문항 하나로 답한다. 고르는 규칙은 faq-rank.ts.
   import { decideFaq, type FaqDoc } from '../../scripts/faq-rank';
   import { ensureChannel, openConsult } from '../../lib/channel';
@@ -559,6 +643,44 @@ if (items.length) {
   }
 
   /* ── 전체 질문 ─────────────────────────────────────────────── */
+  .faq-guide-go {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 60px; margin-bottom: 20px; padding: 14px 20px; border-radius: 999px;
+    background: var(--br-ice); color: var(--br-teal-deep);
+    font-size: 19px; font-weight: 700; text-decoration: none;
+  }
+  .faq-guide-go:focus-visible { outline: 2px solid var(--br-ice); outline-offset: 3px; }
+  .faq-guide { scroll-margin-top: 80px; }
+  /* 순서대로 보기 — 큰 글씨·큰 버튼(어르신도 누르기 쉽게 48px 이상) */
+  .faq-guide { margin-bottom: 40px; }
+  .faq-guide__open {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 60px; padding: 14px 20px; border-radius: 999px;
+    background: var(--br-teal-deep); color: #fff;
+    font-size: 19px; font-weight: 700; cursor: pointer; list-style: none;
+  }
+  .faq-guide__open::-webkit-details-marker { display: none; }
+  .faq-guide[open] > .faq-guide__open { background: var(--br-base); color: var(--br-teal); border: 1px solid var(--br-line); }
+  .faq-guide__open:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 3px; }
+  .faq-guide__list { display: grid; gap: 16px; margin: 20px 0 0; padding: 0; list-style: none; }
+  .faq-guide__step { padding: 24px 20px; }
+  .faq-guide__n { font-size: 15px; font-weight: 700; color: var(--br-teal); }
+  .faq-guide__q { margin-top: 8px; font-size: 22px; font-weight: 700; line-height: 1.45; color: var(--br-ink); outline: none; text-wrap: balance; }
+  .faq-guide__short { margin-top: 12px; font-size: 19px; line-height: 1.8; color: var(--br-ink); }
+  .faq-guide__step .faq-ans__toggle { font-size: 17px; min-height: 48px; }
+  .faq-guide__step .faq-ans__full { font-size: 17px; }
+  .faq-guide__end { display: grid; gap: 14px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--br-line); font-size: 18px; color: var(--br-ink); }
+  .faq-guide__nav { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+  .faq-guide__btn {
+    min-height: 60px; border-radius: 14px; border: 1px solid var(--br-line);
+    background: var(--br-base); color: var(--br-teal);
+    font: inherit; font-size: 19px; font-weight: 700; cursor: pointer;
+  }
+  .faq-guide__btn--next { background: var(--br-teal-deep); border-color: var(--br-teal-deep); color: #fff; }
+  .faq-guide__btn:disabled { opacity: 0.4; cursor: default; }
+  .faq-guide__btn[hidden] { display: none; }
+  .faq-guide__btn:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; }
+
   .faq-all__title { margin-bottom: 18px; font-size: 22px; color: var(--br-ink); }
 
   .faq-nav { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 36px; }
