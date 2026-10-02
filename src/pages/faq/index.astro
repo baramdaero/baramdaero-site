@@ -54,19 +54,34 @@ const answers = items.map((f) => {
   return { f, short, rest, hook };
 });
 
-// 처음 온 분이 순서대로 읽는 길 — 알아보는 순서(달 수 있나 → … → 관리)대로 한 문항씩. 문항이 없으면(hold 등) 그 단계는 뺀다
-const GUIDE_ALL = [
-  { id: 'faq-ceiling-check', label: '달 수 있나' },
-  { id: 'faq-capacity-rooms', label: '몇 대·크기' },
-  { id: 'faq-price-how', label: '비용' },
-  { id: 'faq-brand-choice', label: '브랜드' },
-  { id: 'faq-ask-first', label: '견적' },
-  { id: 'faq-install-flow', label: '설치 날' },
-  { id: 'faq-install-check', label: '끝나고 확인' },
-  { id: 'faq-filter-cycle', label: '관리' },
+// 처음 온 분이 순서대로 읽는 길 — 설치·세척 두 갈래(2026-10-02 대표). 알아보는 순서대로 한 문항씩. 문항이 없으면(hold 등) 그 단계는 뺀다
+const GUIDE_TRACKS = [
+  { key: 'install', name: '설치', steps: [
+    { id: 'faq-ceiling-check', label: '달 수 있나' },
+    { id: 'faq-capacity-rooms', label: '몇 대·크기' },
+    { id: 'faq-price-how', label: '비용' },
+    { id: 'faq-brand-choice', label: '브랜드' },
+    { id: 'faq-ask-first', label: '견적' },
+    { id: 'faq-install-flow', label: '설치 날' },
+    { id: 'faq-install-check', label: '끝나고 확인' },
+    { id: 'faq-filter-cycle', label: '관리' },
+  ] },
+  { key: 'clean', name: '세척', steps: [
+    { id: 'faq-clean-cycle', label: '얼마나 자주' },
+    { id: 'faq-deep-vs-basic', label: '분해 세척' },
+    { id: 'faq-clean-scope', label: '어디까지' },
+    { id: 'faq-clean-live-in', label: '살면서 가능?' },
+    { id: 'faq-clean-time', label: '걸리는 시간' },
+    { id: 'faq-clean-order', label: '당일 순서' },
+    { id: 'faq-clean-check', label: '끝나고 확인' },
+    { id: 'faq-mold-prevent', label: '관리' },
+  ] },
 ];
-const GUIDE = GUIDE_ALL.flatMap((g) => answers.filter((a) => a.f.id === g.id).map((a) => ({ ...a, label: g.label })));
-GUIDE_ALL.filter((g) => !items.some((f) => f.id === g.id)).forEach((g) => console.warn(`[faq 순서대로] live 문항 없음, 단계에서 뺌: ${g.id}`));
+const GUIDES = GUIDE_TRACKS.map((t) => ({
+  ...t,
+  steps: t.steps.flatMap((g) => answers.filter((a) => a.f.id === g.id).map((a) => ({ ...a, label: g.label }))),
+})).filter((t) => t.steps.length > 0);
+GUIDE_TRACKS.flatMap((t) => t.steps).filter((g) => !items.some((f) => f.id === g.id)).forEach((g) => console.warn(`[faq 순서대로] live 문항 없음, 단계에서 뺌: ${g.id}`));
 
 // 카테고리 순서 고정 (비용 먼저) — 문항이 있는 카테고리만 섹션 생성
 const sections = FAQ_CATEGORIES
@@ -106,11 +121,15 @@ if (items.length) {
           <div class="faq-hero">
           {/* 처음 온 분 안내 — 첫 화면 맨 위. 누르면 아래 '순서대로 보기' 를 펼쳐 1단계로.
               테두리에 우리 색 띠가 흐르고 아래로 같은 색이 번진다(Magic UI 'rainbow button' 을 틸 색으로, 2026-10-02 대표 지정) */}
-          {GUIDE.length > 0 && (
-            <a class="faq-start" href="#faq-guide" data-faq-guide-go>
-              <span class="faq-start__t">처음이세요?</span>
-              <span class="faq-start__h">순서대로 차근차근 보기 <span aria-hidden="true">→</span></span>
-            </a>
+          {GUIDES.length > 0 && (
+            <div class="faq-starts">
+              <p class="faq-starts__t">처음이세요?</p>
+              {GUIDES.map((g) => (
+                <a class="faq-start" href={`#faq-guide-${g.key}`} data-faq-guide-go={g.key}>
+                  <span class="faq-start__h">{g.name} 자주 묻는 질문 <span aria-hidden="true">→</span></span>
+                </a>
+              ))}
+            </div>
           )}
           <div class="faq-hero__ask">
           {/* 입력에 name 이 없다 — 적은 말(연락처 등)이 주소창·서버 기록에 남지 않게. JS 가 없어도 전 문항은 아래에 있다 */}
@@ -155,14 +174,14 @@ if (items.length) {
       {items.length > 0 ? (
         <Fragment>
           {/* 순서대로 보기 — JS 가 없으면 펼쳤을 때 전 단계가 차례로 다 보인다. JS 가 있으면 한 화면에 한 문항 + 이전/다음 */}
-          {GUIDE.length > 0 && (
-            <details class="faq-guide" id="faq-guide" data-faq-guide data-no-expand>
-              <summary class="faq-guide__open">순서대로 보기 <span aria-hidden="true">→</span></summary>
+          {GUIDES.map((g) => (
+            <details class="faq-guide" id={`faq-guide-${g.key}`} data-faq-guide={g.key} data-no-expand>
+              <summary class="faq-guide__open">{g.name} 자주 묻는 질문 <span aria-hidden="true">→</span></summary>
               <div class="faq-guide__bar" aria-hidden="true"><i data-faq-guide-bar></i></div>
               <ol class="faq-guide__list">
-                {GUIDE.map(({ f, short, rest, hook, label }, i) => (
+                {g.steps.map(({ f, short, rest, hook, label }, i) => (
                   <li class="faq-guide__step br-glass br-glass--medium" data-faq-step>
-                    <p class="faq-guide__n">{i + 1} / {GUIDE.length} · {label}</p>
+                    <p class="faq-guide__n">{g.name} {i + 1} / {g.steps.length} · {label}</p>
                     <h2 class="faq-guide__q" tabindex="-1" data-faq-step-q>{f.q}</h2>
                     <p class="faq-guide__short">{short}</p>
                     {(rest || f.priceNote) && (
@@ -175,7 +194,7 @@ if (items.length) {
                         </div>
                       </details>
                     )}
-                    {i === GUIDE.length - 1 && (
+                    {i === g.steps.length - 1 && (
                       <div class="faq-guide__end">
                         <p>다 읽으셨습니다. 궁금한 게 남았으면 물어보세요.</p>
                         <div class="faq-guide__end-btns">
@@ -192,7 +211,7 @@ if (items.length) {
                 <button type="button" class="faq-guide__btn faq-guide__btn--next" data-faq-guide-next>다음 ▶</button>
               </div>
             </details>
-          )}
+          ))}
 
           {/* 묻고 답하기 — 물으면 나타난다. 가장 최근 질문 하나만 보여 준다 */}
           <div class="faq-chat" data-faq-chat hidden>
@@ -342,13 +361,14 @@ if (items.length) {
   });
 
   // 순서대로 보기 — 한 화면에 한 단계. 이전/다음으로 넘기고, 넘길 때 질문으로 초점을 옮긴다
-  {
-    const guide = document.querySelector<HTMLDetailsElement>('[data-faq-guide]');
-    const steps = Array.from(document.querySelectorAll<HTMLElement>('[data-faq-step]'));
-    const nav = document.querySelector<HTMLElement>('[data-faq-guide-nav]');
-    const prev = document.querySelector<HTMLButtonElement>('[data-faq-guide-prev]');
-    const nextBtn = document.querySelector<HTMLButtonElement>('[data-faq-guide-next]');
-    const bar = document.querySelector<HTMLElement>('[data-faq-guide-bar]');
+  // 설치·세척 갈래마다 따로 돈다. 한 갈래를 열면 다른 갈래는 닫는다
+  const guides = Array.from(document.querySelectorAll<HTMLDetailsElement>('[data-faq-guide]'));
+  for (const guide of guides) {
+    const steps = Array.from(guide.querySelectorAll<HTMLElement>('[data-faq-step]'));
+    const nav = guide.querySelector<HTMLElement>('[data-faq-guide-nav]');
+    const prev = guide.querySelector<HTMLButtonElement>('[data-faq-guide-prev]');
+    const nextBtn = guide.querySelector<HTMLButtonElement>('[data-faq-guide-next]');
+    const bar = guide.querySelector<HTMLElement>('[data-faq-guide-bar]');
     const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
     const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)';
     let at = 0;
@@ -388,12 +408,13 @@ if (items.length) {
       nextBtn?.addEventListener('click', () => go(at + 1));
       guide.addEventListener('toggle', () => {
         if (!guide.open) return;
+        guides.forEach((o) => { if (o !== guide) o.open = false; });
         steps.forEach((s, k) => { s.hidden = k !== 0; });
         at = 0;
         go(0);
         if (!still()) guide.animate([{ opacity: 0, transform: 'translateY(32px) scale(0.98)' }, { opacity: 1, transform: 'none' }], { duration: 600, easing: EASE });
       });
-      document.querySelector('[data-faq-guide-go]')?.addEventListener('click', (e) => {
+      document.querySelector(`[data-faq-guide-go="${guide.dataset.faqGuide}"]`)?.addEventListener('click', (e) => {
         e.preventDefault();
         if (guide.open) go(0); else guide.open = true;   // toggle 이벤트가 go(0) 을 부른다
       });
@@ -724,7 +745,7 @@ if (items.length) {
   .faq-hero__ask { width: 100%; }
   @media (min-width: 960px) {
     .faq-hero { grid-template-columns: minmax(0, 600px) auto; justify-content: space-between; align-items: start; }
-    .faq-hero .faq-start { order: 2; margin-top: 34px; }
+    .faq-hero .faq-starts { order: 2; margin-top: 4px; }
   }
 
   /* 순서대로 보기 버튼 — 테두리 띠(틸 토큰끼리 섞은 색)가 흐르고, 같은 띠가 버튼 아래로 흐리게 번진다 */
@@ -732,8 +753,8 @@ if (items.length) {
     --btn-bg: color-mix(in srgb, var(--br-teal-deep) 82%, #000);
     --band: linear-gradient(90deg, var(--br-ice), color-mix(in srgb, var(--br-ice) 45%, var(--br-teal)), #fff, color-mix(in srgb, var(--br-ice) 20%, var(--br-teal)), var(--br-ice));
     position: relative; isolation: isolate;
-    display: inline-flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px;
-    min-height: 76px; padding: 12px 26px; border-radius: 14px; white-space: nowrap;
+    display: inline-flex; align-items: center; justify-content: space-between; gap: 12px;
+    min-height: 60px; padding: 0 24px; border-radius: 14px; white-space: nowrap;
     border: 1.5px solid transparent;
     background:
       linear-gradient(var(--btn-bg), var(--btn-bg)) padding-box,
@@ -751,14 +772,15 @@ if (items.length) {
     filter: blur(0.8rem);
     animation: faq-band 4s linear infinite;
   }
-  .faq-start__t { font-size: 15px; font-weight: 700; color: rgba(255, 255, 255, 0.75); transition: color 200ms ease; }
+  .faq-starts { display: grid; gap: 14px; justify-items: stretch; }
+  .faq-starts__t { font-size: 15px; font-weight: 700; color: rgba(255, 255, 255, 0.75); }
+  .faq-starts .faq-start:nth-of-type(2), .faq-starts .faq-start:nth-of-type(2)::before { animation-delay: -2s; }   /* 두 버튼의 흰 띠가 엇갈려 지나가게 */
   .faq-start__h { display: inline-flex; align-items: center; gap: 8px; }
   .faq-start__h > span { display: inline-block; transition: transform 200ms var(--ease-out); }
   .faq-start:focus-visible { outline: 2px solid var(--br-ice); outline-offset: 3px; }
   .faq-start:active { transform: scale(0.95); }
   @media (hover: hover) and (pointer: fine) {
     .faq-start:hover { transform: scale(1.05); }
-    .faq-start:hover .faq-start__t { color: var(--br-ice); }
     .faq-start:hover .faq-start__h > span { transform: translateX(5px); }
   }
   @keyframes faq-band { from { background-position: 0%; } to { background-position: 200%; } }
