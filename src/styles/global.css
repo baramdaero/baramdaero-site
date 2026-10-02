@@ -10,6 +10,9 @@
   --br-line: var(--br-mist);
   --br-ink: #0b2027;
   --br-ink-sub: #465d68;     /* 서브 텍스트 — ink 계열 명도 상승 (base 6.57 / mist 5.47) */
+  /* 브랜드 그라디언트(2026-10-02 대표 결정, DESIGN.md §6 예외) — 틸 토큰끼리만 섞는다. 오른쪽 아래 모서리에서 ice 가 번져 올라온다.
+     grad-wide = 서브 히어로처럼 넓은 면(왼쪽 위 제목 자리는 teal-deep 그대로) */
+  --br-grad-wide: radial-gradient(120% 140% at 100% 115%, color-mix(in oklab, var(--br-ice) 38%, var(--br-teal)) 0%, var(--br-teal) 32%, var(--br-teal-deep) 72%);
 
   /* 타이포 — Pretendard 단일 (세리프 폐기) */
   --sans: 'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', sans-serif;

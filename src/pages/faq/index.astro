@@ -10,6 +10,7 @@ import PageHero from '../../components/v2/PageHero.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
 import { loadFaqPage, renderFaqMd, faqPlainText, FAQ_CATEGORIES } from '../../lib/faq.ts';
 import { normFaq } from '../../scripts/faq-rank';
+import { SITE_CONFIG } from '../../config.js';
 
 const items = loadFaqPage();
 /** 분류마다 처음 보이는 문항 수 — 나머지는 'N개 더 보기'로 접힌다 */
@@ -102,8 +103,21 @@ if (items.length) {
     <Fragment slot="extra">
       {items.length > 0 && (
         <Fragment>
-          {/* 첫 화면에서 바로 보이게 히어로에 둔다 — 누르면 아래 '순서대로 보기' 를 펼쳐 1단계로 */}
-          {GUIDE.length > 0 && <a class="faq-guide-go" href="#faq-guide" data-faq-guide-go>처음이세요? 순서대로 보기 <span aria-hidden="true">→</span></a>}
+          <div class="faq-hero">
+          {/* 첫 화면에서 바로 보이게 히어로에 둔다 — 누르면 아래 '순서대로 보기' 를 펼쳐 1단계로.
+              모서리의 겹친 판 네 장은 장식(aria-hidden) — 누르거나 올리면 판이 모서리로 모인다 */}
+          {GUIDE.length > 0 && (
+            <a class="faq-start" href="#faq-guide" data-faq-guide-go>
+              <span class="faq-start__sheets" aria-hidden="true">
+                {GUIDE.map((_, i) => <i style={`--i:${i}`}><b>{i + 1}</b></i>)}
+              </span>
+              <span class="faq-start__pocket">
+                <span class="faq-start__t">처음이세요? · {GUIDE.length}단계</span>
+                <span class="faq-start__h">순서대로 보기 <span aria-hidden="true">→</span></span>
+              </span>
+            </a>
+          )}
+          <div class="faq-hero__ask">
           {/* 입력에 name 이 없다 — 적은 말(연락처 등)이 주소창·서버 기록에 남지 않게. JS 가 없어도 전 문항은 아래에 있다 */}
           <form class="faq-ask" role="search" data-faq-form>
             <label class="faq-ask__label" for="faq-q">궁금한 걸 물어보세요</label>
@@ -133,6 +147,8 @@ if (items.length) {
               </div>
             </div>
           )}
+          </div>
+          </div>
         </Fragment>
       )}
     </Fragment>
@@ -165,7 +181,10 @@ if (items.length) {
                     {i === GUIDE.length - 1 && (
                       <div class="faq-guide__end">
                         <p>다 읽으셨습니다. 궁금한 게 남았으면 물어보세요.</p>
-                        <button disabled aria-describedby="chat-unavailable" type="button" class="bd-cta" data-chat-tree="etc">상담으로 묻기</button>
+                        <div class="faq-guide__end-btns">
+                          {SITE_CONFIG.PHONE && <a class="bd-cta" href={`tel:${SITE_CONFIG.PHONE.replace(/[^0-9]/g, '')}`}>전화하기 {SITE_CONFIG.PHONE}</a>}
+                          <button disabled aria-describedby="chat-unavailable" type="button" class:list={[SITE_CONFIG.PHONE ? 'br-pill' : 'bd-cta']} data-chat-tree="etc">상담으로 묻기</button>
+                        </div>
                       </div>
                     )}
                   </li>
@@ -312,6 +331,17 @@ if (items.length) {
 </Base>
 
 <script>
+  // 순서대로 보기 카드 — 마우스가 없는 기기는 카드가 화면에 들어올 때 판을 한 번 올린다(마우스는 CSS :hover)
+  {
+    const card = document.querySelector<HTMLElement>('.faq-start');
+    if (card && !matchMedia('(hover: hover) and (pointer: fine)').matches && 'IntersectionObserver' in window) {
+      const io = new IntersectionObserver((es) => {
+        if (es.some((e) => e.isIntersecting)) { card.classList.add('is-in'); io.disconnect(); }
+      }, { threshold: 0.6 });
+      io.observe(card);
+    }
+  }
+
   // 순서대로 보기 — 한 화면에 한 단계. 이전/다음으로 넘기고, 넘길 때 질문으로 초점을 옮긴다
   {
     const guide = document.querySelector<HTMLDetailsElement>('[data-faq-guide]');
@@ -495,7 +525,9 @@ if (items.length) {
     padding: 14px;
     border-radius: 24px;
     background: color-mix(in srgb, #fff 8%, transparent);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
     border: 1px solid color-mix(in srgb, #fff 16%, transparent);
+    border-top-color: color-mix(in srgb, #fff 45%, transparent);
     box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent);
   }
   .faq-ask__label {
@@ -643,13 +675,70 @@ if (items.length) {
   }
 
   /* ── 전체 질문 ─────────────────────────────────────────────── */
-  .faq-guide-go {
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    min-height: 60px; margin-bottom: 20px; padding: 14px 20px; border-radius: 999px;
-    background: var(--br-ice); color: var(--br-teal-deep);
-    font-size: 19px; font-weight: 700; text-decoration: none;
+  /* 히어로 — 넓은 화면은 왼쪽 묻기, 오른쪽 '순서대로 보기' 카드 */
+  .faq-hero { display: grid; gap: 20px; }
+  @media (min-width: 960px) {
+    .faq-hero { grid-template-columns: minmax(0, 600px) minmax(300px, 380px); justify-content: space-between; align-items: start; }
+    .faq-hero .faq-start { order: 2; min-height: 248px; }
   }
-  .faq-guide-go:focus-visible { outline: 2px solid var(--br-ice); outline-offset: 3px; }
+
+  /* 순서대로 보기 카드 — 색인 탭이 꽂힌 서류철. 단계 수만큼 종이가 꽂혀 있고 탭에 단계 번호가 있다(장식이 아니라 8단계를 보여 준다).
+     앞 주머니는 반투명 유리라 뒤 종이가 비친다. 마우스를 대면(터치 기기는 화면에 들어올 때 한 번) 종이가 1번부터 60ms 씩 차례로 올라온다.
+     transform 만 쓴다 */
+  .faq-start {
+    position: relative; overflow: hidden; isolation: isolate;
+    display: block; min-height: 220px; border-radius: 24px;
+    background: var(--br-teal);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent), 0 12px 30px color-mix(in srgb, var(--br-teal-deep) 50%, transparent);
+    color: #fff; text-decoration: none;
+    transition: transform var(--dur-ui) var(--ease-out);
+  }
+  .faq-start:active { transform: scale(0.98); }
+  .faq-start:focus-visible { outline: 2px solid var(--br-ice); outline-offset: 3px; }
+  .faq-start__sheets { position: absolute; left: 18px; right: 18px; top: 52px; bottom: 0; }
+  .faq-start__sheets i {
+    position: absolute; inset: 0;
+    top: calc(var(--i) * 3px);
+    border-radius: 10px 10px 0 0;
+    background: color-mix(in srgb, var(--br-ice) calc(var(--i) * 9%), var(--br-base));
+    border-top: 1px solid #fff;
+    box-shadow: 0 -2px 8px color-mix(in srgb, var(--br-teal-deep) 18%, transparent);
+    transform: translateY(46px);
+    transition: transform var(--dur-reveal) var(--ease-out);
+    transition-delay: calc(var(--i) * 60ms);
+  }
+  /* 탭 — 종이마다 자리를 옮겨 꽂아 번호가 한 줄로 보인다 */
+  .faq-start__sheets b {
+    position: absolute; top: -22px; left: calc(var(--i) * 12.5%);
+    width: calc(12.5% - 3px); height: 23px;
+    display: grid; place-items: center;
+    border-radius: 7px 7px 0 0;
+    background: inherit; border-top: 1px solid #fff;
+    font-size: 13px; font-weight: 700; color: var(--br-ink-sub); font-variant-numeric: tabular-nums;
+  }
+  .faq-start__pocket {
+    position: absolute; left: 0; right: 0; bottom: 0; min-height: 56%;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 18px 22px 22px;
+    background: color-mix(in srgb, var(--br-teal) 72%, transparent);
+    -webkit-backdrop-filter: blur(8px) saturate(120%); backdrop-filter: blur(8px) saturate(120%);
+    border-top: 1.5px solid color-mix(in srgb, #fff 55%, transparent);
+    border-radius: 18px 18px 24px 24px;
+  }
+  .faq-start__t { font-size: 15px; font-weight: 700; color: rgba(255, 255, 255, 0.8); }
+  .faq-start__h { margin-top: 4px; font-size: 26px; font-weight: 700; line-height: 1.3; }
+  .faq-start.is-in .faq-start__sheets i,
+  .faq-start:focus-visible .faq-start__sheets i { transform: translateY(0); }
+  @media (hover: hover) and (pointer: fine) {
+    .faq-start:hover .faq-start__sheets i { transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .faq-start__sheets i { transition: none; transform: none; }
+  }
+  /* JS 가 돌면 아래 펼침 버튼은 숨긴다 — 히어로 카드가 그 일을 한다(같은 버튼 두 개 금지). JS 가 없으면 카드는 이 펼침으로 내려온다 */
+  :global(html.br-js) .faq-guide > .faq-guide__open { display: none; }
+  :global(html.br-js) .faq-guide:not([open]) { margin: 0; }
+  .faq-guide__end-btns { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
   .faq-guide { scroll-margin-top: 80px; }
   /* 순서대로 보기 — 큰 글씨·큰 버튼(어르신도 누르기 쉽게 48px 이상) */
   .faq-guide { margin-bottom: 40px; }
@@ -676,7 +765,7 @@ if (items.length) {
     background: var(--br-base); color: var(--br-teal);
     font: inherit; font-size: 19px; font-weight: 700; cursor: pointer;
   }
-  .faq-guide__btn--next { background: var(--br-teal-deep); border-color: var(--br-teal-deep); color: #fff; }
+  .faq-guide__btn--next { background: var(--br-teal); border-color: var(--br-teal); color: #fff; }
   .faq-guide__btn:disabled { opacity: 0.4; cursor: default; }
   .faq-guide__btn[hidden] { display: none; }
   .faq-guide__btn:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; }
