@@ -14,7 +14,7 @@ import { SITE_CONFIG } from '../../config.js';
 
 const items = loadFaqPage();
 /** 분류마다 처음 보이는 문항 수 — 나머지는 'N개 더 보기'로 접힌다 */
-const FAQ_VISIBLE = 5;
+const FAQ_VISIBLE = 3;
 
 // 검색 인덱스 — 질의·대상 모두 공백 제거+소문자 후 부분 일치 (마크다운 기호 제거한 평문 기준)
 const norm = normFaq;
@@ -140,11 +140,22 @@ if (items.length) {
           {EXAMPLES.length > 0 && (
             <div class="faq-ex">
               <p class="faq-ex__t" id="faq-ex-t">예)</p>
+              {/* 예시는 두 개만 늘어놓고 나머지는 목록 버튼 안에 */}
               <div class="faq-ex__list" role="group" aria-labelledby="faq-ex-t">
-                {EXAMPLES.map((e) => (
+                {EXAMPLES.slice(0, 2).map((e) => (
                   <button type="button" class="faq-ex__chip" data-faq-ask={e.id} data-faq-text={e.t}>{e.t}</button>
                 ))}
               </div>
+              {EXAMPLES.length > 2 && (
+                <details class="faq-ex__more">
+                  <summary class="list-btn list-btn--deep"><span class="list-btn__bars" aria-hidden="true"><span class="list-btn__bar list-btn__bar--a"></span><span class="list-btn__bar list-btn__bar--b"></span><span class="list-btn__bar list-btn__bar--a"></span></span><span>예시 {EXAMPLES.length - 2}개 더</span></summary>
+                  <div class="faq-ex__rest">
+                    {EXAMPLES.slice(2).map((e) => (
+                      <button type="button" class="faq-ex__row" data-faq-ask={e.id} data-faq-text={e.t}>{e.t}</button>
+                    ))}
+                  </div>
+                </details>
+              )}
             </div>
           )}
           </div>
@@ -160,8 +171,9 @@ if (items.length) {
         <Fragment>
           {/* 순서대로 보기 — JS 가 없으면 펼쳤을 때 전 단계가 차례로 다 보인다. JS 가 있으면 한 화면에 한 문항 + 이전/다음 */}
           {GUIDE.length > 0 && (
-            <details class="faq-guide" id="faq-guide" data-faq-guide>
+            <details class="faq-guide" id="faq-guide" data-faq-guide data-no-expand>
               <summary class="faq-guide__open">처음이세요? 순서대로 보기 <span aria-hidden="true">→</span></summary>
+              <div class="faq-guide__bar" aria-hidden="true"><i data-faq-guide-bar></i></div>
               <ol class="faq-guide__list">
                 {GUIDE.map(({ f, short, rest, hook, label }, i) => (
                   <li class="faq-guide__step br-glass br-glass--medium" data-faq-step>
@@ -264,11 +276,15 @@ if (items.length) {
           </div>
 
           <h2 class="faq-all__title">전체 질문</h2>
-          <nav class="faq-nav br-reveal" aria-label="분류" data-faq-nav>
-            {sections.map((s) => (
-              <a class="faq-nav__chip" href={`#cat-${s.cat}`}>{s.cat} <span class="faq-nav__n">{s.items.length}</span></a>
-            ))}
-          </nav>
+          {/* 분류 — 칩을 늘어놓지 않고 목록 버튼 하나. 펼치면 분류가 한 줄씩 */}
+          <details class="faq-nav br-reveal" data-faq-nav>
+            <summary class="list-btn"><span class="list-btn__bars" aria-hidden="true"><span class="list-btn__bar list-btn__bar--a"></span><span class="list-btn__bar list-btn__bar--b"></span><span class="list-btn__bar list-btn__bar--a"></span></span><span>분류 {sections.length}개</span></summary>
+            <nav class="faq-nav__list" aria-label="분류">
+              {sections.map((s) => (
+                <a class="faq-nav__row" href={`#cat-${s.cat}`}><span>{s.cat}</span> <span class="faq-nav__n">{s.items.length}문항</span></a>
+              ))}
+            </nav>
+          </details>
 
           {sections.map((s) => (
             <div class="faq-cat" id={`cat-${s.cat}`} data-faq-cat>
@@ -300,10 +316,10 @@ if (items.length) {
                       )}
                     </div>
                   </details>
-                  {/* 분류마다 앞 5문항만 — 토글을 5번째 문항 바로 뒤에 둬서, 열면 Tab 이 새로 보인 문항으로 이어진다.
+                  {/* 분류마다 앞 3문항만(2026-10-02 대표: 너무 많이 늘어놓지 않기) — 토글을 3번째 문항 바로 뒤에 둬서, 열면 Tab 이 새로 보인 문항으로 이어진다.
                       닫힌 동안 뒤 문항은 CSS 형제 선택자로 숨긴다(문항 HTML·검색 마크업은 그대로 다 있다) */}
                   {i === FAQ_VISIBLE - 1 && s.items.length > FAQ_VISIBLE && (
-                    <details class="faq-more">
+                    <details class="faq-more" data-no-expand>
                       <summary>
                         <span class="faq-more__open">{s.items.length - FAQ_VISIBLE}개 더 보기</span>
                         <span class="faq-more__close">접기</span>
@@ -342,6 +358,23 @@ if (items.length) {
     }
   }
 
+  // 분류 목록에서 고르면 목록을 닫고 그 분류로 내려간다
+  document.querySelectorAll<HTMLAnchorElement>('.faq-nav__row').forEach((a) =>
+    a.addEventListener('click', () => { const d = a.closest('details'); if (d) d.open = false; }));
+
+  // N개 더 보기 — 숨어 있던 문항이 아래로 차례로 떠오른다(접을 때는 바로 닫는다)
+  document.querySelectorAll<HTMLDetailsElement>('.faq-more').forEach((m) => {
+    m.addEventListener('toggle', () => {
+      if (!m.open || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      let el = m.nextElementSibling as HTMLElement | null, k = 0;
+      while (el && k < 30) {
+        if (el.matches('.faq-item')) el.animate([{ opacity: 0, transform: 'translateY(20px)' }, { opacity: 1, transform: 'none' }],
+          { duration: 600, delay: Math.min(k, 10) * 50, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'backwards' });
+        el = el.nextElementSibling as HTMLElement | null; k++;
+      }
+    });
+  });
+
   // 순서대로 보기 — 한 화면에 한 단계. 이전/다음으로 넘기고, 넘길 때 질문으로 초점을 옮긴다
   {
     const guide = document.querySelector<HTMLDetailsElement>('[data-faq-guide]');
@@ -349,10 +382,31 @@ if (items.length) {
     const nav = document.querySelector<HTMLElement>('[data-faq-guide-nav]');
     const prev = document.querySelector<HTMLButtonElement>('[data-faq-guide-prev]');
     const nextBtn = document.querySelector<HTMLButtonElement>('[data-faq-guide-next]');
+    const bar = document.querySelector<HTMLElement>('[data-faq-guide-bar]');
+    const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)';
     let at = 0;
+    let busy: Animation | null = null;
+    // 넘길 때 — 지금 카드는 넘기는 쪽으로 밀려 나가고, 새 카드가 반대쪽에서 들어온 뒤 안 글줄이 60ms 씩 떠오른다
+    const swap = (from: HTMLElement | undefined, to: HTMLElement, dir: number) => {
+      const enter = () => {
+        steps.forEach((s) => { s.hidden = s !== to; });
+        if (still()) return;
+        to.animate([{ opacity: 0, transform: `translateX(${dir * 56}px)` }, { opacity: 1, transform: 'none' }], { duration: 520, easing: EASE });
+        Array.from(to.children).forEach((el, k) =>
+          (el as HTMLElement).animate([{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }],
+            { duration: 520, delay: 120 + k * 60, easing: EASE, fill: 'backwards' }));
+      };
+      busy?.finish();
+      if (!from || from === to || from.hidden || still()) { enter(); return; }
+      busy = from.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateX(${-dir * 56}px)` }], { duration: 200, easing: 'ease-in' });
+      busy.onfinish = () => { busy = null; enter(); };
+    };
     const go = (i: number, focus = true) => {
+      const before = at;
       at = Math.max(0, Math.min(steps.length - 1, i));
-      steps.forEach((s, k) => { s.hidden = k !== at; });
+      swap(steps[before], steps[at], at >= before ? 1 : -1);
+      if (bar) bar.style.transform = `scaleX(${(at + 1) / steps.length})`;
       if (prev) prev.disabled = at === 0;
       if (nextBtn) nextBtn.hidden = at === steps.length - 1;
       if (focus) {
@@ -366,7 +420,13 @@ if (items.length) {
       go(0, false);
       prev?.addEventListener('click', () => go(at - 1));
       nextBtn?.addEventListener('click', () => go(at + 1));
-      guide.addEventListener('toggle', () => { if (guide.open) go(0); });
+      guide.addEventListener('toggle', () => {
+        if (!guide.open) return;
+        steps.forEach((s, k) => { s.hidden = k !== 0; });
+        at = 0;
+        go(0);
+        if (!still()) guide.animate([{ opacity: 0, transform: 'translateY(32px) scale(0.98)' }, { opacity: 1, transform: 'none' }], { duration: 600, easing: EASE });
+      });
       document.querySelector('[data-faq-guide-go]')?.addEventListener('click', (e) => {
         e.preventDefault();
         if (guide.open) go(0); else guide.open = true;   // toggle 이벤트가 go(0) 을 부른다
@@ -662,10 +722,28 @@ if (items.length) {
   .faq-ans__links-t { margin-right: 4px; font-size: 13px; font-weight: 700; color: var(--br-ink-sub); }
 
   @media (prefers-reduced-motion: no-preference) {
-    .faq-chat.is-new > * { animation: faq-in var(--dur-ui) var(--ease-out) both; }
-    .faq-chat.is-new > :nth-child(n + 2) { animation-delay: 80ms; }
+    /* 물으면 — 내 말풍선이 오른쪽에서 붙고, 답 카드가 아래에서 올라온 뒤 안 글줄·관련 질문이 차례로 떠오른다 */
+    .faq-chat.is-new > .faq-chat__me { animation: faq-me var(--dur-reveal) var(--ease-out) both; }
+    .faq-chat.is-new > .faq-chat__we:not([hidden]) { animation: faq-in var(--dur-reveal) var(--ease-out) 120ms both; }
+    .faq-chat.is-new > .faq-chat__we:not([hidden]) > * { animation: faq-line var(--dur-reveal) var(--ease-out) both; }
+    .faq-chat.is-new > .faq-chat__we > :nth-child(2) { animation-delay: 240ms; }
+    .faq-chat.is-new > .faq-chat__we > :nth-child(3) { animation-delay: 300ms; }
+    .faq-chat.is-new > .faq-chat__we > :nth-child(4) { animation-delay: 360ms; }
+    .faq-chat.is-new > .faq-chat__we > :nth-child(n + 5) { animation-delay: 420ms; }
+    .faq-chat.is-new > .faq-chat__next { animation: faq-in var(--dur-reveal) var(--ease-out) 420ms both; }
+    .faq-chat.is-new :global(.faq-chat__chips > button) { animation: faq-line var(--dur-reveal) var(--ease-out) both; }
+    .faq-chat.is-new :global(.faq-chat__chips > button:nth-child(2)) { animation-delay: 60ms; }
+    .faq-chat.is-new :global(.faq-chat__chips > button:nth-child(n + 3)) { animation-delay: 120ms; }
+    .faq-chat.is-new > .faq-chat__foot { animation: faq-in var(--dur-reveal) var(--ease-out) 480ms both; }
   }
-  @keyframes faq-in { from { opacity: 0; transform: translateY(8px); } }
+  @keyframes faq-in { from { opacity: 0; transform: translateY(28px) scale(0.98); } }
+  @keyframes faq-me { from { opacity: 0; transform: translateX(32px) scale(0.92); } }
+  @keyframes faq-line { from { opacity: 0; transform: translateY(12px); } }
+  /* 순서대로 보기 진행 막대 — 단계가 넘어갈 때 차오른다 */
+  .faq-guide__bar { height: 6px; margin-top: 20px; border-radius: 999px; background: color-mix(in srgb, var(--br-teal) 12%, transparent); overflow: hidden; }
+  .faq-guide__bar i { display: block; height: 100%; background: var(--br-teal); border-radius: inherit; transform-origin: left; transform: scaleX(0.125); transition: transform var(--dur-reveal) var(--ease-out); }
+  .faq-guide__btn:active:not(:disabled) { transform: scale(0.96); }
+  .faq-guide__btn { transition: transform 160ms var(--ease-out), background-color var(--dur-color) ease; }
 
   @media (max-width: 640px) {
     .faq-ask { padding: 10px; border-radius: 22px; }
@@ -772,25 +850,71 @@ if (items.length) {
 
   .faq-all__title { margin-bottom: 18px; font-size: 22px; color: var(--br-ink); }
 
-  .faq-nav { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 36px; }
-  .faq-nav__chip {
-    background: var(--br-base);   /* 배경 번짐 위에서도 테두리가 보이게(채팅 칩과 같은 방식) */
-    font-size: 13.5px;
-    font-weight: 600;
-    color: var(--br-teal);
-    border: 1px solid var(--br-line);
-    border-radius: 999px;
-    padding: 8px 16px;
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: border-color var(--dur-color) ease, background-color var(--dur-color) ease;
+  /* 목록 버튼 — 막대 세 줄 위 점이 마우스를 대거나 펼치면 서로 엇갈려 미끄러진다(Uiverse setting-btn 을 우리 색으로) */
+  .list-btn {
+    display: inline-flex; align-items: center; gap: 12px;
+    min-height: 48px; padding: 4px 18px 4px 4px; border-radius: 14px;
+    cursor: pointer; list-style: none;
+    font-size: 16px; font-weight: 700; color: var(--br-teal);
+    background: var(--br-base); border: 1px solid var(--br-line);
+    transition: transform var(--dur-ui) var(--ease-out), border-color var(--dur-color) ease;
   }
+  .list-btn::-webkit-details-marker { display: none; }
+  .list-btn:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; }
+  .list-btn:active { transform: scale(0.96); }
+  .list-btn__bars {
+    width: 40px; height: 40px; flex: none;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    border-radius: 10px; background: var(--br-teal);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--br-ice) 80%, transparent);
+  }
+  .list-btn__bar { position: relative; display: flex; align-items: center; justify-content: center; width: 50%; height: 2px; border-radius: 2px; background: var(--br-ice); }
+  .list-btn__bar::before {
+    content: ""; position: absolute; width: 2px; height: 2px; border-radius: 50%;
+    background: var(--br-teal); border: 2px solid #fff;
+    transition: transform var(--dur-ui) var(--ease-out);
+  }
+  .list-btn__bar--a::before { transform: translateX(-4px); }
+  .list-btn__bar--b::before { transform: translateX(4px); }
+  [open] > .list-btn .list-btn__bar--a::before { transform: translateX(4px); }
+  [open] > .list-btn .list-btn__bar--b::before { transform: translateX(-4px); }
   @media (hover: hover) and (pointer: fine) {
-    .faq-nav__chip:hover { border-color: var(--br-teal); background: var(--br-mist); }
+    .list-btn:hover { border-color: var(--br-teal); }
+    .list-btn:hover .list-btn__bar--a::before { transform: translateX(4px); }
+    .list-btn:hover .list-btn__bar--b::before { transform: translateX(-4px); }
   }
-  .faq-nav__n { font-size: 11.5px; color: var(--br-ink-sub); }
+  /* 딥 히어로 위 — 유리 바탕, 흰 글자 */
+  .list-btn--deep { background: color-mix(in srgb, #fff 8%, transparent); border-color: color-mix(in srgb, #fff 28%, transparent); color: #fff; }
+  .list-btn--deep .list-btn__bars { background: var(--br-ice); box-shadow: none; }
+  .list-btn--deep .list-btn__bar { background: var(--br-teal); }
+  .list-btn--deep .list-btn__bar::before { background: var(--br-ice); border-color: var(--br-teal-deep); }
+  @media (hover: hover) and (pointer: fine) { .list-btn--deep:hover { border-color: var(--br-ice); } }
+
+  .faq-ex__more { margin-top: 10px; }
+  .faq-ex__rest { display: grid; gap: 6px; margin-top: 10px; max-width: 600px; }
+  .faq-ex__row {
+    min-height: 48px; padding: 10px 16px; border-radius: 12px; text-align: left;
+    font: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
+    color: #fff; background: color-mix(in srgb, #fff 6%, transparent);
+    border: 1px solid color-mix(in srgb, #fff 22%, transparent);
+    transition: transform var(--dur-ui) var(--ease-out), background-color var(--dur-color) ease;
+  }
+  .faq-ex__row:focus-visible { outline: 2px solid var(--br-ice); outline-offset: 2px; }
+  @media (hover: hover) and (pointer: fine) { .faq-ex__row:hover { transform: translateX(4px); background: color-mix(in srgb, #fff 12%, transparent); } }
+
+  .faq-nav { margin-bottom: 36px; }
+  .faq-nav__list { display: grid; margin-top: 10px; max-width: 420px; border-radius: 14px; overflow: hidden; border: 1px solid var(--br-line); background: var(--br-base); }
+  .faq-nav__row {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    min-height: 52px; padding: 0 18px;
+    font-size: 16px; font-weight: 700; color: var(--br-ink);
+    border-top: 1px solid var(--br-line);
+    transition: background-color var(--dur-color) ease, padding var(--dur-ui) var(--ease-out);
+  }
+  .faq-nav__row:first-child { border-top: 0; }
+  .faq-nav__row:focus-visible { outline: 2px solid var(--br-teal); outline-offset: -2px; }
+  @media (hover: hover) and (pointer: fine) { .faq-nav__row:hover { background: var(--br-mist); padding-left: 24px; } }
+  .faq-nav__n { font-size: 13px; font-weight: 600; color: var(--br-ink-sub); font-variant-numeric: tabular-nums; }
 
   .faq-cat { margin-top: 44px; scroll-margin-top: 80px; }
   .faq-nav + .faq-cat { margin-top: 0; }
@@ -809,6 +933,20 @@ if (items.length) {
     line-height: 1.6;
     padding: 18px 4px;
     color: var(--br-ink);
+    list-style: none;
+    display: flex; justify-content: space-between; align-items: center; gap: 14px;
+  }
+  .faq-item__q::-webkit-details-marker { display: none; }
+  /* 열림 표시 — 꺾쇠(글자 테두리, 자주 묻는 답 '자세히 보기'와 같은 방식)가 열면 뒤집힌다(기본 ▶ 대신) */
+  .faq-item__q::after {
+    content: ''; flex: none; width: 10px; height: 10px; margin-right: 6px;
+    border-right: 2.4px solid var(--br-teal); border-bottom: 2.4px solid var(--br-teal);
+    transform: translateY(-3px) rotate(45deg);
+    transition: transform var(--dur-ui) var(--ease-out);
+  }
+  .faq-item[open] > .faq-item__q::after { transform: translateY(3px) rotate(-135deg); }
+  @media (hover: hover) and (pointer: fine) {
+    .faq-item:not([open]) > .faq-item__q:hover::after { transform: translateY(0) rotate(45deg); }
   }
   .faq-item__body { padding: 2px 4px 24px; }
 
@@ -871,7 +1009,7 @@ if (items.length) {
 
   .faq-item__related { margin-top: 16px; }
 
-  /* 분류별 앞 5문항 — 토글(5번째 문항 뒤)이 닫혀 있으면 그 뒤 문항을 숨긴다 */
+  /* 분류별 앞 3문항 — 토글(3번째 문항 뒤)이 닫혀 있으면 그 뒤 문항을 숨긴다 */
   .faq-more:not([open]) ~ .faq-item { display: none; }
   .faq-more summary {
     display: inline-flex; align-items: center; min-height: 44px;
@@ -885,4 +1023,26 @@ if (items.length) {
 
   .faq-page__pending { text-align: center; padding: 24px 0; }
   .faq-page__pending-title { font-size: 20px; font-weight: 700; color: var(--br-ink); margin-bottom: 24px; }
+
+  /* 작은 반응 — 누를 수 있는 것마다 마우스를 대면 저마다 다르게 움직인다(2026-10-02 대표 '귀여운 툴바' 참고).
+     transform 만, hover 기기에서만. 누르면 살짝 눌린다 */
+  .faq-ex__chip, .faq-ask__send, .faq-chat__again,
+  .faq-start__h > span, .faq-ask__send svg, .faq-chat__chips :global(button) {
+    transition: transform var(--dur-ui) var(--ease-out), background-color var(--dur-color) ease, color var(--dur-color) ease, border-color var(--dur-color) ease, box-shadow var(--dur-ui) var(--ease-out);
+  }
+  .faq-start__h > span { display: inline-block; }
+  .faq-ans__toggle::after { transition: transform var(--dur-ui) var(--ease-out); }
+  @media (hover: hover) and (pointer: fine) {
+    .faq-ex__chip:hover { transform: translateY(-3px); box-shadow: 0 6px 14px color-mix(in srgb, var(--br-teal-deep) 18%, transparent); }
+    .faq-ask__send:hover svg { transform: translateY(-3px); }
+    .faq-start:hover .faq-start__h > span { transform: translateX(6px); }
+    .faq-chat__chips :global(button:hover) { transform: translateX(4px); }
+    .faq-chat__again:hover { transform: rotate(-3deg); }
+    .faq-guide__btn--next:hover { transform: translateY(-2px); }
+    .faq-ans__toggle:hover::after { transform: translateY(1px) rotate(45deg); }
+  }
+  .faq-ex__chip:active, .faq-ask__send:active, .faq-chat__chips :global(button:active) { transform: scale(0.94); }
+  @media (prefers-reduced-motion: reduce) {
+    .faq-ex__chip, .faq-ask__send, .faq-start__h > span, .faq-ask__send svg, .faq-chat__chips :global(button), .faq-guide__bar i { transition: none; }
+  }
 </style>
