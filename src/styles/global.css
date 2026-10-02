@@ -23,6 +23,7 @@
   --dur-color: 200ms;
   --dur-ui: 240ms;
   --dur-reveal: 600ms;
+  --dur-expand: 400ms;   /* 펼침(details) — scripts/expand.ts 와 같은 값 */
 
   --maxw: 1120px;
   --radius: 12px;
