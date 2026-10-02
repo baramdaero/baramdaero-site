@@ -1,5 +1,5 @@
 ---
-// S8 진행 절차 (bg-alt) — 텍스트와 이미지 슬롯을 나누고, 스텝은 세로 목록으로 표시한다.
+// S8 진행 절차 — 머리(라벨·제목·한 줄, 사진은 옆) 아래 단계 카드 줄(2026-10-02 대표 참고 이미지).
 // 문구는 전부 프롭으로 받는다 — 출처는 src/content/site/home.json (하드코딩 금지).
 import type { HomeProcessStep } from '../../lib/home.ts';
 import ImageSlot from './ImageSlot.astro';
@@ -18,7 +18,7 @@ const hasVisual = isImageSlotVisible(slotId);
 ---
 <section class="bd-section v2-process" data-layout-section="home-process" data-image-side={hasVisual ? 'right' : undefined}>
   <div class="bd-container">
-    <div class:list={['v2-process__card', 'br-glass', 'br-glass--medium', { 'v2-process__card--copy-only': !hasVisual }]}>
+    <div class:list={['v2-process__head', { 'v2-process__head--visual': hasVisual }]}>
       <div class="v2-process__copy">
         {eyebrow && <p class="br-sec-label">{eyebrow}</p>}
         <h2 class="br-h br-reveal">
@@ -27,17 +27,6 @@ const hasVisual = isImageSlotVisible(slotId);
           ))}
         </h2>
         {lead && <p class="br-sec-lead br-reveal">{lead}</p>}
-        <ol class="v2-process__steps">
-          {steps.map((s) => (
-            <li class="v2-process__step br-reveal">
-              <span class="v2-process__no">{s.no}</span>
-              <div>
-                <h3 class="v2-process__title">{s.title}</h3>
-                <p class="v2-process__body">{s.body}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
       </div>
       {hasVisual && (
         <div class="v2-process__visual br-reveal">
@@ -45,68 +34,60 @@ const hasVisual = isImageSlotVisible(slotId);
         </div>
       )}
     </div>
+    {/* 2026-10-02 대표: 참고 이미지처럼 단계마다 흰 카드 한 장 — 번호·제목·한 줄. 넓은 화면은 한 줄, 좁으면 세로 */}
+    <ol class="v2-process__steps">
+      {steps.map((s) => (
+        <li class="v2-process__step br-glass br-glass--heavy br-reveal">
+          <span class="v2-process__no">{s.no}</span>
+          <h3 class="v2-process__title">{s.title}</h3>
+          <p class="v2-process__body">{s.body}</p>
+        </li>
+      ))}
+    </ol>
   </div>
 </section>
 
 <style>
   .v2-process { background: transparent; } /* 유리 카드 호스트 — 투명해야 앰비언트가 비친다 */
 
-  /* 2026-09-07: 서비스 카드(ServiceSplit)와 같은 '유리 한 장' 패널. 카피가 길어(제목+4단계) 사진은 카드 안에서
-     세로 중앙에 두고, 단계 목록은 번호 36px·제목 17px·설명 14.5px 로 한 단 조여 카피 높이를 사진 쪽으로 당긴다.
-     모바일: 사진(또는 준비 중 슬롯)이 카드 윗면, 아래에 제목과 단계. */
-  .v2-process__card {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    align-items: center;
-  }
-  .v2-process__copy { padding: 24px 24px 28px; }
-  .v2-process__visual { order: -1; }
-  .v2-process__visual :global(.br-image-slot) {
-    --slot-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
-    --slot-border-width: 0 0 1px;
-  }
-  .v2-process__card--copy-only { max-width: 760px; }
-  .v2-process__copy :global(.br-h) {
-    margin-top: 18px;
-    font-size: clamp(26px, 0.9rem + 1.9vw, 36px);
-    line-height: 1.25;
-  }
+  /* 머리: 라벨·제목·한 줄, 사진이 있으면 넓은 화면에서 오른쪽에 */
+  .v2-process__head { display: grid; gap: 24px; }
   .v2-process__copy :global(.br-sec-label + .br-h) { margin-top: 10px; } /* 다른 섹션 머리와 같은 간격 */
+  .v2-process__visual :global(.br-image-slot) { --slot-radius: var(--radius); }
+
+  /* 단계 카드 — 모바일은 번호 왼쪽·제목/설명 오른쪽 한 줄씩, 1024px+ 는 다섯 장 한 줄 */
   .v2-process__steps {
-    margin-top: 28px;
+    margin-top: var(--head-gap);
     list-style: none;
     display: grid;
-    gap: 18px;
+    gap: 12px;
   }
-  .v2-process__step { display: grid; grid-template-columns: 36px 1fr; gap: 14px; align-items: start; }
+  .v2-process__step {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 16px;
+    padding: 20px 20px 22px;
+  }
   .v2-process__no {
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--br-ice);
-    color: var(--br-ink-sub);
-    font-size: 13px;
+    grid-row: span 2;
+    font-size: 26px;
     font-weight: 700;
-    border-radius: 999px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--br-ink-sub);
     font-variant-numeric: tabular-nums;
   }
-  .v2-process__title { padding-top: 6px; font-size: 17px; line-height: 1.3; color: var(--br-ink); }
-  .v2-process__body { margin-top: 4px; font-size: 14.5px; line-height: 1.6; color: var(--br-ink); }
+  .v2-process__title { font-size: 19px; line-height: 1.3; color: var(--br-ink); }
+  .v2-process__body { margin-top: 6px; font-size: 15px; line-height: 1.6; color: var(--br-ink-sub); text-wrap: pretty; }
+
   @media (min-width: 768px) {
-    .v2-process__card {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: var(--panel-gap);
-      padding: var(--panel-pad);
-    }
-    .v2-process__copy { padding: 0; }
-    .v2-process__visual { order: 2; }
-    .v2-process__visual :global(.br-image-slot) {
-      --slot-radius: calc(var(--radius) - 4px);
-      --slot-border-width: 1px;
-    }
-    .v2-process__card--copy-only { grid-template-columns: minmax(0, 1fr); }
-    .v2-process__steps { margin-top: 32px; gap: 20px; }
+    .v2-process__head--visual { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--panel-gap); align-items: end; }
+  }
+  @media (min-width: 1024px) {
+    .v2-process__steps { grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 16px; } /* 단계 수만큼 한 줄 — 늘거나 줄어도 맞춰진다 */
+    .v2-process__step { display: flex; flex-direction: column; padding: 28px 22px 30px; }
+    .v2-process__no { font-size: 32px; }
+    .v2-process__title { margin-top: 20px; font-size: 20px; }
+    .v2-process__body { margin-top: 8px; }
   }
 </style>

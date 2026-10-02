@@ -56,7 +56,7 @@ const cta = home.ctaBand;
   {/* 왜 바람대로 — 약속 셋. 스토리 페이지를 합쳤다(2026-09-30). 문구 home.json(why), 사진은 설치 기준 사진 재사용 */}
   {homeRaw.why && (
     <StandardsStory
-      promise={{ heading: homeRaw.why.heading, sub: homeRaw.why.sub, facts: homeRaw.why.facts, items: homeRaw.why.items, eyebrow: homeRaw.why.eyebrow, lead: homeRaw.why.lead }}
+      promise={{ heading: homeRaw.why.heading, sub: homeRaw.why.sub, items: homeRaw.why.items, eyebrow: homeRaw.why.eyebrow, lead: homeRaw.why.lead }}
       slotPrefix="install"
       startSide="left"
       startTone="base"
@@ -68,12 +68,13 @@ const cta = home.ctaBand;
           <dl>
             {stats.map((s) => (
               <div>
-                <dt>{s.label}</dt>
+                <dt>{s.label.split('\n').map((l, i) => <Fragment>{i > 0 && <Fragment>{' '}<br class="home-stats__br" /></Fragment>}{l}</Fragment>)}</dt>
                 <dd>{s.prefix && <span class="home-stats__pre">{s.prefix} </span>}{s.value.toLocaleString('ko-KR')}<span class="home-stats__suf">{s.suffix}</span></dd>
               </div>
             ))}
           </dl>
-          {statsNote && <p>{statsNote}</p>}
+          {/* 기준 줄 — ' · ' 뒤 조각은 앞 점과 함께 다음 줄로(줄 끝에 점만 남지 않게) */}
+          {statsNote && <p>{statsNote.split(' · ').map((t, i) => i === 0 ? t : <Fragment> <span class="home-stats__nb">· {t}</span></Fragment>)}</p>}
         </div>
       )}
       {/* 회사소개 판 아래 — 공개된 사례가 한 건이라도 있을 때만(빈 목록으로 보내지 않는다) */}
@@ -148,12 +149,12 @@ const cta = home.ctaBand;
           photoSwitch
           items={[
             // 2026-10-01 대표: 삼성·LG 사진을 눌러 각 제품의 분해도로 바꾼다(사진 각도·배치는 그대로)
-            { label: '삼성 1Way', file: 'samsung-1way-AC023CN1PBH1.html',
+            { label: '삼성 1Way', file: 'samsung-1way-AJ023BN1PBC1.html',
               photos: [{ src: 'ac-1way-samsung-front.webp', alt: '삼성 무풍 1Way 판넬 정면', caption: '삼성 무풍 1Way' }],
-              caption: '삼성전자 무풍 1Way · AC023CN1PBH1 · 냉방 2.3kW · 부품 14개' },
-            { label: 'LG 1Way', file: 'lg-1way-TNW0230U2S.html',
+              caption: '삼성전자 무풍 1Way · AJ023BN1PBC1 · 냉방 2.3kW · 부품 18개' },
+            { label: 'LG 1Way', file: 'lg-1way-RNQ0231C2SP.html',
               photos: [{ src: 'ac-1way-lg-angle.webp', alt: 'LG 휘센 1Way 실내기 입체', caption: 'LG 휘센 1Way' }],
-              caption: 'LG전자 1Way · TNW0230U2S · 냉방 2.3kW · 부품 14개' },
+              caption: 'LG전자 1Way · RNQ0231C2SP · 냉방 2.3kW · 부품 16개' },
           ]}
       />
   )}
@@ -196,13 +197,17 @@ const cta = home.ctaBand;
   .home-cases-link { display: flex; justify-content: flex-end; margin-top: 28px; }
   /* 실적 숫자 — 숫자가 위, 이름이 아래(dt 를 먼저 읽게 두고 보이는 순서만 뒤집는다) */
   .home-stats { margin-top: 24px; }
-  .home-stats dl { display: flex; flex-wrap: wrap; gap: 12px clamp(24px, 4vw, 40px); }
+  /* 숫자 셋을 한 줄에(2026-10-02 평균 셋) — 좁으면 라벨만 두 줄로 접힌다. 숫자는 꺾지 않는다 */
+  .home-stats dl { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, max-content); gap: 12px clamp(20px, 4vw, 40px); }
   .home-stats dl > div { display: flex; flex-direction: column-reverse; gap: 2px; }
   .home-stats dt { font-size: 14px; color: var(--br-ink-sub); }
-  .home-stats dd { font-size: clamp(26px, 1.1rem + 1.8vw, 40px); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: var(--br-teal); font-variant-numeric: tabular-nums; }
+  .home-stats__nb { white-space: nowrap; }
+  .home-stats dd { white-space: nowrap; font-size: clamp(26px, 1.1rem + 1.8vw, 40px); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: var(--br-teal); font-variant-numeric: tabular-nums; }
   .home-stats__pre, .home-stats__suf { font-size: 0.5em; font-weight: 700; }
   .home-stats__suf { margin-left: 3px; }
   .home-stats p { margin-top: 8px; font-size: 13px; color: var(--br-ink-sub); }
+  @media (min-width: 768px) { .home-stats__br { display: none; } } /* 라벨 줄바꿈 자리(trust.json \n)는 좁은 화면에서만 */
+  @media (max-width: 359px) { .home-stats dd { font-size: 22px; } } /* 320~359px 에서 숫자가 칸을 넘지 않게 */
   .v2-svc-lead { background: transparent; padding-bottom: var(--head-gap); } /* 장 제목 → 첫 카드 = 제목 묶음 → 본 블록 */
   .v2-svc-lead + :global(.v2-svc) { padding-top: 0; }
 </style>

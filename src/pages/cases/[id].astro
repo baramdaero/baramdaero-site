@@ -71,6 +71,8 @@ const specs = [
 <Base title={title} description={description} jsonLd={jsonLd} ogImage={cover}>
   <article class="bd-section case-detail">
     <div class="bd-container">
+      {/* 2026-10-02 대표: 배경 위에 글·사진을 바로 두지 말고 흰 유리판 한 장 안에(블로그 본문 카드와 같은 flat 유리) */}
+      <div class="case-detail__card br-glass br-glass--flat">
       <p class="bd-microlabel">{type} · {region}</p>
       <h1 class="case-detail__title">{tMain}{tSub && <span class="case-detail__sub">{tSub}</span>}</h1>
       {sample && <p class="case-detail__sample">샘플 콘텐츠 — 실제 사례로 교체 예정</p>}
@@ -123,6 +125,7 @@ const specs = [
           ).map(([t, h]) => <li><a href={h}>{t}</a></li>)}
         </ul>
       </nav>
+      </div>
 
       <p class="case-detail__back"><a class="br-pill" href="/cases/">목록으로</a></p>
     </div>
@@ -130,8 +133,11 @@ const specs = [
 </Base>
 
 <style>
+  .case-detail { background: transparent; } /* 유리 카드 호스트 */
   .case-detail .bd-container { max-width: 760px; }
-  .case-detail__title { font-size: clamp(24px, 3.4vw, 34px); margin: 10px 0 14px; text-wrap: balance; }
+  .case-detail__card { padding: 24px 20px 28px; }
+  @media (min-width: 768px) { .case-detail__card { padding: 40px 40px 44px; } }
+  .case-detail__title { font-size: clamp(24px, 3.4vw, 34px); margin: 10px 0 14px; text-wrap: balance; overflow-wrap: anywhere; } /* 긴 단지명이 320px 카드 밖으로 나가지 않게 */
   .case-detail__sub { display: block; margin-top: 6px; font-size: 0.56em; font-weight: 600; line-height: 1.5; color: var(--ink-soft); }
   .case-detail__sample {
     display: inline-block;
@@ -145,8 +151,8 @@ const specs = [
   }
   .case-detail__cover {
     width: 100%;
-    border-radius: var(--radius);
     margin: 20px 0;
+    border-radius: calc(var(--radius) - 4px); /* 유리판 안 — 판 모서리보다 한 단 작게 */
     outline: 1px solid oklch(0 0 0 / 0.08);
     outline-offset: -1px;
   }
@@ -163,7 +169,7 @@ const specs = [
   .case-detail__spec dd { font-size: 15px; font-weight: 600; }
   .case-detail__body { font-size: 15.5px; color: var(--ink); }
   /* 본문 사진 — 아주 긴 세로 사진이 한 화면을 넘게 차지하지 않게 */
-  .case-detail__body :global(img) { max-height: min(80vh, 760px); width: auto; margin-inline: auto; border-radius: var(--radius); }
+  .case-detail__body :global(img) { max-height: min(80vh, 760px); width: auto; margin-inline: auto; border-radius: calc(var(--radius) - 4px); }
   .case-detail__body :global(p) { margin-bottom: 14px; }
   .case-detail__body :global(ul) { margin: 0 0 14px 20px; }
   .case-detail__body :global(blockquote) {
@@ -175,7 +181,7 @@ const specs = [
   .case-detail__body :global(a) { color: var(--br-teal-deep); text-decoration: underline; text-underline-offset: 3px; }
   .case-detail__body :global(h2) { font-size: 20px; margin: 32px 0 12px; }
   .case-detail__photos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 32px; }
-  .case-detail__photos img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--radius); }
+  .case-detail__photos img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: calc(var(--radius) - 4px); }
   .case-detail__photos figcaption { font-size: 13px; color: var(--ink-soft); margin-top: 6px; }
   .case-detail__qa { margin-top: 40px; }
   .case-detail__qa h2 { font-size: 20px; margin-bottom: 8px; }

@@ -151,7 +151,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-const DATA = {"title":"LG전자 휘센 오브제컬렉션 타워II FQ18DDTHBN 분해도","brand":"LG전자","form":"스탠드","model_code":"FQ18DDTHBN","spec":{"body_size_mm":"380×1915×295","panel_size_mm":"","weight_kg":"","cooling_kw":"","series_ko":"휘센 오브제컬렉션 타워II","lineup":null},"envelope":{"body":[-190.0,-147.5,-957.5,190.0,147.5,957.5],"panel":null,"basis":"제원표 외형 치수. 원점 = 본체 중심, z+ = 위"},"local_axes":"x=긴 변, y=짧은 변, z=위(천장 속)+","discharge_dir_local":"y-","steps":["극세 필터","하단 패널","전면 패널","내부 패널","팬 그릴부","송풍팬·팬모듈","벨마우스 (흡입구)","열교환기"],"parts":[{"id":"filter","name_ko":"극세 필터","name_en":"","kind":"filter","shape":"plate","size_mm":[319.2,12,957.5],"center_mm":[0,123.9,114.9],"step":0,"step_name":"극세 필터","explode_dir":[0,1,0],"explode_mm":354.0,"soil":"뒷면 흡입구 전체를 덮는 필터. 여기가 막히면 풍량이 확 준다","clean":"공구 없이 뒤에서 빠진다. 자가 세척 대상","wash":true},{"id":"lower_panel","name_ko":"하단 패널","name_en":"","kind":"panel","shape":"curved","size_mm":[372.0,100.3,574.5],"center_mm":[0,-97.4,-651.1],"step":1,"step_name":"하단 패널","explode_dir":[0,-1,0],"explode_mm":324.0,"soil":"바닥 가까워 먼지가 가장 많이 붙는다","clean":"나사 없이 눌러 여는 구조. 물세척","wash":true},{"id":"front_panel","name_ko":"전면 판넬","name_en":"","kind":"panel","shape":"curved","size_mm":[372.0,100.3,1225.6],"center_mm":[0,-97.4,268.1],"step":2,"step_name":"전면 패널","explode_dir":[0,-1,0],"explode_mm":280.0,"soil":"겉면에 얼룩과 먼지가 쌓인다","clean":"레버를 돌리거나 나사 2개를 풀어 분리. 물세척 후 완전 건조","wash":true},{"id":"inner_panel","name_ko":"내부 패널","name_en":"","kind":"panel","shape":"plate","size_mm":[342.0,24,1110.7],"center_mm":[0,-47.2,229.8],"step":3,"step_name":"내부 패널","explode_dir":[0,-1,0],"explode_mm":236.0,"soil":"송풍로 바로 앞면. 결로와 먼지가 같이 낀다","clean":"고정나사 8개(모델별 상이)를 풀고 분리","wash":true},{"id":"outlet_panel","name_ko":"토출구 (서클/좌우)","name_en":"","kind":"blade","shape":"circ_vent","size_mm":[296.4,88.5,1149.0],"center_mm":[0,-70.8,306.4],"step":3,"step_name":"내부 패널","explode_dir":[0,-1,0.2],"explode_mm":295.0,"soil":"찬 바람이 나오는 자리라 결로·먼지","clean":"탈거해 물세척(LG 타워는 좌우 각 나사 4개)","wash":true},{"id":"fan_grille","name_ko":"팬 그릴부","name_en":"","kind":"grille","shape":"grid","size_mm":[326.8,59.0,1072.4],"center_mm":[0,-29.5,268.1],"step":4,"step_name":"팬 그릴부","explode_dir":[0,-1,0],"explode_mm":236.0,"soil":"팬 바로 앞이라 먼지가 붙는다","clean":"고정나사 12개(모델별 상이)를 풀면 덕트부가 드러난다","wash":true},{"id":"circ_fan","name_ko":"송풍팬 (원심팬 여러 개)","name_en":"","kind":"fan","shape":"fanstack","size_mm":[235.6,235.6,1110.7],"center_mm":[0,0,229.8],"step":5,"step_name":"송풍팬·팬모듈","explode_dir":[0,-1,0],"explode_mm":266.0,"soil":"날개마다 먼지가 굳는다. 스탠드는 팬이 여러 개라 한 개만 막혀도 티가 난다","clean":"송풍팬을 분리해 세척한다. 커넥터·모터에 물이 닿지 않게 한다","wash":true},{"id":"fan_module","name_ko":"팬 모듈 (모터)","name_en":"","kind":"motor","shape":"cylinder","size_mm":[114.0,114.0,957.5],"center_mm":[0,17.7,229.8],"step":5,"step_name":"송풍팬·팬모듈","explode_dir":[0,1,0],"explode_mm":236.0,"soil":"전장 부품","clean":"분리한 뒤 세척한다. 붙인 채 물세척하지 않는다","wash":false},{"id":"bell_mouth","name_ko":"벨마우스 (흡입구)","name_en":"","kind":"duct","shape":"ring","size_mm":[212.8,212.8,383.0],"center_mm":[0,0,651.1],"step":6,"step_name":"벨마우스 (흡입구)","explode_dir":[0,-1,0.3],"explode_mm":266.0,"soil":"기류가 모이는 목. 먼지 띠가 생긴다","clean":"분리해 세척한다","wash":true},{"id":"evaporator","name_ko":"열교환기","name_en":"","kind":"heat_exchanger","shape":"coil_flat","size_mm":[334.4,88.5,1378.8],"center_mm":[0,64.9,153.2],"step":7,"step_name":"열교환기","explode_dir":[0,1,0],"explode_mm":266.0,"soil":"핀 사이 먼지 + 결로 → 곰팡이. 냉방 능력이 여기서 떨어진다","clean":"스탠드는 배관을 분해하지 않고 세척한다. 최종적으로 백바디와 열교환기만 남는 상태까지 분해","wash":true},{"id":"drain_panel","name_ko":"드레인팬 (물받이)","name_en":"","kind":"drain","shape":"box","size_mm":[326.8,94.4,95.8],"center_mm":[0,23.6,-689.4],"step":7,"step_name":"열교환기","explode_dir":[0,0,-1],"explode_mm":354.0,"soil":"응축수가 모이는 바닥. 슬라임과 냄새","clean":"분리해 세척한다. 고압 직분사 금지(압력 20% 낮춤)","wash":true},{"id":"cabinet","name_ko":"본체 캐비닛","name_en":"","kind":"case","shape":"shell","size_mm":[380.0,295.0,1915.0],"center_mm":[0,0,0],"step":7,"step_name":"열교환기","explode_dir":[0,1,0],"explode_mm":118.0,"soil":"송풍로 내벽","clean":"세척가대 설치 후 세척","wash":false},{"id":"control_box","name_ko":"전장박스 (메인 PCB)","name_en":"","kind":"electric","shape":"box","size_mm":[129.2,59.0,191.5],"center_mm":[76.0,35.4,651.1],"step":4,"step_name":"팬 그릴부","explode_dir":[0,1,0.4],"explode_mm":354.0,"soil":"전장 부품","clean":"배전반 차단 후 작업. 분리 안 되는 부분은 보양한다","wash":false}],"public_note":"실제 제품 제원으로 만든 3D 예시입니다. 내부 부품 형상은 실물과 다를 수 있습니다."};
+const DATA = {"title":"LG전자 휘센 오브제컬렉션 타워II FQ18DDTHBN 분해도","brand":"LG전자","form":"스탠드","model_code":"FQ18DDTHBN","spec":{"body_size_mm":"380×1915×295","panel_size_mm":"","weight_kg":"","cooling_kw":"","series_ko":"휘센 오브제컬렉션 타워II","lineup":null},"envelope":{"body":[-190.0,-147.5,-957.5,190.0,147.5,957.5],"panel":null,"basis":"제원표 외형 치수. 원점 = 본체 중심, z+ = 위"},"local_axes":"x=긴 변, y=짧은 변, z=위(천장 속)+","discharge_dir_local":"x±","steps":["극세 필터·플러스 필터","위쪽 덮개·전면 패널","좌우 토출구","팬 모듈 (팬 3개)","열교환기","본체 (전문 세척 범위 — 현장 확인)"],"parts":[{"id":"filter","name_ko":"극세 필터 (좌·우 2장)","name_en":"","kind":"filter","shape":"multi","size_mm":[361.0,12,995.8],"center_mm":[0,144.5,76.6],"step":0,"step_name":"극세 필터·플러스 필터","explode_dir":[0,1,0],"explode_mm":354.0,"soil":"뒷면 흡입구를 덮는 필터. 막히면 풍량이 확 준다","clean":"손잡이를 잡고 옆으로 당겨 뺀다. 흐르는 물·중성세제, 40℃ 이상 금지, 그늘 건조","wash":true,"order":0,"items_mm":[{"c":[-91.2,0,0],"size":[178.6,12,995.8000000000001]},{"c":[91.2,0,0],"size":[178.6,12,995.8000000000001]}]},{"id":"plus_filter","name_ko":"플러스 필터 (4장)","name_en":"CAC공청필터+","kind":"filter","shape":"multi","size_mm":[361.0,6,995.8],"center_mm":[0,133.5,76.6],"step":0,"step_name":"극세 필터·플러스 필터","explode_dir":[0,1,0],"explode_mm":442.0,"soil":"미세먼지를 거르는 필터","clean":"물세척 금지. 진공청소기·솔로 털고 12개월마다 교체","wash":false,"order":1,"items_mm":[{"c":[-91.2,0,248.95000000000002],"size":[152.0,6,478.75]},{"c":[-91.2,0,-248.95000000000002],"size":[152.0,6,478.75]},{"c":[91.2,0,248.95000000000002],"size":[152.0,6,478.75]},{"c":[91.2,0,-248.95000000000002],"size":[152.0,6,478.75]}]},{"id":"ionizer","name_ko":"집진 이오나이저","name_en":"","kind":"electric","shape":"box","size_mm":[98.8,30,134.1],"center_mm":[0,152.5,86.2],"step":0,"step_name":"극세 필터·플러스 필터","explode_dir":[0,1,0],"explode_mm":531.0,"soil":"전장 부품","clean":"물 금지. 공기청정 운전 중 만지지 않는다","wash":false},{"id":"top_cover","name_ko":"위쪽 덮개","name_en":"","kind":"panel","shape":"plate","size_mm":[288.8,147.5,20],"center_mm":[0,-59.0,947.5],"step":1,"step_name":"위쪽 덮개·전면 패널","explode_dir":[0,0,1],"explode_mm":236.0,"soil":"겉면 먼지","clean":"윗면 회색 나사 2개를 풀고 들어 올린다. 겉면만 닦는다","wash":false,"order":0},{"id":"front_panel","name_ko":"전면 패널","name_en":"","kind":"panel","shape":"plate","size_mm":[372.0,20,1819.2],"center_mm":[0,-139.0,19.2],"step":1,"step_name":"위쪽 덮개·전면 패널","explode_dir":[0,-1,0.1],"explode_mm":280.0,"soil":"겉면에 얼룩과 먼지가 쌓인다","clean":"위쪽 덮개를 들고 위쪽 손잡이를 당겨 앞으로 연 뒤 중간 커넥터·연결 클립을 분리한다. 커넥터는 보양하고 물세척","wash":true,"order":1},{"id":"side_outlets","name_ko":"좌우 토출구 (2개)","name_en":"","kind":"blade","shape":"multi","size_mm":[380.0,88.5,1781.0],"center_mm":[0,-104.2,19.2],"step":2,"step_name":"좌우 토출구","explode_dir":[0,-1,0.5],"explode_mm":295.0,"soil":"찬 바람이 나오는 자리라 결로·먼지","clean":"한쪽 회색 나사 4개를 풀고 위로 올린 뒤 안쪽 윗부분을 앞으로 뺀다(앞으로 먼저 당기면 파손)","wash":true,"finish":"dark","items_mm":[{"c":[-169.2,0,0],"size":[45.6,88.5,1780.95]},{"c":[169.2,0,0],"size":[45.6,88.5,1780.95]}]},{"id":"air_guard","name_ko":"에어 가드 (좌·우)","name_en":"","kind":"duct","shape":"multi","size_mm":[323.0,59.0,1015.0],"center_mm":[0,-73.8,86.2],"step":2,"step_name":"좌우 토출구","explode_dir":[0,-1,0.5],"explode_mm":236.0,"soil":"토출 통로 먼지","clean":"좌우 토출구와 함께 닦는다","wash":true,"items_mm":[{"c":[-152.0,0,0],"size":[20,59.0,1014.95]},{"c":[152.0,0,0],"size":[20,59.0,1014.95]}]},{"id":"fan_grille","name_ko":"팬 모듈 덮개","name_en":"","kind":"grille","shape":"disc3y","size_mm":[281.2,35.4,1053.2],"center_mm":[0,-88.5,105.3],"step":3,"step_name":"팬 모듈 (팬 3개)","explode_dir":[-0.5,-1,0],"explode_mm":236.0,"soil":"팬 바로 앞이라 먼지가 붙는다","clean":"오른쪽 가장자리 회색 나사 4개를 풀고 가장자리 가운데를 잡고 연다(왼쪽 경첩)","wash":true,"bars":0,"plate":true},{"id":"circ_fan","name_ko":"팬 (팬 모듈, 3개)","name_en":"","kind":"fan","shape":"fan3y","size_mm":[235.6,73.8,1053.2],"center_mm":[0,-59.0,105.3],"step":3,"step_name":"팬 모듈 (팬 3개)","explode_dir":[-0.5,-1,0],"explode_mm":266.0,"soil":"날개마다 먼지가 굳는다","clean":"LG 사용설명서상 사용자는 물 묻힌 천으로 닦기만(팬 모듈 임의 분해 금지). 전문 세척 범위는 현장 확인","wash":true},{"id":"bell_mouth","name_ko":"원형 흡입구 (팬 뒤 3개)","name_en":"","kind":"duct","shape":"disc3y","size_mm":[235.6,23.6,1053.2],"center_mm":[0,-14.8,105.3],"step":3,"step_name":"팬 모듈 (팬 3개)","explode_dir":[0,-1,0.3],"explode_mm":30.0,"soil":"기류가 모이는 목. 먼지 띠가 생긴다","clean":"표면을 닦는다","wash":true,"bars":0},{"id":"evaporator","name_ko":"열교환기","name_en":"","kind":"heat_exchanger","shape":"coil_flat","size_mm":[334.4,73.8,1072.4],"center_mm":[0,73.8,86.2],"step":4,"step_name":"열교환기","explode_dir":[0,1,0],"explode_mm":266.0,"soil":"핀 사이 먼지 + 결로 → 곰팡이. 냉방 능력이 여기서 떨어진다","clean":"LG는 사용자 청소 금지·열교환기 세척 기능 안내. 전문 세척은 자사 작업기준","wash":true,"tilt":0},{"id":"drain_panel","name_ko":"물받이 (위치 추정)","name_en":"","kind":"drain","shape":"box","size_mm":[326.8,94.4,95.8],"center_mm":[0,23.6,-497.9],"step":5,"step_name":"본체 (전문 세척 범위 — 현장 확인)","explode_dir":[0,0,-1],"explode_mm":354.0,"soil":"응축수가 모이는 바닥. 슬라임과 냄새","clean":"분리해 세척한다. 고압 직분사 금지(압력 20% 낮춤)","wash":true},{"id":"control_box","name_ko":"전장부 (위치 추정)","name_en":"","kind":"electric","shape":"box","size_mm":[129.2,59.0,191.5],"center_mm":[0,-73.8,-402.1],"step":5,"step_name":"본체 (전문 세척 범위 — 현장 확인)","explode_dir":[0,1,0.4],"explode_mm":354.0,"soil":"전장 부품","clean":"배전반 차단 후 작업. 분리 안 되는 부분은 보양한다","wash":false},{"id":"cabinet","name_ko":"본체 캐비닛","name_en":"","kind":"case","shape":"shell","size_mm":[380.0,295.0,1915.0],"center_mm":[0,0,0],"step":5,"step_name":"본체 (전문 세척 범위 — 현장 확인)","explode_dir":[0,1,0],"explode_mm":118.0,"soil":"송풍로 내벽","clean":"세척가대 설치 후 세척","wash":false,"open_front":true,"wall_mm":12}],"public_note":"실제 제품 제원으로 만든 3D 예시입니다. 내부 부품 형상은 실물과 다를 수 있습니다."};
 const S = 0.001;                                   // mm -> m
 const $ = q => document.querySelector(q);
 const Q = new URLSearchParams(location.search);
@@ -251,6 +251,7 @@ const M = {
   fanLight:new THREE.MeshStandardMaterial({color:0xd9dde1, roughness:.45}),
   motor:   new THREE.MeshStandardMaterial({color:0x1b1e21, roughness:.4, metalness:.5}),
   steel:   new THREE.MeshStandardMaterial({color:0xbfc5cb, roughness:.38, metalness:.85}),
+  paint:   new THREE.MeshStandardMaterial({color:0x5d636a, roughness:.62, metalness:.25}),   // 도장 철판 외함(짙은 회색)
   fin:     new THREE.MeshStandardMaterial({color:0xdfe4e8, roughness:.42, metalness:.55}),
   copper:  new THREE.MeshStandardMaterial({color:0xc07a4a, roughness:.3, metalness:1}),
   pcb:     new THREE.MeshStandardMaterial({map:TEX.pcb, roughness:.55}),
@@ -265,17 +266,20 @@ for (const k of ['panel','panelHoles','grille','blade','eps','drain','plastic','
   { M[k].envMapIntensity = 0.55; M[k].needsUpdate = true; }
 function matFor(p) {
   const id = p.id, k = p.kind;
+  if (p.finish === 'dark') return M.dark;                             // 다크 그레이 부품(스탠드 토출구 등)·검정 외함
   if (k === 'panel') return p.micro_hole ? M.panelHoles : M.panel;   // 무풍 마이크로홀은 삼성 무풍 시리즈만
   if (k === 'grille') return id === 'cover_safety' ? M.dark : M.grille;
   if (k === 'filter') return M.filter;
-  if (k === 'blade') return M.blade;
+  if (k === 'blade') return p.micro_hole ? M.panelHoles : M.blade;   // 삼성 무풍 1Way 는 블레이드도 마이크로홀
   if (k === 'drain') return /pump|hose/.test(id) ? M.plastic : M.drain;
   if (k === 'duct') return M.plastic;
   if (k === 'fan') return /cross|circ/.test(id) ? M.fanLight : M.fan;
   if (k === 'motor') return M.motor;
   if (k === 'bracket') return M.steel;
   if (k === 'heat_exchanger') return M.fin;
-  if (k === 'case') return M.eps;
+  if (k === 'case') return p.finish === 'paint' ? M.paint : p.finish === 'dark' ? M.dark : M.eps;   // 외함 재질: 도장 철판(LG 1Way)·검정 ABS(삼성 1Way)
+  if (k === 'pipe') return M.copper;                                  // 배관 접속구(위치 표시용)
+  if (k === 'display') return M.dark;                                 // 표시부·수신부
   if (k === 'electric') return M.pcb;
   return M.plastic;
 }
@@ -299,8 +303,8 @@ function roundedPlate(w, d, h, r) {                // 모서리 둥근 판 (판�
 }
 // 구멍 뚫린 한 장짜리 판(판넬·드레인팬). 막대 4개로 테를 만들면 막대가 만나는 모서리에 홈이 파인다.
 // holes: [{c:[x,y], size:[w,d], shape:'rect'|'circle'}] — mm, 부품 로컬 좌표(x 긴 변, y 짧은 변)
-function plateWithHoles(w, d, h, holes) {
-  const s = rrect(new THREE.Shape(), 0, 0, w*S, d*S, Math.min(w, d)*0.05*S);
+function plateWithHoles(w, d, h, holes, r) {          // r = 모서리 반경(mm). 없으면 짧은 변의 5%
+  const s = rrect(new THREE.Shape(), 0, 0, w*S, d*S, (r ?? Math.min(w, d)*0.05)*S);
   for (const o of holes) {
     const [cx, cy] = o.c || [0, 0], [hw, hd] = o.size, path = new THREE.Path();
     if (o.shape === 'circle') path.absarc(cx*S, cy*S, hw/2*S, 0, Math.PI*2, false);
@@ -364,7 +368,7 @@ function meshFor(p) {
 
   switch (p.shape) {
     case 'frame':                                   // 판넬·드레인팬: 구멍 뚫린 한 장(흡입·토출 구멍은 holes_mm)
-      add(plateWithHoles(w, d, h, p.holes_mm || [{c:[0, 0], size:[hw || w*.6, hd || d*.6]}]));
+      add(plateWithHoles(w, d, h, p.holes_mm || [{c:[0, 0], size:[hw || w*.6, hd || d*.6]}], p.corner_r_mm));
       break;
     case 'plate': add(roundedPlate(w*S, d*S, h*S, 24*S)); break;
     case 'box':   add(roundedPlate(w*S, d*S, h*S, 12*S)); break;
@@ -387,6 +391,9 @@ function meshFor(p) {
       t.rotation.x = Math.PI/2;
       break; }
     case 'cylinder': add(new THREE.CylinderGeometry(w/2*S, w/2*S, h*S, 32)); break;
+    case 'cyl_x':                                   // 가로 축 원통(팬 모터·베어링): size = [길이, 지름, 지름]
+      add(new THREE.CylinderGeometry(d/2*S, d/2*S, w*S, 32)).rotation.z = Math.PI/2;
+      break;
     case 'turbofan': {                              // 터보팬: 허브 + 휜 날개 + 상하 링
       const r = w/2, n = 13;
       add(new THREE.CylinderGeometry(r*.28*S, r*.24*S, h*.5*S, 28), [0, h*.12, 0]);
@@ -406,6 +413,13 @@ function meshFor(p) {
         const t = (w - (hw || w*0.78))/2;
         const sides = [[w, t, 0, (d-t)/2, 0], [w, t, 0, -(d-t)/2, 0],
                        [t, d-2*t, (w-t)/2, 0, 1], [t, d-2*t, -(w-t)/2, 0, 1]];
+        if (p.open_corner) {                        // [x 부호, y 부호](모델 좌표) 모서리를 gap_mm 만큼 비운다 — 코일 끝·펌프 자리
+          const [ox, oy] = p.open_corner, g = p.gap_mm || 170;
+          for (const sd of sides) {
+            if (!sd[4] && Math.sign(-sd[3]) === oy) { sd[0] -= g; sd[2] = -ox*g/2; }
+            if (sd[4] && Math.sign(sd[2]) === ox) { sd[1] -= g - t; sd[3] = oy*(g - t)/2; }
+          }
+        }
         const finMat = M.fin;
         for (const [bw, bd, cx, cz, vert] of sides) {
           add(boxG(bw, bd, h), [cx, 0, cz]);
@@ -423,22 +437,40 @@ function meshFor(p) {
         }
         break; }
     case 'shell': {                                 // 캐비닛: 윗판 + 옆면 4장
-      const t = Math.max(w*0.05, 20);
+      const t = p.wall_mm || Math.max(w*0.05, 20);   // wall_mm: 벽 두께(벽걸이 섀시·스탠드처럼 얇은 외함)
+      if (p.chamfer_mm) {                           // 모서리 챔퍼 팔각(4Way) — 대각 행거가 챔퍼 밖으로 드러난다
+        const oct = (W, D, c) => [[-W/2+c,-D/2],[W/2-c,-D/2],[W/2,-D/2+c],[W/2,D/2-c],[W/2-c,D/2],[-W/2+c,D/2],[-W/2,D/2-c],[-W/2,-D/2+c]];
+        const top = new THREE.Shape();
+        oct(w - 20, d - 20, p.chamfer_mm - 4).forEach(([x, y], i) => i ? top.lineTo(x*S, y*S) : top.moveTo(x*S, y*S));
+        add(extrudeFlat(top, t*S), [0, h/2 - t/2 - 10, 0]);
+        const P = oct(w, d, p.chamfer_mm);
+        P.forEach(([x1, y1], i) => {
+          const [x2, y2] = P[(i + 1) % 8], len = Math.hypot(x2 - x1, y2 - y1);
+          let nx = -(y2 - y1)/len, ny = (x2 - x1)/len;                   // 안쪽 법선
+          if (nx*(x1 + x2) + ny*(y1 + y2) > 0) { nx = -nx; ny = -ny; }
+          const m = add(boxG(len, t, h), [(x1 + x2)/2 + nx*t/2, 0, -((y1 + y2)/2 + ny*t/2)]);
+          m.rotation.y = Math.atan2(y2 - y1, x2 - x1);
+        });
+        break;
+      }
       add(boxG(w - 20, d - 20, t), [0, h/2 - t/2 - 10, 0]);   // 옆판 안으로 물린다 — 면을 공유하면 카메라마다 승자가 바뀐다
       const sides = [[w, t, 0, (d-t)/2], [w, t, 0, -(d-t)/2],
                      [t, d-2*t, (w-t)/2, 0], [t, d-2*t, -(w-t)/2, 0]];
-      for (const [bw, bd, cx, cz] of sides) add(boxG(bw, bd, h), [cx, 0, cz]);
+      sides.forEach(([bw, bd, cx, cz], i) => { if (!(i === 0 && p.open_front)) add(boxG(bw, bd, h), [cx, 0, cz]); });   // open_front: 앞(y−) 벽 없음
       break; }
     case 'blade4': {                                // 4면 토출 블레이드: 판넬 테의 네 토출구에 변과 나란히 눕는다
-      const L = w*0.64, c = w*0.073, off = w/2 - w*0.043;   // w = 네 날개 바깥 둘레(판넬 토출구 위치와 짝)
-      for (let i = 0; i < 4; i++) {
-        const a = i*Math.PI/2;
-        const b = add(roundedPlate(L*S, c*S, h*S, 6*S), [Math.cos(a)*off, 0, Math.sin(a)*off]);
-        b.rotation.set(0.25, -a + Math.PI/2, 0, 'YXZ');    // 제 긴 축으로 기운다 — 판넬 면 밖으로 나가지 않는 각
+      // 날개 길이·폭·중심은 모델 값(vane_len_mm·chord_mm·off_mm)이 있으면 그것 — 없으면 예전 비율
+      const L = p.vane_len_mm || w*0.64, c = p.chord_mm || w*0.073, off = p.off_mm || (w/2 - w*0.043);
+      const vanes = p.vanes || 1;                   // 2 = 듀얼 베인(토출구마다 두 장)
+      const tilt = p.tilt_rad ?? 0.25;              // 0 = 닫힘(판넬 면과 평평)
+      for (let i = 0; i < 4; i++) for (let v = 0; v < vanes; v++) {
+        const a = i*Math.PI/2, o = off + v*c*0.4;   // 둘째 장은 바깥으로 비켜 — 아래에서 두 장이 갈라져 보인다
+        const b = add(roundedPlate(L*S, c*S, h*S, 6*S), [Math.cos(a)*o, 0, Math.sin(a)*o]);
+        b.rotation.set(tilt + v*0.3, -a + Math.PI/2, 0, 'YXZ');    // 제 긴 축으로 기운다 — 판넬 면 밖으로 나가지 않는 각
       }
       break; }
     case 'blade2': {                                // 2면 토출 블레이드: 양쪽 긴 변 토출구에 하나씩
-      const c = d*0.16;                             // d = 두 날개 바깥 폭
+      const c = p.chord_mm || d*0.16;               // d = 두 날개 바깥 폭, chord_mm = 날개 폭(모델 값)
       for (const sy of [-1, 1]) add(roundedPlate(w*S, c*S, h*S, 6*S), [0, 0, sy*(d/2 - c/2)]).rotation.x = sy*0.2;
       break; }
     case 'crossflow': {          // 관류팬(1Way·벽걸이): 길게 누운 드럼. 축은 x(긴 변)
@@ -458,12 +490,13 @@ function meshFor(p) {
       break; }
     case 'coil_flat': {          // 평판형 열교환기: 살짝 기운 핀 팩
       uBends(w, d, h); tubeFace(w, h, d/2 + 3);
+      const tilt = p.tilt ?? -0.18;               // 스탠드는 세운다(0) — 기울이면 위 끝이 캐비닛 뒤로 튀어나온다
       const body = add(boxG(w, d, h));
-      body.rotation.x = -0.18;
+      body.rotation.x = tilt;
       const finMat = M.fin;
       const n = Math.min(46, Math.max(8, Math.round(w/20)));
       const fin = new THREE.InstancedMesh(boxG(3, d*1.02, h*0.94), finMat, n);
-      fin.castShadow = true; fin.rotation.x = -0.18;
+      fin.castShadow = true; fin.rotation.x = tilt;
       const m4 = new THREE.Matrix4();
       for (let i = 0; i < n; i++) { m4.makeTranslation((-w/2 + w*(i+.5)/n)*S, 0, 0); fin.setMatrixAt(i, m4); }
       G.add(fin);
@@ -471,9 +504,9 @@ function meshFor(p) {
     case 'curved': {             // 벽걸이·스탠드 전면 패널: 앞으로 볼록한 면
       const g2 = roundedPlate(w*S, d*S, h*S, Math.min(w, d)*S*0.28);
       const pos = g2.attributes.position;
-      for (let i = 0; i < pos.count; i++) {      // 가로 위치에 따라 앞으로 부풀린다
+      for (let i = 0; i < pos.count; i++) {      // 가로 위치에 따라 앞으로 부풀린다 — 가운데는 제자리, 양끝이 뒤로 0.19d
         const x = pos.getX(i), z = pos.getZ(i);
-        pos.setZ(i, z - Math.cos(x / (w*S/2) * 1.2) * d*S * 0.30);
+        pos.setZ(i, z + (Math.cos(x / (w*S/2) * 1.2) - 1) * d*S * 0.30);
       }
       g2.computeVertexNormals();
       add(g2);
@@ -518,14 +551,96 @@ function meshFor(p) {
       o.material.side = THREE.DoubleSide;
       const i2 = add(new THREE.CylinderGeometry(r*0.62*S, r*0.62*S, h*S, 48, 1, true), [0,0,0], ringMat);
       i2.material = ringMat;
-      for (const yy of [-h/2, h/2])
-        add(new THREE.TorusGeometry(r*0.81*S, (r*0.19)*S, 2, 56), [0, yy, 0]).rotation.x = Math.PI/2;
-      for (let k = 0; k < 3; k++) {   // 부스터팬 BLDC 모터 3개(120도 간격)
-        const a = k/3 * Math.PI*2, rr = r*0.80;
-        add(new THREE.CylinderGeometry(r*0.12*S, r*0.12*S, h*0.7*S, 20),
+      add(new THREE.TorusGeometry(r*0.81*S, (r*0.19)*S, 2, 56), [0, h/2, 0]).rotation.x = Math.PI/2;
+      add(new THREE.TorusGeometry(r*0.74*S, (r*0.12)*S, 2, 56), [0, -h/2, 0]).rotation.x = Math.PI/2;   // 바닥 테 — 바깥(0.86r~)은 토출 슬롯
+      for (let k = 0; k < 3; k++) {   // 부스터팬 BLDC 모터 3개(120도 간격) — 바닥 슬롯 안으로 보인다
+        const a = k/3 * Math.PI*2, rr = r*0.93;
+        add(new THREE.CylinderGeometry(r*0.055*S, r*0.055*S, h*0.7*S, 20),
             [Math.cos(a)*rr, 0, Math.sin(a)*rr], M.motor);
       }
       break; }
+    case 'hanger4d':                                // 행거 4개를 네 모서리에 대각(45°)으로 — 4Way·360(w×d = 볼트 중심 간격)
+      for (const sx of [-1, 1]) for (const sz of [-1, 1])
+        add(boxG(110, 26, h), [sx*w/2, 0, sz*d/2]).rotation.y = sx*sz*Math.PI/4;
+      break;
+    case 'corners4': {                              // 판넬 네 모서리 커버(점검용) — corner_mm 한 변
+      const c = p.corner_mm || Math.min(w, d)*0.19;
+      for (const sx of [-1, 1]) for (const sz of [-1, 1])
+        add(roundedPlate(c*S, c*S, h*S, c*0.25*S), [sx*(w/2 - c/2), 0, sz*(d/2 - c/2)]);
+      if (p.display_corner) {                       // 표시부 코너: 수신 창(작은 원) — [x 부호, y 부호] 모델 좌표
+        const [sx, sy] = p.display_corner;
+        add(new THREE.CylinderGeometry(c*0.13*S, c*0.13*S, 2*S, 24), [sx*(w/2 - c*0.42), -h/2 - 1, -sy*(d/2 - c*0.42)], M.dark);
+      }
+      break; }
+    case 'drum': {                                  // 원통 본체(360): 옆벽 + 윗판. top_ratio = 윗지름/아랫지름
+      const m2 = mat.clone(); m2.side = THREE.DoubleSide;
+      const rb = w/2, rt = rb*(p.top_ratio || 1);
+      add(new THREE.CylinderGeometry(rt*S, rb*S, h*S, 64, 1, true), [0, 0, 0], m2);
+      add(new THREE.CylinderGeometry(rt*S, rt*S, Math.max(h*0.05, 14)*S, 64), [0, h/2, 0]);
+      break; }
+    case 'annulus': {                               // 원형 테(360 물받이): 바깥 지름 w, 안 구멍 hole_mm[0]
+      const sh = new THREE.Shape(); sh.absarc(0, 0, w/2*S, 0, Math.PI*2, false);
+      const hole = new THREE.Path(); hole.absarc(0, 0, (hw || w*0.6)/2*S, 0, Math.PI*2, true);
+      sh.holes.push(hole);
+      add(extrudeFlat(sh, h*S, 64));
+      break; }
+    case 'coil_round': {                            // 원형 열교환기(360): 두께 있는 원통 띠 + 핀 결
+      const m2 = M.fin.clone(); m2.side = THREE.DoubleSide;
+      const ro = w/2, ri = (hw || w*0.8)/2;
+      add(new THREE.CylinderGeometry(ro*S, ro*S, h*S, 72, 1, true), [0, 0, 0], m2);
+      add(new THREE.CylinderGeometry(ri*S, ri*S, h*S, 72, 1, true), [0, 0, 0], m2);
+      for (const yy of [-h/2, h/2]) {
+        const sh = new THREE.Shape(); sh.absarc(0, 0, ro*S, 0, Math.PI*2, false);
+        const ho = new THREE.Path(); ho.absarc(0, 0, ri*S, 0, Math.PI*2, true); sh.holes.push(ho);
+        add(extrudeFlat(sh, 4*S, 72), [0, yy, 0]);
+      }
+      add(boxG(ro - ri + 20, 60, h*0.9), [ri + (ro - ri + 20)/2, 0, 0], M.copper);   // 반경 방향, 바깥으로 20 나온다   // 입출구 헤더 한 곳
+      break; }
+    case 'vplate_holes':                            // 세운 판에 원형 구멍 n개(스탠드 내부 패널) — 구멍 지름 hole_ratio·w
+    case 'fan3y': case 'disc3y': {                  // 스탠드: 정면을 보는 원형 팬(또는 그릴) n개를 세로로 쌓는다
+      const n = p.count || 3, r = Math.min(w, h/n*0.96)/2;
+      if (p.plate || p.shape === 'vplate_holes') {  // 판·틀: 팬 자리마다 원형 구멍
+        const hd = (p.hole_ratio || 0.85)*r*2, holes = [];
+        for (let i = 0; i < n; i++) holes.push({c:[0, h/2 - h*(i + .5)/n], size:[hd, hd], shape:'circle'});
+        add(plateWithHoles(w, h, p.shape === 'vplate_holes' ? d : Math.max(4, d*0.2), holes, 20)).rotation.x = Math.PI/2;
+        if (p.shape === 'vplate_holes') break;
+      }
+      for (let i = 0; i < n; i++) {
+        const yy = h/2 - h*(i + .5)/n;
+        add(new THREE.TorusGeometry(r*S, (p.shape === 'disc3y' ? 9 : 6)*S, 10, 48), [0, yy, 0]);   // 정면(z) 을 보는 테
+        if (p.shape === 'disc3y') {
+          for (let k = 0; k < (p.bars ?? 16); k++)          // bars 0 = 테만(덕트·흡입 링)
+            add(boxG(2*r*0.95, 8, 6), [0, yy, 0]).rotation.z = k/16 * Math.PI;
+        } else {
+          add(new THREE.CylinderGeometry(r*0.24*S, r*0.24*S, d*0.8*S, 24), [0, yy, 0], M.motor).rotation.x = Math.PI/2;
+          for (let k = 0; k < 7; k++) {
+            const a = k/7 * Math.PI*2;
+            const b = add(boxG(r*0.62, d*0.35, 6), [Math.cos(a)*r*0.58, yy + Math.sin(a)*r*0.58, 0]);
+            b.rotation.set(0.5, 0, a, 'ZYX');
+          }
+        }
+      }
+      break; }
+    case 'dome_perf': {          // 타공 돔 그릴(360): 아래로 얕게 볼록한 구면 + 테. 타공은 무늬로 표시
+      const r = w/2, sag = h*0.8, R = (r*r + sag*sag)/(2*sag), th = Math.asin(r/R);
+      const g2 = new THREE.SphereGeometry(R*S, 72, 12, 0, Math.PI*2, Math.PI - th, th);
+      g2.translate(0, (R - h/2)*S, 0);
+      const uv = g2.attributes.uv, ps = g2.attributes.position;   // 평면 UV — 구멍이 고르게 보이게
+      for (let i = 0; i < ps.count; i++) uv.setXY(i, ps.getX(i)/(w*S)*4, ps.getZ(i)/(w*S)*4);
+      const m2 = M.panelHoles.clone(); m2.side = THREE.DoubleSide;
+      add(g2, [0, 0, 0], m2);
+      add(new THREE.TorusGeometry(r*S, 8*S, 8, 72), [0, sag - h/2, 0]).rotation.x = Math.PI/2;
+      break; }
+    case 'win_grille': {         // 흡입 그릴: 둥근 사각 민판 + 가운데 격자 창(window_mm 한 변, 타공 무늬로 표시)
+      const win = p.window_mm || w*0.55;
+      add(plateWithHoles(w, d, h, [{c:[0, 0], size:[win, win]}], p.corner_r_mm));
+      add(roundedPlate(win*S, win*S, h*0.5*S, 10*S), [0, -h*0.2, 0], M.panelHoles);
+      break; }
+    case 'multi':                                   // 같은 판 여러 장(필터 3장, 좌우 토출구 등) — items_mm: [{c:[x,y,z], size:[w,d,h]}]
+      for (const it of p.items_mm || [])
+        add(roundedPlate(it.size[0]*S, it.size[1]*S, it.size[2]*S, Math.min(...it.size)*0.2*S),
+            [it.c[0], it.c[2], -it.c[1]]);
+      break;
     case 'hanger4':                                 // 행거 4개: 외곽(w×d) 긴 변 양 끝 — 원형 배치는 직사각(1Way)에서 본체 밖에 뜬다
       for (const sx of [-1, 1]) for (const sz of [-1, 1])
         add(boxG(w*0.16, 26, h), [sx*(w/2 - w*0.08), 0, sz*(d/2 - 13)]);
@@ -568,7 +683,8 @@ const items = DATA.parts.map((p, i) => {
 
 // 분해 순서대로 한 줄에 놓는다. 같은 단계 안에서는 조립 위치(분해 축) 순서.
 const LAST = p => (p.kind === 'case' ? 2 : /hanger/.test(p.id) ? 3 : 0);
-const order = [...items].sort((a, b) => a.p.step - b.p.step || LAST(a.p) - LAST(b.p) || a.home.x - b.home.x);
+const order = [...items].sort((a, b) => a.p.step - b.p.step || (a.p.order ?? 0) - (b.p.order ?? 0)   // order: 같은 단계 안 순서(설명서)
+                                       || LAST(a.p) - LAST(b.p) || a.home.x - b.home.x);
 const hMax = Math.max(...items.map(it => it.size.y));
 const GAP = Math.max(0.09, hMax * 0.16);
 // 조립 상태는 가운데로 모은다
@@ -600,7 +716,9 @@ key.shadow.bias = -0.00023;                       // 실거리 = |bias| x (far-n
 key.shadow.normalBias = Math.min(lineLen / 512, 0.006);
 
 // 카메라: 줄이 화면을 비스듬히 가로지르는 3/4 — 레퍼런스식 분해도 구도
-const DIR = new THREE.Vector3(0.52, 0.30, 0.80).normalize();   // 비스듬한 3/4 — 줄이 대각선으로 들어간다
+// 벽걸이·스탠드는 화면 오른쪽(+X)이 제품 뒤쪽이라 앞에서 본다(-X) — 고객이 아는 면이 먼저 보이게
+const FRONT = DATA.form === '벽걸이' || DATA.form === '스탠드' ? -1 : 1;
+const DIR = new THREE.Vector3(0.52*FRONT, 0.30, 0.80).normalize();   // 비스듬한 3/4 — 줄이 대각선으로 들어간다
 const CORNERS = [];
 for (const x of [-lineLen/2, lineLen/2]) for (const y of [yLo, yHi]) for (const z of [zLo, zHi])
   CORNERS.push(new THREE.Vector3(x, y, z));
@@ -784,7 +902,7 @@ function paint() {
   $('#sub').textContent = `${DATA.brand} · ${DATA.form.toUpperCase()} · 부품 ${DATA.parts.length}개`;
   const unitless = v => String(v ?? '').replace(/\s*(mm|kg|kW)\b/gi, '').trim();   // 원문에 단위가 붙어 온 행이 있다
   $('#spec').innerHTML = [['본체', unitless(DATA.spec.body_size_mm)], ['판넬', unitless(DATA.spec.panel_size_mm)],
-    ['중량', unitless(DATA.spec.weight_kg)], ['냉방', DATA.spec.cooling_kw && unitless(DATA.spec.cooling_kw) + ' kW']]
+    ['중량', unitless(DATA.spec.weight_kg)], ['냉방', DATA.spec.cooling_kw && (/^[\d.\s]+$/.test(unitless(DATA.spec.cooling_kw)) ? unitless(DATA.spec.cooling_kw) + ' kW' : String(DATA.spec.cooling_kw))]]   // '7,200W' 처럼 단위가 붙은 원문에 kW 를 또 붙이지 않는다
     .filter(x => x[1]).map(([k, v]) => `<span>${esc(k)}</span><b>${esc(v)}</b>`).join('');
   $('#note').textContent = DATA.public_note
     || '외형 치수만 제원표 근거. 내부 부품 형상은 분해도를 보고 만든 추정이며 실제 치수가 아닙니다.';
