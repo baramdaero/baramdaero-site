@@ -107,8 +107,8 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
       <p class="ex-note">
         {photoNote && <Fragment>{photoNote}<br /></Fragment>}
         {photoSwitch
-          ? '제조사마다 한 모델의 외형 치수로 만들었습니다. 내부 부품 형상은 실물과 다를 수 있습니다.'
-          : '삼성·LG 공통 구성으로 만들고 외형 치수만 한 모델의 제원을 씁니다. 내부 부품 형상은 실물과 다를 수 있습니다.'}
+          ? '우리가 설치하는 모델을 제조사 문서와 시공 현장 기준으로 따로 그렸습니다. 내부 부품의 크기·위치는 일부 추정입니다.'
+          : '모델마다 제조사 문서 기준으로 그렸습니다. 내부 부품의 크기·위치는 일부 추정입니다.'}
       </p>
     </div>
   </section>
