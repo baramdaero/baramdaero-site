@@ -126,7 +126,7 @@ if (items.length) {
               <p class="faq-starts__t">처음이세요?</p>
               {GUIDES.map((g) => (
                 <a class="faq-start" href={`#faq-guide-${g.key}`} data-faq-guide-go={g.key}>
-                  <span class="faq-start__face">{g.name} 자주 묻는 질문 <span aria-hidden="true">→</span></span>
+                  <span class="faq-start__face"><span class="faq-start__k">{g.name}</span><span class="faq-start__s">자주 묻는 질문 <span aria-hidden="true">→</span></span></span>
                   <span class="faq-start__bg" aria-hidden="true"></span>
                 </a>
               ))}
@@ -750,6 +750,10 @@ if (items.length) {
   }
 
   /* 안내 버튼 — Uiverse 'Btn' 그대로: 테두리만 있는 앞면 뒤에 짙은 뒤판. 마우스를 대면(터치는 누를 때) 뒤판이 왼쪽 아래를 축으로 기울고 앞면이 반투명 유리가 된다 */
+  /* 설치·세척 두 칸 나란히 — 휴대폰·넓은 화면 모두 */
+  .faq-starts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; max-width: 600px; }
+  .faq-starts__t { grid-column: 1 / -1; font-size: 15px; font-weight: 700; color: rgba(255, 255, 255, 0.75); }
+  @media (min-width: 960px) { .faq-starts { width: 340px; } }
   .faq-start {
     position: relative; isolation: isolate;
     display: flex; min-height: 60px; border-radius: 10px;
@@ -757,27 +761,31 @@ if (items.length) {
     transition: all 0.3s;
   }
   .faq-start__face {
-    flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    padding: 0 24px; border-radius: 10px;
+    flex: 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px;
+    min-height: 88px; padding: 14px 18px; border-radius: 10px;
     border: 1px solid rgba(156, 156, 156, 0.466);
     background-color: transparent;
     -webkit-backdrop-filter: blur(0px); backdrop-filter: blur(0px);
-    font-size: 18px; font-weight: 700; letter-spacing: 0.8px; white-space: nowrap;
+    letter-spacing: 0.8px; white-space: nowrap;
     transition: all 0.3s;
   }
+  .faq-start__k { font-size: 22px; font-weight: 700; line-height: 1.2; }
+  .faq-start__s { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, 0.78); }
+  .faq-start__s > span { display: inline-block; transition: transform 0.3s; }
   .faq-start__bg {
     position: absolute; inset: 0; z-index: -1;
-    background: var(--br-teal);
+    background: color-mix(in srgb, var(--br-teal) 55%, var(--br-teal-deep));   /* 바탕(딥)과 한 단계 차이만 — 꽉 찬 틸 판이면 무겁다 */
     border-radius: 10px; pointer-events: none;
-    transform-origin: bottom left;   /* 원본은 정사각 버튼이라 35°. 가로로 긴 버튼은 35°면 뒤판이 위 글자를 덮어서, 왼쪽 아래를 축으로 5°만 든다 */
+    transform-origin: bottom left;   /* 원본은 정사각 버튼이라 35°. 가로로 긴 버튼은 35°면 뒤판이 위 글자를 덮어서, 왼쪽 아래를 축으로 8°만 든다 */
     transition: all 0.3s;
   }
   .faq-start:focus-visible { outline: 2px solid var(--br-ice); outline-offset: 3px; }
-  .faq-start:focus-visible .faq-start__bg, .faq-start:active .faq-start__bg { transform: rotate(5deg); }
+  .faq-start:focus-visible .faq-start__bg, .faq-start:active .faq-start__bg { transform: rotate(8deg); }
   .faq-start:focus-visible .faq-start__face, .faq-start:active .faq-start__face { background-color: rgba(156, 156, 156, 0.466); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
   @media (hover: hover) and (pointer: fine) {
-    .faq-start:hover .faq-start__bg { transform: rotate(5deg); }
+    .faq-start:hover .faq-start__bg { transform: rotate(8deg); }
     .faq-start:hover .faq-start__face { background-color: rgba(156, 156, 156, 0.466); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+    .faq-start:hover .faq-start__s > span { transform: translateX(4px); }
   }
   @media (prefers-reduced-motion: reduce) {
     .faq-start, .faq-start__face, .faq-start__bg { transition: none; }
