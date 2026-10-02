@@ -108,13 +108,14 @@ if (items.length) {
               모서리의 겹친 판 네 장은 장식(aria-hidden) — 누르거나 올리면 판이 모서리로 모인다 */}
           {GUIDE.length > 0 && (
             <a class="faq-start" href="#faq-guide" data-faq-guide-go>
-              <span class="faq-start__sheets" aria-hidden="true">
-                {GUIDE.map((_, i) => <i style={`--i:${i}`}><b>{i + 1}</b></i>)}
-              </span>
-              <span class="faq-start__pocket">
-                <span class="faq-start__t">처음이세요? · {GUIDE.length}단계</span>
+              <span class="faq-start__txt">
+                <span class="faq-start__t">처음이세요?</span>
                 <span class="faq-start__h">순서대로 보기 <span aria-hidden="true">→</span></span>
               </span>
+              {/* 유리 판 세 장 — 1·2·3단계. 평소엔 카드 밖(왼쪽 아래)에 숨어 있다가 올라온다 */}
+              <span class="faq-start__box faq-start__box--1" aria-hidden="true"><b>1</b></span>
+              <span class="faq-start__box faq-start__box--2" aria-hidden="true"><b>2</b></span>
+              <span class="faq-start__box faq-start__box--3" aria-hidden="true"><b>3</b></span>
             </a>
           )}
           <div class="faq-hero__ask">
@@ -757,61 +758,67 @@ if (items.length) {
   .faq-hero { display: grid; gap: 20px; }
   @media (min-width: 960px) {
     .faq-hero { grid-template-columns: minmax(0, 600px) minmax(300px, 380px); justify-content: space-between; align-items: start; }
-    .faq-hero .faq-start { order: 2; min-height: 248px; }
+    .faq-hero .faq-start { order: 2; min-height: 0; aspect-ratio: 1 / 1; }
   }
 
-  /* 순서대로 보기 카드 — 색인 탭이 꽂힌 서류철. 단계 수만큼 종이가 꽂혀 있고 탭에 단계 번호가 있다(장식이 아니라 8단계를 보여 준다).
-     앞 주머니는 반투명 유리라 뒤 종이가 비친다. 마우스를 대면(터치 기기는 화면에 들어올 때 한 번) 종이가 1번부터 60ms 씩 차례로 올라온다.
-     transform 만 쓴다 */
+  /* 순서대로 보기 카드 — Uiverse 'social card'(Smit-Prajapati) 를 그대로 옮기고 색만 우리 틸로(2026-10-02 대표 지정, 판 1·2·3 세 장).
+     진한 방사 그라디언트 위에, 평소엔 카드 밖(왼쪽 아래)에 숨은 투명 유리 판 세 장이
+     마우스를 대면(터치 기기는 화면에 들어올 때 한 번) 큰 판부터 0.2초 간격으로 1초 동안 올라오고, 글자는 위로 비켜난다 */
   .faq-start {
     position: relative; overflow: hidden; isolation: isolate;
-    display: block; min-height: 220px; border-radius: 24px;
-    background: var(--br-teal);
-    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent), 0 12px 30px color-mix(in srgb, var(--br-teal-deep) 50%, transparent);
+    display: block; min-height: 300px; border-radius: 30px;
+    background: radial-gradient(circle at 100% 107%, #fff 0%, var(--br-ice) 14%, color-mix(in srgb, var(--br-ice) 55%, var(--br-teal)) 34%, var(--br-teal) 64%, var(--br-teal-deep) 100%);
+    /* 진하게(대표 '빡세게') — oklch 로 섞어 중간 색이 회색으로 죽지 않게. 지원 안 하면 위 줄 */
+    background: radial-gradient(in oklch circle at 100% 107%, #fff 0%, var(--br-ice) 12%, color-mix(in oklch, var(--br-ice) 50%, var(--br-teal)) 30%, var(--br-teal) 58%, var(--br-teal-deep) 100%);
+    box-shadow: 0 10px 32px color-mix(in srgb, #000 30%, var(--br-teal-deep));
     color: #fff; text-decoration: none;
-    transition: transform var(--dur-ui) var(--ease-out);
+    transition: transform 1s ease-in-out;
+  }
+  .faq-start:focus-visible { outline: 2px solid var(--br-ice); outline-offset: 3px; }
+  .faq-start__txt {
+    position: absolute; left: 28px; right: 28px; top: 50%; z-index: 4;
+    transform: translateY(-50%);
+    transition: top 0.6s ease-in-out, transform 0.6s ease-in-out;
+  }
+  .faq-start__t { display: block; font-size: 16px; font-weight: 700; color: rgba(255, 255, 255, 0.8); }
+  .faq-start__h { display: block; margin-top: 6px; font-size: 28px; font-weight: 700; line-height: 1.3; }
+  .faq-start__box {
+    position: absolute; z-index: 1;
+    padding: 12px 14px; text-align: right;
+    background: rgba(255, 255, 255, 0.39);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    border-top: 2px solid #fff;
+    border-right: 1px solid #fff;
+    border-radius: 10% 13% 42% 0% / 10% 12% 75% 0%;
+    box-shadow: -7px 7px 29px color-mix(in srgb, var(--br-teal-deep) 45%, transparent);
+    transform-origin: bottom left;
+    transition: bottom 1s ease-in-out, left 1s ease-in-out;
+  }
+  /* 판에 마우스를 대면 판 속이 우리 색 그라디언트로 차오른다 */
+  .faq-start__box::before {
+    content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+  }
+  .faq-start__box b { font-size: 22px; font-weight: 800; line-height: 1; color: rgba(255, 255, 255, 0.92); font-variant-numeric: tabular-nums; text-shadow: 0 1px 2px color-mix(in srgb, var(--br-teal-deep) 35%, transparent); }
+  .faq-start__box--1 { width: 70%; height: 70%; bottom: -70%; left: -70%; }
+  .faq-start__box--2 { width: 50%; height: 50%; bottom: -50%; left: -50%; transition-delay: 0.2s; }
+  .faq-start__box--3 { width: 30%; height: 30%; bottom: -30%; left: -30%; transition-delay: 0.4s; }
+  .faq-start__box--1::before { background: radial-gradient(circle at 30% 107%, #fff 0%, var(--br-ice) 30%, var(--br-teal) 90%); }
+  .faq-start__box--2::before { background: radial-gradient(circle at 30% 107%, var(--br-ice) 0%, color-mix(in srgb, var(--br-ice) 40%, var(--br-teal)) 90%); }
+  .faq-start__box--3::before { background: radial-gradient(circle at 30% 107%, color-mix(in srgb, var(--br-ice) 60%, var(--br-teal)) 0%, var(--br-teal-deep) 90%); }
+  .faq-start.is-in .faq-start__box,
+  .faq-start:focus-visible .faq-start__box { bottom: -1px; left: -1px; }
+  .faq-start.is-in .faq-start__txt,
+  .faq-start:focus-visible .faq-start__txt { top: 24px; transform: none; }
+  @media (hover: hover) and (pointer: fine) {
+    .faq-start:hover { transform: scale(1.05); }
+    .faq-start:hover .faq-start__box { bottom: -1px; left: -1px; }
+    .faq-start:hover .faq-start__txt { top: 24px; transform: none; }
+    .faq-start__box:hover::before { opacity: 1; }
   }
   .faq-start:active { transform: scale(0.98); }
-  .faq-start:focus-visible { outline: 2px solid var(--br-ice); outline-offset: 3px; }
-  .faq-start__sheets { position: absolute; left: 18px; right: 18px; top: 52px; bottom: 0; }
-  .faq-start__sheets i {
-    position: absolute; inset: 0;
-    top: calc(var(--i) * 3px);
-    border-radius: 10px 10px 0 0;
-    background: color-mix(in srgb, var(--br-ice) calc(var(--i) * 9%), var(--br-base));
-    border-top: 1px solid #fff;
-    box-shadow: 0 -2px 8px color-mix(in srgb, var(--br-teal-deep) 18%, transparent);
-    transform: translateY(46px);
-    transition: transform var(--dur-reveal) var(--ease-out);
-    transition-delay: calc(var(--i) * 60ms);
-  }
-  /* 탭 — 종이마다 자리를 옮겨 꽂아 번호가 한 줄로 보인다 */
-  .faq-start__sheets b {
-    position: absolute; top: -22px; left: calc(var(--i) * 12.5%);
-    width: calc(12.5% - 3px); height: 23px;
-    display: grid; place-items: center;
-    border-radius: 7px 7px 0 0;
-    background: inherit; border-top: 1px solid #fff;
-    font-size: 13px; font-weight: 700; color: var(--br-ink-sub); font-variant-numeric: tabular-nums;
-  }
-  .faq-start__pocket {
-    position: absolute; left: 0; right: 0; bottom: 0; min-height: 56%;
-    display: flex; flex-direction: column; justify-content: flex-end;
-    padding: 18px 22px 22px;
-    background: color-mix(in srgb, var(--br-teal) 72%, transparent);
-    -webkit-backdrop-filter: blur(8px) saturate(120%); backdrop-filter: blur(8px) saturate(120%);
-    border-top: 1.5px solid color-mix(in srgb, #fff 55%, transparent);
-    border-radius: 18px 18px 24px 24px;
-  }
-  .faq-start__t { font-size: 15px; font-weight: 700; color: rgba(255, 255, 255, 0.8); }
-  .faq-start__h { margin-top: 4px; font-size: 26px; font-weight: 700; line-height: 1.3; }
-  .faq-start.is-in .faq-start__sheets i,
-  .faq-start:focus-visible .faq-start__sheets i { transform: translateY(0); }
-  @media (hover: hover) and (pointer: fine) {
-    .faq-start:hover .faq-start__sheets i { transform: translateY(0); }
-  }
   @media (prefers-reduced-motion: reduce) {
-    .faq-start__sheets i { transition: none; transform: none; }
+    .faq-start, .faq-start__box, .faq-start__txt { transition: none; }
   }
   /* JS 가 돌면 아래 펼침 버튼은 숨긴다 — 히어로 카드가 그 일을 한다(같은 버튼 두 개 금지). JS 가 없으면 카드는 이 펼침으로 내려온다 */
   :global(html.br-js) .faq-guide > .faq-guide__open { display: none; }
