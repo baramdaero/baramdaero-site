@@ -23,7 +23,7 @@ import { loadTrust } from '../lib/trust.ts';
 // 홈 섹션 문구 — home.json 단일 소스
 const home = loadHome();
 // 실적 숫자 — trust.json stats 단일 소스(샘플은 로더가 거른다). 2개 미만이면 숫자 줄째 뺀다
-const { stats, statsNote } = loadTrust();
+const { stats, statsNote, statsLead } = loadTrust();
 
 
 
@@ -65,6 +65,7 @@ const cta = home.ctaBand;
       {/* 제목 묶음 아래 실적 숫자(2026-10-01 대표) — 정지값, 기준 한 줄 */}
       {stats.length >= 2 && (
         <div slot="head" class="home-stats br-reveal">
+          {statsLead && <p class="home-stats__lead">{statsLead}</p>}
           <dl>
             {stats.map((s) => (
               <div>
@@ -73,8 +74,8 @@ const cta = home.ctaBand;
               </div>
             ))}
           </dl>
-          {/* 기준 줄 — ' · ' 뒤 조각은 앞 점과 함께 다음 줄로(줄 끝에 점만 남지 않게) */}
-          {statsNote && <p>{statsNote.split(' · ').map((t, i) => i === 0 ? t : <Fragment> <span class="home-stats__nb">· {t}</span></Fragment>)}</p>}
+          {/* 기준 줄 — 가운뎃점은 앞 줄 끝에 두고 날짜 조각만 한 덩어리로(둘째 줄이 '·'로 시작하지 않게) */}
+          {statsNote && <p>{statsNote.split(' · ').map((t, i) => i === 0 ? t : <Fragment> · <span class="home-stats__nb">{t}</span></Fragment>)}</p>}
         </div>
       )}
       {/* 회사소개 판 아래 — 공개된 사례가 한 건이라도 있을 때만(빈 목록으로 보내지 않는다) */}
@@ -149,9 +150,9 @@ const cta = home.ctaBand;
           photoSwitch
           items={[
             // 2026-10-01 대표: 삼성·LG 사진을 눌러 각 제품의 분해도로 바꾼다(사진 각도·배치는 그대로)
-            { label: '삼성 1Way', file: 'samsung-1way-AJ023BN1PBC1.html',
+            { label: '삼성 1Way', file: 'samsung-1way-AJ072BN1PBC1.html',
               photos: [{ src: 'ac-1way-samsung-front.webp', alt: '삼성 무풍 1Way 판넬 정면', caption: '삼성 무풍 1Way' }],
-              caption: '삼성전자 무풍 1Way · AJ023BN1PBC1 · 냉방 2.3kW · 부품 18개' },
+              caption: '삼성전자 무풍 1Way · AJ072BN1PBC1 · 냉방 7.2kW · 부품 19개' },   // 거실 대형(2026-10-02 대표: 거실 대형으로)
             { label: 'LG 1Way', file: 'lg-1way-RNQ0231C2SP.html',
               photos: [{ src: 'ac-1way-lg-angle.webp', alt: 'LG 휘센 1Way 실내기 입체', caption: 'LG 휘센 1Way' }],
               caption: 'LG전자 1Way · RNQ0231C2SP · 냉방 2.3kW · 부품 16개' },
@@ -197,6 +198,8 @@ const cta = home.ctaBand;
   .home-cases-link { display: flex; justify-content: flex-end; margin-top: 28px; }
   /* 실적 숫자 — 숫자가 위, 이름이 아래(dt 를 먼저 읽게 두고 보이는 순서만 뒤집는다) */
   .home-stats { margin-top: 24px; }
+  /* 누적 한 줄 — 숫자 묶음의 머리(2026-10-02 대표: 글자 키우고 굵게) */
+  .home-stats__lead { margin-bottom: 14px; font-size: clamp(20px, 1rem + 0.9vw, 26px); font-weight: 700; line-height: 1.35; letter-spacing: -0.02em; color: var(--br-ink); text-wrap: balance; }
   /* 숫자 셋을 한 줄에(2026-10-02 평균 셋) — 좁으면 라벨만 두 줄로 접힌다. 숫자는 꺾지 않는다 */
   .home-stats dl { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, max-content); gap: 12px clamp(20px, 4vw, 40px); }
   .home-stats dl > div { display: flex; flex-direction: column-reverse; gap: 2px; }
@@ -205,7 +208,7 @@ const cta = home.ctaBand;
   .home-stats dd { white-space: nowrap; font-size: clamp(26px, 1.1rem + 1.8vw, 40px); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: var(--br-teal); font-variant-numeric: tabular-nums; }
   .home-stats__pre, .home-stats__suf { font-size: 0.5em; font-weight: 700; }
   .home-stats__suf { margin-left: 3px; }
-  .home-stats p { margin-top: 8px; font-size: 13px; color: var(--br-ink-sub); }
+  .home-stats dl + p { margin-top: 8px; font-size: 13px; color: var(--br-ink-sub); }
   @media (min-width: 768px) { .home-stats__br { display: none; } } /* 라벨 줄바꿈 자리(trust.json \n)는 좁은 화면에서만 */
   @media (max-width: 359px) { .home-stats dd { font-size: 22px; } } /* 320~359px 에서 숫자가 칸을 넘지 않게 */
   .v2-svc-lead { background: transparent; padding-bottom: var(--head-gap); } /* 장 제목 → 첫 카드 = 제목 묶음 → 본 블록 */

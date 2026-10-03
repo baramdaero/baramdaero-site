@@ -18,6 +18,8 @@ export interface TrustData {
   stats: TrustStat[];
   /** 숫자 아래 기준 한 줄(예: 2026년 9월 기준) — 비면 안 나온다 */
   statsNote: string;
+  /** 숫자 위 굵은 한 줄(누적, 2026-10-02) */
+  statsLead: string;
   credentials: TrustCredential[];
   as_promises: TrustPromise[];
   principles: TrustPrinciple[];
@@ -25,7 +27,7 @@ export interface TrustData {
   videoId: string | null;
 }
 
-const EMPTY: TrustData = { stats: [], statsNote: '', credentials: [], as_promises: [], principles: [], videoId: null };
+const EMPTY: TrustData = { stats: [], statsNote: '', statsLead: '', credentials: [], as_promises: [], principles: [], videoId: null };
 
 const warn = (msg: string) => console.warn(`[trust.json 경고] ${msg}`);
 
@@ -139,6 +141,7 @@ export function loadTrust(): TrustData {
   }
 
   const statsNote = isNonEmptyString(raw.stats_note) ? raw.stats_note.trim() : '';
+  const statsLead = isNonEmptyString(raw.stats_lead) ? raw.stats_lead.trim() : '';
 
-  return { stats, statsNote, credentials, as_promises, principles, videoId };
+  return { stats, statsNote, statsLead, credentials, as_promises, principles, videoId };
 }

@@ -28,6 +28,7 @@
   --maxw: 1120px;
   --radius: 12px;
   --radius-pill: 999px;
+  --radius-btn: 12px; /* 채운 버튼(문의) — 알약 대신 사각(2026-10-02) */
   /* 틴트 — 누를 수 있는 것의 면. 글자(teal)가 식별을 맡고 면은 1.1:1 로 조용히 */
   --tint-fill: color-mix(in srgb, var(--br-teal) 6%, transparent);
   --tint-strong: color-mix(in srgb, var(--br-teal) 12%, transparent);
@@ -228,7 +229,7 @@ button {
 
 /* 버튼 2종 + 텍스트 링크 1종 (2026-09-23, 토스 실측 — DESIGN.md §5)
    primary   .bd-cta   teal 채움 알약. 문의(접수) 전용, 한 화면에 하나
-   secondary .br-pill  teal 틴트 알약 + 원 화살표. 페이지 이동·반복되는 보조 동작은 전부 이것
+   secondary .br-pill  teal 틴트 사각(10px) + 화살표(선·꺾쇠). 페이지 이동·반복되는 보조 동작은 전부 이것
    inline    .br-link  본문 속 밑줄 텍스트 — 아직 쓰는 곳이 없어 규칙은 처음 쓸 때 추가한다(DESIGN.md §5)
    칩·탭·토글은 여기 넣지 않는다 — 모양이 같아지면 '이동'과 '고르기'가 섞인다. */
 .bd-cta {
@@ -243,26 +244,42 @@ button {
   font-weight: 700;
   font-size: 17px;
   letter-spacing: -0.01em;
-  border-radius: var(--radius-pill);
-  transition: background-color var(--dur-color) ease, color var(--dur-color) ease, transform 160ms var(--ease-out);
+  border-radius: var(--radius-btn);
+  transition: background-color var(--dur-color) ease, color var(--dur-color) ease, transform var(--dur-ui) var(--ease-out);
 }
-.bd-cta:active { transform: scale(0.96); }
-/* 다크 구간 변형 — ice 채움 + teal 글자 */
-.bd-cta--deep { background: var(--br-ice); color: var(--br-teal); }
+.bd-cta:active:not(:disabled) { transform: scale(0.96); }
 @media (hover: hover) and (pointer: fine) {
   .bd-cta:hover { background: var(--br-ice); color: var(--br-teal); }
-  .bd-cta--deep:hover { background: var(--br-base); }
 }
 
-/* secondary — 기존 <span aria-hidden="true">→</span> 을 원으로 칠한다(아이콘 신규 생성 없음) */
+/* 문의 버튼 — 2026-10-02 대표: 'AI 티 나는 동그라미(알약)' 대신 참고 버튼처럼 모서리 12px 사각, 떠오름 + 화살표(선이 나오고 꺾쇠가 민다).
+   빛 번짐은 '밤티'로 반려 — 그림자만. 어두운 구간은 흰 면 + ink 글자(.bd-cta--ondark) */
+.bd-cta--ondark { background: #fff; color: var(--br-ink); } /* ink/흰 17.5:1 */
+.br-cta-arrow { flex: none; margin: 1px -4px 0 0; stroke: currentColor; stroke-width: 2; }
+.br-cta-arrow path { transition: opacity var(--dur-ui) ease, transform var(--dur-ui) var(--ease-out); }
+.br-cta-arrow path:first-child { opacity: 0; }
+@media (hover: hover) and (pointer: fine) {
+  .bd-cta:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 22px -10px rgba(0, 41, 58, 0.45); }
+  .bd-cta--ondark:hover { background: color-mix(in srgb, #fff 72%, var(--br-ice)); color: var(--br-ink); }
+  .bd-cta:hover:not(:disabled) .br-cta-arrow path:first-child { opacity: 1; }
+  .bd-cta:hover:not(:disabled) .br-cta-arrow path:last-child { transform: translateX(3px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .br-cta-arrow path { transition: none; }
+  .bd-cta:hover:not(:disabled) { transform: none; }
+}
+
+/* secondary — 2026-10-02 대표: 알약·동그라미 화살표는 'AI 티' → 문의 버튼과 같은 사각(44px 높이라 모서리 10px)과 같은 화살표
+   (hover 에 선이 나오고 꺾쇠가 민다, .br-cta-arrow 와 같은 모양). 마크업의 <span aria-hidden="true">→</span> 은 그대로 두고
+   글자를 감춘 뒤 CSS 로 선·꺾쇠를 그린다(아이콘 신규 생성 없음) */
 .br-pill {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-height: 44px;
   padding: 0 18px;
   border: 0;
-  border-radius: var(--radius-pill);
+  border-radius: 10px;
   background: var(--pill-bg, var(--tint-fill));
   color: var(--pill-fg, var(--br-teal));
   font: inherit;
@@ -273,28 +290,33 @@ button {
   text-decoration: none;
   text-align: left;
   cursor: pointer;
-  transition: background-color var(--dur-color) ease, transform 160ms var(--ease-out);
+  transition: background-color var(--dur-color) ease, transform var(--dur-ui) var(--ease-out);
 }
 .br-pill > [aria-hidden="true"]:last-child {
-  display: inline-grid;
-  place-items: center;
+  position: relative;
   flex: none;
-  width: 28px;
-  height: 28px;
-  margin-right: -10px; /* 원이 알약 안쪽 8px 에 붙게 */
-  border-radius: 50%;
-  background: var(--pill-dot, var(--tint-strong));
-  font-size: 14px;
-  line-height: 1;
-  transition: transform var(--dur-ui) var(--ease-out);
+  width: 10px;
+  height: 10px;
+  margin-right: -2px;
+  font-size: 0; /* '→' 글자는 감춘다 — 아래 선·꺾쇠가 대신한다 */
+}
+.br-pill > [aria-hidden="true"]:last-child::before { /* 선 — hover 에 나온다 */
+  content: ""; position: absolute; left: 0; top: 4px; width: 7px; height: 2px; border-radius: 1px;
+  background: currentColor; opacity: 0; transition: opacity var(--dur-ui) ease;
+}
+.br-pill > [aria-hidden="true"]:last-child::after { /* 꺾쇠 */
+  content: ""; position: absolute; left: -2px; top: 2px; width: 6px; height: 6px; box-sizing: border-box;
+  border-top: 2px solid currentColor; border-right: 2px solid currentColor;
+  transform: rotate(45deg); transition: transform var(--dur-ui) var(--ease-out);
 }
 .br-pill:active { transform: scale(0.96); }
 .br-pill:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 @media (hover: hover) and (pointer: fine) {
   .br-pill:hover { background: var(--pill-bg-hover, var(--tint-strong)); color: var(--pill-fg-hover, var(--pill-fg, var(--br-teal))); }
+  .br-pill:hover > [aria-hidden="true"]:last-child::before { opacity: 1; }
 }
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  .br-pill:hover > [aria-hidden="true"]:last-child { transform: translateX(2px); }
+  .br-pill:hover > [aria-hidden="true"]:last-child::after { transform: translateX(3px) rotate(45deg); }
 }
 @media (forced-colors: active) { .br-pill { border: 1px solid ButtonText; } }
 /* 여러 개가 한 줄에 올 때 */
@@ -613,9 +635,10 @@ html.br-js .br-reveal.br-h { transform: none; }
 .install-step--deep :focus-visible,
 .sit-journey__story--deep :focus-visible,
 .v2-cta .br-pill:focus-visible,
-.bd-cta--deep:focus-visible {
+.bd-cta--ondark:focus-visible {
   outline-color: var(--br-ice);
 }
+.bd-cta--ondark:focus-visible { outline-offset: 3px; } /* 흰 면 바깥 — 어두운 바탕 위 ice 링 */
 /* 딥 섹션 안의 밝은 유리 카드는 다시 teal — 카드 면(≈#b7c4ca) 위 ice 링은 1.4:1 로 안 보인다 (teal 5.1:1) */
 .br-glass--heavy :focus-visible,
 .br-glass--medium :focus-visible,

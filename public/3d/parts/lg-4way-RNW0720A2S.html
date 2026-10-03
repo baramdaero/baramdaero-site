@@ -62,6 +62,7 @@
   .co.on em{color:var(--accent)}
   /* 좁은 화면: 번호만 */
   .co.num{max-width:none;padding:2px;grid-template-columns:auto;column-gap:0}
+  .co.num::before{content:'';position:absolute;inset:-5px}   /* 번호만일 때 누르는 자리 36px(이웃 레인 34px 와 안 겹치게) */
   .co.num em,.co.num span,.co.num::after{display:none}
   .co.num i{width:20px;height:20px;font-size:11px}
   #side{background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;padding:20px 20px 40px}
@@ -99,8 +100,9 @@
   #card{display:none;position:absolute;left:14px;right:14px;bottom:70px;z-index:4;background:var(--panel);
     border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow);
     max-width:460px;margin:0 auto;max-height:42dvh;overflow-y:auto;font-size:13.5px}
+  body.embed #card{max-height:calc(100% - 84px);overflow-y:auto;overscroll-behavior:auto}   /* 넘칠 때만 안 스크롤, 끝에서 페이지로 이어진다 */
   #card.on{display:block}
-  #card .x{position:absolute;top:8px;right:10px;border:0;background:none;color:var(--dim);font-size:19px;cursor:pointer}
+  #card .x{position:absolute;top:0;right:0;min-width:44px;min-height:44px;display:grid;place-items:center;border:0;background:none;color:var(--dim);font-size:19px;cursor:pointer}   /* 누르는 자리 44px */
   #err{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;color:var(--dim);z-index:5}
   body.embed #app{grid-template-columns:1fr;grid-template-rows:1fr}
   body.embed #bar{padding-right:88px}
@@ -183,7 +185,32 @@ if (renderer) {
   // three r160 은 scene.environmentIntensity 를 읽지 않는다(r163+). 환경광은 아래에서 재질별 envMapIntensity 로 내린다.
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true; controls.dampingFactor = 0.08; controls.minDistance = 0.3;   // near 0.15 보다 2배 밖
-  if (EMBED) controls.enableZoom = false;   // 사이트 안에서는 휠이 페이지를 내리게(모형 줌에 갇히지 않게)
+  if (EMBED) {
+    controls.enableZoom = false;   // 사이트 안에서는 휠이 페이지를 내리게(모형 줌에 갇히지 않게)
+    // 2026-10-02 대표 '3D 위에서 스크롤이 안 내려감': 세로 스와이프는 페이지로, 가로 드래그만 회전.
+    // OrbitControls 가 생성자에서 touch-action:none 을 인라인으로 박으므로 그 뒤에 덮어쓴다
+    renderer.domElement.style.touchAction = 'pan-y';
+    document.documentElement.style.overscrollBehavior = 'auto';
+    // 터치 중에는 위아래 각을 잠근다. 감쇠를 켜 둔 채 잠그면 잠긴 세로 몫이 쌓였다가 놓는 순간 적용돼 모형이 9~13°씩 기울었다
+    // (10-02 검토) — 터치 동안 감쇠를 끄면 OrbitControls 가 움직일 때마다 그 몫을 버린다
+    let touchSaved = null;
+    const lock = e => {
+      if (e.pointerType !== 'touch' || touchSaved) return;
+      touchSaved = {damp: controls.enableDamping, cam: autoCam, tw: camTw};
+      controls.enableDamping = false;
+      controls.minPolarAngle = controls.maxPolarAngle = controls.getPolarAngle();
+    };
+    const unlock = e => {
+      if (!touchSaved) return;
+      controls.update();
+      controls.minPolarAngle = 0; controls.maxPolarAngle = Math.PI; controls.enableDamping = touchSaved.damp;
+      if (e.type === 'pointercancel') { autoCam = touchSaved.cam; camTw = touchSaved.tw; }   // 스크롤로 넘어간 제스처는 '사람이 돌림'이 아니다
+      touchSaved = null; dirty = true;
+    };
+    renderer.domElement.addEventListener('pointerdown', lock, true);
+    for (const ev of ['pointerup', 'pointercancel']) renderer.domElement.addEventListener(ev, unlock, true);
+  }
+  controls.addEventListener('start', () => { autoCam = false; camTw = null; });   // 사람이 돌리면 자동 카메라를 놓는다
 }
 const key = new THREE.DirectionalLight(0xffffff, 1.6);
 key.position.set(-3, 6, 5); key.castShadow = true;
@@ -701,6 +728,11 @@ order.forEach((it, i) => {
 });
 const lineLen = cursor - GAP;
 order.forEach(it => { it.slot.x -= lineLen / 2; });
+// 작은 부품(펌프·접속구·브래킷·표시부 등)은 앞면에 맞춰 앞으로 — 비스듬한 카메라에서 옆 큰 부품 뒤에 숨던 것(4Way 펌프·배관 등)
+{ const zFront = Math.max(...order.map(it => it.slot.z + it.size.z/2));
+  const inner = p => /^(electric|pipe|display|motor|bracket)$/.test(p.kind) || /pump|socket|bearing|holder/.test(p.id);
+  for (const it of order) { const m = Math.max(it.size.y, it.size.z);
+    if (m < hMax * 0.25 || (inner(it.p) && m < hMax * 0.5)) it.slot.z = Math.max(it.slot.z, zFront - it.size.z/2); } }
 // 분해 줄의 실제 위아래·앞뒤 폭(천장형은 가로 자리 포함) — 화면 맞춤과 바닥 높이에 쓴다
 const ext = k => [Math.min(...items.map(it => it.slot[k] - it.size[k]/2)), Math.max(...items.map(it => it.slot[k] + it.size[k]/2))];
 const [yLo, yHi] = ext('y'), [zLo, zHi] = ext('z');
@@ -719,21 +751,42 @@ key.shadow.normalBias = Math.min(lineLen / 512, 0.006);
 // 벽걸이·스탠드는 화면 오른쪽(+X)이 제품 뒤쪽이라 앞에서 본다(-X) — 고객이 아는 면이 먼저 보이게
 const FRONT = DATA.form === '벽걸이' || DATA.form === '스탠드' ? -1 : 1;
 const DIR = new THREE.Vector3(0.52*FRONT, 0.30, 0.80).normalize();   // 비스듬한 3/4 — 줄이 대각선으로 들어간다
-const CORNERS = [];
-for (const x of [-lineLen/2, lineLen/2]) for (const y of [yLo, yHi]) for (const z of [zLo, zHi])
-  CORNERS.push(new THREE.Vector3(x, y, z));
-function fits(dist) {
+const PV = new THREE.Vector3();
+function fits(dist, corners, my) {
   camera.position.copy(DIR).multiplyScalar(dist); camera.lookAt(0, 0, 0); camera.updateMatrixWorld();
-  const narrow = camera.aspect < 1;
-  const mx = 0.94, my = narrow ? 0.5 : 0.58;           // 위아래는 라벨 자리
-  return CORNERS.every(c => { const v = c.clone().project(camera); return Math.abs(v.x) <= mx && Math.abs(v.y) <= my; });
+  return corners.every(c => { PV.copy(c).project(camera); return Math.abs(PV.x) <= 0.94 && Math.abs(PV.y) <= my; });
 }
-const HOME = () => {
+function fitDist(corners, my) {
   let lo = 0.5, hi = 60;
-  for (let i = 0; i < 30; i++) { const m = (lo + hi)/2; fits(m) ? hi = m : lo = m; }
-  return {pos: DIR.clone().multiplyScalar(hi), target: new THREE.Vector3(0, 0, 0)};
-};
-function goHome() { const h = HOME(); camera.position.copy(h.pos); controls?.target.copy(h.target); }
+  for (let i = 0; i < 30; i++) { const m = (lo + hi)/2; fits(m, corners, my) ? hi = m : lo = m; }
+  return hi;
+}
+// 지금 부품 위치의 외곽 — 부품마다 빠지는 시차가 있어 t 곡선으로 거리를 정하면 분해 중간에 화면 밖으로 나갔다(10-02 검토)
+const CB = new THREE.Box3(), CV = new THREE.Vector3(), CUR = Array.from({length: 8}, () => new THREE.Vector3());
+function curCorners() {
+  CB.makeEmpty();
+  for (const it of items) { CB.expandByPoint(CV.copy(it.g.position).addScaledVector(it.size, -0.5)); CB.expandByPoint(CV.copy(it.g.position).addScaledVector(it.size, 0.5)); }
+  let i = 0;
+  for (const x of [CB.min.x, CB.max.x]) for (const y of [CB.min.y, CB.max.y]) for (const z of [CB.min.z, CB.max.z]) CUR[i++].set(x, y, z);
+  return CUR;
+}
+// 위아래 여백: 라벨이 보이는 끝(t>0.92)에서만 라벨 자리를 비운다 — 조립 화면이 작게 보이던 것(360)
+function labelMy() {
+  const lab = camera.aspect < 1 ? 0.5 : 0.58, k = Math.max(0, Math.min(1, (t - 0.75) / 0.17));
+  return 0.86 + (lab - 0.86) * k*k*(3 - 2*k);
+}
+const HOME = () => ({pos: DIR.clone().multiplyScalar(fitDist(curCorners(), labelMy())), target: new THREE.Vector3(0, 0, 0)});
+// autoCam: 사람이 돌리거나 고르기 전에는 분해 정도(t)를 따라 거리가 바뀐다 — 재생하면 모형이 펼쳐지며 자연스럽게 멀어진다
+let autoCam = true, camTw = null, dirty = true;
+function camTo(pos, target, dur = 420) {
+  camTw = {p0: camera.position.clone(), q0: controls.target.clone(), p1: pos.clone(), q1: target.clone(), t0: performance.now(), dur: REDUCED ? 1 : dur};
+  dirty = true;
+}
+function goHome(instant = false) {
+  autoCam = true; const h = HOME();
+  if (instant || !controls) { camTw = null; camera.position.copy(h.pos); controls?.target.copy(h.target); dirty = true; }
+  else { camTo(h.pos, h.target); camTw.follow = true; }   // 재생과 겹치면 목표를 매 프레임 갱신(끝에서 튀지 않게)
+}
 
 let t = Q.has('assembled') ? 0 : 1, selected = null, playing = false;
 const ease = k => k*k*(3 - 2*k);
@@ -744,6 +797,8 @@ function apply() {
     const k = ease(Math.max(0, Math.min(1, (t - s*0.55) / 0.45)));
     it.g.position.lerpVectors(it.home, it.slot, k);
   });
+  if (autoCam && !camTw && controls) { const h = HOME(); camera.position.copy(h.pos); controls.target.copy(h.target); }
+  dirty = true;
 }
 
 function resize() {
@@ -751,15 +806,17 @@ function resize() {
   const w = $('#view').clientWidth, h = $('#view').clientHeight;
   if (!w || !h) return;
   renderer.setSize(w, h); camera.aspect = w/h; camera.updateProjectionMatrix();
+  dirty = true;
 }
-addEventListener('resize', () => { resize(); goHome(); });
-resize(); goHome(); apply();
+addEventListener('resize', () => { resize(); goHome(true); });
+resize(); goHome(true); apply();
 
 // ---- 라벨: 번호 + 이름 + 한 줄 설명, 위·아래 번갈아, 지시선 ----
 const svg = $('#callouts svg');
 const labels = order.map((it, i) => {
   const el = document.createElement('div');
   el.className = 'co' + (it.p.wash ? ' wash' : '');
+  el.style.opacity = 0;
   const sent = (it.p.clean || '').split(/[.。]/)[0];
   // 22자 = 칩 설명 1줄 한도. 자를 땐 걸친 어절을 버리고 … 를 붙여 잘렸음을 표시한다(전문은 선택 시 카드에 나온다)
   const short = sent.length > 22 ? sent.slice(0, 22).replace(/\s\S*$/, '') + '…' : sent;
@@ -779,7 +836,7 @@ function drawCallouts() {
   const show = t > 0.92 ? Math.min(1, (t - 0.92)/0.08) : 0;
   const W = renderer.domElement.clientWidth, H = renderer.domElement.clientHeight;
   if (!W || !H) return;                                    // 숨겨진(지연 로딩) 프레임: 크기가 0 이면 좌표가 NaN 이다
-  const numOnly = W < 620 || order.length / W > 0.017;      // 좁으면 번호만(글씨 겹침 방지)
+  const numOnly = W < 620 || order.length / W > 0.0185;     // 좁으면 번호만(글씨 겹침 방지) — 1080 무대에서 19개까지 이름
   labels.forEach(L => L.el.classList.toggle('num', numOnly));
   // 부품 위/아래 끝의 화면 좌표
   const pts = labels.map(L => {
@@ -830,13 +887,29 @@ function drawCallouts() {
   svg.innerHTML = lines;
 }
 
+// 2026-10-02 대표 '매끄럽지 못하다': 예전엔 화면 밖에서도 매 프레임 그리고 라벨 배치(강제 레이아웃)를 해서
+// 같은 출처인 부모 페이지 스크롤까지 무거웠다. 이제 필요할 때만 그리고, 화면 밖이면 쉰다
+let onScreen = true;
+if ('IntersectionObserver' in window) new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; if (onScreen) dirty = true; }).observe(document.body);
+const easeIO = k => k < .5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3)/2;
 if (renderer) (function loop() {
   requestAnimationFrame(loop);
+  if (!onScreen) return;
   if (playing) {
     t = Math.min(1, t + (REDUCED ? 0.03 : 0.0055)); $('#ex').value = t*100; apply();
     if (t >= 1) stopPlay();
   }
-  controls.update(); renderer.render(scene, camera); drawCallouts();
+  if (camTw) {
+    if (camTw.follow) camTw.p1.copy(HOME().pos);
+    const k = Math.min(1, (performance.now() - camTw.t0) / camTw.dur), e2 = easeIO(k);
+    camera.position.lerpVectors(camTw.p0, camTw.p1, e2); controls.target.lerpVectors(camTw.q0, camTw.q1, e2);
+    if (k >= 1) camTw = null;
+    dirty = true;
+  }
+  if (controls.update()) dirty = true;                  // 드래그·감쇠 중이면 true
+  if (!dirty) return;
+  dirty = false;
+  renderer.render(scene, camera); drawCallouts();
 })();
 
 // ---- 선택 ----
@@ -845,12 +918,13 @@ let downAt = null;
 if (renderer) {
   renderer.domElement.addEventListener('pointerdown', e => { downAt = [e.clientX, e.clientY]; });
   renderer.domElement.addEventListener('pointerup', e => {
-    if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 6) return;
+    const slop = e.pointerType === 'touch' ? 12 : 6;        // 손가락 떨림(5~15px)으로 탭이 버려지던 것
+    if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > slop) return;
     const r = renderer.domElement.getBoundingClientRect();
     ptr.set((e.clientX - r.left)/r.width*2 - 1, -(e.clientY - r.top)/r.height*2 + 1);
     ray.setFromCamera(ptr, camera);
     const hit = ray.intersectObjects(items.map(i => i.g), true).find(h => h.object.userData.part);
-    hit ? select(hit.object.userData.part.id) : clearSel();
+    hit ? select(hit.object.userData.part.id) : selected && (clearSel(), goHome());
   });
 }
 const dimmed = new Map();
@@ -865,6 +939,7 @@ function paintMaterials() {
       o.castShadow = false;            // 재질 투명도는 그림자 맵과 무관하다 — 끄지 않으면 실루엣이 바닥에 남는다
     } else { o.material = base; o.castShadow = cs; }
   });
+  dirty = true;
 }
 function select(id) {
   const it = items.find(x => x.p.id === id); if (!it) return;
@@ -872,8 +947,8 @@ function select(id) {
   if (t < 1) { t = 1; $('#ex').value = 100; apply(); }
   const c = it.g.position.clone();
   const r = Math.max(it.size.y, it.size.z, 0.35) * 3.2;
-  controls.target.copy(c);
-  camera.position.set(c.x + r*0.35, c.y + r*0.3, c.z + r);
+  autoCam = false;
+  camTo(new THREE.Vector3(c.x + r*0.35, c.y + r*0.3, c.z + r), c);   // 순간이동 대신 부드럽게 다가간다
   paint(); post('select', {id});
 }
 function clearSel() { selected = null; paintMaterials(); paint(); }
@@ -886,6 +961,7 @@ function infoHTML(p, n) {
     <div class="k">우리가 어떻게 세척하나</div><div>${esc(p.clean)}</div>`;
 }
 function paint() {
+  dirty = true;
   $('#ttl').textContent = DATA.title;
   {
     const sp = DATA.spec || {};
@@ -917,13 +993,22 @@ function paint() {
   $('#card').classList.toggle('on', EMBED && !!cur);
 }
 function stopPlay() { playing = false; $('#play').classList.remove('on'); $('#play').textContent = '분해 재생'; }
+let exSaved = null;   // 슬라이더 위에서 시작한 세로 스와이프가 스크롤로 넘어가면(pointercancel) 값과 재생 상태를 되돌린다
+$('#ex').addEventListener('pointerdown', e => { if (e.pointerType === 'touch') exSaved = {t, playing}; }, true);
+$('#ex').addEventListener('pointerup', () => { exSaved = null; });
+$('#ex').addEventListener('pointercancel', () => {
+  if (!exSaved) return;
+  t = exSaved.t;
+  if (exSaved.playing && !playing) { playing = true; $('#play').classList.add('on'); $('#play').textContent = '멈춤'; }
+  exSaved = null; $('#ex').value = t*100; apply(); post('explode', {t});
+});
 $('#ex').addEventListener('input', e => { t = +e.target.value/100; stopPlay(); apply(); post('explode', {t}); });
 $('#reset').addEventListener('click', () => { t = 0; $('#ex').value = 0; stopPlay(); clearSel(); goHome(); apply(); });
 $('#play').addEventListener('click', () => {
   playing = !playing; if (playing && t >= 1) { t = 0; clearSel(); goHome(); }
   $('#play').classList.toggle('on', playing); $('#play').textContent = playing ? '멈춤' : '분해 재생';
 });
-$('#card .x').addEventListener('click', clearSel);
+$('#card .x').addEventListener('click', () => { clearSel(); goHome(); });   // 닫으면 전체 보기로(확대된 채 남던 것)
 addEventListener('keydown', e => { if (e.key === 'Escape') { clearSel(); goHome(); } });
 
 function post(type, data) {

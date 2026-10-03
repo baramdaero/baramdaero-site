@@ -39,7 +39,6 @@
         <div class="h3-dock__row h3-dock__row--top">
           <div class="h3-spaces" role="group" aria-label="공간 선택" id="spaces"></div>
           <p class="h3-disclaimer">실제 시공사례를 기반으로 제작한 3D 예시입니다.</p>
-          <button class="h3-touch-toggle" id="touch" type="button" aria-pressed="false" hidden>3D 직접 돌리기</button>
         </div>
         <div class="h3-dock__row h3-dock__row--go">
           <div class="h3-spots" id="spots" role="group" aria-label="공간 목록"></div>
@@ -63,13 +62,12 @@
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const hero = $('hero'), headIn = $('headIn'), dock = $('dock'), stage = $('stage');
-  const wide = matchMedia('(min-width: 1024px)'), coarse = matchMedia('(any-pointer: coarse)'), reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  const wide = matchMedia('(min-width: 1024px)'), reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const frames = { house: $('f-house') };
   const VIEWERS = [...new Set(SPACES.map(s => s.viewer))];   // house · commercial(상가) · office(오피스)
-  const st = { space: 'house', viewer: 'house', ready: {}, failed: {}, entries: {}, bldKey: {}, pendingKey: null, dipTimer: 0, room: null, touchLive: false, notice: '', pick: {} };
+  const st = { space: 'house', viewer: 'house', ready: {}, failed: {}, entries: {}, bldKey: {}, pendingKey: null, dipTimer: 0, room: null, notice: '', pick: {} };
   const FAIL_MSG = '3D 구성도를 불러오지 못했습니다. 잠시 뒤 새로고침해 주세요.';
   const RETRY_MSG = '구성도를 불러오지 못했습니다. 탭을 다시 누르면 다시 불러옵니다.';
-  const TOUCH_HINT = '다 보셨으면 3D 직접 돌리기를 한 번 더 눌러 끄세요. 끄면 페이지가 다시 스크롤됩니다.';
 
   const spaceOf = key => SPACES.find(s => s.key === key);
   const send = (viewer, msg) => { const f = frames[viewer]; if (f && st.ready[viewer]) f.contentWindow.postMessage({ ns: 'bd3d', ...msg }, '*'); };
@@ -178,12 +176,13 @@
     hero.toggleAttribute('data-fail', !!failed);
     $('hint').classList.toggle('fail', !!(failed || st.notice));
     // 평상시엔 비워 둔다(:empty 로 숨는다). 우상단 칩이 같은 말을 하고 있어 두 번 적을 이유가 없다.
-    $('hint').textContent = failed ? FAIL_MSG : st.notice || (coarse.matches && st.touchLive ? TOUCH_HINT : '');
+    $('hint').textContent = failed ? FAIL_MSG : st.notice || '';
   }
 
-  // 3D 를 처음 만진 순간(프레임 클릭·드래그 포함). iframe 클릭은 부모로 안 올라와서 blur 로 잡는다
+  // 3D 를 처음 만진 순간(프레임 클릭·드래그 포함). iframe 클릭은 부모로 안 올라와서 blur 로 잡는다.
+  // 문구(제목·안내)는 실제로 방·층에 들어갔을 때만 비운다(아래 'enter') — 아무 일도 없는 탭에 문구만 사라지던 것(10-02 검토)
   function engage(on3d) {
-    if (on3d) hero.setAttribute('data-touch3d', '');   // 도면을 직접 만졌을 때만 문구를 비운다
+    if (on3d) hero.setAttribute('data-touch3d', '');
     if (hero.hasAttribute('data-engaged')) return;
     hero.setAttribute('data-engaged', '');
     stopTour();
@@ -222,9 +221,9 @@
   }
   addEventListener('blur', () => setTimeout(() => {
     const el = document.activeElement;
-    if (el && el.tagName === 'IFRAME' && stage.contains(el)) engage(true);
+    if (el && el.tagName === 'IFRAME' && stage.contains(el)) engage(false);
   }, 0));
-  stage.addEventListener('pointerdown', () => { cancelGround(); engage(true); });
+  stage.addEventListener('pointerdown', () => { cancelGround(); engage(false); });
   dock.addEventListener('pointerdown', () => { cancelGround(); engage(false); });
 
   // 빌딩 탭: 건물을 한 번 보여 준 다음 1층으로 내려간다. 거기서 '건물 정면'을 누르면 전체 구성도로 올라간다
@@ -292,18 +291,8 @@
   $('back').addEventListener('click', () => send(st.viewer, { type: 'home' }));
   addEventListener('keydown', e => { if (e.key === 'Escape' && st.room) send(st.viewer, { type: 'home' }); });
 
-  // 터치 기기: 히어로가 세로 스크롤을 가로채지 않게 기본은 꺼 둔다. 화면을 벗어나면 자동으로 끈다
-  function syncTouch() {
-    const on = coarse.matches;
-    $('touch').hidden = !on;
-    if (!on) { hero.removeAttribute('data-touch'); return; }
-    hero.dataset.touch = st.touchLive ? 'on' : 'off';
-    $('touch').setAttribute('aria-pressed', String(st.touchLive));
-  }
-  $('touch').addEventListener('click', () => { st.touchLive = !st.touchLive; syncTouch(); renderDock(); });
-  coarse.addEventListener('change', syncTouch);
-  new IntersectionObserver(([en]) => { if (!en.isIntersecting && st.touchLive) { st.touchLive = false; syncTouch(); renderDock(); } }).observe(hero);
-  syncTouch();
+  // 터치 기기 '3D 직접 돌리기' 잠금은 걷었다(2026-10-02 대표: 휴대폰에서 '아래 도면을 눌러 보세요'인데 도면이 안 눌림).
+  // 뷰어가 세로 스와이프는 페이지로, 가로 드래그만 회전으로 받는다(house·office·commercial.html embed, touch-action: pan-y)
 
   let posterShown = false;
   const showPoster = () => { posterShown = true; hero.dataset.poster = ''; };
@@ -340,6 +329,7 @@
       }
     } else if (m.type === 'enter' && v === st.viewer) {
       const fromDock = dock.contains(document.activeElement);
+      if (!fromDock) engage(true);   // 도면을 눌러 들어왔을 때 문구를 비운다(칩으로 들어온 건 그대로)
       st.room = { id: m.id, title: m.title, sub: m.sub };
       renderDock();
       $('live').textContent = `${m.title}, ${m.sub || ''}`;
@@ -385,7 +375,7 @@
 /* 사이트 global.css 에 없는 틴트 2단 + 히어로 안 버튼·제목 기본값(프로토와 같게) */
 .h3-hero { --h3-gutter: max(20px, calc(50% - var(--maxw) / 2 + 20px)); --tint-line: color-mix(in srgb, var(--br-teal) 12%, transparent); --tint-fill: color-mix(in srgb, var(--br-teal) 8%, transparent); }
 /* 버튼 리셋 — :where() 로 특이도 0. 그냥 `.h3-hero button` 이면 (0,1,1) 이라
-   뒤에 오는 .h3-spot·.h3-touch-toggle·.h3-spot--up 의 색·굵기·배경을 전부 이겨 버린다
+   뒤에 오는 .h3-spot·.h3-spot--up 의 색·굵기·배경을 전부 이겨 버린다
    (2026-09-23 실측: 되돌아가기 버튼의 ice 채움과 700 굵기가 죽어 있었다). */
 :where(.h3-hero) button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; letter-spacing: inherit; }
 .h3-hero h1 { font-weight: 800; line-height: 1.15; letter-spacing: -0.02em; text-wrap: balance; }
@@ -449,10 +439,6 @@
 .h3-poster img { width: 100%; height: 100%; object-fit: contain; }
 .h3js .h3-poster { opacity: 0; }
 .h3js .h3-hero[data-poster] .h3-poster { opacity: 1; }
-/* 터치 기기: 기본은 페이지 스크롤. '3D 직접 돌리기'를 켰을 때만 3D 가 손가락을 받는다 */
-.h3-hero[data-touch="off"] .h3-stage iframe { pointer-events: none; }
-/* 켜진 동안 헤드라인 띠는 스크롤로 남긴다 — 3D 위에서 손가락이 갇히지 않게 빠져나갈 자리 */
-.h3-hero[data-touch="on"] .h3-head { pointer-events: auto; }
 /* 새 공간을 불러오는 동안 남겨 둔 이전 화면은 누르지 못하게 (거기서 방에 들어가면 도크와 어긋난다) */
 .h3-stage iframe.hold { pointer-events: none; }
 
@@ -496,8 +482,6 @@
 .h3-invite strong { font-size: 14px; color: var(--br-teal); font-weight: 700; } /* 누르라는 안내 — teal 은 누르는 것에(§1) */
 @media (hover: hover) { .h3-invite:hover strong { text-decoration: underline; text-underline-offset: 3px; } }
 .h3-invite:active { transform: scale(.98); }
-/* ⚠️ [data-touch="off"] 를 여기 다시 넣지 말 것 — 터치 기기에서 안내가 0개가 된다(2026-09-22).
-   도면을 직접 못 누르는 상태라도 '아래 목록에서 누른다'는 건 알려 줘야 한다. */
 .h3-head h1 { font-size: clamp(36px, 7.4vw, 72px); color: var(--br-ink); }
 /* 업종 한 줄 — 헤더 바로 아래. 제목 위 빈 띠가 첫 화면에서 가장 먼저 눈이 가는 자리다. */
 .h3-kicker {
@@ -513,7 +497,9 @@
 .h3-head p { margin-top: 20px; font-size: 17px; line-height: 1.7; color: var(--br-ink-sub); max-width: 34em; }
 
 /* 도크: 공간 전환 + 공간 목록. 히어로 안의 유리는 이것 하나 */
-.h3-dock-wrap { padding-bottom: 24px; display: flex; flex-wrap: wrap; align-items: flex-start; /* 위쪽 정렬 — 아래 오른쪽은 챗봇 버튼 자리 */ gap: 12px 16px; }
+.h3-dock-wrap { padding-bottom: 24px; display: flex; flex-wrap: wrap; align-items: flex-start; /* 위쪽 정렬 — 아래 오른쪽은 챗봇 버튼 자리 */ gap: 12px 16px;
+  pointer-events: none; } /* 띠의 빈 곳은 3D 로 통과(방·층 안에서 도크 오른쪽이 죽은 자리였다) */
+.h3-dock-wrap > * { pointer-events: auto; }
 .h3-dock-wrap > .h3-note { flex: 1 1 100%; }
 .h3-dock { display: grid; padding: 6px; width: fit-content; max-width: 100%; }
 .h3-dock__row { display: flex; align-items: center; column-gap: 16px; min-width: 0; }
@@ -532,12 +518,6 @@
 .h3-hero[data-fail] .h3-spaces, .h3-hero[data-fail] .h3-dock__row--go { display: none; }
 
 .h3-disclaimer { padding-inline: 8px; font-size: 13px; line-height: 1.5; color: var(--br-ink-sub); }
-.h3-touch-toggle {
-  flex: none; min-height: 44px; padding-inline: 10px;
-  border-bottom: 2px solid transparent; border-radius: 6px 6px 0 0;
-  font-size: 13px; font-weight: 600; color: var(--br-teal);
-}
-.h3-touch-toggle[aria-pressed="true"] { color: var(--br-ink); border-bottom-color: var(--br-teal); }
 
 /* 방 목록 — 회색 판 위 칸, 짚은 칸만 흰 판(세그먼트, 2026-10-01 대표 지정) */
 .h3-spots { display: flex; gap: 2px; padding: 4px; min-width: 0; overflow-x: auto; scrollbar-width: none;
@@ -593,9 +573,8 @@
 .h3-note { padding: 10px 2px 0; font-size: 13px; line-height: 1.5; color: var(--br-ink-sub); }
 .h3-note:empty { display: none; }   /* 평상시엔 할 말이 없다 — 빈 줄로 자리만 먹지 않게 */
 .h3-note.fail { color: var(--br-ink); }
-/* 방 안에서는 실내 위에 떠서 읽기 어렵다. 터치 기기는 조작을 켰을 때만 끄는 법을 알린다(꺼져 있으면 자리도 비운다) */
+/* 방 안에서는 실내 위에 떠서 읽기 어렵다 */
 .h3-hero[data-room] .h3-note:not(.fail), .h3-hero[data-deep] .h3-note:not(.fail) { visibility: hidden; }
-.h3-hero[data-touch="off"] .h3-note:not(.fail) { display: none; }
 
 /* 휴대폰·태블릿(2026-10-01 대표 지적 2건)
    ① 건물·층 안(data-deep)·방 안에서는 제목처럼 안내 판도 숨긴다 — 3D 위에 그대로 떠 있었다
@@ -632,15 +611,14 @@
   .h3-dock__row--top { flex-wrap: wrap; column-gap: 8px; }
   .h3-spaces { flex: 1 1 100%; }
   .h3-spaces button { flex: 1; padding-inline: 6px; }
-  /* 휴대폰: 주석은 탭 위 한 줄, 직접 돌리기 버튼은 숨김, 안내 버튼은 도면을 가리지 않게 도크 아래로(2026-10-01 대표) */
+  /* 휴대폰: 주석은 탭 위 한 줄, 안내 버튼은 도면을 가리지 않게 도크 아래로(2026-10-01 대표) */
   .h3-disclaimer { order: -1; flex: 1 1 100%; padding: 2px 8px 6px; font-size: 12px; white-space: nowrap; }
-  .h3-touch-toggle { display: none !important; }
   .h3-here__t { white-space: normal; }
   .h3-here__t small { display: block; margin-left: 0; }
 }
 
 
 .h3-sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-@media (forced-colors: active) { .h3-spaces button[aria-pressed="true"], .h3-touch-toggle[aria-pressed="true"] { border-bottom-color: CanvasText; } }
+@media (forced-colors: active) { .h3-spaces button[aria-pressed="true"] { border-bottom-color: CanvasText; } }
 
 </style>
