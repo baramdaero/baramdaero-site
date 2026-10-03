@@ -216,14 +216,16 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   .bd-header__cta:hover { background: var(--copper-deep); }
   .bd-header__actions { display: flex; align-items: center; gap: 8px; margin-left: 12px; flex: none; }
   .bd-header__quote {
-    min-height: 40px; padding: 0 16px; border: 0; border-radius: 999px;
+    min-height: 40px; padding: 0 16px; border: 0; border-radius: 10px; /* 문의 버튼 사각(2026-10-02) — 40px 높이라 한 단 작게 */
     background: var(--br-teal-deep); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
     transition: background-color var(--dur-color) ease, transform 160ms var(--ease-out);
   }
-  .bd-header__quote:hover { background: var(--br-teal); }
+  @media (hover: hover) and (pointer: fine) { .bd-header__quote:hover:not(:disabled) { background: var(--br-teal); } }
+  /* 높이 40px(헤더 줄) — 누르는 자리는 위아래 2px 씩 넓혀 44px */
+  .bd-header__quote { position: relative; }
+  .bd-header__quote::before { content: ''; position: absolute; inset: -2px 0; }
   .bd-header__quote:active { transform: scale(0.96); }
   .bd-header__quote:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; }
-  .bd-header__quote:disabled { opacity: 0.6; }
   .bd-header__cta:active { transform: scale(0.96); }
 
   .bd-header__link,

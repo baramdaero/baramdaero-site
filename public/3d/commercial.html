@@ -539,6 +539,30 @@ const maxAniso = renderer.capabilities.getMaxAnisotropy();
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(30, 1, 0.05, 1500);
 const controls = new OrbitControls(camera, canvas);
+
+// 2026-10-02 대표 '휴대폰에서 3D 위 스크롤이 안 내려감·첫 탭이 안 먹음' — 사이트 안(embed)에서는 세로 스와이프는 페이지로,
+// 가로 드래그만 회전. OrbitControls 가 생성자에서 touch-action:none 을 인라인으로 박으므로 바로 뒤에 덮어쓴다.
+// 터치 중에는 위아래 각을 잠가 가로 회전만(놓으면 모드별 범위로 되돌린다)
+let polarSaved = null; // 터치 중 잠근 위아래 범위(놓으면 되돌린다) — configControls 가 그동안 새 범위를 넣으면 여기로 받는다
+if (EMBED) {
+  canvas.style.touchAction = 'pan-y';
+  document.documentElement.style.overscrollBehavior = 'auto';
+  let dampSaved = null;
+  canvas.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'touch' || polarSaved) return;
+    polarSaved = [controls.minPolarAngle, controls.maxPolarAngle];
+    // 감쇠를 켠 채 잠그면 잠긴 세로 몫이 쌓였다가 놓는 순간 적용돼 모형이 기울었다(10-02 검토) — 터치 동안 감쇠를 끈다
+    dampSaved = controls.enableDamping; controls.enableDamping = false;
+    controls.minPolarAngle = controls.maxPolarAngle = controls.getPolarAngle();
+  }, true);
+  const polarUnlock = () => {
+    if (!polarSaved) return;
+    controls.update();
+    [controls.minPolarAngle, controls.maxPolarAngle] = polarSaved; polarSaved = null;
+    controls.enableDamping = dampSaved;
+  };
+  for (const ev of ['pointerup', 'pointercancel']) canvas.addEventListener(ev, polarUnlock, true);
+}
 controls.enableDamping = !reduced.matches;
 controls.dampingFactor = 0.08;
 const CUT = 1000; // cutaway height in the overview (visual choice, not a plan value)
@@ -651,7 +675,7 @@ const mat = {
   patch: new THREE.MeshBasicMaterial({ color: 0xBFE9F2, transparent: true, opacity: .6, depthWrite: false, side: THREE.DoubleSide }),
   patchEdge: new THREE.LineBasicMaterial({ color: 0x004E64, transparent: true, opacity: .9 }),
   arrow: new THREE.MeshBasicMaterial({ color: 0x004E64, transparent: true, opacity: .75, depthWrite: false, side: THREE.DoubleSide }),
-  hover: new THREE.MeshBasicMaterial({ color: EMBED ? 0x004E64 : 0x3C9DB3, transparent: true, opacity: EMBED ? .32 : .22, depthWrite: false }) /* 히어로 임베드 14% 는 바닥 위에서 거의 안 보였다 — 가리키는 자리가 읽히게 32% (2026-09-23) */,
+  hover: new THREE.MeshBasicMaterial({ color: EMBED ? 0x004E64 : 0x3C9DB3, transparent: true, opacity: EMBED ? .32 : .22, depthWrite: false, side: THREE.DoubleSide }) /* 히어로 임베드 14% 는 바닥 위에서 거의 안 보였다 — 가리키는 자리가 읽히게 32% (2026-09-23) */,
   pick: new THREE.LineBasicMaterial({ color: EMBED ? 0x004E64 : 0x3C9DB3, transparent: true, opacity: .9, depthTest: false }),
   door: std(0xB9AD9C, { roughness: .6 }),
   slab: std(0x6E7377, { roughness: .95 }),   // 노출 천장: 도장한 콘크리트 슬래브
@@ -2502,6 +2526,7 @@ function configControls(kind, pose) {
     controls.target.copy(pose.tgt);
   }
   if (EMBED) Object.assign(controls, { enableZoom: false, enablePan: false }); // 히어로 위 휠은 페이지 스크롤 (스크롤 하이재킹 금지)
+  if (polarSaved) { polarSaved = [controls.minPolarAngle, controls.maxPolarAngle]; controls.minPolarAngle = controls.maxPolarAngle = controls.getPolarAngle(); } // 터치 중 모드가 바뀌면 새 범위를 받아 두고 다시 잠근다
   controls.update();
 }
 function flyTo(pose, kTo, turn = false) {
@@ -2820,7 +2845,7 @@ canvas.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.client
 canvas.addEventListener('pointerup', e => {
   if (!down || !pickable() || tween) return;
   const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
-  if (moved < 6 && performance.now() - down.t < 600) {
+  if (moved < (e.pointerType === 'touch' ? 12 : 6) && performance.now() - down.t < (e.pointerType === 'touch' ? 900 : 600)) /* 손가락 떨림 5~15px 로 탭이 버려지던 것 */ {
     const id = pick(e);
     if (id && state.level === 'building') id === 'roof' ? goRoof() : goFloor(id.slice(6));
     else if (id && state.level === 'floor') (S.unitsById[id] ? goUnit(id) : goZone(id));

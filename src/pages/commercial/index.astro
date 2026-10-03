@@ -46,14 +46,13 @@ const jsonLd = {
   <PageHero eyebrow="상업용">
     운영 중인 공간의 에어컨,<br />관리까지 맡습니다
     <Fragment slot="sub">용도와 운영 조건을 바탕으로 점검·세척·설치를 이야기합니다.</Fragment>
-    <Fragment slot="extra"><button disabled aria-describedby="chat-unavailable" type="button" class="bd-cta bd-cta--deep" data-chat-tree="menu">상담 종류 선택</button></Fragment>
+    <Fragment slot="extra"><button disabled aria-describedby="chat-unavailable" type="button" class="bd-cta bd-cta--ondark" data-chat-tree="menu">상담 종류 선택<svg class="br-cta-arrow" aria-hidden="true" viewBox="0 0 10 10" width="10" height="10" fill="none"><path d="M0 5h7" /><path d="M1 1l4 4-4 4" /></svg></button></Fragment>
   </PageHero>
 
   {/* 2026-09-30 재기획: 유지보수 중심(예성이엔지 등 6곳 조사) + 히어로 상가·오피스 3D 로 공간 제안.
       순서: 3D 공간 제안 → 관리 항목 → 관리 범위 → 공간 조건 → 신규·교체 설치 → 진행 절차 → 기종 속 구조 → 문의 */}
   <SpaceViewer
     id="commercial-space"
-    hint="층을 눌러 보세요"
     views={[
       { label: '상업공간', src: '/3d/commercial.html?embed', title: '상업공간 구성도' },
       { label: '오피스', src: '/3d/office.html?embed', title: '오피스 구성도' },

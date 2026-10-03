@@ -175,12 +175,8 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
       });
     };
 
-    // 휴대폰: 처음엔 손가락이 페이지를 내리게 두고(모형에 스크롤이 갇히던 것), 도면을 한 번 누르면 돌릴 수 있게.
-    // 화면 밖으로 나가면 다시 페이지 스크롤로 돌린다
-    stage?.addEventListener('click', () => stage.setAttribute('data-live', ''));
-    if (stage && 'IntersectionObserver' in window) {
-      new IntersectionObserver((es) => { es.forEach((e) => { if (!e.isIntersecting) stage.removeAttribute('data-live'); }); }).observe(stage);
-    }
+    // 휴대폰 '한 번 눌러 켜기' 잠금은 걷었다(2026-10-02 대표: 첫 탭이 안 먹고, 켜지면 3D 위에서 스크롤이 안 내려감).
+    // 뷰어가 세로 스와이프는 페이지로, 가로 드래그만 회전으로 받는다(parts3d src.html EMBED, touch-action: pan-y)
 
     // 스크롤해서 눈에 들어오면 그때부터 센다(백그라운드 탭에서 실패로 찍지 않게)
     if (stage && 'IntersectionObserver' in window) {
@@ -303,7 +299,6 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
     background: var(--br-mist); aspect-ratio: 16 / 9; width: 100%;
   }
   .ex-stage iframe { display: block; width: 100%; height: 100%; border: 0; }
-  @media (hover: none) { .ex-stage:not([data-live]) iframe { pointer-events: none; } }
 
   .ex-cap { margin: 12px 0 0; color: var(--br-ink-sub); font-size: 14px; }
   .ex-cap:empty, .ex-cap--hidden { display: none; }

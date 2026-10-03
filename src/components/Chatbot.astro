@@ -25,9 +25,8 @@ const TEASER = [
   <script type="application/json" data-chat-faq set:html={faqJson} />
   <button disabled aria-describedby="chat-unavailable"
     type="button"
-    class="chat__fab br-specular"
+    class="chat__fab"
     data-chat-fab
-    data-specular
     aria-haspopup="dialog"
     aria-expanded="false"
     aria-label="문의 챗봇 열기"
@@ -1178,14 +1177,16 @@ const TEASER = [
   }
   .chat__fab:active { transform: scale(0.96); }
   @media (hover: hover) and (pointer: fine) {
-    .chat__fab:hover { background: var(--br-teal); transform: scale(1.04); }
+    .chat__fab:hover { background: var(--br-teal); transform: translateY(-2px); } /* 문의 버튼과 같은 떠오름 — 빛 테두리(specular)는 뺐다(2026-10-02 '밤티') */
     .chat__fab:hover:active { transform: scale(0.96); }
   }
   .chat__fab-label { font-size: 15px; font-weight: 700; letter-spacing: 0.01em; }
+  /* 포커스: 흰 링 + teal 바깥 링 — 짙은 구간(푸터·다크 히어로) 위에서도 보이게(teal 단색 링은 1.65:1) */
+  .chat__fab:focus-visible { outline: 2px solid #fff; outline-offset: 2px; box-shadow: 0 0 0 4px var(--br-teal); }
   /* 좁은 화면: 라벨을 빼고 원형 56px. 91px 폭이 본문 글자를 덮었다(44x44 하한은 그대로 만족) */
   @media (max-width: 640px) {
     .chat__fab-label { display: none; }
-    .chat__fab { width: 56px; height: 56px; padding: 0; border-radius: 999px; }
+    .chat__fab { width: 56px; height: 56px; padding: 0; } /* 모서리는 데스크톱과 같은 18px 스쿼클 — 동그라미 버튼 정리(2026-10-02) */
   }
   .chat.is-open .chat__fab-label { display: none; }
   .chat.is-open .chat__fab { padding: 0 17px; }

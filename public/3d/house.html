@@ -481,6 +481,30 @@ const maxAniso = renderer.capabilities.getMaxAnisotropy();
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(30, 1, 0.05, 1500);
 const controls = new OrbitControls(camera, canvas);
+
+// 2026-10-02 대표 '휴대폰에서 3D 위 스크롤이 안 내려감·첫 탭이 안 먹음' — 사이트 안(embed)에서는 세로 스와이프는 페이지로,
+// 가로 드래그만 회전. OrbitControls 가 생성자에서 touch-action:none 을 인라인으로 박으므로 바로 뒤에 덮어쓴다.
+// 터치 중에는 위아래 각을 잠가 가로 회전만(놓으면 모드별 범위로 되돌린다)
+let polarSaved = null; // 터치 중 잠근 위아래 범위(놓으면 되돌린다) — configControls 가 그동안 새 범위를 넣으면 여기로 받는다
+if (EMBED) {
+  canvas.style.touchAction = 'pan-y';
+  document.documentElement.style.overscrollBehavior = 'auto';
+  let dampSaved = null;
+  canvas.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'touch' || polarSaved) return;
+    polarSaved = [controls.minPolarAngle, controls.maxPolarAngle];
+    // 감쇠를 켠 채 잠그면 잠긴 세로 몫이 쌓였다가 놓는 순간 적용돼 모형이 기울었다(10-02 검토) — 터치 동안 감쇠를 끈다
+    dampSaved = controls.enableDamping; controls.enableDamping = false;
+    controls.minPolarAngle = controls.maxPolarAngle = controls.getPolarAngle();
+  }, true);
+  const polarUnlock = () => {
+    if (!polarSaved) return;
+    controls.update();
+    [controls.minPolarAngle, controls.maxPolarAngle] = polarSaved; polarSaved = null;
+    controls.enableDamping = dampSaved;
+  };
+  for (const ev of ['pointerup', 'pointercancel']) canvas.addEventListener(ev, polarUnlock, true);
+}
 controls.enableDamping = !reduced.matches;
 controls.dampingFactor = 0.08;
 
@@ -570,7 +594,7 @@ const mat = {
   patch: new THREE.MeshBasicMaterial({ color: 0xBFE9F2, transparent: true, opacity: .6, depthWrite: false, side: THREE.DoubleSide }),
   patchEdge: new THREE.LineBasicMaterial({ color: 0x004E64, transparent: true, opacity: .9 }),
   arrow: new THREE.MeshBasicMaterial({ color: 0x004E64, transparent: true, opacity: .75, depthWrite: false, side: THREE.DoubleSide }),
-  hover: new THREE.MeshBasicMaterial({ color: EMBED ? 0x004E64 : 0x3C9DB3, transparent: true, opacity: EMBED ? .32 : .22, depthWrite: false }) /* 히어로 임베드 14% 는 나무 바닥 위에서 거의 안 보였다 — 어느 방을 가리키는지 읽히게 32% (2026-09-23) */,
+  hover: new THREE.MeshBasicMaterial({ color: EMBED ? 0x004E64 : 0x3C9DB3, transparent: true, opacity: EMBED ? .32 : .22, depthWrite: false, side: THREE.DoubleSide }) /* 히어로 임베드 14% 는 나무 바닥 위에서 거의 안 보였다 — 어느 방을 가리키는지 읽히게 32% (2026-09-23) */,
   ou: std(0xE4E6E6, { roughness: .6 }),
   fan: std(0xffffff, { map: fanTex, roughness: .7 }),
   hatch: std(0x6E767B, { roughness: .8 }),
@@ -1219,6 +1243,7 @@ function configControls(kind, pose) {
     controls.target.copy(pose.tgt);
   }
   if (EMBED) Object.assign(controls, { enableZoom: false, enablePan: false });
+  if (polarSaved) { polarSaved = [controls.minPolarAngle, controls.maxPolarAngle]; controls.minPolarAngle = controls.maxPolarAngle = controls.getPolarAngle(); } // 터치 중 모드가 바뀌면 새 범위를 받아 두고 다시 잠근다
   controls.update();
 }
 function flyTo(pose, kTo, durMs) {
@@ -1327,6 +1352,13 @@ function pick(e) {
   const r = canvas.getBoundingClientRect();
   ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
   ray.setFromCamera(ndc, camera);
+  // 실내기를 먼저 맞춘다 — 천장에 떠 있어 바닥만 맞추면 광선이 실내기를 지나 뒤쪽 바닥(옆 방)에 닿았다(2026-10-02 실측 5대 중 2대만 맞음)
+  const a = ray.intersectObjects(groups.ac.children, true)[0];
+  if (a) {
+    let g = a.object; while (g.parent && g.parent !== groups.ac) g = g.parent;
+    const u = PLAN.ac_units.find(x => acGroups[x.id] === g);
+    if (u && CLICKABLE.has(u.room)) return u.room;
+  }
   return ray.intersectObjects(floorMeshes, false)[0]?.object.userData.room || null;
 }
 function setHover(id) {
@@ -1342,9 +1374,9 @@ canvas.addEventListener('pointermove', e => { pointer = e; if (state.mode === 'h
 canvas.addEventListener('pointerleave', () => { pointer = null; if (state.mode === 'house') setHover(null); });
 canvas.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY, t: performance.now() }; });
 canvas.addEventListener('pointerup', e => {
-  if (!down || state.mode !== 'house' || tween) return;
+  if (!down || state.mode !== 'house') return; // 전체 보기에서는 카메라가 움직이는 중(인트로·화면 맞춤)에도 탭을 받는다 — flyTo 가 진행 중 전환을 이어받는다(10-02 '첫 탭이 안 먹음')
   const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
-  if (moved < 6 && performance.now() - down.t < 600) { const id = pick(e); if (id) goRoom(id); }
+  if (moved < (e.pointerType === 'touch' ? 12 : 6) && performance.now() - down.t < (e.pointerType === 'touch' ? 900 : 600)) /* 손가락 떨림 5~15px 로 탭이 버려지던 것 */ { const id = pick(e); if (id) goRoom(id); }
   down = null;
 });
 $('btnHome').addEventListener('click', goHome);

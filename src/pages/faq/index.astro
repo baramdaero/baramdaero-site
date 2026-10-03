@@ -199,8 +199,8 @@ if (items.length) {
                       <div class="faq-guide__end">
                         <p>다 읽으셨습니다. 궁금한 게 남았으면 물어보세요.</p>
                         <div class="faq-guide__end-btns">
-                          {SITE_CONFIG.PHONE && <a class="bd-cta" href={`tel:${SITE_CONFIG.PHONE.replace(/[^0-9]/g, '')}`}>전화하기 {SITE_CONFIG.PHONE}</a>}
-                          <button disabled aria-describedby="chat-unavailable" type="button" class:list={[SITE_CONFIG.PHONE ? 'br-pill' : 'bd-cta']} data-chat-tree="etc">상담으로 묻기</button>
+                          {SITE_CONFIG.PHONE && <a class="bd-cta" href={`tel:${SITE_CONFIG.PHONE.replace(/[^0-9]/g, '')}`}>전화하기 {SITE_CONFIG.PHONE}<svg class="br-cta-arrow" aria-hidden="true" viewBox="0 0 10 10" width="10" height="10" fill="none"><path d="M0 5h7" /><path d="M1 1l4 4-4 4" /></svg></a>}
+                          <button disabled aria-describedby="chat-unavailable" type="button" class:list={[SITE_CONFIG.PHONE ? 'br-pill' : 'bd-cta']} data-chat-tree="etc">상담으로 묻기{SITE_CONFIG.PHONE ? <span aria-hidden="true">→</span> : <Fragment set:html={`<svg class="br-cta-arrow" aria-hidden="true" viewBox="0 0 10 10" width="10" height="10" fill="none"><path d="M0 5h7" /><path d="M1 1l4 4-4 4" /></svg>`} />}</button>
                         </div>
                       </div>
                     )}
@@ -336,7 +336,7 @@ if (items.length) {
       ) : (
         <div class="faq-page__pending br-reveal">
           <p class="faq-page__pending-title">질문 목록을 준비하고 있습니다.</p>
-          <button disabled aria-describedby="chat-unavailable" type="button" class="bd-cta" data-chat-tree="menu">바로 문의하기</button>
+          <button disabled aria-describedby="chat-unavailable" type="button" class="bd-cta" data-chat-tree="menu">바로 문의하기<svg class="br-cta-arrow" aria-hidden="true" viewBox="0 0 10 10" width="10" height="10" fill="none"><path d="M0 5h7" /><path d="M1 1l4 4-4 4" /></svg></button>
         </div>
       )}
     </div>

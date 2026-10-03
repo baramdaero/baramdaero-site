@@ -25,7 +25,7 @@ const year = new Date().getFullYear();
       {SITE_CONFIG.SHOP_URL && <a href={SITE_CONFIG.SHOP_URL} rel="noopener">예약·구매</a>}
     </nav>
     <p class="bd-footer__cta">
-      <button disabled aria-describedby="chat-unavailable" type="button" class="bd-footer__ask" data-chat-tree="menu">문의하기</button>
+      <button disabled aria-describedby="chat-unavailable" type="button" class="bd-cta bd-cta--ondark bd-footer__ask" data-chat-tree="menu">문의하기<svg class="br-cta-arrow" aria-hidden="true" viewBox="0 0 10 10" width="10" height="10" fill="none"><path d="M0 5h7" /><path d="M1 1l4 4-4 4" /></svg></button>
     </p>
     <hr class="bd-footer__hairline" />
     <p class="bd-footer__legal">
@@ -57,15 +57,8 @@ const year = new Date().getFullYear();
   /* 연락처(PHONE·KAKAO)는 확정 전까지 빈 값이라(AGENTS.md 절대 규칙 2) 푸터에 연락 수단이 없었다.
      접수 진입점은 챗봇 단일이므로(DESIGN.md §6) 같은 챗봇을 부르는 버튼 하나를 둔다 */
   .bd-footer__cta { margin-top: 20px; }
-  .bd-footer__ask {
-    display: inline-flex; align-items: center; min-height: 44px;
-    padding: 0 20px; border-radius: 999px;
-    background: var(--br-ice); color: var(--br-teal);
-    font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; border: 0;
-    transition: background-color var(--dur-color) ease;
-  }
-  @media (hover: hover) { .bd-footer__ask:hover { background: #fff; } }
-  .bd-footer__ask:active { transform: scale(0.96); }
+  /* 색·모양·떠오름은 문의 버튼(.bd-cta--ondark) — 여기서는 작은 크기만 */
+  .bd-footer__ask { min-height: 44px; padding: 0 18px; font-size: 15px; cursor: pointer; }
   .bd-footer__nav a:hover { color: var(--br-ice); }
   .bd-footer__nav--sub { font-size: 13px; align-items: center; }
   .bd-footer__navlabel { color: rgba(255, 255, 255, 0.5); }
