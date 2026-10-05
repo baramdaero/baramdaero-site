@@ -311,7 +311,7 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
     .ex-photo { padding: 10px; aspect-ratio: 4 / 3; }
   }
   @media (max-width: 760px) {
-    .ex-stage { aspect-ratio: 3 / 4; }
+    .ex-stage { aspect-ratio: 3 / 4.4; }   /* 3/4 + 아래 부품 이름 띠 한 줄(약 44px) — 띠가 생겨도 도면 크기는 그대로(2026-10-05) */
     .ex-tabs { gap: 0; }
     .ex-tab { padding: 0 11px; font-size: 14px; } /* 390px 에서 6개가 한 줄에 든다(더 좁으면 가로로 민다) */
   }

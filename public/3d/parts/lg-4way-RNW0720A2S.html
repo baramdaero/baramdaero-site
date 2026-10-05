@@ -65,6 +65,48 @@
   .co.num::before{content:'';position:absolute;inset:-5px}   /* 번호만일 때 누르는 자리 36px(이웃 레인 34px 와 안 겹치게) */
   .co.num em,.co.num span,.co.num::after{display:none}
   .co.num i{width:20px;height:20px;font-size:11px}
+  /* 이름 띠 — 이름표가 번호만 남는 폭(휴대폰·태블릿 임베드)에서 번호 + 이름을 한 줄로. 옆으로 밀고, 누르면 그 부품으로
+     (2026-10-05: 휴대폰에서 번호만 보여 무엇인지 알 수 없었다). '전체'를 누르면 띠가 위로 펴져 이름을 한눈에 본다.
+     무대 아래 칸(45px)이라 도면·재생 바 배치는 그대로고, 펴진 판은 도면 위에 겹친다(무대 크기를 바꾸지 않는다) */
+  #names{display:none;position:relative;z-index:6}
+  body.embed.names #app{grid-template-rows:1fr 45px}
+  body.embed.names #names{display:block}
+  #nmsheet{position:absolute;left:0;right:0;bottom:0;height:45px;display:flex;align-items:center;overflow:hidden;
+    background:var(--panel);border-top:1px solid var(--line);transition:height .36s cubic-bezier(.16,1,.3,1),box-shadow .36s,border-radius .36s}
+  #nmall{flex:none;align-self:stretch;min-width:52px;min-height:44px;padding:0 12px;border:0;border-right:1px solid var(--line);
+    background:none;color:var(--accent);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
+  #nmall:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  #nmlist{position:relative;flex:1;min-width:0;display:flex;gap:6px;align-items:center;padding:6px 10px;
+    overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain;transition:opacity .16s}
+  #nmlist::-webkit-scrollbar{display:none}
+  #nmlist::after{content:'';flex:none;width:72px}   /* 끝 칩이 사이트 고정 문의 버튼 밑에서 빠져나올 자리(#bar 의 88px 과 같은 이유) */
+  #nmlist[data-more]{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 40px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 40px),transparent)}
+  #nmlist[data-less]{-webkit-mask-image:linear-gradient(90deg,transparent,#000 24px);mask-image:linear-gradient(90deg,transparent,#000 24px)}
+  #nmlist[data-less][data-more]{-webkit-mask-image:linear-gradient(90deg,transparent,#000 24px,#000 calc(100% - 40px),transparent);mask-image:linear-gradient(90deg,transparent,#000 24px,#000 calc(100% - 40px),transparent)}
+  #nmlist:focus-within{-webkit-mask-image:none;mask-image:none}
+  .nm{flex:none;position:relative;display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 11px 0 4px;
+    border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--ink);cursor:pointer;
+    font:inherit;font-size:12.5px;font-weight:600;line-height:1;letter-spacing:-.01em;white-space:nowrap;
+    transition:border-color .18s,background-color .18s,color .18s,transform .18s}
+  .nm::before{content:'';position:absolute;inset:-7px -1px}   /* 누르는 높이 44px(테두리 안 30 + 14) */
+  .nm i{font-style:normal;flex:none;width:22px;height:22px;border-radius:999px;background:var(--accent);color:#fff;
+    font-size:11px;font-weight:600;display:grid;place-items:center;font-variant-numeric:tabular-nums}
+  .nm:active{transform:scale(.96)}
+  .nm.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .nm:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  /* 펴진 판 — 같은 칩을 2단 표로. 위에서부터 차례로 떠오른다 */
+  #nmsheet.open{flex-direction:column-reverse;align-items:stretch;border-radius:14px 14px 0 0;box-shadow:0 -10px 28px rgba(11,32,39,.14)}
+  #nmsheet.open #nmall{align-self:flex-start;flex:0 0 44px;border-right:0}   /* '전체'↔'접기'는 제자리 — 같은 곳을 두 번 눌러 여닫는다 */
+  #nmsheet.open #nmlist{flex:1;min-height:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:0 8px;align-content:start;
+    padding:6px 10px 0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:auto;-webkit-mask-image:none;mask-image:none}
+  #nmsheet.open #nmlist::after{display:none}
+  #nmsheet.open .nm{min-height:44px;padding:4px 8px 4px 4px;border-color:transparent;border-radius:8px;
+    white-space:normal;word-break:keep-all;text-align:left;line-height:1.3;animation:nmin .34s cubic-bezier(.16,1,.3,1) backwards;animation-delay:calc(var(--i)*14ms)}
+  #nmsheet.open .nm::before{display:none}
+  #nmsheet.open .nm.on{border-color:var(--accent)}
+  #nmsheet.shut{border-radius:0;box-shadow:none}    /* 접히는 동안 모서리·그림자도 같이 돌아간다 */
+  #nmsheet.shut #nmlist{opacity:0}                  /* 한 줄 ↔ 표로 배치가 바뀌는 순간을 가린다(펼 때·접을 때 모두) */
+  @keyframes nmin{from{opacity:0;transform:translateY(6px)}}
   #side{background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;padding:20px 20px 40px}
   h1{font-size:17px;margin:0 0 3px;letter-spacing:-.012em;line-height:1.35}
   .sub{color:var(--dim);font-size:12.5px;margin-bottom:14px}
@@ -116,7 +158,7 @@
     #head .t{max-width:none}   /* 오른쪽 #note 가 숨으니 60% 로 묶을 이유가 없다 — '부품 / 14개' 꺾임 */
     .co span{display:none}   /* 폭 제한은 기본 규칙(min(252px,44%))에 맡긴다 — 120px 는 이름을 잘랐다 */
   }
-  @media (prefers-reduced-motion: reduce){ .co{transition:none} }
+  @media (prefers-reduced-motion: reduce){ .co,.nm,#nmsheet,#nmlist{transition:none} #nmsheet.open .nm{animation:none} }
 </style>
 </head>
 <body>
@@ -130,6 +172,12 @@
       <button class="btn" id="play">분해 재생</button>
       <input type="range" id="ex" min="0" max="100" value="100" aria-label="분해 정도">
       <button class="btn" id="reset">조립</button>
+    </div>
+  </div>
+  <div id="names" role="group" aria-label="부품 이름">
+    <div id="nmsheet">
+      <button type="button" id="nmall" aria-expanded="false" aria-controls="nmlist">전체</button>
+      <div id="nmlist"></div>
     </div>
   </div>
   <div id="side">
@@ -789,6 +837,7 @@ function goHome(instant = false) {
 }
 
 let t = Q.has('assembled') ? 0 : 1, selected = null, playing = false;
+let rate = 0.0055;   // 프레임당 분해 속도. 조립 상태에서 부품을 고르면 남은 구간을 0.5초쯤에 편다
 const ease = k => k*k*(3 - 2*k);
 function apply() {
   const last = Math.max(1, order.length - 1);
@@ -801,15 +850,65 @@ function apply() {
   dirty = true;
 }
 
+// 좁으면 이름표는 번호만(글씨 겹침 방지) — 1080 무대에서 19개까지 이름. 번호만일 때는 아래 이름 띠가 이름을 맡는다
+const numOnlyAt = W => W < 620 || order.length / W > 0.0185;
+const nmSheet = $('#nmsheet'), nmAll = $('#nmall'), nmList = $('#nmlist');
+const syncNames = () => {
+  nmList.toggleAttribute('data-more', nmList.scrollWidth - nmList.scrollLeft - nmList.clientWidth > 4);
+  nmList.toggleAttribute('data-less', nmList.scrollLeft > 4);
+};
 function resize() {
   if (!renderer) return;
+  document.body.classList.toggle('names', EMBED && numOnlyAt($('#view').clientWidth));   // 높이를 재기 전에 — 띠가 서면 무대가 그만큼 줄어든다
   const w = $('#view').clientWidth, h = $('#view').clientHeight;
   if (!w || !h) return;
   renderer.setSize(w, h); camera.aspect = w/h; camera.updateProjectionMatrix();
+  syncNames();
   dirty = true;
 }
-addEventListener('resize', () => { resize(); goHome(true); });
+// 창(iframe) 크기는 #app 이 따라간다. 띠가 서고 빠지는 건 resize() 가 스스로 하고 그 뒤에 무대를 다시 잰다
+// (#view 를 보면 콜백이 관찰 대상의 높이를 바꿔 'ResizeObserver loop' 오류 이벤트가 난다)
+new ResizeObserver(() => { resize(); goHome(true); }).observe($('#app'));
 resize(); goHome(true); apply();
+
+nmList.innerHTML = order.map((it, i) => `<button type="button" class="nm" style="--i:${i}" data-id="${it.p.id}" aria-pressed="false"><i>${it.n}</i>${esc(it.p.name_ko)}</button>`).join('');
+const centerChip = (b, smooth = true) => nmList.scrollTo({left: b.offsetLeft - (nmList.clientWidth - b.offsetWidth)/2, behavior: smooth && !REDUCED ? 'smooth' : 'auto'});
+// 띠 ↔ 펴진 판. 높이를 px 로 잡아 움직인다(띡 바뀌지 않게). 접을 때는 줄어든 뒤에 한 줄 배치로 되돌린다
+let nmTimer = 0;
+function setNames(open) {
+  if ((nmAll.getAttribute('aria-expanded') === 'true') === open) return;
+  clearTimeout(nmTimer);
+  nmAll.setAttribute('aria-expanded', open); nmAll.textContent = open ? '접기' : '전체';
+  if (open) {
+    nmSheet.classList.add('shut');                      // 띠의 칩을 먼저 흐린 뒤 표로 바꾼다
+    nmTimer = setTimeout(() => {
+      const h0 = nmSheet.offsetHeight;
+      nmSheet.classList.remove('shut'); nmSheet.classList.add('open');
+      nmSheet.style.height = 'auto';
+      // 올림: 소수점 높이를 내림하면 목록이 1px 넘쳐 첫 스와이프를 목록이 먹는다
+      const h1 = Math.min(Math.ceil(nmSheet.getBoundingClientRect().height), $('#app').clientHeight);
+      nmSheet.style.height = h0 + 'px'; nmSheet.offsetHeight;   // 시작 높이를 확정한 뒤 목표로
+      nmSheet.style.height = h1 + 'px';
+      nmList.scrollTop = 0;
+    }, REDUCED ? 0 : 140);
+  } else {
+    nmSheet.classList.add('shut'); nmSheet.style.height = '';
+    nmTimer = setTimeout(() => {
+      nmSheet.classList.remove('open', 'shut');
+      const on = nmList.querySelector('.nm.on'); if (on) centerChip(on, false);
+      syncNames();
+    }, REDUCED ? 0 : 360);
+  }
+}
+nmAll.addEventListener('click', () => setNames(nmAll.getAttribute('aria-expanded') !== 'true'));
+nmList.addEventListener('click', e => {
+  const b = e.target.closest('.nm'); if (!b) return;
+  b.dataset.id === selected ? (clearSel(), goHome()) : select(b.dataset.id);   // 고른 칩을 다시 누르면 전체로
+  setNames(false);
+});
+nmList.addEventListener('scroll', syncNames, {passive: true});
+$('#view').addEventListener('pointerdown', () => setNames(false));              // 판 밖(도면)을 누르면 접는다
+syncNames();
 
 // ---- 라벨: 번호 + 이름 + 한 줄 설명, 위·아래 번갈아, 지시선 ----
 const svg = $('#callouts svg');
@@ -836,7 +935,7 @@ function drawCallouts() {
   const show = t > 0.92 ? Math.min(1, (t - 0.92)/0.08) : 0;
   const W = renderer.domElement.clientWidth, H = renderer.domElement.clientHeight;
   if (!W || !H) return;                                    // 숨겨진(지연 로딩) 프레임: 크기가 0 이면 좌표가 NaN 이다
-  const numOnly = W < 620 || order.length / W > 0.0185;     // 좁으면 번호만(글씨 겹침 방지) — 1080 무대에서 19개까지 이름
+  const numOnly = numOnlyAt(W);
   labels.forEach(L => L.el.classList.toggle('num', numOnly));
   // 부품 위/아래 끝의 화면 좌표
   const pts = labels.map(L => {
@@ -896,7 +995,7 @@ if (renderer) (function loop() {
   requestAnimationFrame(loop);
   if (!onScreen) return;
   if (playing) {
-    t = Math.min(1, t + (REDUCED ? 0.03 : 0.0055)); $('#ex').value = t*100; apply();
+    t = Math.min(1, t + (REDUCED ? 0.03 : rate)); $('#ex').value = t*100; apply();
     if (t >= 1) stopPlay();
   }
   if (camTw) {
@@ -944,8 +1043,11 @@ function paintMaterials() {
 function select(id) {
   const it = items.find(x => x.p.id === id); if (!it) return;
   selected = id; paintMaterials();
-  if (t < 1) { t = 1; $('#ex').value = 100; apply(); }
-  const c = it.g.position.clone();
+  if (t < 1) {                                     // 조립·재생 중: 한 프레임에 튀지 않게 빠르게 펼친다(이름 띠는 조립 상태에서도 눌린다)
+    if (REDUCED) { t = 1; $('#ex').value = 100; apply(); }
+    else { rate = Math.max(0.0055, (1 - t) / 30); playing = true; $('#play').classList.add('on'); $('#play').textContent = '멈춤'; }
+  }
+  const c = it.slot.clone();                       // 다 펼친 자리 — 펼치는 중에 골라도 목표는 같다
   const r = Math.max(it.size.y, it.size.z, 0.35) * 3.2;
   autoCam = false;
   camTo(new THREE.Vector3(c.x + r*0.35, c.y + r*0.3, c.z + r), c);   // 순간이동 대신 부드럽게 다가간다
@@ -987,12 +1089,18 @@ function paint() {
       <span class="st">${it.n}</span><span>${esc(it.p.name_ko)}</span>
       <span class="en">${esc(it.p.name_en || '')}</span></button>`).join('');
   $('#list').querySelectorAll('.row').forEach(r => r.addEventListener('click', () => select(r.dataset.id)));
+  for (const b of nmList.children) {
+    const on = b.dataset.id === selected;
+    // 도면에서 번호를 눌러 골랐을 때도 그 이름이 띠 가운데로 온다(페이지는 안 움직이게 띠만 민다)
+    if (on && !b.classList.contains('on') && !nmSheet.classList.contains('open')) centerChip(b);
+    b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
+  }
   const cur = order.find(x => x.p.id === selected);
   $('#info').innerHTML = cur ? infoHTML(cur.p, cur.n) : `<div class="k">부품이나 번호를 누르면 세척 방법이 나옵니다</div>`;
   $('#cardbody').innerHTML = cur ? infoHTML(cur.p, cur.n) : '';
   $('#card').classList.toggle('on', EMBED && !!cur);
 }
-function stopPlay() { playing = false; $('#play').classList.remove('on'); $('#play').textContent = '분해 재생'; }
+function stopPlay() { playing = false; rate = 0.0055; $('#play').classList.remove('on'); $('#play').textContent = '분해 재생'; }
 let exSaved = null;   // 슬라이더 위에서 시작한 세로 스와이프가 스크롤로 넘어가면(pointercancel) 값과 재생 상태를 되돌린다
 $('#ex').addEventListener('pointerdown', e => { if (e.pointerType === 'touch') exSaved = {t, playing}; }, true);
 $('#ex').addEventListener('pointerup', () => { exSaved = null; });
@@ -1009,7 +1117,7 @@ $('#play').addEventListener('click', () => {
   $('#play').classList.toggle('on', playing); $('#play').textContent = playing ? '멈춤' : '분해 재생';
 });
 $('#card .x').addEventListener('click', () => { clearSel(); goHome(); });   // 닫으면 전체 보기로(확대된 채 남던 것)
-addEventListener('keydown', e => { if (e.key === 'Escape') { clearSel(); goHome(); } });
+addEventListener('keydown', e => { if (e.key === 'Escape') { setNames(false); clearSel(); goHome(); } });
 
 function post(type, data) {
   if (parent !== window) parent.postMessage({ns:'ac3d', type, model:DATA.model_code, ...data}, '*');

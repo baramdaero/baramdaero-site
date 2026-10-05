@@ -23,6 +23,16 @@
       </div>
     </div>
 
+    {/* 층·옥상 안에서 건물 전체로 나가는 길 — 3D 왼쪽 위(서브페이지 공간 3D 의 '전체 보기'와 같은 자리).
+        2026-09-22 대표: '다시 전체를 볼 수 있는 건 제대로 돌아갈 수 있게 … 그냥 왼쪽 밑에 건물 정면, 이게 아니라' */}
+    <div class="h3-up h3-glass" id="up">
+      <button class="h3-back" id="upBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        건물 전체
+      </button>
+      <p class="h3-here__t" id="upT"></p>
+    </div>
+
     <button class="h3-invite h3-glass" id="invite" type="button">
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M5 3l14 8-6.2 1.8L10.4 19 5 3z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
@@ -45,7 +55,7 @@
           <div class="h3-here" id="here" hidden>
             <button class="h3-back" id="back" type="button">
               <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              전체 보기
+              <span id="backT">전체 보기</span>
             </button>
             <p class="h3-here__t" id="hereT"></p>
           </div>
@@ -65,7 +75,7 @@
   const wide = matchMedia('(min-width: 1024px)'), reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const frames = { house: $('f-house') };
   const VIEWERS = [...new Set(SPACES.map(s => s.viewer))];   // house · commercial(상가) · office(오피스)
-  const st = { space: 'house', viewer: 'house', ready: {}, failed: {}, entries: {}, bldKey: {}, pendingKey: null, dipTimer: 0, room: null, notice: '', pick: {} };
+  const st = { space: 'house', viewer: 'house', ready: {}, failed: {}, entries: {}, bldKey: {}, pendingKey: null, dipTimer: 0, room: null, notice: '', pick: {}, level: {}, roofSub: {} };
   const FAIL_MSG = '3D 구성도를 불러오지 못했습니다. 잠시 뒤 새로고침해 주세요.';
   const RETRY_MSG = '구성도를 불러오지 못했습니다. 탭을 다시 누르면 다시 불러옵니다.';
 
@@ -126,7 +136,10 @@
   }
 
   function syncMore() {
-    const el = $('spots');
+    const el = $('spots'), last = el.lastElementChild;
+    // 칩만으로 줄이 넘치는가(끝 빈 자리는 빼고 잰다) — 넘칠 때만 CSS 가 문의 버튼 자리를 비운다.
+    // data-more/less 에 걸면 처음 → 끝으로 한 번에 뛸 때 둘 다 꺼진 순간 빈 자리가 사라져 스크롤이 덜 간다
+    el.toggleAttribute('data-wide', !!last && last.getBoundingClientRect().right - el.getBoundingClientRect().left + el.scrollLeft > el.clientWidth);
     el.toggleAttribute('data-more', el.scrollWidth - el.scrollLeft - el.clientWidth > 4);
     el.toggleAttribute('data-less', el.scrollLeft > 4);
   }
@@ -138,8 +151,12 @@
   }
   function renderDock() {
     const inRoom = !!st.room;
-    // 층·옥상 안('건물 정면'으로 돌아갈 수 있는 상태)은 도면이 화면을 가득 채운다 — 헤드라인과 겹친다
-    const deep = inRoom || !!st.entries[st.space]?.some(e => e.id === 'building');
+    // 층·옥상 안(뷰어가 '건물로' 항목을 주는 상태)은 도면이 화면을 가득 채운다 — 헤드라인과 겹친다
+    const inBld = !!st.entries[st.space]?.some(e => e.id === 'building');
+    const deep = inRoom || inBld;
+    // 건물로 나가는 길은 3D 왼쪽 위에 따로 — 지금 층 이름과 함께. 실내기 시점에서도 그대로 둔다(건물까지 한 번에)
+    $('up').toggleAttribute('data-on', inBld);
+    if (inBld) $('upT').textContent = st.level[st.space] || '';
     hero.toggleAttribute('data-room', inRoom);
     hero.toggleAttribute('data-deep', deep);
     if (hero.dataset.space !== st.space) { hero.dataset.space = st.space; requestAnimationFrame(() => sendInset()); } // 문구가 숨거나 나타난 뒤 자리를 다시 잰다
@@ -147,22 +164,20 @@
     $('here').hidden = !inRoom;
     for (const b of $('spaces').children) b.setAttribute('aria-pressed', String(b.dataset.space === st.space));
     if (inRoom) {
+      $('backT').textContent = st.viewer === 'house' ? '전체 보기' : '층 전체';   // 건물에서 이 버튼은 실내기 → 그 층까지. 건물로는 위 '건물 전체'
       $('hereT').innerHTML = `${esc(st.room.title)} <small>${esc(st.room.sub || '')}</small>`;
     } else {
       const list = st.entries[st.space];
-      // '건물 정면'은 층에서 빠져나오는 길이다. 방 칩과 같은 모양으로 목록에 섞여 있으면
-      // 탈출구로 안 읽힌다 — 맨 앞에 되돌아가기 버튼으로 세운다.
-      const up = list?.find(e => e.id === 'building');
+      // 목록은 지금 층에서 고를 것만 — 건물로 나가는 길('building')은 위 '건물 전체'가 맡는다
       const rest = list?.filter(e => e.id !== 'building') ?? [];
-      $('spots').innerHTML = list
-        ? (up ? `<button type="button" class="h3-spot h3-spot--up" data-id="${esc(up.id)}">`
-              + `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
-              + `${esc(up.name)}</button>` : '')
-          + rest.map((e, i) => {
+      $('spots').innerHTML = list && !rest.length
+        ? `<span class="h3-spots__load">${esc(st.roofSub[st.space] || st.level[st.space] || '')}</span>`   // 옥상: 고를 칸이 없다
+        : list
+        ? rest.map((e, i) => {
               // 고른 칸 하나만 흰 판(세그먼트) — 처음엔 첫 칸, 들어갔다 나오면 마지막으로 본 칸. 안내 버튼은 이 칸으로 들어간다
               const sel = (st.pick[st.space] ?? rest[0]?.id) === e.id;
               return `<button type="button" class="h3-spot${sel ? ' is-sel' : ''}" aria-pressed="${sel}" data-id="${esc(e.id)}">${esc(e.name)} <small>${esc(e.sub || '')}</small></button>`;
-            }).join('')
+          }).join('')
         : `<span class="h3-spots__load" role="status">구성도를 불러오는 중입니다</span>`;
       syncMore();
     }
@@ -205,7 +220,7 @@
     tourTimer = setTimeout(() => {
       if (st.viewer !== 'house' || st.room || hero.hasAttribute('data-engaged')) return stopTour();
       if (hero.getBoundingClientRect().bottom < innerHeight * 0.5) return stopTour();
-      const chips = [...$('spots').querySelectorAll('.h3-spot:not(.h3-spot--up)')].slice(0, 3);
+      const chips = [...$('spots').querySelectorAll('.h3-spot')].slice(0, 3);
       let i = 0;
       const step = () => {
         if (tourDone) return;
@@ -224,15 +239,16 @@
     if (el && el.tagName === 'IFRAME' && stage.contains(el)) engage(false);
   }, 0));
   stage.addEventListener('pointerdown', () => { cancelGround(); engage(false); });
-  dock.addEventListener('pointerdown', () => { cancelGround(); engage(false); });
+  for (const el of [dock, $('up')]) el.addEventListener('pointerdown', () => { cancelGround(); engage(false); });
 
-  // 빌딩 탭: 건물을 한 번 보여 준 다음 1층으로 내려간다. 거기서 '건물 정면'을 누르면 전체 구성도로 올라간다
+  // 빌딩 탭: 건물을 한 번 보여 준 다음 1층으로 내려간다. 거기서 왼쪽 위 '건물 전체'를 누르면 전체 구성도로 올라간다
   let groundTimer = 0;
   const cancelGround = () => { clearTimeout(groundTimer); st.wantGround = false; };
   function groundFirst(v) {
     if (!st.wantGround || st.viewer !== v || st.room) return;
     const g = (st.entries[st.bldKey[v]] || []).find(e => /^floor:/.test(e.id) && e.name === '1층');
-    if (!g) return;                       // 1층이 없는 건물이면 전체 구성도 그대로 둔다
+    if (!g) { st.wantGround = false; return; }   // 1층이 목록에 없다 = 1층 없는 건물이거나 이미 층 안(보던 층 유지) — 깃발을 내린다.
+                                          // 남겨 두면 나중에 키보드·Esc 로 건물 전체에 나간 순간 1층으로 다시 끌려 들어간다(10-05 검증)
     st.wantGround = false;
     clearTimeout(groundTimer);
     groundTimer = setTimeout(() => {
@@ -277,11 +293,11 @@
     if (reground) groundFirst(vw);
   }
 
-  $('invite').addEventListener('click', () => ($('spots').querySelector('.h3-spot.is-sel') || $('spots').querySelector('.h3-spot:not(.h3-spot--up)'))?.click());
+  $('invite').addEventListener('click', () => ($('spots').querySelector('.h3-spot.is-sel') || $('spots').querySelector('.h3-spot'))?.click());
   $('spaces').addEventListener('click', e => { const b = e.target.closest('[data-space]'); if (b) selectSpace(b.dataset.space); });
   $('spots').addEventListener('click', e => {
     const b = e.target.closest('[data-id]');
-    if (b && !b.classList.contains('h3-spot--up')) st.pick[st.space] = b.dataset.id;
+    if (b) st.pick[st.space] = b.dataset.id;
     if (b) send(st.viewer, st.viewer === 'house' ? { type: 'goRoom', id: b.dataset.id } : { type: 'goUnit', id: b.dataset.id });
   });
   // 목록에 올리면 3D 에서 그 자리를 짚어 준다 (라벨이 없는 화면이라 '창가 1'이 어디인지 알게)
@@ -289,7 +305,15 @@
   for (const ev of ['pointerover', 'focusin']) $('spots').addEventListener(ev, hoverSpot);
   for (const ev of ['pointerleave', 'focusout']) $('spots').addEventListener(ev, () => send(st.viewer, { type: 'hover', id: null }));
   $('back').addEventListener('click', () => send(st.viewer, { type: 'home' }));
-  addEventListener('keydown', e => { if (e.key === 'Escape' && st.room) send(st.viewer, { type: 'home' }); });
+  const goBuilding = () => { cancelGround(); send(st.viewer, { type: 'goUnit', id: 'building' }); };   // 직접 나간 건물에는 머문다
+  $('upBtn').addEventListener('click', goBuilding);
+  // Esc 는 한 단계씩: 실내기 → 층 입구 → 건물 전체
+  addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    const a = document.activeElement;
+    if (a && a !== document.body && !hero.contains(a)) return;   // 챗봇·메뉴를 Esc 로 닫을 때 3D 까지 같이 나가지 않게(body 는 통과 — 사파리는 버튼 클릭에 포커스를 안 준다)
+    if (st.room) send(st.viewer, { type: 'home' }); else if ($('up').hasAttribute('data-on')) goBuilding();
+  });
 
   // 터치 기기 '3D 직접 돌리기' 잠금은 걷었다(2026-10-02 대표: 휴대폰에서 '아래 도면을 눌러 보세요'인데 도면이 안 눌림).
   // 뷰어가 세로 스와이프는 페이지로, 가로 드래그만 회전으로 받는다(house·office·commercial.html embed, touch-action: pan-y)
@@ -297,6 +321,8 @@
   let posterShown = false;
   const showPoster = () => { posterShown = true; hero.dataset.poster = ''; };
 
+  // 옥상 안에서 도크에 보여 줄 '실외기 N대' — 건물 목록(ready·space)에 실려 올 때 적어 둔다
+  const keepRoof = m => { const roof = m.entries?.find(e => e.id === 'roof'); if (roof) st.roofSub[m.key] = roof.sub; };
   addEventListener('message', e => {
     const m = e.data;
     if (!m || m.ns !== 'bd3d' || !frames[m.viewer] || e.source !== frames[m.viewer].contentWindow) return;
@@ -304,7 +330,7 @@
     if (m.type === 'ready') {
       st.ready[v] = true; st.failed[v] = false;
       if (v !== 'house') st.notice = '';
-      if (v === 'house') st.entries.house = m.entries; else { st.bldKey[v] = m.key; st.entries[m.key] = m.entries; }
+      if (v === 'house') st.entries.house = m.entries; else { st.bldKey[v] = m.key; st.entries[m.key] = m.entries; keepRoof(m); }
       sendInset(true);
       if (v === 'house') {
         // 대체 이미지를 이미 보여 줬으면 인트로 없이 바로 겹쳐 바꾼다 (집을 이미 본 사람에게 다시 방에서 시작하지 않는다)
@@ -316,16 +342,20 @@
       renderDock();
       if (v !== 'house') groundFirst(v);
     } else if (m.type === 'space') {
-      const fromDock = dock.contains(document.activeElement);
+      const fromDock = dock.contains(document.activeElement) || $('up').contains(document.activeElement);
       st.bldKey[v] = m.key; st.entries[m.key] = m.entries; st.pendingKey = null;
+      st.level[m.key] = m.title || '';
+      keepRoof(m);
+
       // 응답이 오는 사이 다른 공간을 골랐으면 그 공간으로 다시 맞춘다
       if (st.viewer === v && st.space !== m.key) { st.pendingKey = st.space; send(v, { type: 'space', key: st.space }); return; }
       requestAnimationFrame(() => frames[v]?.classList.remove('dip'));
       if (st.viewer === v) {
         st.room = null; renderDock();
         groundFirst(v);
-        if (m.title) $('live').textContent = m.title; // 건물 정면 · 3층 학원 · 옥상 실외기실
-        if (fromDock && !dock.contains(document.activeElement)) $('spots').querySelector('.h3-spot')?.focus({ preventScroll: true }); // 누른 칩이 목록째 바뀌면 포커스가 body 로 빠진다
+        if (m.title) $('live').textContent = m.title === '건물 정면' ? '건물 전체' : m.title; // 건물 전체 · 3층 학원 · 옥상 실외기실(뷰어는 전경을 '건물 정면'이라 부른다)
+        // 누른 칩이 목록째 바뀌거나 '건물 전체'가 숨으면 포커스가 body 로 빠진다. 옥상은 고를 칸이 없어 '건물 전체'가 받는다
+        if (fromDock && !dock.contains(document.activeElement)) ($('spots').querySelector('.h3-spot') || $('upBtn')).focus({ preventScroll: true });
       }
     } else if (m.type === 'enter' && v === st.viewer) {
       const fromDock = dock.contains(document.activeElement);
@@ -338,7 +368,7 @@
       const fromBack = document.activeElement === $('back'), was = st.room?.id;
       st.room = null;
       renderDock();
-      $('live').textContent = '전체 보기';
+      $('live').textContent = v === 'house' ? '전체 보기' : '층 전체';
       if (fromBack) ($('spots').querySelector(`[data-id="${CSS.escape(was || '')}"]`) || $('spaces').querySelector('[aria-pressed="true"]')).focus({ preventScroll: true });
     }
   });
@@ -375,7 +405,7 @@
 /* 사이트 global.css 에 없는 틴트 2단 + 히어로 안 버튼·제목 기본값(프로토와 같게) */
 .h3-hero { --h3-gutter: max(20px, calc(50% - var(--maxw) / 2 + 20px)); --tint-line: color-mix(in srgb, var(--br-teal) 12%, transparent); --tint-fill: color-mix(in srgb, var(--br-teal) 8%, transparent); }
 /* 버튼 리셋 — :where() 로 특이도 0. 그냥 `.h3-hero button` 이면 (0,1,1) 이라
-   뒤에 오는 .h3-spot·.h3-spot--up 의 색·굵기·배경을 전부 이겨 버린다
+   뒤에 오는 .h3-spot·.h3-back 의 색·굵기·배경을 전부 이겨 버린다
    (2026-09-23 실측: 되돌아가기 버튼의 ice 채움과 700 굵기가 죽어 있었다). */
 :where(.h3-hero) button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; letter-spacing: inherit; }
 .h3-hero h1 { font-weight: 800; line-height: 1.15; letter-spacing: -0.02em; text-wrap: balance; }
@@ -542,18 +572,6 @@
 .h3-spot:focus-visible { outline-offset: -2px; }
 .h3-spot small { font-size: 13px; font-weight: 500; color: var(--br-ink-sub); }
 @media (hover: hover) { .h3-spot:hover { color: var(--br-teal); background: #fff; box-shadow: 0 1px 2px rgba(0, 41, 58, .08); } }
-/* 층 → 건물 전경 되돌아가기. 옆 방 칩들과 확실히 다르게 — 채운 면 + 화살표 + 구분선 */
-.h3-spot--up {
-  gap: 4px; padding-left: 10px; font-weight: 700; color: var(--br-teal);
-  background: var(--br-ice); border-radius: 999px;
-  margin-right: 10px; position: relative; flex: none;
-}
-.h3-spot--up svg { width: 16px; height: 16px; flex: none; }
-.h3-spot--up::after {
-  content: ''; position: absolute; right: -10px; top: 50%; translate: 0 -50%;
-  width: 1px; height: 20px; background: var(--br-line);
-}
-@media (hover: hover) { .h3-spot--up:hover { background: #fff; color: var(--br-teal-deep); } }
 .h3-spot:active { transform: scale(.96); }
 .h3-spots__load { padding-inline: 12px; font-size: 13px; color: var(--br-ink-sub); }
 
@@ -569,6 +587,21 @@
 .h3-back svg { width: 20px; height: 20px; }
 .h3-here__t { padding-left: 12px; border-left: 1px solid var(--tint-line); font-size: 15px; font-weight: 600; line-height: 1.4; color: var(--br-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .h3-here__t small { margin-left: 8px; font-size: 13px; font-weight: 500; color: var(--br-ink-sub); }
+
+/* 건물 전체로 — 3D 왼쪽 위, 헤더 바로 아래. 도크의 '전체 보기' 줄과 같은 버튼·글자를 쓴다 */
+.h3-up {
+  position: absolute; z-index: 2; top: 16px; left: var(--h3-gutter);   /* 히어로는 헤더(sticky) 바로 아래에서 시작한다 */
+  display: flex; align-items: center; gap: 8px; padding: 4px; max-width: calc(100% - 2 * var(--h3-gutter));
+  border-radius: 10px;
+  opacity: 0; visibility: hidden; translate: 0 -8px;
+  transition: opacity var(--dur-ui) var(--ease-out), translate var(--dur-ui) var(--ease-out), visibility 0s linear var(--dur-ui);
+}
+/* 층으로 들어가는 카메라가 자리를 잡을 즈음 내려앉는다 */
+.h3-up[data-on] { opacity: 1; visibility: visible; translate: 0 0;
+  transition: opacity var(--dur-reveal) var(--ease-out) .35s, translate var(--dur-reveal) var(--ease-out) .35s, visibility 0s; }
+.h3-up .h3-here__t { padding-right: 12px; }
+.h3-up .h3-here__t:empty { display: none; }
+@media (prefers-reduced-motion: reduce) { .h3-up, .h3-up[data-on] { translate: none; transition-duration: .01s; transition-delay: 0s; } }
 
 .h3-note { padding: 10px 2px 0; font-size: 13px; line-height: 1.5; color: var(--br-ink-sub); }
 .h3-note:empty { display: none; }   /* 평상시엔 할 말이 없다 — 빈 줄로 자리만 먹지 않게 */
@@ -602,6 +635,12 @@
    ⚠️ .h3-dock-wrap 기본값(padding-bottom: 24px)과 명시도가 같다 — 반드시 그 뒤에 있어야 먹는다.
    2026-09-22 이전에는 이 선언이 기본값보다 앞에 있어 한 번도 적용된 적이 없었다(실측 24px). */
 @media (max-width: 820px) { .h3-dock-wrap { padding-bottom: 84px; } }
+/* 그 위 폭(아이패드 가로·작은 노트북)은 도크가 내려와 있어, 칩이 많은 층에서 줄 끝 칩이 문의 버튼 밑에 깔려 눌리지 않았다
+   (1024x768 실측: 마지막 칩 93px 중 80px, 눌러도 챗봇이 열림 — 10-05 검증). 도크를 올리면 승인된 구도가 바뀌므로,
+   줄이 넘칠 때만 끝에 빈 자리를 둬 끝까지 밀면 마지막 칩이 버튼 왼쪽으로 나오게 한다. 1280px 부터는 도크가 버튼에 닿지 않는다 */
+@media (min-width: 821px) and (max-width: 1279px) {
+  .h3-spots[data-wide]::after { content: ''; flex: none; width: 96px; }
+}
 @media (max-width: 760px) {
   .h3-head { padding-block: 28px 0; }
   /* 히어로 padding-top(56px)이 이미 헤더 아래 공기다. 업종 줄 24px 를 더 얹으면
