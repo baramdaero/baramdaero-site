@@ -27,11 +27,15 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
     <div class="space3d__stage br-glass br-glass--medium">
       <iframe src={views[0].src} title={views[0].title} loading="lazy"></iframe>
       {hint && <p class="space3d__hint" aria-hidden="true">{hint}</p>}
-      {/* 방·층 안에 들어가면 나올 길 — 히어로의 '전체 보기'와 같은 말·같은 화살표(2026-10-01, 갇힘 제보) */}
-      <button type="button" class="space3d__back">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        전체 보기
-      </button>
+      {/* 방·층 안에 들어가면 나올 길 — 히어로와 같은 자리(3D 왼쪽 위)·같은 말·같은 화살표(2026-10-01, 갇힘 제보).
+          건물(상업공간·오피스)은 '건물 전체' + 지금 층 이름, 아파트는 '전체 보기' */}
+      <div class="space3d__here">
+        <button type="button" class="space3d__back">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>전체 보기</span>
+        </button>
+        <p class="space3d__lv"></p>
+      </div>
     </div>
     <p class="space3d__note">{NOTE}</p>
   </div>
@@ -43,14 +47,17 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
     const frame = stage.querySelector('iframe')!;
     // 방(아파트)·층(건물) 안이면 '전체 보기'를 띄운다. 뷰어가 알려 주는 bd3d 메시지로만 판단한다
     const back = stage.querySelector<HTMLButtonElement>('.space3d__back')!;
+    const backT = back.querySelector('span')!, lv = stage.querySelector<HTMLElement>('.space3d__lv')!;
     let inRoom = false, level = '';
     const sync = () => {
-      if (inRoom || (level && level !== '건물 정면')) stage.dataset.deep = ''; else delete stage.dataset.deep;
+      const inLevel = !!level && level !== '건물 정면';   // 뷰어가 알려 주는 건물 전경의 이름
+      if (inRoom || inLevel) stage.dataset.deep = ''; else delete stage.dataset.deep;
+      if (inLevel) lv.textContent = level;               // 나갈 때는 지우지 않는다 — 사라지는 동안 글자가 먼저 비지 않게
     };
     addEventListener('message', (e) => {
       const m = e.data;
       if (!m || m.ns !== 'bd3d' || e.source !== frame.contentWindow) return;
-      if (m.type === 'ready') { inRoom = false; level = ''; }
+      if (m.type === 'ready') { inRoom = false; level = ''; lv.textContent = ''; backT.textContent = m.viewer === 'house' ? '전체 보기' : '건물 전체'; }
       else if (m.type === 'enter') inRoom = true;
       else if (m.type === 'home') inRoom = false;                     // 건물: 실내기 → 그 층 입구(층 안은 그대로)
       else if (m.type === 'space') { level = m.title || ''; inRoom = false; }
@@ -67,7 +74,7 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
         // 탭 전환이 뒤로가기 기록을 쌓지 않게(뒤로가기 한 번에 iframe 만 바뀌던 것) — Exploded 와 같다
         try { frame.contentWindow!.location.replace(tab.dataset.src!); } catch { frame.src = tab.dataset.src!; }
         frame.title = tab.dataset.title!;
-        inRoom = false; level = ''; sync();
+        inRoom = false; level = ''; sync();   // 층 이름은 지우지 않는다 — 판이 사라지는 동안 글자가 먼저 비면 판이 줄었다 사라진다. 새 뷰어의 ready 가 비운다
       });
     });
   }
@@ -97,13 +104,31 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
     background: rgba(255, 255, 255, 0.86); color: var(--br-ink-sub); font-size: 13px; font-weight: 600; pointer-events: none;
   }
   .space3d__note { margin-top: 12px; font-size: 13px; color: var(--br-ink-sub); }
+  /* 나갈 길 — 흰 판 하나에 버튼 + 지금 층 이름. 들어가는 카메라가 자리 잡을 즈음 내려앉는다(띡 뜨지 않게) */
+  .space3d__here {
+    position: absolute; left: 12px; top: 12px; max-width: calc(100% - 24px); display: flex; align-items: center;
+    border-radius: 10px; background: rgba(255, 255, 255, 0.92); /* 버튼은 사각(2026-10-02) */
+    opacity: 0; visibility: hidden; translate: 0 -8px;
+    transition: opacity var(--dur-ui) var(--ease-out), translate var(--dur-ui) var(--ease-out), visibility 0s linear var(--dur-ui);
+  }
+  .space3d__stage[data-deep] .space3d__here {
+    opacity: 1; visibility: visible; translate: 0 0;
+    transition: opacity var(--dur-reveal) var(--ease-out) .35s, translate var(--dur-reveal) var(--ease-out) .35s, visibility 0s;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .space3d__here, .space3d__stage[data-deep] .space3d__here { translate: none; transition-duration: .01s; transition-delay: 0s; }
+  }
   .space3d__back {
-    position: absolute; left: 12px; top: 12px; display: none; align-items: center; gap: 2px;
-    min-height: 44px; padding: 0 14px 0 8px; border: 0; border-radius: 10px; background: rgba(255, 255, 255, 0.92); /* 버튼은 사각(2026-10-02) */
+    display: inline-flex; align-items: center; gap: 2px; flex: none;
+    min-height: 44px; padding: 0 14px 0 8px; border: 0; border-radius: 10px; background: transparent;
     color: var(--br-teal); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
   }
   .space3d__back svg { width: 20px; height: 20px; }
   .space3d__back:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; }
-  .space3d__stage[data-deep] .space3d__back { display: inline-flex; }
+  .space3d__lv {
+    margin: 0; padding: 0 14px 0 12px; border-left: 1px solid var(--br-line);
+    font-size: 14px; font-weight: 600; color: var(--br-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .space3d__lv:empty { display: none; }
   .space3d__stage[data-deep] .space3d__hint { display: none; }
 </style>
