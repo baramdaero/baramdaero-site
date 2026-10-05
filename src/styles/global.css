@@ -14,7 +14,7 @@
      grad-wide = 서브 히어로처럼 넓은 면(왼쪽 위 제목 자리는 teal-deep 그대로) */
   --br-grad-wide: radial-gradient(120% 140% at 100% 115%, color-mix(in oklab, var(--br-ice) 38%, var(--br-teal)) 0%, var(--br-teal) 32%, var(--br-teal-deep) 72%);
 
-  /* 타이포 — Pretendard 단일 (세리프 폐기) */
+  /* 타이포 — 본문 Pretendard. 제목(h1·h2)은 맨 아래 G마켓 산스 블록 (세리프 폐기) */
   --sans: 'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', sans-serif;
 
   /* 모션 — DESIGN.md §4 */

@@ -209,7 +209,7 @@ const cta = home.ctaBand;
   .home-stats { margin-top: 24px; }
   /* 누적 한 줄 — 숫자 묶음의 머리(2026-10-02 대표: 글자 키우고 굵게) */
   .home-stats__lead { margin-bottom: 14px; font-size: clamp(20px, 1rem + 0.9vw, 26px); font-weight: 700; line-height: 1.35; letter-spacing: -0.02em; color: var(--br-ink); text-wrap: balance; }
-  /* 숫자 셋을 한 줄에(2026-10-02 평균 셋) — 좁으면 라벨만 두 줄로 접힌다. 숫자는 꺾지 않는다 */
+  /* 숫자 셋을 한 줄에(최근 1년 합계 둘 + 하루 평균) — 좁으면 라벨만 두 줄로 접힌다. 숫자는 꺾지 않는다 */
   .home-stats dl { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, max-content); gap: 12px clamp(20px, 4vw, 40px); }
   .home-stats dl > div { display: flex; flex-direction: column-reverse; gap: 2px; }
   .home-stats dt { font-size: 14px; color: var(--br-ink-sub); }
@@ -217,7 +217,7 @@ const cta = home.ctaBand;
   .home-stats dd { white-space: nowrap; font-size: clamp(26px, 1.1rem + 1.8vw, 40px); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: var(--br-teal); font-variant-numeric: tabular-nums; }
   .home-stats__pre, .home-stats__suf { font-size: 0.5em; font-weight: 700; }
   .home-stats__suf { margin-left: 3px; }
-  /* 누적 큰 숫자 — 아래 평균 셋보다 한 단 크게, 라벨도 한 단 크게 */
+  /* 누적 큰 숫자 — 아래 숫자 셋보다 한 단 크게, 라벨도 한 단 크게 */
   .home-stats .home-stats__total { margin-bottom: 18px; }
   .home-stats .home-stats__total dd { font-size: clamp(40px, 1.6rem + 3vw, 64px); line-height: 1.05; }
   .home-stats .home-stats__total dt { font-size: 15px; font-weight: 600; color: var(--br-ink); }

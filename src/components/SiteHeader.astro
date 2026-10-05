@@ -4,9 +4,10 @@
 // 오버레이의 기본값은 솔리드다. 투명(백색 텍스트)은 하단 스크립트가 .is-ready를 붙인 뒤에만 켜진다 (no-JS/초기화 실패 안전).
 // 락업은 인라인 SVG 한 벌(2026-10-05): 색은 CSS 변수로, 협소 폭(≤389px)은 워드마크를 숨겨 마크만 남긴다.
 // 인라인인 이유는 꼬불 모션 — <img> 안의 SVG 는 밖에서 움직일 수 없다.
-// 390px+는 wide(마크+"바람대로" 워드마크) — 단, 실물 크기가 커 보인다는 판단에
-// 따라 08-24 축소했다. 워드마크 14px 하한 규칙을 이번엔 의도적으로 깼다
-// (한 차례 마크 단독 전환 시도 후 되돌림 — 오독이었다. 지시는 "락업 유지, 크기만 축소").
+// 390px+는 락업 전체(마크 + 워드마크). 높이(24 / 26.667px)는 08-24 에 "커 보인다"는 판단으로 줄인 값을 그대로 쓴다
+// (그때 지시는 "락업 유지, 크기만 축소").
+// 메뉴는 800px 이하에서 '메뉴' 버튼으로 접는다(2026-10-06): 새 락업이 넓어(115→174px) 한 줄 메뉴 + 견적 문의가
+// 795px 미만에서 화면 밖으로 넘쳤다(641~794px 실측. 그 전에도 641~735px 는 넘치고 있었다).
 import { SITE_CONFIG } from '../config.js';
 import { getCollection } from 'astro:content';
 import lockupSvg from '../assets/logo/baramdaero-lockup-anim.svg?raw';
@@ -128,12 +129,14 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     align-items: center;
     gap: 28px;
   }
-  /* flex 축소 금지 — 축소는 flex '아이템'에서 일어난다. img에만 걸면 부모 picture/brand가
-     대신 눌려 로고 비율이 깨진다 (360px에서 155→123px 실측). 사슬 전체에 건다 */
+  /* flex 축소 금지 — 축소는 flex '아이템'에서 일어난다. svg 에만 걸면 부모(span·brand)가
+     대신 눌려 로고 비율이 깨진다 (옛 img 락업으로 360px에서 155→123px 실측). 사슬 전체에 건다.
+     min-height 44px = 로고 링크의 누르는 높이(로고 자체는 24~32px) */
   .bd-header__brand {
     display: flex;
     align-items: center;
     flex-shrink: 0;
+    min-height: 44px;
   }
   /* 우측 액션 슬롯 — 내용이 생겨도 줄어들지 않는다 */
   .bd-header__actions {
@@ -264,7 +267,8 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   .bd-header.is-menu-open .bd-header__menu-open { display: none; }
   .bd-header.is-menu-open .bd-header__menu-close { display: inline; }
   .bd-header--overlay.is-ready:not(.is-scrolled):not(.is-menu-open) .bd-header__menu-btn { color: #fff; background: rgba(255, 255, 255, 0.14); }
-  @media (max-width: 640px) {
+  /* ⚠️ 이 800 은 아래 스크립트의 matchMedia 와 같은 값이어야 한다 */
+  @media (max-width: 800px) {
     .bd-header.has-menu .bd-header__menu-btn { display: inline-flex; }
     .bd-header.has-menu .bd-header__links { display: none; }
     /* 펼침 목록 — 헤더 바로 아래 전체 폭. 글자는 전체 명칭, 한 줄 52px */
@@ -318,7 +322,7 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   const header = document.querySelector<HTMLElement>('.bd-header');
   const menuBtn = header?.querySelector<HTMLButtonElement>('.bd-header__menu-btn');
   if (header && menuBtn) {
-    const narrow = window.matchMedia('(max-width: 640px)');
+    const narrow = window.matchMedia('(max-width: 800px)');
     const setOpen = (open: boolean, returnFocus = false) => {
       header.classList.toggle('is-menu-open', open);
       menuBtn.setAttribute('aria-expanded', String(open));
@@ -352,14 +356,15 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   const brand = document.querySelector<HTMLElement>('.bd-header__brand');
   const firstLine = brand?.querySelector<SVGAnimationElement>('#bdw0');
   if (brand && firstLine && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    let last = 0;
+    let last = -Infinity; // 0 이면 페이지를 연 직후 1.3초 안의 첫 hover 가 무시된다
     const play = () => {
       const now = performance.now();
       if (now - last < 1300) return; // 도는 중에 다시 시작하지 않는다(전체 1.1초)
       last = now;
       firstLine.beginElement();
     };
-    if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) brand.addEventListener('pointerenter', play);
+    // 터치 겸용 노트북은 hover 기기로 잡히지만 손가락 탭에도 pointerenter 가 온다 — 탭은 곧바로 이동이라 재생하지 않는다
+    if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) brand.addEventListener('pointerenter', (e) => { if (e.pointerType !== 'touch') play(); });
     brand.addEventListener('focus', () => { if (brand.matches(':focus-visible')) play(); });
   }
 
