@@ -346,7 +346,8 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     narrow.addEventListener('change', (e) => { if (!e.matches) setOpen(false); });
   }
 
-  // 로고 꼬불 모션 — 마우스를 올리거나 키보드로 닿으면 한 번. 첫 선을 시작시키면 나머지 선·점은 SVG 안 시차로 따라온다.
+  // 로고 꼬불 모션 — 마우스를 올리거나 키보드로 닿으면 한 번. 첫 선을 시작시키면 나머지 선·글자·마침표는 SVG 안 시차로 따라온다
+  // (선 3개 꼬불 → 글자가 한 자씩 살짝 → '.' 이 통).
   // 터치(hover 없음)와 '동작 줄이기' 설정에서는 걸지 않는다
   const brand = document.querySelector<HTMLElement>('.bd-header__brand');
   const firstLine = brand?.querySelector<SVGAnimationElement>('#bdw0');
@@ -354,7 +355,7 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     let last = 0;
     const play = () => {
       const now = performance.now();
-      if (now - last < 800) return; // 도는 중에 다시 시작하지 않는다
+      if (now - last < 1300) return; // 도는 중에 다시 시작하지 않는다(전체 1.1초)
       last = now;
       firstLine.beginElement();
     };

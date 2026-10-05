@@ -62,15 +62,15 @@ const cta = home.ctaBand;
       startTone="base"
       itemPhotos
     >
-      {/* 제목 묶음 아래 실적 숫자(2026-10-01 대표) — 정지값, 기준 한 줄 */}
+      {/* 제목 묶음 아래 실적 숫자(2026-10-01 대표) — 보일 때 한 번 세고(2026-10-05, motion.ts) 최종값에 멎는다. 기준 한 줄 */}
       {stats.length >= 2 && (
         <div slot="head" class="home-stats br-reveal">
-          {statsLead && <p class="home-stats__lead">{statsLead}</p>}
+          {statsLead && <p class="home-stats__lead">{statsLead.split('\n').map((l, i) => <Fragment>{i > 0 && <br />}{l}</Fragment>)}</p>}
           <dl>
             {stats.map((s) => (
               <div>
                 <dt>{s.label.split('\n').map((l, i) => <Fragment>{i > 0 && <Fragment>{' '}<br class="home-stats__br" /></Fragment>}{l}</Fragment>)}</dt>
-                <dd>{s.prefix && <span class="home-stats__pre">{s.prefix} </span>}{s.value.toLocaleString('ko-KR')}<span class="home-stats__suf">{s.suffix}</span></dd>
+                <dd>{s.prefix && <span class="home-stats__pre">{s.prefix} </span>}<span data-countup={s.value}>{s.value.toLocaleString('ko-KR')}</span><span class="home-stats__suf">{s.suffix}</span></dd>
               </div>
             ))}
           </dl>
