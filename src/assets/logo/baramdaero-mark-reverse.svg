@@ -1,5 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000" role="img" aria-label="바람대로">
-<title>바람대로</title>
-<g fill="#F7F9FA" fill-rule="nonzero">
-<path transform="translate(236.13 120.0) scale(1.090387)" d="M0 0 L161 0 L161 48 L238 48 L238 0 L399 0 L399 341 L0 341 Z M161 169 L161 216 L237 216 L237 215 L238 215 L238 169 Z M0 356 L399 356 L399 491 L166 491 L166 562 L399 562 L399 697 L0 697 Z M411 636 L484 636 L484 695 L411 695 Z"/>
-</g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-25.55 30.25 261.82 261.82" role="img" aria-label="바람대로"><title>바람대로</title><polygon fill="#FFFFFF" points="116.26,83.50 236.26,83.50 222.93,116.50 102.93,116.50"/><polygon fill="#FFFFFF" points="12.02,143.50 212.02,143.50 198.69,176.50 -1.31,176.50"/><polygon fill="#BFE9F2" points="-12.22,203.50 97.78,203.50 84.45,236.50 -25.55,236.50"/><polygon fill="#BFE9F2" points="124.90,201.19 162.52,201.19 147.32,238.81 109.70,238.81"/></svg>

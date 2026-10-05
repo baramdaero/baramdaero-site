@@ -142,6 +142,9 @@ v2(그린 듀오톤 canopy/lime) 체계는 폐기 — 본 v3 틸 토큰이 대�
 - `prefers-reduced-motion`: 리빌·마퀴·카운트업·히어로 영상 정지
 - UI 모션은 `transform`·`opacity`만, 상태 전환은 transition,
   `:active { scale(0.96) }`, `transition: all` 금지, hover는 `(hover: hover) and (pointer: fine)` 게이트
+  - 예외(2026-10-05): **헤더 로고 꼬불 모션**만 선 모양(SVG `d`)을 움직인다 — 선이 휘는 것은 transform·opacity 로 못 만든다.
+    hover·키보드 초점에 1회, 600ms(`--dur-reveal` 값)·`--ease-in-out` 값·시차 60ms, 터치와 reduced-motion 에서는 걸지 않는다.
+    마침표가 튀는 것은 transform 만 쓴다. 다른 곳에 선 모양 모션을 늘리지 않는다
 - 금지: 패럴랙스(배속차 이동), 3D, 커서 이펙트, 무한 회전·바운스, 자동 전환 캐러셀,
   스크롤 하이재킹, GSAP 등 외부 라이브러리 (전부 바닐라)
 - 히어로 영상: 사전 렌더 mp4 루프 (canvas 프레임 캡처 금지)
