@@ -12,7 +12,7 @@ const context = { SITE_CONFIG: { BRANDS_INSTALL: ['테스트 브랜드'], WELCOM
 vm.runInNewContext(stripTypeScriptTypes(chat.slice(start, end)) + '\nglobalThis.nodes = NODES; globalThis.parseUnits = parseUnits;', context);
 const nodes = context.nodes;
 const spaces = nodes['install.space'].options;
-assert.deepEqual(Array.from(spaces, (o) => o.label), ['아파트·주택', '상가·사무실', '관공서·공공시설']);
+assert.deepEqual(Array.from(spaces, (o) => o.label), ['아파트·주택', '상업공간·오피스', '관공서·공공시설']);
 for (const option of spaces) {
   const data = { ...option.set };
   const next = nodes['install.place'].input.next(data);
@@ -49,9 +49,12 @@ assert.match(home, /home-service-install\.webp/);
 assert.match(page, /<link rel="canonical" href="https:\/\/baramdaero.com\/commercial\/"/);
 assert.doesNotMatch(page, /AI로 만든 공간 예시입니다/);
 assert.doesNotMatch(home, /AI로 만든 공간 예시입니다/);
-assert.match(page, /관공서·공공시설/);
+assert.match(page, /매장·상가/);
 assert.match(page, /대형빌딩/);
+// AS 정책 문장 — 상업용 페이지와 챗봇 AS 트리가 같은 말을 해야 한다
 assert.match(page, /바람대로에서 시공·관리를 받은 고객의 AS 안내/);
+assert.ok(nodes['as.q1'].options.some((o) => o.next === 'as.nonclient'));
+assert.match(nodes['as.nonclient'].text, /AS는 바람대로 시공·관리 고객 대상/);
 for (const tree of ['install', 'clean', 'as']) {
   const buttons = Array.from(page.matchAll(/<button\b[^>]*>/g), (m) => m[0]).filter((b) => b.includes(`data-chat-tree="${tree}"`));
   assert.ok(buttons.length > 0, `${tree}: entry exists`);
