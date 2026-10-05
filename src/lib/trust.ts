@@ -20,6 +20,8 @@ export interface TrustData {
   statsNote: string;
   /** 숫자 위 굵은 한 줄(누적, 2026-10-02) */
   statsLead: string;
+  /** 맨 위 큰 누적 숫자(2026-10-05) — 값이 없거나 틀리면 null(그 줄만 빠진다) */
+  statsTotal: TrustStat | null;
   credentials: TrustCredential[];
   as_promises: TrustPromise[];
   principles: TrustPrinciple[];
@@ -27,7 +29,7 @@ export interface TrustData {
   videoId: string | null;
 }
 
-const EMPTY: TrustData = { stats: [], statsNote: '', statsLead: '', credentials: [], as_promises: [], principles: [], videoId: null };
+const EMPTY: TrustData = { stats: [], statsNote: '', statsLead: '', statsTotal: null, credentials: [], as_promises: [], principles: [], videoId: null };
 
 const warn = (msg: string) => console.warn(`[trust.json 경고] ${msg}`);
 
@@ -143,5 +145,13 @@ export function loadTrust(): TrustData {
   const statsNote = isNonEmptyString(raw.stats_note) ? raw.stats_note.trim() : '';
   const statsLead = isNonEmptyString(raw.stats_lead) ? raw.stats_lead.trim() : '';
 
-  return { stats, statsNote, statsLead, credentials, as_promises, principles, videoId };
+  const t = raw.stats_total;
+  let statsTotal: TrustData['statsTotal'] = null;
+  if (t != null) {
+    if (typeof t.value === 'number' && isFinite(t.value) && isNonEmptyString(t.label)) {
+      statsTotal = { label: t.label.trim(), value: t.value, suffix: typeof t.suffix === 'string' ? t.suffix : '', prefix: isNonEmptyString(t.prefix) ? t.prefix.trim() : '' };
+    } else warn('stats_total — value(숫자)와 label이 필요합니다. 누적 숫자 줄을 건너뜁니다.');
+  }
+
+  return { stats, statsNote, statsLead, statsTotal, credentials, as_promises, principles, videoId };
 }
