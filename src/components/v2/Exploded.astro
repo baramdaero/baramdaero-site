@@ -11,8 +11,9 @@ interface Item {
   /** 탭 아래 한 줄 설명 (모델명·용량 등) */
   caption?: string;
   /** public/media/ 안의 제품 사진. 있으면 사진 칸 + 3D 2단으로 나온다.
-   *  caption 은 사진 아래 보이는 라벨 — 제조사를 여기서 밝힌다(삼성만 한다는 오해 방지) */
-  photos?: { src: string; alt: string; caption?: string }[];
+   *  caption 은 사진 아래 보이는 라벨 — 제조사를 여기서 밝힌다(삼성만 한다는 오해 방지).
+   *  width·height 는 사진 파일의 실제 픽셀 크기(img 속성으로 나간다 — 사진을 바꾸면 같이 고친다) */
+  photos?: { src: string; alt: string; caption?: string; width?: number; height?: number }[];
 }
 interface Props {
   eyebrow: string;
@@ -75,7 +76,7 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
             {items.map((it, k) => it.photos?.[0] && (
               <button type="button" class="ex-photo ex-switch" role="radio" data-ex-pick={k}
                 aria-checked={k === 0 ? 'true' : 'false'} tabindex={k === 0 ? 0 : -1}>
-                <img src={`/media/${it.photos[0].src}`} loading="lazy" decoding="async" alt="" />{/* 버튼 이름은 아래 제품명이 맡는다 */}
+                <img src={`/media/${it.photos[0].src}`} width={it.photos[0].width} height={it.photos[0].height} loading="lazy" decoding="async" alt="" />{/* 버튼 이름은 아래 제품명이 맡는다 */}
                 <span class="ex-switch__cap">{it.photos[0].caption ?? it.label}</span>
               </button>
             ))}
@@ -88,6 +89,7 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
                 {items[0].photos?.[k] && (
                   <Fragment>
                     <img id={`${id}-photo-${k}`} src={`/media/${items[0].photos[k].src}`}
+                         width={items[0].photos[k].width} height={items[0].photos[k].height}
                          loading="lazy" decoding="async" alt={items[0].photos[k].alt} />
                     <figcaption id={`${id}-cap-${k}`}>{items[0].photos[k].caption ?? ''}</figcaption>
                   </Fragment>
@@ -173,7 +175,7 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
       figs.forEach((fig, k) => {           // 사진 수가 다른 기종으로 바꿀 때 이전 사진이 남지 않게
         const ph = it.photos?.[k], img = photos.find((x) => x.id === `${id}-photo-${k}`);
         fig.hidden = !ph;
-        if (ph && img) { img.src = `/media/${ph.src}`; img.alt = ph.alt; }
+        if (ph && img) { img.src = `/media/${ph.src}`; img.alt = ph.alt; if (ph.width && ph.height) { img.width = ph.width; img.height = ph.height; } else { img.removeAttribute('width'); img.removeAttribute('height'); } }
         const cap = fig.querySelector('figcaption');
         if (cap) cap.textContent = ph?.caption ?? '';
       });
