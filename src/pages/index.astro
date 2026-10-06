@@ -83,10 +83,12 @@ const cta = home.ctaBand;
               </div>
             ))}
           </dl>
-          {/* 기준 줄 — 가운뎃점은 앞 줄 끝에 두고 날짜 조각만 한 덩어리로(둘째 줄이 '·'로 시작하지 않게) */}
-          {statsNote && <p>{statsNote.split(' · ').map((t, i) => i === 0 ? t : <Fragment> · <span class="home-stats__nb">{t}</span></Fragment>)}</p>}
+          {/* 기준 줄(좁은 화면) — 가운뎃점은 앞 줄 끝에 두고 날짜 조각만 한 덩어리로(둘째 줄이 '·'로 시작하지 않게) */}
+          {statsNote && <p class="home-stats__note">{statsNote.split(' · ').map((t, i) => i === 0 ? t : <Fragment> · <span class="home-stats__nb">{t}</span></Fragment>)}</p>}
         </div>
       )}
+      {/* 기준 줄(넓은 화면) — 제목 줄 오른쪽 끝, 글자 아래 끝을 제목과 맞춘다(2026-10-06 대표, 맞춤은 StandardsStory). 좁은 화면에는 자리가 없어 위의 숫자 아래 줄이 대신 나온다 */}
+      {stats.length >= 2 && statsNote && <p slot="title-aside" class="home-stats__asof">{statsNote}</p>}
       {/* 회사소개 판 아래 — 공개된 사례가 한 건이라도 있을 때만(빈 목록으로 보내지 않는다) */}
       {cases.some((e) => !e.data.sample) && (
         <div slot="after" class="home-cases-link"><ArrowLink href="/cases/" label="시공사례 보러가기" /></div>
@@ -222,6 +224,12 @@ const cta = home.ctaBand;
   .home-stats .home-stats__total dd { font-size: clamp(40px, 1.6rem + 3vw, 64px); line-height: 1.05; }
   .home-stats .home-stats__total dt { font-size: 15px; font-weight: 600; color: var(--br-ink); }
   .home-stats dl + p { margin-top: 8px; font-size: 13px; color: var(--br-ink-sub); }
+  /* 기준 줄은 화면 폭에 따라 한 곳에만 — 넓으면 제목 줄 오른쪽 끝(글씨는 숫자 아래 줄과 같다), 좁으면 숫자 아래 */
+  .home-stats__asof { display: none; font-size: 13px; color: var(--br-ink-sub); white-space: nowrap; }
+  @media (min-width: 768px) {
+    .home-stats__asof { display: block; }
+    .home-stats__note { display: none; }
+  }
   @media (min-width: 768px) { .home-stats__br { display: none; } } /* 라벨 줄바꿈 자리(trust.json \n)는 좁은 화면에서만 */
   @media (max-width: 359px) { .home-stats dd { font-size: 22px; } } /* 320~359px 에서 숫자가 칸을 넘지 않게 */
   .v2-svc-lead { background: transparent; padding-bottom: var(--head-gap); } /* 장 제목 → 첫 카드 = 제목 묶음 → 본 블록 */
