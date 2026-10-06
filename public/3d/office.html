@@ -569,6 +569,7 @@ const CUT = 1000; // cutaway height in the overview (visual choice, not a plan v
 // 건물 정면(남쪽)에서 조금 위: 옥상 실외기실이 파라펫 너머로 살짝 보이는 높이. 층 진입은 이 정면에서 그 층 유리로 빨려 들어간다
 const FRONT_DIR = new THREE.Vector3(0, Math.sin(14 * DEG), Math.cos(14 * DEG));
 const ROOF_DIR = new THREE.Vector3(0, Math.sin(38 * DEG), Math.cos(38 * DEG));
+const SAME_MS = 450;   // 카메라가 안 움직이는 전환(반자만 바뀐다)
 const ENTRY_MS = 1800; // 정면 ↔ 층 안(돌리 줌)
 // 같은 재질·그림자 설정끼리 도형을 한 덩어리로: 층마다 벽·가구·유리가 수백 개라 그대로면 한 화면에 draw call 이 1,800번을 넘는다
 function mergeStatic(group) {
@@ -676,11 +677,15 @@ const mat = {
   patchEdge: new THREE.LineBasicMaterial({ color: 0x004E64, transparent: true, opacity: .9 }),
   arrow: new THREE.MeshBasicMaterial({ color: 0x004E64, transparent: true, opacity: .75, depthWrite: false, side: THREE.DoubleSide }),
   hover: new THREE.MeshBasicMaterial({ color: EMBED ? 0x004E64 : 0x3C9DB3, transparent: true, opacity: EMBED ? .32 : .22, depthWrite: false, side: THREE.DoubleSide }) /* 히어로 임베드 14% 는 바닥 위에서 거의 안 보였다 — 가리키는 자리가 읽히게 32% (2026-09-23) */,
+  // 짚는 표시에서 벽·가구에 가려진 부분(옅게): 층 안에서는 벽 뒤 방도 눌리므로 어디를 짚었는지 비쳐 보이게 한다. 안 가려진 부분은 hover 가 그린다
+  hoverX: new THREE.MeshBasicMaterial({ color: EMBED ? 0x004E64 : 0x3C9DB3, transparent: true, opacity: EMBED ? .16 : .11, depthWrite: false, depthFunc: THREE.GreaterDepth, side: THREE.DoubleSide }),
   pick: new THREE.LineBasicMaterial({ color: EMBED ? 0x004E64 : 0x3C9DB3, transparent: true, opacity: .9, depthTest: false }),
   door: std(0xB9AD9C, { roughness: .6 }),
   slab: std(0x6E7377, { roughness: .95 }),   // 노출 천장: 도장한 콘크리트 슬래브
+  // 천장 속 뒤판(위층 슬래브 밑면): 방 시점에서 반투명 반자 너머로 하늘이 아니라 콘크리트 면이 보이고, 그 앞의 배관이 읽힌다. 빛을 안 받는 면이라 고정색
+  plenum: new THREE.MeshBasicMaterial({ color: 0xD6D9D9, transparent: true, opacity: 0 }),
 };
-const GRID_OVER = new THREE.Color(0x5E6D73), GRID_ROOM = new THREE.Color(0xC2C7C9);
+const GRID_OVER = new THREE.Color(0x5E6D73), GRID_ROOM = new THREE.Color(0xA4ACB0); // 반투명 반자 위에서 예전(불투명 반자 + 0xC2C7C9)에 가깝게 보이는 색
 /* ---- 가구 재질·도구: furniture.js 의 형상들이 쓰는 것 (색은 조사 사진에서 고른 디자인 선택) ---- */
 const FURN_MATS = {
   deskTop: std(0xE8E6E1, { roughness: .55 }), wood: std(0xB68A5F, { roughness: .6 }),
@@ -1598,6 +1603,7 @@ function build1Way(u) {
 const PIPE = EMBED // 사이트 틸 토큰. 반지름은 빌딩 전체 보기에서 읽히는 굵기
   ? { refrigerant_main: [0x004E64, .06], refrigerant_branch: [0x004E64, .045], refrigerant: [0x004E64, .05] }
   : { refrigerant_main: [0x1F6F82, .06], refrigerant_branch: [0x2E7F91, .045], refrigerant: [0x2E7F91, .05] };
+const PIPE_FINE = .45; // 층 안 배관 굵기 = 전경용 굵기 × 이 값
 const PIPE_MATS = {};
 const pipeMat = color => (PIPE_MATS[color] ??= new THREE.MeshStandardMaterial({ color, roughness: .5, emissive: color, emissiveIntensity: .35 }));
 
@@ -1606,7 +1612,7 @@ function buildSpace(key) {
   const P = DATA[key], C = CHECKS[key], F0 = FLOOR[key], zOff = mm(F0.z_mm);
   const root = new THREE.Group(); root.position.y = zOff; scene.add(root); // 층 안 좌표는 그대로, 묶음째 층 높이로
   const g = {};
-  for (const k of ['floor', 'walls', 'win', 'ceil', 'grid', 'ac', 'pipes', 'furn']) { g[k] = new THREE.Group(); root.add(g[k]); }
+  for (const k of ['floor', 'walls', 'win', 'ceil', 'grid', 'ac', 'pipes', 'pipesFine', 'furn']) { g[k] = new THREE.Group(); root.add(g[k]); }
   const H_CEIL = P.ceiling.height_mm, H_WALL = H_CEIL + P.ceiling.void_mm;
   const [ix0, iy0, ix1, iy1] = P.envelope.interior_rect;
   const center = V((ix0 + ix1) / 2, (iy0 + iy1) / 2, 0);
@@ -1646,6 +1652,7 @@ function buildSpace(key) {
   for (const z of P.zones) {
     const zg = new THREE.ShapeGeometry(shapeOf(z.polygon)); zg.rotateX(-Math.PI / 2);
     const h = new THREE.Mesh(zg, mat.hover); h.position.y = .006; h.visible = false; h.renderOrder = 2; h.userData.zone = z.id;
+    { const x = new THREE.Mesh(zg, mat.hoverX); x.renderOrder = 2; x.userData.ghost = 1; h.add(x); } // 가려진 부분(h 와 같이 켜진다. userData: 병합에서 빠진다)
     g.floor.add(h); hoverMeshes[z.id] = h; pickMeshes.push(h);
   }
 
@@ -1724,6 +1731,10 @@ function buildSpace(key) {
     const m = new THREE.Mesh(cg, exposed ? mat.slab : mat.ceil); m.position.y = mm(exposed ? H_WALL : r.ceiling_mm); m.receiveShadow = true;
     g.ceil.add(m);
   }
+  { // 천장 속 뒤판 — 층 입구(반자를 걷은 상태)에서는 g.ceil 과 함께 숨고, 방 시점으로 들어가며 반자와 같이 나타난다(setBlend)
+    const tp = new THREE.PlaneGeometry(mm(ix1 - ix0) + 1, mm(iy1 - iy0) + 1); tp.rotateX(Math.PI / 2);
+    const t = new THREE.Mesh(tp, mat.plenum); t.position.copy(V((ix0 + ix1) / 2, (iy0 + iy1) / 2, H_WALL + 30)); t.renderOrder = -1; g.ceil.add(t); // 반투명 반자보다 늘 먼저 그린다(순서가 시점마다 달라 도착 프레임에 천장 밝기가 튀었다)
+  }
   {
     const G = P.ceiling.grid, pts = [];
     for (const r of P.rooms) {
@@ -1785,6 +1796,7 @@ function buildSpace(key) {
     const h = new THREE.Mesh(pk, mat.hover);
     h.position.copy(V(u.center[0], u.center[1], u.mount_z_mm - 45));
     h.visible = false; h.renderOrder = 3; h.userData.unit = u.id;
+    { const x = new THREE.Mesh(pk, mat.hoverX); x.renderOrder = 3; x.userData.ghost = 1; h.add(x); }
     g.ac.add(h); unitPick.push(h); unitHover[u.id] = h;
     // 방 안에서 '지금 이 실내기' 를 가리키는 링 (여러 대가 한 컷에 잡히는 와이드에서 필요)
     // 판넬 사진이 보이게 테두리만 그린다(반투명 판을 얹으면 제품 면이 파랗게 덮인다 — 2026-09-18)
@@ -1807,6 +1819,9 @@ function buildSpace(key) {
       path.add(new THREE.LineCurve3(a, b)); len += a.distanceTo(b);
     }
     g.pipes.add(new THREE.Mesh(new THREE.TubeGeometry(path, Math.max(8, Math.ceil(len / .2)), r, 6, false), pipeMat(color)));
+    // 층 안에서 쓰는 가는 관: 굵은 관(지름 100mm)은 건물 전경용이라 가까이서는 호스 다발처럼 보였다(2026-10-06 대표 '징그럽다').
+    // 보온한 냉매배관 한 조의 실제 굵기에 가깝게(지름 약 45mm)
+    g.pipesFine.add(new THREE.Mesh(new THREE.TubeGeometry(path, Math.max(8, Math.ceil(len / .2)), r * PIPE_FINE, 6, false), pipeMat(color)));
   }
 
   /* 가구·장비: FURNITURE.md 의 type 마다 전용 형상(furniture.js). 치수·좌석은 층 데이터 값 그대로.
@@ -1875,9 +1890,9 @@ function buildSpace(key) {
   const aim = center.clone().setY(zOff + .9);
   const s = { key, P, C, root, g, center, aim, zOff, boxPts, pickMeshes, hoverMeshes, labels, patchObjs, slab, units, unitsByZone, unitsById,
               unitPick, unitHover, unitMark, allPick: [...unitPick, ...pickMeshes], names, H_CEIL, size: [ix1 - ix0, iy1 - iy0], half: Math.max(ix1 - ix0, iy1 - iy0) / 2000 + 3 };
-  g.pipes.visible = state.pipes; g.grid.visible = state.grid;
+  g.pipes.visible = state.pipes; g.pipesFine.visible = false; g.grid.visible = state.grid;
   s.buildFurn = () => { if (s.furnDone) return; s.furnDone = true; buildFurn(); };
-  for (const k of ['floor', 'walls', 'win', 'ceil', 'grid', 'pipes']) mergeStatic(g[k]);
+  for (const k of ['floor', 'walls', 'win', 'ceil', 'grid', 'pipes', 'pipesFine']) mergeStatic(g[k]);
   g.ac.children.filter(c => c.isGroup).forEach(mergeStatic);
   return s;
 }
@@ -2532,7 +2547,10 @@ function configControls(kind, pose) {
 function flyTo(pose, kTo, turn = false) {
   // 방→방 전환 중(dip)에는 벽이 잠깐 걷혀 k 가 .5 아래로 내려가도 방에서 출발한 것으로 본다
   const prev = tween, fromRoom = state.k > .5 || !!prev?.dip, toRoom = kTo > .5, p0 = camera.position.clone(), d0 = camera.getWorldDirection(new THREE.Vector3());
-  tween = { t0: performance.now(), p0, f0: camera.fov, s0: state.tanP, k0: state.k, pose, kTo, dip: fromRoom && toRoom, cl0: state.ceil, cl1: ceilTarget() };
+  // same: 도착 자세가 지금과 같다(층 입구와 시점이 같은 실내기, 구역 → 그 방 실내기, 그 방 → 층 전체).
+  // 카메라는 그대로인데 벽만 1.4초 걷혔다 덮이던 것 — dip 을 빼고 짧게 끝낸다(반자·이름·표시 링만 바뀐다)
+  const same = p0.distanceTo(pose.pos) < .05 && d0.angleTo(pose.tgt.clone().sub(pose.pos)) < DEG;
+  tween = { t0: performance.now(), p0, f0: camera.fov, s0: state.tanP, k0: state.k, pose, kTo, dip: fromRoom && toRoom && !same, cl0: state.ceil, cl1: ceilTarget() };
   // 절단 목표는 전환마다 지금 단계에서 잡는다: 층 이동 중에 구역·실내기를 눌러도 절단이 중간에 멈추지 않는다
   // 시선을 방위각·앙각으로 고르게 돌리게 하고, 피크 각속도 기준의 시간을 돌려준다
   const turnLook = () => {
@@ -2544,6 +2562,7 @@ function flyTo(pose, kTo, turn = false) {
   if (fromRoom && toRoom) { // 시점→시점: 가까이서 크게 돈다
     tween.arc = Math.min(3, p0.distanceTo(pose.pos) * .25);
     dur = turnLook();
+    if (same) dur = SAME_MS;
   } else {
     // 시선은 과녁 점을 따라간다(건물이 화면에 남는다). 다만 전환 도중에 새 전환이 오면(인트로 중 목록·탭 클릭 등) 과녁 점이 카메라 옆을 스쳐
     // 초당 천 도 가까이 돌 수 있어 방위각·앙각으로 돌린다(검토 2026-09-17)
@@ -2769,8 +2788,10 @@ function entries() {
     ? { id: `${S.key}/${g[0].id}`, name: entryName(g[0]), sub: MODEL_KO[g[0].model] || g[0].model }
     : { id: `${S.key}/${g[0].id}`, name: groupName(g), sub: modelSummary(g) })];
 }
-// 반자 목표: 구역·실내기 시점만 덮는다(층 입구·건물·옥상은 걷는다)
-function ceilTarget() { return state.zone ? 1 : 0; }
+// 반자 목표: 층 입구·건물·옥상은 걷고, 구역·실내기 시점은 반투명으로 덮는다 — 방 안에서도 천장 속 배관이 비쳐 보이게
+// (2026-10-06 대표: '방 안에 들어가면 바로 배관들이 천장에 보이면 좋겠다, 에어컨 회사인 만큼'. 그 전에는 1 = 불투명이라 방에 들어가면 배관이 사라졌다)
+const CEIL_ROOM = .5;
+function ceilTarget() { return state.zone ? CEIL_ROOM : 0; }
 function setBlend(k) {
   state.k = k;
   const solid = k > .999;
@@ -2780,13 +2801,20 @@ function setBlend(k) {
   }
   // 층 입구에서는 반자(천장판)를 걷어 천장 속 배관·실내기 본체가 계속 보이게 둔다. 구역·실내기 시점으로 들어갈 때만 반자를 덮는다
   // (2026-09-23 대표: 상가·오피스는 배관이 들어가는 동안만 잠깐 보였다. 아파트는 평면에서 이미 보여 그대로)
-  const c = Math.min(k, state.ceil), cSolid = c > .999, open = state.ceil < .5;
+  const c = Math.min(k, state.ceil), cSolid = c > .999, bare = state.ceil < .2; // bare: 반자를 걷은 상태(층 입구)
   mat.ceil.opacity = c;
-  if (mat.ceil.transparent === cSolid) { mat.ceil.transparent = !cSolid; mat.ceil.needsUpdate = true; }
+  if (mat.ceil.transparent === cSolid || mat.ceil.depthWrite !== cSolid) { mat.ceil.transparent = !cSolid; mat.ceil.depthWrite = cSolid; mat.ceil.needsUpdate = true; } // 반투명일 때는 깊이를 안 써야 뒤(천장 속)가 가려지지 않는다
+  const pl = clamp(c / CEIL_ROOM, 0, 1) * clamp((k - .5) / .3, 0, 1), plSolid = pl > .999; mat.plenum.opacity = pl; // 벽이 걷히는 동안(k ≤ .5)은 뒤판도 걷는다: 호 비행에서 카메라가 뒤판을 지난다
+  if (mat.plenum.transparent === plSolid) { mat.plenum.transparent = !plSolid; mat.plenum.needsUpdate = true; }
   S.g.ceil.visible = c > .01;
-  if (state.level === 'floor') S.g.grid.visible = state.grid && !open; // 격자·조명은 반자에 붙어 있다
+  if (state.level === 'floor') S.g.grid.visible = state.grid && !bare; // 격자·조명은 반자에 붙어 있다
   // 천장 위(배관·실내기 본체)는 시점으로 들어갈수록 숨긴다: 위에서 수직으로 내려올 때 옆 실내기 본체 윗면이 화면을 덮는다. 시점 안에서는 원래 천장에 가려 안 보인다
-  S.g.pipes.visible = state.pipes && (k <= .5 || open); mat.acBody.visible = k <= .5 || open;
+  // 반자가 불투명(1)일 때만 가려진다. 층 안(k > .5)에서는 가는 관으로 바꾼다
+  // dip(층 안 이동) 동안에도 가는 관을 유지하고, 건물로 나갈 때(dolly out)는 벽이 걷히는 k .5 에서 굵은 관으로 바꾼다
+  // inVoid: 방→방 호 비행에서 카메라가 천장 속을 지나는 동안 — 코앞의 관·본체가 화면을 덮으므로 걷는다
+  const inVoid = !!tween?.arc && camera.position.y - S.zOff > mm(S.H_CEIL) - .3;
+  const above = (k <= .5 || state.ceil < .999) && !inVoid, fine = (state.level === 'floor' || tween?.dolly === 'out') && (k > .5 || !!tween?.dip);
+  S.g.pipes.visible = state.pipes && above && !fine; S.g.pipesFine.visible = state.pipes && above && fine; mat.acBody.visible = above;
   mat.grid.opacity = lerp(.32, .95, k); mat.grid.color.lerpColors(GRID_OVER, GRID_ROOM, k);
   mat.patch.opacity = .6 * (1 - k); mat.patchEdge.opacity = .9 * (1 - k); mat.arrow.opacity = .75 * (1 - k);
   S.patchObjs.forEach(o => { o.visible = k < .99; });
@@ -2816,15 +2844,18 @@ function pick(e) {
   const r = canvas.getBoundingClientRect();
   ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
   ray.setFromCamera(ndc, camera);
-  const list = state.level === 'building' ? BLD.pick : state.level === 'floor' && !state.zone ? S.allPick : [];
+  const list = state.level === 'building' ? BLD.pick : state.level === 'floor' ? S.allPick : [];
   const d = ray.intersectObjects(list, false)[0]?.object.userData; // units sit above the floor, so they win on distance
-  return d ? (d.unit || d.zone || d.hid || null) : null;
+  const id = d ? (d.unit || d.zone || d.hid || null) : null;
+  // 방 시점: 지금 보고 있는 실내기(같은 시점 묶음)와 지금 서 있는 구역의 바닥은 누를 대상이 아니다
+  if (id && state.zone && (S.unitsById[id] ? !!state.unit && groupOf(state.unit).some(u => u.id === id) : id === state.zone)) return null;
+  return id;
 }
 function setHover(id) {
   if (state.hover === id) return;
   state.hover = id;
   for (const s of Object.values(spaces)) {
-    const live = s === S && state.level === 'floor' && !state.zone; // 층 입구에서 천장 에어컨·바닥 구역을 짚어 준다
+    const live = s === S && state.level === 'floor'; // 층 안(입구·방 시점 모두)에서 천장 에어컨·바닥 구역을 짚어 준다
     for (const [zid, m] of Object.entries(s.hoverMeshes)) m.visible = live && zid === id;
     const hg = live && id && S.unitsById[id] ? groupOf(id).map(u => u.id) : [id]; // 같은 시점 묶음은 함께 짚는다
     for (const [uid, m] of Object.entries(s.unitHover)) m.visible = live && hg.includes(uid);
@@ -2838,7 +2869,7 @@ function setHover(id) {
   canvas.style.cursor = id ? 'pointer' : '';
   invalidate();
 }
-const pickable = () => state.level === 'building' || (state.level === 'floor' && !state.zone);
+const pickable = () => state.level === 'building' || state.level === 'floor';
 canvas.addEventListener('pointermove', e => { pointer = e; if (pickable() && !tween && !e.buttons) setHover(pick(e)); });
 canvas.addEventListener('pointerleave', () => { pointer = null; setHover(null); });
 canvas.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY, t: performance.now() }; });
@@ -2854,7 +2885,7 @@ canvas.addEventListener('pointerup', e => {
 });
 $('btnHome').addEventListener('click', goHome);
 $('btnPipes').addEventListener('click', () => {
-  state.pipes = !state.pipes; Object.values(spaces).forEach(s => { s.g.pipes.visible = state.pipes && (s !== S || state.k <= .5 || state.ceil < .5); }); invalidate();
+  state.pipes = !state.pipes; Object.values(spaces).forEach(s => { if (s !== S) s.g.pipes.visible = state.pipes; }); if (S) setBlend(state.k); invalidate();
   $('btnPipes').setAttribute('aria-pressed', String(state.pipes));
 });
 $('btnGrid').addEventListener('click', () => {

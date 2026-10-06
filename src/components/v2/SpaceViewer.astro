@@ -59,11 +59,11 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
   for (const root of document.querySelectorAll<HTMLElement>('[data-space3d]')) {
     const stage = root.querySelector<HTMLElement>('.space3d__stage')!;
     const frame = stage.querySelector('iframe')!;
-    // 방(아파트)·층(건물) 안이면 '전체 보기'를 띄운다. 뷰어가 알려 주는 bd3d 메시지로만 판단한다
+    // 방(아파트)·층(건물) 안이면 되돌아가기 판을 띄운다. 뷰어가 알려 주는 bd3d 메시지로만 판단한다
     const back = stage.querySelector<HTMLButtonElement>('.space3d__back')!;
     const backT = back.querySelector('span')!, lv = stage.querySelector<HTMLElement>('.space3d__lv')!;
     const invite = root.querySelector<HTMLButtonElement>('.space3d__invite');
-    let inRoom = false, level = '';
+    let inRoom = false, level = '', room = '', bld = false;   // room: 지금 방·실내기 이름, bld: 건물 뷰어인가
     let first: { type: string; id: string } | null = null;   // 안내 버튼이 들어갈 첫 공간
     // 무대가 화면 아래 고정 문의 버튼(76px) 위로 올라온 뒤에만 안내를 켠다 — 첫 화면 접힘선에서 버튼이 문의 버튼 밑에 깔렸다(10-06 검증)
     let seen = !('IntersectionObserver' in window);
@@ -76,19 +76,22 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
       const fromBack = document.activeElement === back;
       invite?.toggleAttribute('data-on', !!first && !deep && seen);
       if (!deep && fromBack && first && seen) invite?.focus({ preventScroll: true });   // 나올 때도 — 되돌아가기 버튼이 숨으면 포커스가 body 로 빠진다
-      if (inLevel) lv.textContent = level;               // 나갈 때는 지우지 않는다 — 사라지는 동안 글자가 먼저 비지 않게
+      // 건물은 한 단계씩 나온다: 방·실내기 안에서는 '층 전체'(그 층 입구로), 층 입구에서는 '건물 전체'.
+      // 층 안에서 방을 눌러 옮겨 다니다가 층 전체를 다시 볼 길이 없었다(2026-10-06 대표: '방 이동이 안 된다')
+      if (bld && deep) backT.textContent = inRoom ? '층 전체' : '건물 전체';
+      if (bld && deep) lv.textContent = inRoom && room ? room : level;   // 나갈 때는 지우지 않는다 — 사라지는 동안 글자가 먼저 비지 않게
     };
     addEventListener('message', (e) => {
       const m = e.data;
       if (!m || m.ns !== 'bd3d' || e.source !== frame.contentWindow) return;
       if (m.type === 'ready') {
-        inRoom = false; level = ''; lv.textContent = ''; backT.textContent = m.viewer === 'house' ? '전체 보기' : '건물 전체';
+        inRoom = false; level = ''; room = ''; bld = m.viewer !== 'house'; lv.textContent = ''; backT.textContent = bld ? '건물 전체' : '전체 보기';
         // 아파트 = 첫 방(거실), 건물 = 1층(히어로가 건물을 고르면 1층부터 보여 주는 것과 같다)
         const es: { id: string; name: string }[] = m.entries || [];
         const e = m.viewer === 'house' ? es[0] : es.find((x) => /^floor:/.test(x.id) && x.name === '1층') || es.find((x) => /^floor:/.test(x.id));
         first = e ? { type: m.viewer === 'house' ? 'goRoom' : 'goUnit', id: e.id } : null;
       }
-      else if (m.type === 'enter') inRoom = true;
+      else if (m.type === 'enter') { inRoom = true; room = m.title || ''; }
       else if (m.type === 'home') inRoom = false;                     // 건물: 실내기 → 그 층 입구(층 안은 그대로)
       else if (m.type === 'space') { level = m.title || ''; inRoom = false; }
       sync();
@@ -99,9 +102,8 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
     }
     invite?.addEventListener('click', () => { if (first) frame.contentWindow?.postMessage({ ns: 'bd3d', ...first }, '*'); });
     back.addEventListener('click', () => {
-      let house = frame.src.includes('/house.html');
-      try { house = frame.contentWindow!.location.pathname.includes('/house.html'); } catch {}   // 탭 전환은 location.replace 라 src 속성이 그대로다
-      frame.contentWindow?.postMessage(house ? { ns: 'bd3d', type: 'home' } : { ns: 'bd3d', type: 'goUnit', id: 'building' }, '*');
+      // 아파트: 방 → 전체. 건물: 방·실내기 → 그 층 입구(home), 층 입구 → 건물 전체
+      frame.contentWindow?.postMessage(!bld || inRoom ? { ns: 'bd3d', type: 'home' } : { ns: 'bd3d', type: 'goUnit', id: 'building' }, '*');
     });
     root.querySelectorAll<HTMLButtonElement>('.space3d__tab').forEach((tab, _, all) => {
       tab.addEventListener('click', () => {
