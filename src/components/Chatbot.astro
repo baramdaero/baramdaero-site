@@ -1012,17 +1012,28 @@ const TEASER = [
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   });
 
+  // 여닫는 모션이 끝났을 때 — 모션 표시(.is-moving)를 떼고, 닫힌 것이면 숨긴다.
+  // 끝 이벤트로 맞춘다(타이머로 재면 시작이 늦은 기기에서 닫힘의 끝이 잘린다). 이벤트가 안 오는 경우(가려진 탭 등)에만 타이머가 마무리한다
   let hideTimer: ReturnType<typeof setTimeout>;
+  const settle = () => {
+    clearTimeout(hideTimer);
+    panel.classList.remove('is-moving');
+    if (!openState) panel.hidden = true;
+  };
+  panel.addEventListener('transitionend', (e) => { if (e.target === panel && !panel.getAnimations?.().length) settle(); }); // 투명도·transform 둘 다 끝난 뒤
+  panel.addEventListener('animationend', (e) => { if (e.target === panel) settle(); });
   // 전체화면 시트가 떠 있는 동안 뒤 페이지 스크롤을 막는다. 스크롤 위치는 복원한다
   let lockedY = 0;
   function lockScroll(on: boolean) {
     const b = document.body;
     if (on) {
+      if (b.style.position === 'fixed') return; // 열린 채 다른 문의 버튼으로 다시 열어도 처음 위치를 지킨다
       lockedY = window.scrollY;
       b.style.position = 'fixed'; b.style.top = `-${lockedY}px`; b.style.width = '100%';
     } else if (b.style.position === 'fixed') {
       b.style.position = ''; b.style.top = ''; b.style.width = '';
-      window.scrollTo(0, lockedY);
+      // 한 번에 — html 의 scroll-behavior: smooth 를 타면 닫히는 창 뒤로 페이지가 맨 위에서부터 다시 내려온다
+      window.scrollTo({ top: lockedY, behavior: 'instant' });
     }
   }
 
@@ -1034,10 +1045,11 @@ const TEASER = [
     log.innerHTML = '';
     disarmInput();
     hideTeaser();
-    clearTimeout(hideTimer);   // 닫는 중에 다시 열면 그 타이머가 방금 연 패널을 숨긴다
+    clearTimeout(hideTimer);
     panel.hidden = false;
     // rAF 대신 동기 리플로우 — 백그라운드 탭(rAF 정지)에서도 열림 상태가 즉시 적용된다
     void panel.offsetHeight;
+    if (!openState) panel.classList.add('is-moving'); // 모션은 여닫은 직후에만(CSS .is-moving)
     panel.classList.add('is-open');
     lockScroll(true);        // 전체화면 시트 뒤로 페이지가 밀려 내려가던 것
     root.classList.add('is-open');
@@ -1050,12 +1062,15 @@ const TEASER = [
   }
 
   function close() {
+    if (!openState) return; // 닫기가 두 번 불려도(연타) 한 번만
+    panel.classList.add('is-moving');
     panel.classList.remove('is-open');
     root.classList.remove('is-open');
     fab.setAttribute('aria-expanded', 'false');
     fab.setAttribute('aria-label', '문의 챗봇 열기');
     openState = false;
-    hideTimer = setTimeout(() => { panel.hidden = true; }, 220);
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(settle, 1000); // 닫힘 모션(--dur-spring-out 320ms)의 끝 이벤트가 안 올 때의 마무리 — 시작이 늦어도 자르지 않게 넉넉히
     lockScroll(false);
     lastFocus?.focus();
   }
@@ -1173,9 +1188,9 @@ const TEASER = [
     justify-content: center; /* 좁은 화면 원형(패딩 0)에서 아이콘이 왼쪽에 붙던 것 */
     gap: 8px;
     box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent), 0 2px 6px rgba(0, 41, 58, 0.18), 0 10px 26px rgba(0, 41, 58, 0.28);
-    transition: background-color var(--dur-color) ease, transform 200ms var(--ease-out);
+    transition: background-color var(--dur-color) ease, transform var(--dur-spring) var(--ease-spring);
   }
-  .chat__fab:active { transform: scale(0.96); }
+  .chat__fab:active { transform: scale(0.96); transition-duration: var(--dur-color), calc(var(--dur-color) / 2); transition-timing-function: ease, ease-out; }
   @media (hover: hover) and (pointer: fine) {
     .chat__fab:hover { background: var(--br-teal); transform: translateY(-2px); } /* 문의 버튼과 같은 떠오름 — 빛 테두리(specular)는 뺐다(2026-10-02 '밤티') */
     .chat__fab:hover:active { transform: scale(0.96); }
@@ -1266,10 +1281,13 @@ const TEASER = [
     overflow: hidden;
     isolation: isolate;
     opacity: 0;
-    transform: translateY(8px);
-    transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+    transform: translateY(18px) scale(0.93);
+    transform-origin: bottom right; /* 런처(오른쪽 아래)에서 피어난다 */
+    /* 닫힘 — 여는 스프링의 짝: 살짝 부풀었다가 런처 쪽으로 빠진다. 투명도는 부푼 뒤에 걷힌다(다 걷히면 스크립트가 hidden 을 건다) */
+    transition: opacity calc(var(--dur-spring-out) * 0.55) ease-in calc(var(--dur-spring-out) * 0.45), transform var(--dur-spring-out) var(--ease-spring-out);
   }
-  .chat__panel.is-open { opacity: 1; transform: translateY(0); }
+  /* 열림 — 통 하고 넘었다 멎는다(2026-10-06 대표: '딱 열리지 않고 뚜~웅'). 스프링은 transform 에만, 투명도는 따로(DESIGN.md §4) */
+  .chat__panel.is-open { opacity: 1; transform: none; transition: opacity var(--dur-ui) ease, transform var(--dur-spring) var(--ease-spring); }
   /* display:flex 가 UA [hidden] 을 덮어 닫힌 패널(opacity 0)이 우측 380×640 클릭을 가로채던 버그 — 로컬 가드 */
   .chat__panel[hidden] { display: none; }
   /* 패널 내부 앰비언트(2026-09-03): 말풍선·칩이 반투명이어도 뒤에 형체가 없으면 유리로 안 읽힌다(모바일은 전체화면이라 특히).
@@ -1602,22 +1620,41 @@ const TEASER = [
   }
 
   @media (max-width: 640px) {
+    /* 전체 화면 시트 — 아래에서 올라와 위로 14px 넘었다 내려앉고, 닫힐 때는 10px 들썩였다 내려간다
+       (2026-10-06 대표: '견적 문의를 눌러도 그렇게'). 이동 거리가 화면 높이라 스프링 곡선을 그대로 쓰면 150px 넘게 넘는다 —
+       그래서 넘는 양을 px 로 정한 키프레임을 쓴다. 시트는 아래로 24px 더 길어서(안쪽 여백이 받쳐 내용 자리는 화면 높이 그대로)
+       넘는 동안 밑에 뒤 페이지가 비치지 않는다. 아래쪽으로는 넘지 않는다(위에 뒤 페이지가 비친다).
+       높이는 위·아래 위치로 잡는다(height 를 dvh 로 주면 dvh 를 모르는 브라우저에서 시트가 내용 높이로 줄어든다) */
     .chat__panel {
-      inset: 0;
+      inset: 0 0 -24px;
       width: 100%;
-      height: 100dvh;
+      height: auto;
+      padding-bottom: 24px;
       border-radius: 0;
       border: 0;
-      bottom: 0;
+      opacity: 1;
       transform: translateY(100%);
-      transition: transform 260ms var(--ease-out), opacity 260ms var(--ease-out);
+      transition: none;
     }
-    .chat__panel.is-open { transform: translateY(0); }
+    .chat__panel.is-open { transform: none; transition: none; }
+    /* 모션은 여닫은 직후에만(.is-moving — 스크립트가 붙였다 끝나면 뗀다). 열린 채 화면이 좁아질 때 시트가 다시 올라오지 않게 */
+    .chat__panel.is-moving { animation: chat-sheet-out var(--dur-spring-out) both; }
+    .chat__panel.is-moving.is-open { animation: chat-sheet-in var(--dur-spring) both; }
+    @keyframes chat-sheet-in {
+      from { transform: translateY(100%); animation-timing-function: cubic-bezier(0.2, 0.85, 0.3, 1); }
+      58% { transform: translateY(-14px); animation-timing-function: cubic-bezier(0.4, 0, 0.5, 1); }
+      to { transform: none; }
+    }
+    @keyframes chat-sheet-out {
+      from { transform: none; animation-timing-function: cubic-bezier(0.3, 0, 0.5, 1); }
+      34% { transform: translateY(-10px); animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.5); }
+      to { transform: translateY(100%); }
+    }
     .chat__head { padding-top: calc(14px + env(safe-area-inset-top, 0px)); }
     /* iOS 자동 확대 방지 — 입력 폰트 16px 이상 */
     .chat__input { font-size: 16px; }
     /* 풀스크린 시트가 런처를 덮는다 — 닫기는 헤더 X */
     .chat.is-open .chat__fab { opacity: 0; pointer-events: none; }
-    .chat__fab { transition: background-color var(--dur-color) ease, transform 200ms var(--ease-out), opacity 200ms ease; }
+    .chat__fab { transition: background-color var(--dur-color) ease, transform var(--dur-spring) var(--ease-spring), opacity 200ms ease; }
   }
 </style>

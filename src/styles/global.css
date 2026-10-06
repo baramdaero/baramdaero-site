@@ -23,7 +23,14 @@
   --dur-color: 200ms;
   --dur-ui: 240ms;
   --dur-reveal: 600ms;
-  --dur-expand: 400ms;   /* 펼침(details) — scripts/expand.ts 와 같은 값 */
+  --dur-expand: 520ms;   /* 펼침(details) 여는 시간 — scripts/expand.ts 와 같은 값 */
+  /* 스프링 — 누르면 열리는 것(헤더 메뉴·채팅창)이 통 하고 넘었다 돌아오며 멎는다(2026-10-06, DESIGN.md §4). transform 에만 쓴다.
+     여기 값은 linear() 를 모르는 브라우저용(한 번 넘는 곡선) — 아는 브라우저는 파일 맨 아래 @supports 의 진짜 스프링을 쓴다 */
+  --ease-spring: cubic-bezier(0.34, 1.6, 0.64, 1);
+  --dur-spring: 600ms;
+  /* 닫힘용 — 나가기 전에 반대쪽으로 살짝 부풀었다(16%) 빠진다. 여는 스프링의 짝 */
+  --ease-spring-out: cubic-bezier(0.4, 0, 0.7, -0.75);
+  --dur-spring-out: 320ms;
 
   --maxw: 1120px;
   --radius: 12px;
@@ -245,9 +252,9 @@ button {
   font-size: 17px;
   letter-spacing: -0.01em;
   border-radius: var(--radius-btn);
-  transition: background-color var(--dur-color) ease, color var(--dur-color) ease, transform var(--dur-ui) var(--ease-out);
+  /* 떼면 스프링으로 돌아온다(2026-10-06). 누르는 쪽은 아래 hover 규칙 뒤의 :active 에서 빠르게 */
+  transition: background-color var(--dur-color) ease, color var(--dur-color) ease, transform var(--dur-spring) var(--ease-spring);
 }
-.bd-cta:active:not(:disabled) { transform: scale(0.96); }
 @media (hover: hover) and (pointer: fine) {
   .bd-cta:hover { background: var(--br-ice); color: var(--br-teal); }
 }
@@ -268,6 +275,8 @@ button {
   .br-cta-arrow path { transition: none; }
   .bd-cta:hover:not(:disabled) { transform: none; }
 }
+/* 누르면 빠르게 눌린다 — hover 의 떠오름과 특이도가 같아 그 뒤에 둔다(앞에 두면 마우스로 눌러도 떠 있는 채다) */
+.bd-cta:active:not(:disabled) { transform: scale(0.96); transition-duration: var(--dur-color), var(--dur-color), calc(var(--dur-color) / 2); transition-timing-function: ease, ease, ease-out; }
 
 /* secondary — 2026-10-02 대표: 알약·동그라미 화살표는 'AI 티' → 문의 버튼과 같은 사각(44px 높이라 모서리 10px)과 같은 화살표
    (hover 에 선이 나오고 꺾쇠가 민다, .br-cta-arrow 와 같은 모양). 마크업의 <span aria-hidden="true">→</span> 은 그대로 두고
@@ -290,7 +299,7 @@ button {
   text-decoration: none;
   text-align: left;
   cursor: pointer;
-  transition: background-color var(--dur-color) ease, transform var(--dur-ui) var(--ease-out);
+  transition: background-color var(--dur-color) ease, transform var(--dur-spring) var(--ease-spring);
 }
 .br-pill > [aria-hidden="true"]:last-child {
   position: relative;
@@ -309,7 +318,7 @@ button {
   border-top: 2px solid currentColor; border-right: 2px solid currentColor;
   transform: rotate(45deg); transition: transform var(--dur-ui) var(--ease-out);
 }
-.br-pill:active { transform: scale(0.96); }
+.br-pill:active { transform: scale(0.96); transition-duration: var(--dur-color), calc(var(--dur-color) / 2); transition-timing-function: ease, ease-out; }
 .br-pill:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 @media (hover: hover) and (pointer: fine) {
   .br-pill:hover { background: var(--pill-bg-hover, var(--tint-strong)); color: var(--pill-fg-hover, var(--pill-fg, var(--br-teal))); }
@@ -367,6 +376,7 @@ html.br-js .br-reveal.br-h { transform: none; }
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0s !important; /* 길이만 줄이면 지연이 걸린 전환(닫힘의 투명도 등)은 그만큼 늦게 바뀐다 */
   }
 }
 
@@ -665,3 +675,9 @@ html.br-js .br-reveal.br-h { transform: none; }
   src: url('/fonts/GmarketSans-Bold.subset.woff2') format('woff2');
 }
 h1, h2 { font-family: 'GmarketSans', var(--sans); }
+
+/* 스프링 곡선 — 감쇠비 0.47(목표를 18.8% 넘었다가 3.5% 모자라게 한 번 더 출렁이고 멎는다, 32% 지점에서 정점).
+   더 통통 튀게는 감쇠비를 낮춰, 더 차분하게는 높여 다시 뽑는다(0.55 = 12.6%, 0.6 = 9.5%) */
+@supports (transition-timing-function: linear(0, 1)) {
+  :root { --ease-spring: linear(0, 0.087, 0.293, 0.543, 0.781, 0.973, 1.102, 1.171, 1.188, 1.168, 1.128, 1.081, 1.037, 1.002, 0.979, 0.967, 0.965, 0.969, 0.977, 0.986, 0.994, 1, 1.004, 1.006, 1.007, 1); }
+}

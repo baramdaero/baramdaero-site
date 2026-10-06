@@ -60,9 +60,10 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
         <span class="bd-header__menu-open">메뉴</span><span class="bd-header__menu-close">닫기</span>
       </button>
       <div class="bd-header__links" id="site-nav">
-        {nav.map((item) => (
+        {nav.map((item, i) => (
           <a
             href={item.href}
+            style={`--i:${i}`}
             class:list={['bd-header__link', item.wide && 'bd-header__link--wide']}
             aria-label={item.name}
             aria-current={isCurrent(item.href) ? 'page' : undefined}
@@ -199,22 +200,23 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     border-radius: 6px;
     background: var(--copper);
     color: #fff;
-    transition: background-color var(--dur-color) ease, transform 160ms var(--ease-out);
+    transition: background-color var(--dur-color) ease, transform var(--dur-spring) var(--ease-spring);
   }
   .bd-header__cta:hover { background: var(--copper-deep); }
   .bd-header__actions { display: flex; align-items: center; gap: 8px; margin-left: 12px; flex: none; }
   .bd-header__quote {
     min-height: 40px; padding: 0 16px; border: 0; border-radius: 10px; /* 문의 버튼 사각(2026-10-02) — 40px 높이라 한 단 작게 */
     background: var(--br-teal-deep); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
-    transition: background-color var(--dur-color) ease, transform 160ms var(--ease-out);
+    transition: background-color var(--dur-color) ease, transform var(--dur-spring) var(--ease-spring);
   }
   @media (hover: hover) and (pointer: fine) { .bd-header__quote:hover:not(:disabled) { background: var(--br-teal); } }
   /* 높이 40px(헤더 줄) — 누르는 자리는 위아래 2px 씩 넓혀 44px */
   .bd-header__quote { position: relative; }
   .bd-header__quote::before { content: ''; position: absolute; inset: -2px 0; }
-  .bd-header__quote:active { transform: scale(0.96); }
+  /* 누르면 빠르게 눌리고, 떼면 스프링으로 돌아온다(위 transition) */
+  .bd-header__quote:active { transform: scale(0.96); transition-duration: var(--dur-color), calc(var(--dur-color) / 2); transition-timing-function: ease, ease-out; }
   .bd-header__quote:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; }
-  .bd-header__cta:active { transform: scale(0.96); }
+  .bd-header__cta:active { transform: scale(0.96); transition-duration: var(--dur-color), calc(var(--dur-color) / 2); transition-timing-function: ease, ease-out; }
 
   .bd-header__link,
   .bd-header__cta,
@@ -260,9 +262,9 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     font-size: 14px;
     font-weight: 700;
     white-space: nowrap;
-    transition: background-color var(--dur-color) ease, transform 160ms var(--ease-out);
+    transition: background-color var(--dur-color) ease, transform var(--dur-spring) var(--ease-spring);
   }
-  .bd-header__menu-btn:active { transform: scale(0.96); }
+  .bd-header__menu-btn:active { transform: scale(0.96); transition-duration: var(--dur-color), calc(var(--dur-color) / 2); transition-timing-function: ease, ease-out; }
   .bd-header__menu-close,
   .bd-header.is-menu-open .bd-header__menu-open { display: none; }
   .bd-header.is-menu-open .bd-header__menu-close { display: inline; }
@@ -270,10 +272,10 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   /* ⚠️ 이 800 은 아래 스크립트의 matchMedia 와 같은 값이어야 한다 */
   @media (max-width: 800px) {
     .bd-header.has-menu .bd-header__menu-btn { display: inline-flex; }
-    .bd-header.has-menu .bd-header__links { display: none; }
-    /* 펼침 목록 — 헤더 바로 아래 전체 폭. 글자는 전체 명칭, 한 줄 52px */
-    .bd-header.has-menu.is-menu-open .bd-header__links {
-      display: flex;
+    /* 펼침 목록 — 헤더 바로 아래 전체 폭. 글자는 전체 명칭, 한 줄 52px.
+       닫힌 상태도 같은 모양을 갖는다(여닫는 동안 그 모양에서 오간다) — 평소에 보이고 안 보이고는 display 로 가른다 */
+    .bd-header.has-menu .bd-header__links {
+      display: none;
       flex-direction: column;
       gap: 0;
       position: absolute;
@@ -283,13 +285,48 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
       padding: 4px 20px 16px;
       background: var(--br-base);
       border-bottom: 1px solid var(--glass-line);
-      box-shadow: var(--glass-shadow);
+      /* 위로 4px 덧단 — 열리며 아래로 넘는 동안(최대 4.5px) 헤더와 목록 사이로 뒤 페이지가 비치지 않게 */
+      box-shadow: 0 -4px 0 var(--br-base), var(--glass-shadow);
       /* 화면 높이가 낮으면(가로 모드·확대) 목록 안에서 스크롤 — sticky 헤더에 붙어 페이지 스크롤로는 못 내린다 */
       max-height: calc(100dvh - 56px);
       overflow-y: auto;
       overscroll-behavior: contain;
+      opacity: 0;
+      transform: translateY(-24px) scaleY(0.94);
+      transform-origin: top center;
     }
-    .bd-header.has-menu.is-menu-open .bd-header__link {
+    /* 여닫는 모션은 사람이 누른 직후에만 건다 — 아래 스크립트가 .is-menu-anim 을 붙였다 뗀다.
+       페이지를 열 때, 창 폭이 800px 을 넘나들 때, 뒤로 가기로 되살아날 때는 이 클래스가 없어 그냥 바뀐다
+       (늘 걸어 두면 한 줄 메뉴가 접히는 순간 목록이 잠깐 비쳤다 사라진다).
+       붙어 있는 동안에는 닫힌 모양으로도 그려 둔다 — 거기서 출발하고 거기로 돌아가야 해서.
+       닫힘 = 여는 스프링의 짝: 아래로 살짝 부풀었다가 위로 빠지며 걷힌다(2026-10-06 대표: '닫을 때도 통통'). 투명도는 부푼 뒤에 걷힌다 */
+    .bd-header.has-menu.is-menu-anim .bd-header__links {
+      display: flex;
+      pointer-events: none;
+      transition: transform var(--dur-spring-out) var(--ease-spring-out), opacity calc(var(--dur-spring-out) * 0.55) ease-in calc(var(--dur-spring-out) * 0.45);
+    }
+    /* 열림 — 헤더 밑에서 내려오며 통 하고 넘었다 멎는다(2026-10-06 대표: '딱 열리지 않고 뚜~웅').
+       스프링은 transform 에만, 투명도는 따로(DESIGN.md §4).
+       열림도 닫힘도 transition 이라, 도중에 다시 누르면 그 자리에서 되돌아간다 */
+    .bd-header.has-menu.is-menu-open .bd-header__links {
+      display: flex;
+      pointer-events: auto;
+      opacity: 1;
+      transform: none;
+    }
+    .bd-header.has-menu.is-menu-anim.is-menu-open .bd-header__links {
+      transition: transform var(--dur-spring) var(--ease-spring), opacity var(--dur-ui) ease;
+    }
+    /* 항목 — 닫힌 동안은 12px 위·투명, 열리면 위에서부터 차례로 내려온다(--i = 순서, 30ms 간격).
+       닫힐 때는 목록이 다 걷힌 뒤에야 그 자리로 돌아간다 — 걷히는 도중에 다시 열어도 항목은 깜빡이지 않는다 */
+    .bd-header.has-menu:not(.is-menu-open) .bd-header__link { opacity: 0; transform: translateY(-12px); }
+    .bd-header.has-menu.is-menu-anim .bd-header__link {
+      transition: opacity 0s linear var(--dur-spring-out), transform 0s linear var(--dur-spring-out);
+    }
+    .bd-header.has-menu.is-menu-anim.is-menu-open .bd-header__link {
+      transition: opacity var(--dur-ui) ease calc(40ms + var(--i, 0) * 30ms), transform var(--dur-spring) var(--ease-spring) calc(40ms + var(--i, 0) * 30ms);
+    }
+    .bd-header.has-menu .bd-header__link {
       justify-content: flex-start;
       min-height: 52px;
       padding: 0 4px;
@@ -299,10 +336,10 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
       opacity: 1;
       border-bottom: 1px solid color-mix(in srgb, var(--br-ink) 8%, transparent);
     }
-    .bd-header.has-menu.is-menu-open .bd-header__link:last-child { border-bottom: 0; }
-    .bd-header.has-menu.is-menu-open .bd-header__link[aria-current='page'] { color: var(--br-teal); }
-    .bd-header.has-menu.is-menu-open .bd-header__label--short { display: none; }
-    .bd-header.has-menu.is-menu-open .bd-header__label--full { display: inline; }
+    .bd-header.has-menu .bd-header__link:last-child { border-bottom: 0; }
+    .bd-header.has-menu .bd-header__link[aria-current='page'] { color: var(--br-teal); }
+    .bd-header.has-menu .bd-header__label--short { display: none; }
+    .bd-header.has-menu .bd-header__label--full { display: inline; }
     /* 투명 오버레이 위에서 열면 헤더도 솔리드로 — 흰 글자 버튼이 밝은 목록 위에 뜨지 않게 */
     .bd-header--overlay.is-menu-open { background: var(--br-base); color: var(--br-ink); }
   }
@@ -323,11 +360,33 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   const menuBtn = header?.querySelector<HTMLButtonElement>('.bd-header__menu-btn');
   if (header && menuBtn) {
     const narrow = window.matchMedia('(max-width: 800px)');
-    const setOpen = (open: boolean, returnFocus = false) => {
+    const links = header.querySelector<HTMLElement>('.bd-header__links');
+    // 여닫는 모션은 사람이 누른 직후에만 건다(.is-menu-anim — 위 CSS 주석). 닫힘이 끝나면 떼서 목록의 display 를 끈다
+    let animTimer: ReturnType<typeof setTimeout>;
+    const settle = () => {
+      clearTimeout(animTimer);
+      if (links) links.inert = false;
+      if (!header.classList.contains('is-menu-open')) header.classList.remove('is-menu-anim');
+    };
+    // animate=false 는 모션 없이 바로 닫는다(창이 넓어질 때, 뒤로 가기로 되살아날 때)
+    const setOpen = (open: boolean, returnFocus = false, animate = true) => {
+      const changed = open !== header.classList.contains('is-menu-open');
+      if (animate && changed) {
+        header.classList.add('is-menu-anim');
+        void links?.offsetHeight; // 닫힌 모양을 한 번 그려 둬야 거기서부터 움직인다
+      }
       header.classList.toggle('is-menu-open', open);
       menuBtn.setAttribute('aria-expanded', String(open));
+      if (!animate || open) settle();
+      else if (changed) {
+        if (links) links.inert = true; // 걷히는 동안 링크에 초점이 가지 않게
+        clearTimeout(animTimer);
+        animTimer = setTimeout(settle, 1000); // 끝 이벤트가 안 오는 경우(가려진 탭 등)의 마무리 — 시작이 늦어도 자르지 않게 넉넉히
+      }
       if (!open && returnFocus) menuBtn.focus();
     };
+    // 닫힘 모션의 끝(투명도·transform 둘 다 끝난 뒤) — 타이머로 재면 시작이 늦은 기기에서 끝이 잘린다
+    links?.addEventListener('transitionend', (e) => { if (e.target === links && !links.getAnimations?.().length) settle(); });
     menuBtn.hidden = false;
     header.classList.add('has-menu');
     menuBtn.addEventListener('click', () => setOpen(!header.classList.contains('is-menu-open')));
@@ -345,9 +404,9 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
       if (header.classList.contains('is-menu-open') && !header.contains(e.relatedTarget as Node | null)) setOpen(false);
     });
     // 뒤로 가기로 캐시에서 되살아난 페이지가 열린 채 보이지 않게
-    window.addEventListener('pageshow', (e) => { if (e.persisted) setOpen(false); });
+    window.addEventListener('pageshow', (e) => { if (e.persisted) setOpen(false, false, false); });
     // 데스크톱 폭으로 넓어지면 펼침 상태를 풀어 둔다
-    narrow.addEventListener('change', (e) => { if (!e.matches) setOpen(false); });
+    narrow.addEventListener('change', (e) => { if (!e.matches) setOpen(false, false, false); });
   }
 
   // 로고 꼬불 모션 — 마우스를 올리거나 키보드로 닿으면 한 번. 첫 선을 시작시키면 나머지 선·글자·마침표는 SVG 안 시차로 따라온다
