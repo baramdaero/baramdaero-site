@@ -219,17 +219,17 @@ if (items.length) {
             <p class="faq-chat__me"><span class="visually-hidden">물어본 질문: </span><span data-faq-me></span></p>
 
             {/* 답 — 아래 숨긴 문항별 답을 복제해 넣는다 */}
-            <div class="faq-chat__we br-glass br-glass--medium" data-faq-we hidden></div>
+            <div class="faq-chat__we br-glass br-glass--medium" data-glow="off" data-faq-we hidden></div>
 
             {/* 하나로 못 박기 어려울 때 — 고르게 한다 */}
-            <div class="faq-chat__we br-glass br-glass--medium" data-faq-pick hidden>
+            <div class="faq-chat__we br-glass br-glass--medium" data-glow="off" data-faq-pick hidden>
               <p class="faq-chat__who">바람대로</p>
               <p class="faq-chat__lead" tabindex="-1" data-faq-focus data-faq-pick-title></p>
               <div class="faq-chat__chips" data-faq-pick-list></div>
             </div>
 
             {/* 걸리는 문항이 없을 때 */}
-            <div class="faq-chat__we br-glass br-glass--medium" data-faq-none hidden>
+            <div class="faq-chat__we br-glass br-glass--medium" data-glow="off" data-faq-none hidden>
               <p class="faq-chat__who">바람대로</p>
               <p class="faq-chat__lead" tabindex="-1" data-faq-focus>맞는 답을 찾지 못했습니다.</p>
               <p class="faq-chat__alt">예)</p>

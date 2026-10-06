@@ -459,7 +459,8 @@ html.br-js .br-reveal.br-h { transform: none; }
 }
 
 /* ── 엣지 글로우 (React Bits BorderGlow 이식, 2026-09-03) ──────────────────
-   [data-glow] 카드에 scripts/border-glow.ts 가 레이어 2장을 넣고 --edge-proximity(0~100)·--cursor-angle 을 갱신한다.
+   유리 카드 전부(.br-glass, data-glow="off" 제외)와 [data-glow] 카드에 scripts/border-glow.ts 가 레이어 2장을 넣고
+   --edge-proximity(0~100)·--cursor-angle 을 갱신한다(2026-10-06: 흰 카드 전체로 확대).
    ① __border: 커서 쪽 테두리만 팔레트 메시(ice·white·teal)로 물든다 — 링 마스크 ∩ 원뿔 마스크
    ② __light : 같은 각도로 바깥에 ice 빛. plus-lighter 로 유리 위에 얹힌다.
    호버 밖에선 opacity 0 (0.75s 로 꺼짐). 색은 팔레트 v3 토큰만. 애니메이션 없음(포인터 구동). */
