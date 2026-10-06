@@ -96,6 +96,31 @@ const cta = home.ctaBand;
     </StandardsStory>
   )}
 
+  {/* 세척 — 분해 3D. 회사소개(시공 실적) 바로 아래(2026-10-06 대표: 위가 시공이니 바로 아래에 세척을 —
+      시공한 팀이 시공 기록을 갖고 세척까지 맡는다. 그 다음에 '어떤 일로 오셨나요'가 온다).
+      전에는 서비스 카드 세 장 다음에 '내부 구조'로 있었다(2026-10-01). 문구 home.json(exploded) */}
+  {home.exploded && (
+    <Exploded
+          id="home-exploded"
+          tone="clear"
+          eyebrow={home.exploded.eyebrow}
+          title={home.exploded.heading}
+          body={home.exploded.body.join(' ') || undefined}
+          photoNote="제품 사진: 삼성전자·LG전자 공식 제품 이미지"
+          photoSwitch
+          card
+          items={[
+            // 2026-10-01 대표: 삼성·LG 사진을 눌러 각 제품의 분해도로 바꾼다(사진 각도·배치는 그대로)
+            { label: '삼성 1Way', file: 'samsung-1way-AJ072BN1PBC1.html',
+              photos: [{ src: 'ac-1way-samsung-front.webp', alt: '삼성 무풍 1Way 판넬 정면', caption: '삼성 무풍 1Way' }],
+              caption: '삼성전자 무풍 1Way · AJ072BN1PBC1 · 냉방 7.2kW · 부품 19개' },   // 거실 대형(2026-10-02 대표: 거실 대형으로)
+            { label: 'LG 1Way', file: 'lg-1way-RNQ0231C2SP.html',
+              photos: [{ src: 'ac-1way-lg-angle.webp', alt: 'LG 휘센 1Way 실내기 입체', caption: 'LG 휘센 1Way' }],
+              caption: 'LG전자 1Way · RNQ0231C2SP · 냉방 2.3kW · 부품 16개' },
+          ]}
+      />
+  )}
+
 
   {/* 다크 스크럽 미노출 (2026-08-27) — 이 카피는 히어로 영상 자막으로 들어간다.
       화면에 큰 글자로 또 쓰면 같은 말을 두 번 하는 셈이라 뺐다.
@@ -148,28 +173,6 @@ const cta = home.ctaBand;
     </ServiceSplit>
     </Fragment>
   ))}
-
-  {/* 분해 3D — 서비스 카드 세 장 다음(2026-10-01: 세척 카드 아래에 끼어 상업용 카드가 혼자 떨어져 보였다). 문구 home.json(exploded) */}
-  {home.exploded && (
-    <Exploded
-          id="home-exploded"
-          tone="clear"
-          eyebrow={home.exploded.eyebrow}
-          title={home.exploded.heading}
-          body={home.exploded.body.join(' ') || undefined}
-          photoNote="제품 사진: 삼성전자·LG전자 공식 제품 이미지"
-          photoSwitch
-          items={[
-            // 2026-10-01 대표: 삼성·LG 사진을 눌러 각 제품의 분해도로 바꾼다(사진 각도·배치는 그대로)
-            { label: '삼성 1Way', file: 'samsung-1way-AJ072BN1PBC1.html',
-              photos: [{ src: 'ac-1way-samsung-front.webp', alt: '삼성 무풍 1Way 판넬 정면', caption: '삼성 무풍 1Way' }],
-              caption: '삼성전자 무풍 1Way · AJ072BN1PBC1 · 냉방 7.2kW · 부품 19개' },   // 거실 대형(2026-10-02 대표: 거실 대형으로)
-            { label: 'LG 1Way', file: 'lg-1way-RNQ0231C2SP.html',
-              photos: [{ src: 'ac-1way-lg-angle.webp', alt: 'LG 휘센 1Way 실내기 입체', caption: 'LG 휘센 1Way' }],
-              caption: 'LG전자 1Way · RNQ0231C2SP · 냉방 2.3kW · 부품 16개' },
-          ]}
-      />
-  )}
 
 
   {/* '어떤 일로 오셨나요'(NeedTriage)는 서비스 카드 제목으로 합쳤다(2026-09-30). 증상 상담은 채팅 위젯에 그대로 있다 */}

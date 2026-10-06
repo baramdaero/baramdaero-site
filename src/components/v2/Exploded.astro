@@ -30,9 +30,15 @@ interface Props2 {
   photoNote?: string;
   /** 제조사 전환(2026-10-01 대표): 기종마다 사진 한 장 — 사진 칸이 토글이 되어 누르면 그 제품의 분해도로 바뀐다. 탭 줄은 안 그린다 */
   photoSwitch?: boolean;
+  /** 머리부터 3D 까지를 흰 유리 판 하나에 담는다 — 홈 회사소개 판과 같은 모양(2026-10-06 대표: '하얀 섹션 네모로 넣자 이것도') */
+  card?: boolean;
 }
 const { eyebrow, title, body, items, tone = 'base', id = 'exploded' } = Astro.props;
-const { photoNote, photoSwitch = false } = Astro.props as Props2;
+const { photoNote, photoSwitch = false, card = false } = Astro.props as Props2;
+// 판을 안 쓰는 페이지의 마크업은 그대로 두려고, 감싸는 요소 자체를 조건으로 둔다.
+// 글로우는 끈다(DESIGN.md §5 '3D 무대') — 포인터가 3D(iframe) 안에 있는 동안은 움직임이 전달되지 않아 빛이 멈춘 채 남는다
+const Card = card ? 'div' : Fragment;
+const cardProps = card ? { class: 'ex-card br-glass br-glass--medium', 'data-glow': 'off' } : {};
 const tabMode = items.length > 1 && !photoSwitch;
 const titleLines = Array.isArray(title) ? title : [title];
 const hasPhoto = items.some((it) => (it.photos?.length ?? 0) > 0);
@@ -41,6 +47,7 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
 {items.length > 0 && (
   <section class:list={['bd-section', 'ex-sec', tone === 'mist' && 'ex-sec--mist', tone === 'clear' && 'ex-sec--clear']} id={id}>
     <div class="bd-container">
+      <Card {...cardProps}>
       {/* 머리 — 라벨 · 제목 · 한 줄(홈 회사소개와 같은 .br-sec-* , 2026-10-01) */}
       {eyebrow && <p class="br-sec-label">{eyebrow}</p>}
       {/* 제목이 비면 h2 를 내지 않는다(제목을 둘지는 페이지가 정한다) */}
@@ -110,6 +117,7 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
           ? '우리가 설치하는 모델을 제조사 문서와 시공 현장 기준으로 따로 그렸습니다. 내부 부품의 크기·위치는 일부 추정입니다.'
           : '모델마다 제조사 문서 기준으로 그렸습니다. 내부 부품의 크기·위치는 일부 추정입니다.'}
       </p>
+      </Card>
     </div>
   </section>
 )}
@@ -214,6 +222,9 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
   .ex-sec { background: var(--br-base); }
   .ex-sec--mist { background: var(--br-mist); }
   .ex-sec--clear { background: transparent; }
+  /* 흰 유리 판(card) — 안쪽 여백은 홈 회사소개 판(.v2-standards-story__card)과 같은 값. 감싸는 요소가 조건부라 :global 로 잡는다 */
+  .ex-sec :global(.ex-card) { padding: 24px 20px 28px; }
+  @media (min-width: 768px) { .ex-sec :global(.ex-card) { padding: var(--panel-pad); } }
 
   /* 제목 묶음 → 본 블록은 --head-gap 하나로 (영상·탭·3D 중 먼저 오는 것) */
   .ex-lead { margin-top: var(--head-gap); }
