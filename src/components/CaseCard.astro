@@ -13,6 +13,7 @@ const dateLabel = date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'lo
 ---
 <a
   class="bd-case-card"
+  data-glow
   href={`/cases/${entry.id}/`}
   data-region={region}
   data-type={type}
@@ -35,19 +36,18 @@ const dateLabel = date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'lo
     display: flex;
     flex-direction: column;
     border: 1px solid var(--glass-line);
+    position: relative; /* 엣지 글로우 레이어 기준 */
     border-radius: var(--radius);
-    overflow: hidden;
     background: var(--glass-medium-bg);
     -webkit-backdrop-filter: var(--glass-medium-fx);
     backdrop-filter: var(--glass-medium-fx);
     box-shadow: var(--glass-shadow);
-    transition: border-color var(--dur-color) ease, transform 160ms var(--ease-out);
+    transition: transform 160ms var(--ease-out);
   }
   .bd-case-card:active { transform: scale(0.98); }
-  @media (hover: hover) and (pointer: fine) {
-    .bd-case-card:hover { border-color: var(--ink-soft); }
-  }
-  .bd-case-card__media { aspect-ratio: 4 / 3; background: var(--bg-soft); }
+  /* hover 는 엣지 글로우(data-glow)가 맡는다 — 회색 테두리 hover 는 걷었다(2026-10-06, 다른 흰 카드와 같은 모션) */
+  /* 카드에서 overflow:hidden 을 걷었다(테두리 밖 1px 에 그리는 글로우가 잘린다) — 사진 칸이 위 모서리를 직접 둥글린다 */
+  .bd-case-card__media { aspect-ratio: 4 / 3; background: var(--bg-soft); overflow: hidden; border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0; }
   .bd-case-card__media img { width: 100%; height: 100%; object-fit: cover; outline: 1px solid oklch(0 0 0 / 0.08); outline-offset: -1px; }
   .bd-case-card__placeholder { width: 100%; height: 100%; background: var(--bg-soft); }
   .bd-case-card__body { flex: 1; display: flex; flex-direction: column; padding: 18px 20px 20px; }

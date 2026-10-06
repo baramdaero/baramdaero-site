@@ -1,32 +1,46 @@
 ---
 // 공간 3D 구성도 블록 — 히어로의 아파트·상가·오피스 뷰어(public/3d/*.html?embed)를 서브페이지에 한 번 더 쓴다(2026-09-30).
-// 설명하지 않고 두기만 한다(2026-09-30 대표: "3D 만들었어요 자랑하지 말고 은연중에 누르게") — 제목 없이 작은 안내 한 줄.
+// 설명하지 않고 두기만 한다(2026-09-30 대표: "3D 만들었어요 자랑하지 말고 은연중에 누르게") — 제목 없이 안내 버튼 하나.
+// 안내 버튼은 홈 히어로의 '아래 도면을 눌러 보세요'와 같은 모양·같은 동작(2026-10-06 대표: '설치·상업용 페이지에도 도면 위에 눌러 보라고').
 // 휴대폰 '직접 둘러보기' 잠금은 걷었다(2026-10-02 대표: 첫 탭이 안 먹고 켜지면 스크롤이 갇힘). 뷰어가 세로 스와이프는 페이지로,
 // 가로 드래그만 회전으로 받는다(house·office·commercial.html embed 의 touch-action: pan-y).
 // 탭이 둘 이상이면 같은 iframe 의 src 만 바꾼다 — 뷰어를 여러 개 동시에 띄우지 않는다(WebGL 컨텍스트).
 interface View { label: string; src: string; title: string }
 interface Props {
   id: string;
-  hint?: string;
+  /** 도면 위 안내 버튼 — [굵은 한 줄, 이유 한 줄]. 누르면 첫 공간(아파트 거실 · 건물 1층)으로 들어간다 */
+  invite?: [string, string];
   views: View[];
   tone?: 'base' | 'mist';
 }
-const { id, hint, views, tone = 'base' } = Astro.props;
+const { id, invite, views, tone = 'base' } = Astro.props;
 // 공간 3D 공통 주석 — 잠금 문구(2026-09-22 대표 확정). 바꾸지 않는다
 const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.';
 ---
 <section class:list={['bd-section', 'space3d', `space3d--${tone}`]} id={id} data-space3d>
   <div class="bd-container">
-    {views.length > 1 && (
-      <div class="space3d__tabs" role="tablist" aria-label="공간 선택">
-        {views.map((v, i) => (
-          <button type="button" role="tab" class="space3d__tab" aria-selected={i === 0 ? 'true' : 'false'} data-src={v.src} data-title={v.title}>{v.label}</button>
-        ))}
+    {(views.length > 1 || invite) && (
+      <div class="space3d__bar">
+        {views.length > 1 && (
+          <div class="space3d__tabs" role="tablist" aria-label="공간 선택">
+            {views.map((v, i) => (
+              <button type="button" role="tab" class="space3d__tab" aria-selected={i === 0 ? 'true' : 'false'} data-src={v.src} data-title={v.title}>{v.label}</button>
+            ))}
+          </div>
+        )}
+        {/* 뷰어가 준비됐다고 알려 온 뒤에만 보인다(data-on) — 3D 가 안 뜨면 누를 것도 없다. 자리는 미리 잡아 둬 도면이 밀리지 않는다 */}
+        {invite && (
+          <button type="button" class="space3d__invite br-glass br-glass--heavy" data-glow="off">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M5 3l14 8-6.2 1.8L10.4 19 5 3z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+            </svg>
+            <span class="space3d__invite-t"><strong>{invite[0]}</strong><span>{invite[1]}</span></span>
+          </button>
+        )}
       </div>
     )}
-    <div class="space3d__stage br-glass br-glass--medium">
+    <div class="space3d__stage br-glass br-glass--medium" data-glow="off">
       <iframe src={views[0].src} title={views[0].title} loading="lazy"></iframe>
-      {hint && <p class="space3d__hint" aria-hidden="true">{hint}</p>}
       {/* 방·층 안에 들어가면 나올 길 — 히어로와 같은 자리(3D 왼쪽 위)·같은 말·같은 화살표(2026-10-01, 갇힘 제보).
           건물(상업공간·오피스)은 '건물 전체' + 지금 층 이름, 아파트는 '전체 보기' */}
       <div class="space3d__here">
@@ -48,21 +62,34 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
     // 방(아파트)·층(건물) 안이면 '전체 보기'를 띄운다. 뷰어가 알려 주는 bd3d 메시지로만 판단한다
     const back = stage.querySelector<HTMLButtonElement>('.space3d__back')!;
     const backT = back.querySelector('span')!, lv = stage.querySelector<HTMLElement>('.space3d__lv')!;
+    const invite = root.querySelector<HTMLButtonElement>('.space3d__invite');
     let inRoom = false, level = '';
+    let first: { type: string; id: string } | null = null;   // 안내 버튼이 들어갈 첫 공간
     const sync = () => {
       const inLevel = !!level && level !== '건물 정면';   // 뷰어가 알려 주는 건물 전경의 이름
       if (inRoom || inLevel) stage.dataset.deep = ''; else delete stage.dataset.deep;
+      // 안내는 전체가 보일 때만 — 방·층 안에서는 히어로처럼 비운다(도면 위에 그대로 떠 있지 않게)
+      const deep = inRoom || inLevel;
+      if (deep && invite && document.activeElement === invite) back.focus({ preventScroll: true });   // 누른 버튼이 숨으면 포커스가 body 로 빠진다
+      invite?.toggleAttribute('data-on', !!first && !deep);
       if (inLevel) lv.textContent = level;               // 나갈 때는 지우지 않는다 — 사라지는 동안 글자가 먼저 비지 않게
     };
     addEventListener('message', (e) => {
       const m = e.data;
       if (!m || m.ns !== 'bd3d' || e.source !== frame.contentWindow) return;
-      if (m.type === 'ready') { inRoom = false; level = ''; lv.textContent = ''; backT.textContent = m.viewer === 'house' ? '전체 보기' : '건물 전체'; }
+      if (m.type === 'ready') {
+        inRoom = false; level = ''; lv.textContent = ''; backT.textContent = m.viewer === 'house' ? '전체 보기' : '건물 전체';
+        // 아파트 = 첫 방(거실), 건물 = 1층(히어로가 건물을 고르면 1층부터 보여 주는 것과 같다)
+        const es: { id: string; name: string }[] = m.entries || [];
+        const e = m.viewer === 'house' ? es[0] : es.find((x) => /^floor:/.test(x.id) && x.name === '1층') || es.find((x) => /^floor:/.test(x.id));
+        first = e ? { type: m.viewer === 'house' ? 'goRoom' : 'goUnit', id: e.id } : null;
+      }
       else if (m.type === 'enter') inRoom = true;
       else if (m.type === 'home') inRoom = false;                     // 건물: 실내기 → 그 층 입구(층 안은 그대로)
       else if (m.type === 'space') { level = m.title || ''; inRoom = false; }
       sync();
     });
+    invite?.addEventListener('click', () => { if (first) frame.contentWindow?.postMessage({ ns: 'bd3d', ...first }, '*'); });
     back.addEventListener('click', () => {
       let house = frame.src.includes('/house.html');
       try { house = frame.contentWindow!.location.pathname.includes('/house.html'); } catch {}   // 탭 전환은 location.replace 라 src 속성이 그대로다
@@ -74,7 +101,7 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
         // 탭 전환이 뒤로가기 기록을 쌓지 않게(뒤로가기 한 번에 iframe 만 바뀌던 것) — Exploded 와 같다
         try { frame.contentWindow!.location.replace(tab.dataset.src!); } catch { frame.src = tab.dataset.src!; }
         frame.title = tab.dataset.title!;
-        inRoom = false; level = ''; sync();   // 층 이름은 지우지 않는다 — 판이 사라지는 동안 글자가 먼저 비면 판이 줄었다 사라진다. 새 뷰어의 ready 가 비운다
+        inRoom = false; level = ''; first = null; sync();   // 새 뷰어가 준비될 때까지 안내 버튼도 쉰다. 층 이름은 지우지 않는다 — 판이 사라지는 동안 글자가 먼저 비면 판이 줄었다 사라진다. 새 뷰어의 ready 가 비운다
       });
     });
   }
@@ -83,7 +110,30 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
 <style>
   .space3d { background: transparent; }
   .space3d--mist { background: var(--br-mist); }
+  /* 도면 위 한 줄: 탭(있으면) 왼쪽, 안내 버튼 오른쪽. 높이를 미리 잡아 버튼이 뜰 때 도면이 밀리지 않는다 */
+  .space3d__bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; min-height: 56px; }
   .space3d__tabs { margin-top: 0; display: flex; gap: 8px; flex-wrap: wrap; }
+  /* 안내 버튼 — 홈 히어로 .h3-invite 와 같은 모양(유리 판 + 화살표 + 굵은 한 줄·이유 한 줄) */
+  .space3d__invite {
+    display: flex; align-items: center; gap: 10px; margin-left: auto; min-height: 56px; padding: 10px 16px;
+    font: inherit; text-align: left; font-size: 13px; line-height: 1.35; color: var(--br-ink-sub); cursor: pointer;
+    opacity: 0; visibility: hidden; translate: 0 6px;
+    transition: opacity var(--dur-ui) var(--ease-out), translate var(--dur-ui) var(--ease-out), visibility 0s linear var(--dur-ui);
+  }
+  .space3d__invite[data-on] {
+    opacity: 1; visibility: visible; translate: 0 0;
+    transition: opacity var(--dur-reveal) var(--ease-out), translate var(--dur-reveal) var(--ease-out), visibility 0s;
+  }
+  .space3d__invite svg { width: 16px; height: 16px; flex: none; color: var(--br-teal); }
+  .space3d__invite-t { display: grid; }
+  .space3d__invite-t > span { text-wrap: balance; }
+  .space3d__invite strong { font-size: 14px; font-weight: 700; color: var(--br-teal); }
+  @media (hover: hover) and (pointer: fine) { .space3d__invite:hover strong { text-decoration: underline; text-underline-offset: 3px; } }
+  .space3d__invite:active { transform: scale(.98); }
+  .space3d__invite:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .space3d__invite, .space3d__invite[data-on] { translate: none; transition-duration: .01s; } }
+  /* 휴대폰: 판은 글자 길이만큼만, 오른쪽(히어로와 같다 — 화면 폭을 꽉 채운 판은 어색하다는 2026-10-01 지적) */
+  @media (max-width: 760px) { .space3d__invite-t > span { max-width: 17em; } }
   .space3d__tab {
     min-height: 44px; padding: 0 18px; border-radius: 999px;
     border: 1px solid var(--br-ink-sub); background: transparent;
@@ -95,14 +145,10 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
     position: relative; margin-top: 20px; aspect-ratio: 4 / 5; overflow: hidden;
     border-radius: var(--radius);
   }
-  .space3d__tabs + .space3d__stage { margin-top: 16px; }
+  .space3d__bar + .space3d__stage { margin-top: 12px; }
   .space3d__stage:first-child { margin-top: 0; }
   @media (min-width: 768px) { .space3d__stage { aspect-ratio: 16 / 10; } }
   .space3d__stage iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
-  .space3d__hint {
-    position: absolute; left: 12px; top: 12px; margin: 0; padding: 6px 12px; border-radius: 999px;
-    background: rgba(255, 255, 255, 0.86); color: var(--br-ink-sub); font-size: 13px; font-weight: 600; pointer-events: none;
-  }
   .space3d__note { margin-top: 12px; font-size: 13px; color: var(--br-ink-sub); }
   /* 나갈 길 — 흰 판 하나에 버튼 + 지금 층 이름. 들어가는 카메라가 자리 잡을 즈음 내려앉는다(띡 뜨지 않게) */
   .space3d__here {
@@ -130,5 +176,4 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
     font-size: 14px; font-weight: 600; color: var(--br-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .space3d__lv:empty { display: none; }
-  .space3d__stage[data-deep] .space3d__hint { display: none; }
 </style>
