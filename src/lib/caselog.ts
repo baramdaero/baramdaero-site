@@ -3,6 +3,8 @@
 // 단지명은 한국부동산원 공동주택 단지 목록과 맞춰 본 것만 싣는다 — 못 맞춘 현장은 지역·공간까지만 나온다.
 // 숫자(건수·대수·기간)는 전부 이 파일에서 센다. 문장에 쓸 숫자를 따로 적지 않는다.
 import raw from '../content/site/case-log.json';
+// 단지 기본 정보 — 한국부동산원 공동주택 단지 목록의 세대수·사용승인 연도(없는 단지는 빠져 있다)
+import complexMeta from '../content/site/case-complex.json';
 
 export interface LogRecord {
   /** 마지막 단계(마감) 날짜 YYYY-MM-DD */
@@ -25,6 +27,10 @@ export interface Complex {
   gu: string;
   region: string;
   records: LogRecord[];
+  /** 세대수 */
+  hh?: number;
+  /** 사용승인 연도 */
+  yr?: number;
 }
 
 export const LOG_UPDATED: string = (raw as { updated: string }).updated;
@@ -43,7 +49,7 @@ const group = <T, K extends string>(a: T[], key: (x: T) => K | undefined) => {
 };
 
 export const COMPLEXES: Complex[] = [...group(RECORDS, (r) => r.slug).entries()]
-  .map(([slug, records]) => ({ slug, name: records[0].apt!, dong: records[0].dong!, gu: records[0].gu!, region: records[0].r, records }))
+  .map(([slug, records]) => ({ slug, name: records[0].apt!, dong: records[0].dong!, gu: records[0].gu!, region: records[0].r, records, ...((complexMeta as Record<string, { hh?: number; yr?: number }>)[slug] ?? {}) }))
   .sort((a, b) => b.records.length - a.records.length || a.name.localeCompare(b.name, 'ko'));
 export const COMPLEX_BY_SLUG = new Map(COMPLEXES.map((c) => [c.slug, c]));
 
@@ -85,3 +91,5 @@ export const brandLine = (b: [string, number][]) => b.map(([name, n]) => `${name
 export const recordLine = (r: LogRecord) => [r.b, r.u ? `${r.u}대` : '', r.t].filter(Boolean).join(' ');
 /** 기록의 자리 이름 — 단지가 확인된 현장은 '동 단지명', 아니면 공간 종류 */
 export const placeOf = (r: LogRecord) => (r.apt ? `${r.dong} ${r.apt}` : r.sp ?? '현장');
+/** '2012년 준공 · 3,293세대' (있는 값만) */
+export const complexLine = (c: Complex) => [c.yr ? `${c.yr}년 준공` : '', c.hh ? `${c.hh.toLocaleString('ko-KR')}세대` : ''].filter(Boolean).join(' · ');

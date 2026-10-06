@@ -7,7 +7,7 @@ import Base from '../../../layouts/Base.astro';
 import CtaBand from '../../../components/v2/CtaBand.astro';
 import CaseCard from '../../../components/CaseCard.astro';
 import LogTable from '../../../components/cases/LogTable.astro';
-import { COMPLEXES, REGIONS, stats, brandLine, fmtDate, fmtYm, ymOf, regionSlug, LOG_UPDATED } from '../../../lib/caselog';
+import { COMPLEXES, REGIONS, complexLine, stats, brandLine, fmtDate, fmtYm, ymOf, regionSlug, LOG_UPDATED } from '../../../lib/caselog';
 import { SITE_CONFIG } from '../../../config.js';
 import faq from '../../../content/site/faq.json';
 
@@ -28,6 +28,8 @@ const answer = s.n === 1
   ? `바람대로는 ${fmtDate(one.d)} ${place}에서 ${one.b ? `${one.b} ` : ''}시스템에어컨 ${one.u ? `${one.u}대 ` : ''}${one.t}${one.t === '설치' ? '를' : '을'} 마쳤습니다.`
   : `바람대로는 ${place}에서 시스템에어컨 ${work} 현장 ${s.n}건을 마쳤습니다(${range}). ${s.brands.length ? `브랜드는 ${brandLine(s.brands)}, ` : ''}${unitsSentence}`.trim();
 
+// 단지 한 줄 — 공식 목록의 준공 연도·세대수(있을 때만)
+const about = complexLine(c) ? `이 단지는 ${[c.yr ? `${c.yr}년 준공` : '', c.hh ? `${c.hh.toLocaleString('ko-KR')}세대 규모` : ''].filter(Boolean).join(', ')}입니다.` : '';
 const ask = faq.items.find((f) => f.id === 'faq-ask-first');
 const qa = [
   {
@@ -70,6 +72,8 @@ const jsonLd = [
       '@type': 'ApartmentComplex',
       name: c.name,
       address: { '@type': 'PostalAddress', addressCountry: 'KR', addressRegion: c.region.split(' ')[0], addressLocality: `${c.gu} ${c.dong}` },
+      ...(c.hh ? { numberOfAccommodationUnits: c.hh } : {}),
+      ...(c.yr ? { yearBuilt: c.yr } : {}),
     },
     mainEntity: { '@type': 'Service', name: `시스템에어컨 ${work}`, serviceType: `시스템에어컨 ${work}`, areaServed: `${c.gu} ${c.dong}`, provider: org },
   },
@@ -95,9 +99,12 @@ const jsonLd = [
         </nav>
         <h1 class="apt__title">{c.name}<span class="apt__sub">시스템에어컨 {work} 사례 {s.n}건</span></h1>
         <p class="apt__answer">{answer}</p>
+        {about && <p class="apt__about">{about}</p>}
 
         <dl class="apt__facts">
           <div><dt>위치</dt><dd>{c.gu} {c.dong}</dd></div>
+          {c.yr && <div><dt>준공</dt><dd>{c.yr}년</dd></div>}
+          {c.hh && <div><dt>세대수</dt><dd>{c.hh.toLocaleString('ko-KR')}세대</dd></div>}
           <div><dt>마친 현장</dt><dd>{s.n}건</dd></div>
           {s.unitsKnown > 0 && <div><dt>실내기</dt><dd>{s.unitsTotal}대</dd></div>}
           {s.brands.length > 0 && <div><dt>브랜드</dt><dd>{brandLine(s.brands)}</dd></div>}
@@ -111,7 +118,7 @@ const jsonLd = [
 
         <h2 class="apt__h">날짜별 기록</h2>
         <LogTable records={c.records} showPlace={false} showRegion={false} caption={`${c.name} 시스템에어컨 시공 기록`} />
-        <p class="apt__note">일정 기록 기준 · {fmtDate(LOG_UPDATED)} 갱신</p>
+        <p class="apt__note">일정 기록 기준 · {fmtDate(LOG_UPDATED)} 갱신{about && ' · 준공·세대수는 한국부동산원 공동주택 단지 목록'}</p>
 
         {photoCases.length > 0 && (
           <Fragment>
@@ -165,6 +172,7 @@ const jsonLd = [
   .apt__title { margin: 12px 0 0; font-size: clamp(26px, 3.6vw, 38px); line-height: 1.25; text-wrap: balance; overflow-wrap: anywhere; }
   .apt__sub { display: block; margin-top: 6px; font-family: var(--sans); font-size: 0.52em; font-weight: 600; line-height: 1.5; color: var(--br-ink-sub); }
   /* 답 문장 — 휴대폰에서 문장 중간이 어색하게 끊기지 않게 낱말 단위로만 넘기고(pretty), 줄 길이를 34자 안팎으로 */
+  .apt__about { margin-top: 8px; font-size: 15px; line-height: 1.7; color: var(--br-ink-sub, var(--br-ink)); max-width: 36em; }
   .apt__answer { margin-top: 18px; font-size: 17px; line-height: 1.8; color: var(--br-ink); max-width: 36em; text-wrap: pretty; word-break: keep-all; }
   .apt__facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 20px; margin: 24px 0 0; padding: 20px 0; border-top: 1px solid var(--br-line); border-bottom: 1px solid var(--br-line); }
   .apt__facts dt { font-size: 12.5px; font-weight: 600; color: var(--br-ink-sub); }

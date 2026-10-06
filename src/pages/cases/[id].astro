@@ -3,7 +3,7 @@
 import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
-import { COMPLEX_BY_SLUG } from '../../lib/caselog';
+import { COMPLEX_BY_SLUG, complexLine } from '../../lib/caselog';
 import { SITE_CONFIG } from '../../config.js';
 
 export async function getStaticPaths() {
@@ -64,8 +64,15 @@ if (qa.length) {
   });
 }
 
+// 같은 지역의 다른 사진 사례 — 날짜가 가까운 순으로 네 건
+const nearby = (await getCollection('cases'))
+  .filter((e) => !e.data.sample && e.id !== entry.id && e.data.region === region)
+  .sort((a, b) => Math.abs(+a.data.date - +date) - Math.abs(+b.data.date - +date))
+  .slice(0, 4);
+
 const specs = [
   ['지역', region],
+  ...(complex && complexLine(complex) ? [['단지', complexLine(complex)]] : []),
   ['공간', space],
   ['브랜드', brand],
   ['작업', type],
@@ -138,6 +145,15 @@ const specs = [
           ).map(([t, h]) => <li><a href={h}>{t}</a></li>)}
         </ul>
       </nav>
+
+      {nearby.length > 0 && (
+        <nav class="case-detail__more" aria-label={`${region} 다른 사례`}>
+          <p>{region} 다른 사례</p>
+          <ul>
+            {nearby.map((e) => <li><a href={`/cases/${e.id}/`}>{(e.data.title || '').split(/\s*[｜|]\s*/)[0]}</a></li>)}
+          </ul>
+        </nav>
+      )}
       </div>
 
       <p class="case-detail__back"><a class="br-pill" href="/cases/">목록으로</a></p>
