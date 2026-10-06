@@ -2,7 +2,7 @@
 // 원리: 포인터가 카드 중심에서 가장자리로 갈수록 --edge-proximity(0~100) ↑, 중심 기준 각도 --cursor-angle.
 // CSS 가 그 두 변수로 (1) 커서 쪽 테두리를 팔레트 메시로 물들이고 (2) 바깥으로 빛을 흘린다.
 // 대상: 유리 카드 전부(.br-glass) + [data-glow](유리 클래스가 없는 흰 카드 — 시공사례 카드). data-glow="off" 는 뺀다
-// (2026-10-06 대표: 설치 4단계 카드의 테두리 모션을 다른 흰 카드에도 전부). 3D 무대·말풍선·긴 본문 판은 off.
+// (2026-10-06 대표: 설치 4단계 카드의 테두리 모션을 다른 흰 카드에도 전부). 3D 무대·말풍선·안내 버튼은 off(긴 본문 판은 켠다).
 // 레이어 2장은 여기서 주입한다 — no-JS·터치 기기는 글로우 없음(hover 가 없으니 의미도 없음).
 const fine = window.matchMedia('(hover: hover) and (pointer: fine)');
 if (fine.matches) {
@@ -22,7 +22,8 @@ if (fine.matches) {
       host.appendChild(s);
     }
     card.classList.add('br-glow');
-    card.addEventListener('pointermove', (e) => {
+    // pointerenter 도 같이 — 휠로 화면만 움직이면 pointermove 가 안 와서, 지난번에 나간 방향의 빛이 그대로 켜졌다
+    const onMove = (e: PointerEvent) => {
       const r = card.getBoundingClientRect();
       const cx = r.width / 2;
       const cy = r.height / 2;
@@ -36,6 +37,8 @@ if (fine.matches) {
       if (deg < 0) deg += 360;
       card.style.setProperty('--edge-proximity', (edge * 100).toFixed(2));
       card.style.setProperty('--cursor-angle', `${deg.toFixed(2)}deg`);
-    });
+    };
+    card.addEventListener('pointermove', onMove);
+    card.addEventListener('pointerenter', onMove);
   });
 }

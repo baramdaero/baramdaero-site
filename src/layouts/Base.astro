@@ -100,7 +100,7 @@ const extraJsonLd = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
       import '../scripts/motion.ts';
       // 펼침 모션 — 모든 <details> 높이·내용이 부드럽게 (data-no-expand 제외)
       import '../scripts/expand.ts';
-      // 엣지 글로우 — [data-glow] 유리 카드, hover 기기 전용
+      // 엣지 글로우 — 유리 카드 전부(.br-glass) + [data-glow], data-glow="off" 제외. hover 기기 전용
       import '../scripts/border-glow.ts';
       // Specular 림 — [data-specular] 버튼(런처·CTA 밴드), hover 기기 전용
       import '../scripts/specular.ts';

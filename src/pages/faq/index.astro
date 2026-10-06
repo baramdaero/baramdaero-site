@@ -380,7 +380,8 @@ if (items.length) {
         steps.forEach((s) => { s.hidden = s !== to; });
         if (still()) return;
         to.animate([{ opacity: 0, transform: `translateX(${dir * 56}px)` }, { opacity: 1, transform: 'none' }], { duration: 520, easing: EASE });
-        Array.from(to.children).forEach((el, k) =>
+        // 엣지 글로우 레이어(카드의 마지막 자식 2장)는 뺀다 — 같이 떠오르면 포인터가 새 카드 위일 때 빛이 최대로 켜졌다 뚝 꺼진다
+        Array.from(to.children).filter((el) => !el.matches('.br-glow__border, .br-glow__light')).forEach((el, k) =>
           (el as HTMLElement).animate([{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }],
             { duration: 520, delay: 120 + k * 60, easing: EASE, fill: 'backwards' }));
       };

@@ -65,13 +65,17 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
     const invite = root.querySelector<HTMLButtonElement>('.space3d__invite');
     let inRoom = false, level = '';
     let first: { type: string; id: string } | null = null;   // 안내 버튼이 들어갈 첫 공간
+    // 무대가 화면 아래 고정 문의 버튼(76px) 위로 올라온 뒤에만 안내를 켠다 — 첫 화면 접힘선에서 버튼이 문의 버튼 밑에 깔렸다(10-06 검증)
+    let seen = !('IntersectionObserver' in window);
     const sync = () => {
       const inLevel = !!level && level !== '건물 정면';   // 뷰어가 알려 주는 건물 전경의 이름
       if (inRoom || inLevel) stage.dataset.deep = ''; else delete stage.dataset.deep;
       // 안내는 전체가 보일 때만 — 방·층 안에서는 히어로처럼 비운다(도면 위에 그대로 떠 있지 않게)
       const deep = inRoom || inLevel;
       if (deep && invite && document.activeElement === invite) back.focus({ preventScroll: true });   // 누른 버튼이 숨으면 포커스가 body 로 빠진다
-      invite?.toggleAttribute('data-on', !!first && !deep);
+      const fromBack = document.activeElement === back;
+      invite?.toggleAttribute('data-on', !!first && !deep && seen);
+      if (!deep && fromBack && first && seen) invite?.focus({ preventScroll: true });   // 나올 때도 — 되돌아가기 버튼이 숨으면 포커스가 body 로 빠진다
       if (inLevel) lv.textContent = level;               // 나갈 때는 지우지 않는다 — 사라지는 동안 글자가 먼저 비지 않게
     };
     addEventListener('message', (e) => {
@@ -89,6 +93,10 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
       else if (m.type === 'space') { level = m.title || ''; inRoom = false; }
       sync();
     });
+    if (!seen) {
+      const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { seen = true; io.disconnect(); sync(); } }, { rootMargin: '0px 0px -96px 0px' });
+      io.observe(stage);
+    }
     invite?.addEventListener('click', () => { if (first) frame.contentWindow?.postMessage({ ns: 'bd3d', ...first }, '*'); });
     back.addEventListener('click', () => {
       let house = frame.src.includes('/house.html');
@@ -118,11 +126,11 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
     display: flex; align-items: center; gap: 10px; margin-left: auto; min-height: 56px; padding: 10px 16px;
     font: inherit; text-align: left; font-size: 13px; line-height: 1.35; color: var(--br-ink-sub); cursor: pointer;
     opacity: 0; visibility: hidden; translate: 0 6px;
-    transition: opacity var(--dur-ui) var(--ease-out), translate var(--dur-ui) var(--ease-out), visibility 0s linear var(--dur-ui);
+    transition: opacity var(--dur-ui) var(--ease-out), translate var(--dur-ui) var(--ease-out), transform var(--dur-ui) var(--ease-out), visibility 0s linear var(--dur-ui);
   }
   .space3d__invite[data-on] {
     opacity: 1; visibility: visible; translate: 0 0;
-    transition: opacity var(--dur-reveal) var(--ease-out), translate var(--dur-reveal) var(--ease-out), visibility 0s;
+    transition: opacity var(--dur-reveal) var(--ease-out), translate var(--dur-reveal) var(--ease-out), transform var(--dur-ui) var(--ease-out), visibility 0s;
   }
   .space3d__invite svg { width: 16px; height: 16px; flex: none; color: var(--br-teal); }
   .space3d__invite-t { display: grid; }
