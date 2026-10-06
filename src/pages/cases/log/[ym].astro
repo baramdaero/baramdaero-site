@@ -1,0 +1,61 @@
+---
+// 월별 시공 기록 — 그 달에 마친 현장을 날짜순으로 전부. 숫자는 case-log.json 에서 센다
+import Base from '../../../layouts/Base.astro';
+import CtaBand from '../../../components/v2/CtaBand.astro';
+import LogTable from '../../../components/cases/LogTable.astro';
+import { MONTHS, stats, brandLine, fmtYm, fmtDate, LOG_UPDATED } from '../../../lib/caselog';
+
+export function getStaticPaths() {
+  return MONTHS.map((m, i) => ({ params: { ym: m.ym }, props: { m, newer: MONTHS[i - 1]?.ym ?? null, older: MONTHS[i + 1]?.ym ?? null } }));
+}
+const { m, newer, older } = Astro.props;
+const s = stats(m.records);
+const label = fmtYm(m.ym);
+const complexes = new Set(m.records.map((r) => r.slug).filter(Boolean)).size;
+const answer = `바람대로가 ${label}에 마친 시스템에어컨 현장은 ${s.n}건입니다.${s.unitsKnown ? ` 실내기는 ${s.unitsTotal}대이고,` : ''}${s.brands.length ? ` 브랜드는 ${brandLine(s.brands)}입니다.` : ''}`;
+const title = `${label} 시스템에어컨 시공 기록 ${s.n}건`;
+const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? '';
+const jsonLd = [
+  { '@context': 'https://schema.org', '@type': 'CollectionPage', name: title, description: answer, url: `${siteUrl}/cases/log/${m.ym}/`, inLanguage: 'ko-KR', dateModified: s.last },
+  { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+    { '@type': 'ListItem', position: 1, name: '홈', item: `${siteUrl}/` },
+    { '@type': 'ListItem', position: 2, name: '시공사례', item: `${siteUrl}/cases/` },
+    { '@type': 'ListItem', position: 3, name: label, item: `${siteUrl}/cases/log/${m.ym}/` },
+  ] },
+];
+---
+<Base title={title} description={answer} jsonLd={jsonLd}>
+  <article class="bd-section logp">
+    <div class="bd-container">
+      <div class="logp__card br-glass br-glass--flat">
+        <nav class="logp__crumb" aria-label="위치"><a href="/cases/">시공사례</a></nav>
+        <h1 class="logp__title">{label} 시공 기록<span class="logp__sub">{s.n}건{complexes > 0 && ` · 단지 ${complexes}곳`}</span></h1>
+        <p class="logp__answer">{answer}</p>
+        <LogTable records={m.records} caption={`${label} 시스템에어컨 시공 기록`} />
+        <p class="logp__note">일정 기록 기준 · {fmtDate(LOG_UPDATED)} 갱신</p>
+        <nav class="logp__pager" aria-label="다른 달">
+          {older ? <a class="br-pill" href={`/cases/log/${older}/`}>{fmtYm(older)}</a> : <span></span>}
+          {newer && <a class="br-pill" href={`/cases/log/${newer}/`}>{fmtYm(newer)} <span aria-hidden="true">→</span></a>}
+        </nav>
+      </div>
+    </div>
+  </article>
+  <CtaBand chatTree="install">
+    다음 현장이<br /><em>우리 집</em>이어도 됩니다
+    <Fragment slot="sub">기종과 대수, 설치 위치. 이 정도면 됩니다.</Fragment>
+  </CtaBand>
+</Base>
+
+<style>
+  .logp { background: transparent; }
+  .logp .bd-container { max-width: 920px; }
+  .logp__card { padding: 26px 20px 30px; }
+  .logp__crumb { font-size: 13px; font-weight: 600; }
+  .logp__crumb a { color: var(--br-teal); text-decoration: underline; text-underline-offset: 3px; }
+  .logp__title { margin: 12px 0 0; font-size: clamp(26px, 3.6vw, 38px); line-height: 1.25; text-wrap: balance; }
+  .logp__sub { display: block; margin-top: 6px; font-family: var(--sans); font-size: 0.52em; font-weight: 600; color: var(--br-ink-sub); font-variant-numeric: tabular-nums; }
+  .logp__answer { margin: 18px 0 24px; font-size: 17px; line-height: 1.8; max-width: 36em; text-wrap: pretty; word-break: keep-all; }
+  .logp__note { margin-top: 10px; font-size: 13px; color: var(--br-ink-sub); }
+  .logp__pager { display: flex; justify-content: space-between; gap: 12px; margin-top: 28px; }
+  @media (min-width: 720px) { .logp__card { padding: 40px 44px 44px; } }
+</style>
