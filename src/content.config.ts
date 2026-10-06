@@ -38,6 +38,7 @@ const cases = defineCollection({
     answer: z.string().default(''), // 첫 2문장 — meta description·AI 인용용
     qa: z.array(z.object({ q: z.string(), a: z.string() })).default([]), // 원본 근거 있는 질문만 → FAQPage
     updated: z.coerce.date().optional(),
+    apt: z.string().default(''), // 단지 페이지 slug(/cases/apt/<slug>/) — 시공 기록(case-log.json)과 잇는다
   }),
 });
 
