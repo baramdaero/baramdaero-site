@@ -652,7 +652,8 @@ html.br-js .br-reveal.br-h { transform: none; }
 
 /* ── 제목 글꼴 = 로고와 같은 G마켓 산스 (2026-10-05 확정, DESIGN.md §2) ──
    페이지 제목(h1)·섹션 제목(h2)만. 카드 제목(h3)·본문·버튼·표는 Pretendard 그대로.
-   파일은 완성형 한글 2,350자 + 라틴·숫자만 추린 Bold 한 벌(122KB) — 여기 없는 글자는 Pretendard 로 떨어진다.
+   파일은 완성형 한글 2,350자 + 라틴·숫자만 추린 Bold 한 벌(125KB) — 여기 없는 글자(공백 포함)는 Pretendard 로 떨어진다.
+   수정본이라 글꼴 파일 안 이름은 'Baramdaero Title' 이다('Gmarket Sans Font' 는 예약된 이름 — public/fonts/GmarketSans-NOTICE.txt).
    size-adjust 90%: 같은 px 에서 Pretendard 보다 크고 넓게 나와 휴대폰에서 줄이 늘었다
    (실측: 375px 홈 '바람대로와 함께한 공간' 1→2줄, 상업용 h1 2→3줄 — 94% 부터 돌아온다. 360px 상업용 h1 은 90% 부터) */
 @font-face {
