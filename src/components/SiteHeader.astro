@@ -409,9 +409,9 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     narrow.addEventListener('change', (e) => { if (!e.matches) setOpen(false, false, false); });
   }
 
-  // 로고 꼬불 모션 — 마우스를 올리거나 키보드로 닿으면 한 번. 첫 선을 시작시키면 나머지 선·글자·마침표는 SVG 안 시차로 따라온다
-  // (선 3개 꼬불 → 글자가 한 자씩 살짝 → '.' 이 통).
-  // 터치(hover 없음)와 '동작 줄이기' 설정에서는 걸지 않는다
+  // 로고 꼬불 모션 — 페이지를 열 때 한 번, 그리고 마우스를 올리거나 키보드로 닿으면 한 번.
+  // 첫 선을 시작시키면 나머지 선·글자·마침표는 SVG 안 시차로 따라온다(선 3개 꼬불 → 글자가 한 자씩 살짝 → '.' 이 통).
+  // '동작 줄이기' 설정에서는 걸지 않는다
   const brand = document.querySelector<HTMLElement>('.bd-header__brand');
   const firstLine = brand?.querySelector<SVGAnimationElement>('#bdw0');
   if (brand && firstLine && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -425,6 +425,11 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     // 터치 겸용 노트북은 hover 기기로 잡히지만 손가락 탭에도 pointerenter 가 온다 — 탭은 곧바로 이동이라 재생하지 않는다
     if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) brand.addEventListener('pointerenter', (e) => { if (e.pointerType !== 'touch') play(); });
     brand.addEventListener('focus', () => { if (brand.matches(':focus-visible')) play(); });
+    // 페이지를 열 때 한 번(2026-10-06 대표: '모바일에 통통거리는 로고가 없으니 허전하다' — 터치 기기는 hover 가 없어 이때만 보인다).
+    // 첫 화면이 그려지고 조금 뒤에 시작한다(rAF 는 가려진 탭에서 멈춰 있어, 뒤에서 열린 탭은 처음 보일 때 돈다). 뒤로 가기로 되살아났을 때도 한 번
+    const greet = () => requestAnimationFrame(() => setTimeout(play, 350));
+    greet();
+    window.addEventListener('pageshow', (e) => { if (e.persisted) greet(); });
   }
 
   // 오버레이 헤더 — 히어로 구간을 벗어나면 솔리드 전환 (rAF 스로틀)
