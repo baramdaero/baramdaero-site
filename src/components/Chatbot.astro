@@ -1046,6 +1046,7 @@ const TEASER = [
     disarmInput();
     hideTeaser();
     clearTimeout(hideTimer);
+    hideTimer = setTimeout(settle, 1000); // 끝 이벤트가 안 올 때(여는 도중 화면 폭이 바뀌어 모션이 끊김 등) .is-moving 을 떼는 마무리
     panel.hidden = false;
     // rAF 대신 동기 리플로우 — 백그라운드 탭(rAF 정지)에서도 열림 상태가 즉시 적용된다
     void panel.offsetHeight;
@@ -1071,6 +1072,9 @@ const TEASER = [
     openState = false;
     clearTimeout(hideTimer);
     hideTimer = setTimeout(settle, 1000); // 닫힘 모션(--dur-spring-out 320ms)의 끝 이벤트가 안 올 때의 마무리 — 시작이 늦어도 자르지 않게 넉넉히
+    // 움직일 것이 없으면(연 직후 첫 프레임이 그려지기 전에 닫힘) 끝 이벤트가 오지 않는다 — 안 보이는 패널이 1초 동안 클릭을 가로채지 않게 바로 숨긴다
+    void panel.offsetHeight;
+    if (typeof panel.getAnimations === 'function' && !panel.getAnimations().length) settle();
     lockScroll(false);
     lastFocus?.focus();
   }
