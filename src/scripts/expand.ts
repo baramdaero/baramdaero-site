@@ -28,6 +28,7 @@ function toggle(d: HTMLDetailsElement) {
   const to = heightWhen(d, opening);
   if (opening) d.open = true;
   d.style.overflow = 'hidden';
+  d.toggleAttribute('data-expanding', true);   // 엣지 글로우는 이 동안 쉰다(global.css) — overflow 에 잘렸다가 끝에서 뚝 돌아오지 않게
   const dur = opening ? DUR : CLOSE;
   const over = Math.min(OVER, Math.max(0, to - from) * 0.06);
   const a = opening
@@ -69,12 +70,13 @@ function toggle(d: HTMLDetailsElement) {
     a.cancel();
     if (!opening) d.open = false;
     d.style.overflow = '';
+    d.removeAttribute('data-expanding');
     running.delete(d);
   };
   a.onfinish = finish;
   setTimeout(finish, dur + 80);
   // 밖에서 끊겼을 때(요소가 사라짐 등)만 정리한다 — 다시 눌러 끊긴 것은 새 모션이 이어받았고, 이 이벤트는 그 뒤에 온다
-  a.oncancel = () => { if (running.get(d)?.a === a) { d.style.overflow = ''; running.delete(d); } };
+  a.oncancel = () => { if (running.get(d)?.a === a) { d.style.overflow = ''; d.removeAttribute('data-expanding'); running.delete(d); } };
 }
 
 document.addEventListener('click', (e) => {
