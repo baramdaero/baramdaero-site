@@ -159,7 +159,8 @@ v2(그린 듀오톤 canopy/lime) 체계는 폐기 — 본 v3 틸 토큰이 대�
 - UI 모션은 `transform`·`opacity`만(펼침의 높이는 예외), 상태 전환은 transition(휴대폰 채팅 시트만 키프레임, 펼침은 스크립트),
   `:active { scale(0.96) }`(누르는 쪽은 100ms, 떼면 `--ease-spring` 으로 돌아온다 — 문의·보조 버튼, 헤더 버튼, 채팅 런처), `transition: all` 금지, hover는 `(hover: hover) and (pointer: fine)` 게이트
   - 예외(2026-10-05): **헤더 로고 꼬불 모션**만 선 모양(SVG `d`)을 움직인다 — 선이 휘는 것은 transform·opacity 로 못 만든다.
-    hover·키보드 초점에 1회, 600ms(`--dur-reveal` 값)·`--ease-in-out` 값·시차 60ms, 터치와 reduced-motion 에서는 걸지 않는다.
+    페이지를 열 때 1회(2026-10-06 대표: 휴대폰은 hover 가 없어 이때만 보인다 — 전 페이지 공통)와 hover·키보드 초점에 1회,
+    600ms(`--dur-reveal` 값)·`--ease-in-out` 값·시차 60ms, reduced-motion 에서는 걸지 않는다.
     이어서 워드마크 글자가 한 자씩 살짝 떴다 내려앉고 '.' 이 크게 한 번·작게 한 번 튄다 — 이쪽은 transform 만 쓴다(각 600ms, 전체 1.1초).
     마침표의 튐만 이징 토큰 밖 곡선을 쓴다(올라갈 때 감속·내려올 때 가속 — 토큰 2종으로는 튀는 모양이 안 난다).
     다른 곳에 선 모양 모션을 늘리지 않는다
