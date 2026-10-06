@@ -2,19 +2,15 @@
 // 전역 헤더. overlay = 홈 히어로 위 투명 고정 / solid = 서브페이지 상단.
 // 로고 톤은 상태 클래스(.bd-header--overlay / .is-ready / .is-scrolled)에만 물린다 — 스크롤 리스너 추가 없음.
 // 오버레이의 기본값은 솔리드다. 투명(백색 텍스트)은 하단 스크립트가 .is-ready를 붙인 뒤에만 켜진다 (no-JS/초기화 실패 안전).
-// 락업은 <picture> media로 전환: 협소 폭(≤389px)에서 wide → mark 강등.
-// 390px+는 wide(마크+"바람대로" 워드마크) — 단, 실물 크기가 커 보인다는 판단에
-// 따라 08-24 축소했다. 워드마크 14px 하한 규칙을 이번엔 의도적으로 깼다
-// (한 차례 마크 단독 전환 시도 후 되돌림 — 오독이었다. 지시는 "락업 유지, 크기만 축소").
+// 락업은 인라인 SVG 한 벌(2026-10-05): 색은 CSS 변수로, 협소 폭(≤389px)은 워드마크를 숨겨 마크만 남긴다.
+// 인라인인 이유는 꼬불 모션 — <img> 안의 SVG 는 밖에서 움직일 수 없다.
+// 390px+는 락업 전체(마크 + 워드마크). 높이(24 / 26.667px)는 08-24 에 "커 보인다"는 판단으로 줄인 값을 그대로 쓴다
+// (그때 지시는 "락업 유지, 크기만 축소").
+// 메뉴는 800px 이하에서 '메뉴' 버튼으로 접는다(2026-10-06): 새 락업이 넓어(115→174px) 한 줄 메뉴 + 견적 문의가
+// 795px 미만에서 화면 밖으로 넘쳤다(641~794px 실측. 그 전에도 641~735px 는 넘치고 있었다).
 import { SITE_CONFIG } from '../config.js';
 import { getCollection } from 'astro:content';
-import wideUrl from '../assets/logo/baramdaero-wide.svg?url';
-import wideReverseUrl from '../assets/logo/baramdaero-wide-reverse.svg?url';
-import markUrl from '../assets/logo/baramdaero-mark.svg?url';
-import markReverseUrl from '../assets/logo/baramdaero-mark-reverse.svg?url';
-
-/** 이 폭 이하는 마크 단독 강등 (변경 없음 — 320~389px는 이번 축소 대상 아님). */
-const MARK_MAX = 389;
+import lockupSvg from '../assets/logo/baramdaero-lockup-anim.svg?raw';
 
 interface Props {
   variant?: 'overlay' | 'solid';
@@ -54,15 +50,8 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
 <header class:list={['bd-header', `bd-header--${variant}`]}>
   <div class="bd-header__inner">
     <a href="/" class="bd-header__brand" aria-label="바람대로 홈">
-      {/* alt는 빈 값 — 링크의 aria-label이 이름을 이미 읽는다 (중복 읽기 방지) */}
-      <picture class="bd-header__logo bd-header__logo--ink">
-        <source media={`(max-width: ${MARK_MAX}px)`} srcset={markUrl} />
-        <img src={wideUrl} alt="" />
-      </picture>
-      <picture class="bd-header__logo bd-header__logo--rev">
-        <source media={`(max-width: ${MARK_MAX}px)`} srcset={markReverseUrl} />
-        <img src={wideReverseUrl} alt="" />
-      </picture>
+      {/* SVG 는 aria-hidden — 링크의 aria-label이 이름을 이미 읽는다 (중복 읽기 방지) */}
+      <span class="bd-header__logo" set:html={lockupSvg} />
     </a>
     {/* 주 메뉴 랜드마크는 늘 남는다 — 640px 이하 + JS 에서는 안의 '메뉴' 버튼이 링크 묶음(#site-nav)을 펼침 목록으로 연다.
         버튼은 글자('메뉴'↔'닫기'): 아이콘은 koboyo 에서만 가져오는데 이 레포 세션에 연결이 없다. hidden 은 스크립트가 푼다 */}
@@ -140,12 +129,14 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     align-items: center;
     gap: 28px;
   }
-  /* flex 축소 금지 — 축소는 flex '아이템'에서 일어난다. img에만 걸면 부모 picture/brand가
-     대신 눌려 로고 비율이 깨진다 (360px에서 155→123px 실측). 사슬 전체에 건다 */
+  /* flex 축소 금지 — 축소는 flex '아이템'에서 일어난다. svg 에만 걸면 부모(span·brand)가
+     대신 눌려 로고 비율이 깨진다 (옛 img 락업으로 360px에서 155→123px 실측). 사슬 전체에 건다.
+     min-height 44px = 로고 링크의 누르는 높이(로고 자체는 24~32px) */
   .bd-header__brand {
     display: flex;
     align-items: center;
     flex-shrink: 0;
+    min-height: 44px;
   }
   /* 우측 액션 슬롯 — 내용이 생겨도 줄어들지 않는다 */
   .bd-header__actions {
@@ -167,21 +158,18 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   /* 로고 — 높이 고정·width auto (비율 무변경). 톤 전환은 기존 상태 클래스만 사용.
      08-24 축소: 기존 36/40px의 2/3 — "커 보인다"는 실물 판단을 워드마크 14px
      하한보다 우선했다(의도적으로 하한 이하로 내려간다). */
-  .bd-header__logo { display: none; flex-shrink: 0; }
-  .bd-header__logo img {
+  /* 라이트 구간(서브페이지 솔리드 · 오버레이 스크롤 후) = ink 글자 + teal 포인트 */
+  .bd-header__logo { display: block; flex-shrink: 0; color: var(--br-ink); --logo-accent: var(--br-teal); }
+  .bd-header__logo :global(svg) {
     display: block;
     height: 24px;
     width: auto;
-    aspect-ratio: 1472 / 341; /* v3 락업 비율 — 로드 전 레이아웃 밀림 방지 */
+    aspect-ratio: 555 / 85; /* 기울인 바람 락업 비율 */
     flex-shrink: 0;
+    overflow: visible; /* 꼬불할 때 선이 상자 밖으로 1px 쯤 나간다 */
   }
-  /* 라이트 구간(서브페이지 솔리드 · 오버레이 스크롤 후) = teal 잉크 */
-  .bd-header--solid .bd-header__logo--ink,
-  .bd-header--overlay:not(.is-ready) .bd-header__logo--ink,
-  .bd-header--overlay.is-scrolled .bd-header__logo--ink,
-  .bd-header--overlay.is-menu-open .bd-header__logo--ink { display: block; }
-  /* 다크 구간(JS 초기화 후 히어로 위 투명 오버레이) = 리버스 */
-  .bd-header--overlay.is-ready:not(.is-scrolled):not(.is-menu-open) .bd-header__logo--rev { display: block; }
+  /* 다크 구간(JS 초기화 후 히어로 위 투명 오버레이) = 흰 글자 + ice 포인트 */
+  .bd-header--overlay.is-ready:not(.is-scrolled):not(.is-menu-open) .bd-header__logo { color: #fff; --logo-accent: var(--br-ice); }
   .bd-header__nav { display: flex; align-items: center; }
   .bd-header__links {
     display: flex;
@@ -239,7 +227,7 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
 
   /* 데스크톱 헤더(64px)는 여유가 있어 40px의 2/3 = 26.667px */
   @media (min-width: 641px) {
-    .bd-header__logo img { height: 26.667px; }
+    .bd-header__logo :global(svg) { height: 26.667px; }
 
     /* 641px+는 폭이 충분하므로 전체 명칭 — 축약은 좁은 폭에서 로고 자리를 벌려던 것이다 */
     .bd-header__label--short { display: none; }
@@ -253,11 +241,11 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     .bd-header__nav { margin-left: auto; }
   }
 
-  /* 가로형이 안 들어가는 폭 — 마크 단독 강등 (파일 교체는 <picture> media가).
-     ⚠️ 이 389는 위 MARK_MAX와 같은 값이어야 한다. 미디어 쿼리는 CSS 변수를 못 읽어
-     define:vars로 묶을 수 없다 — 한쪽만 고치면 파일은 마크인데 크기는 가로형이 된다 */
+  /* 가로형이 안 들어가는 폭 — 마크 단독 강등. 워드마크를 숨기고 상자를 마크 폭으로 줄인다
+     (SVG 가 xMinYMid slice 라 높이에 맞춰 왼쪽부터 그린다. 125 = 락업 안 마크 폭) */
   @media (max-width: 389px) {
-    .bd-header__logo img { height: 32px; aspect-ratio: 1 / 1; }
+    .bd-header__logo :global(svg) { height: 32px; aspect-ratio: 125 / 85; }
+    .bd-header__logo :global(.bd-logo-word) { display: none; }
   }
 
   /* ---- 모바일 메뉴(640px 이하 + JS: .has-menu) — 한 줄 메뉴를 접고 '메뉴' 버튼으로 편다 ---- */
@@ -279,7 +267,8 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   .bd-header.is-menu-open .bd-header__menu-open { display: none; }
   .bd-header.is-menu-open .bd-header__menu-close { display: inline; }
   .bd-header--overlay.is-ready:not(.is-scrolled):not(.is-menu-open) .bd-header__menu-btn { color: #fff; background: rgba(255, 255, 255, 0.14); }
-  @media (max-width: 640px) {
+  /* ⚠️ 이 800 은 아래 스크립트의 matchMedia 와 같은 값이어야 한다 */
+  @media (max-width: 800px) {
     .bd-header.has-menu .bd-header__menu-btn { display: inline-flex; }
     .bd-header.has-menu .bd-header__links { display: none; }
     /* 펼침 목록 — 헤더 바로 아래 전체 폭. 글자는 전체 명칭, 한 줄 52px */
@@ -333,7 +322,7 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   const header = document.querySelector<HTMLElement>('.bd-header');
   const menuBtn = header?.querySelector<HTMLButtonElement>('.bd-header__menu-btn');
   if (header && menuBtn) {
-    const narrow = window.matchMedia('(max-width: 640px)');
+    const narrow = window.matchMedia('(max-width: 800px)');
     const setOpen = (open: boolean, returnFocus = false) => {
       header.classList.toggle('is-menu-open', open);
       menuBtn.setAttribute('aria-expanded', String(open));
@@ -359,6 +348,24 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     window.addEventListener('pageshow', (e) => { if (e.persisted) setOpen(false); });
     // 데스크톱 폭으로 넓어지면 펼침 상태를 풀어 둔다
     narrow.addEventListener('change', (e) => { if (!e.matches) setOpen(false); });
+  }
+
+  // 로고 꼬불 모션 — 마우스를 올리거나 키보드로 닿으면 한 번. 첫 선을 시작시키면 나머지 선·글자·마침표는 SVG 안 시차로 따라온다
+  // (선 3개 꼬불 → 글자가 한 자씩 살짝 → '.' 이 통).
+  // 터치(hover 없음)와 '동작 줄이기' 설정에서는 걸지 않는다
+  const brand = document.querySelector<HTMLElement>('.bd-header__brand');
+  const firstLine = brand?.querySelector<SVGAnimationElement>('#bdw0');
+  if (brand && firstLine && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    let last = -Infinity; // 0 이면 페이지를 연 직후 1.3초 안의 첫 hover 가 무시된다
+    const play = () => {
+      const now = performance.now();
+      if (now - last < 1300) return; // 도는 중에 다시 시작하지 않는다(전체 1.1초)
+      last = now;
+      firstLine.beginElement();
+    };
+    // 터치 겸용 노트북은 hover 기기로 잡히지만 손가락 탭에도 pointerenter 가 온다 — 탭은 곧바로 이동이라 재생하지 않는다
+    if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) brand.addEventListener('pointerenter', (e) => { if (e.pointerType !== 'touch') play(); });
+    brand.addEventListener('focus', () => { if (brand.matches(':focus-visible')) play(); });
   }
 
   // 오버레이 헤더 — 히어로 구간을 벗어나면 솔리드 전환 (rAF 스로틀)

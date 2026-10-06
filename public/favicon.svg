@@ -1,11 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000" role="img" aria-label="바람대로">
-<title>바람대로</title><rect width="1000" height="1000" fill="#004E64"/><g fill="#F7F9FA">
-<rect x="100.0" y="158.15" width="322.81" height="96.24"/>
-<rect x="577.19" y="158.15" width="322.81" height="96.24"/>
-<rect x="100.0" y="254.39" width="800.0" height="242.61"/>
-<rect x="100.0" y="496.99" width="322.81" height="92.23"/>
-<rect x="577.19" y="496.99" width="322.81" height="92.23"/>
-<rect x="100.0" y="589.22" width="322.81" height="2.01"/>
-<rect x="575.19" y="589.22" width="324.81" height="2.01"/>
-<rect x="100.0" y="591.23" width="800.0" height="250.63"/>
-</g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-77.92 -22.12 366.54 366.54" role="img" aria-label="바람대로"><title>바람대로</title><rect x="-77.92" y="-22.12" width="366.54" height="366.54" rx="80.64" fill="#00293A"/><polygon fill="#FFFFFF" points="116.26,83.50 236.26,83.50 222.93,116.50 102.93,116.50"/><polygon fill="#FFFFFF" points="12.02,143.50 212.02,143.50 198.69,176.50 -1.31,176.50"/><polygon fill="#BFE9F2" points="-12.22,203.50 97.78,203.50 84.45,236.50 -25.55,236.50"/><polygon fill="#BFE9F2" points="124.90,201.19 162.52,201.19 147.32,238.81 109.70,238.81"/></svg>

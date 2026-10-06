@@ -3,20 +3,40 @@
 // 실행되지 않으면(또는 IO 미지원이면) 콘텐츠는 처음부터 전부 보인다.
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/* ---------- 카운트업 — [data-countup] (마크업 기본값 = 최종값이라 실패에도 안전) ---------- */
+/* ---------- 카운트업 — [data-countup] (마크업 기본값 = 최종값이라 실패에도 안전) ----------
+   스프링으로 센다(2026-10-05): 처음엔 빠르게 올라가고 끝자리에서 천천히 멎는다.
+   React Bits CountUp 의 느낌(과감쇠 스프링)을 라이브러리 없이 옮긴 것 —
+   과감쇠라 목표를 넘어가지 않는다(숫자가 실제 값보다 커 보이는 순간이 없다) */
 function countUp(el: HTMLElement) {
-  const target = Number(el.dataset.countup);
+  const raw = el.dataset.countup ?? '';
+  const target = Number(raw);
   if (!isFinite(target)) return;
   const finalText = el.textContent; // 마크업 기본값 = 최종 정적 콘텐츠. 어떤 실패에도 이 값으로 되돌린다
-  const dur = 1200;
-  const t0 = performance.now();
-  const ease = (t: number) => 1 - Math.pow(1 - t, 3);
-  const restore = () => { el.textContent = finalText; };
+  const decimals = (raw.split('.')[1] ?? '').length; // 소수 자릿수는 목표값을 따른다
+  const fmt = { minimumFractionDigits: decimals, maximumFractionDigits: decimals };
+  const damping = 60, stiffness = 170; // 100 이면 끝자리 하나가 4초까지 끈다(644 실측) — 2.5초 안에 멎게 조였다
+  const done = 0.5 / Math.pow(10, decimals); // 반올림해도 목표값이 되는 거리
+  const maxMs = 6000; // 안전장치 — 어떤 경우에도 이 안에 최종값으로 끝낸다
+  // 세는 동안 숫자 폭이 변해 옆 칸이 밀리지 않게 최종 폭을 잡아 둔다
+  const w = el.offsetWidth;
+  if (w) { el.style.display = 'inline-block'; el.style.minWidth = `${w}px`; }
+  const restore = () => {
+    el.textContent = finalText;
+    if (w) { el.style.display = ''; el.style.minWidth = ''; }
+  };
+  let x = 0, v = 0, t0 = 0, prev = 0;
   const tick = (now: number) => {
     try {
-      const p = Math.min(1, (now - t0) / dur);
-      if (p >= 1) { restore(); return; }
-      el.textContent = Math.round(target * ease(p)).toLocaleString('ko-KR');
+      if (!t0) { t0 = now; prev = now; }
+      let dt = Math.min(0.064, (now - prev) / 1000); // 탭이 쉬다 돌아와도 튀지 않게
+      prev = now;
+      for (; dt > 0; dt -= 0.004) { // 4ms 씩 잘라 적분(프레임률과 무관하게 같은 곡선)
+        const h = Math.min(0.004, dt);
+        v += (stiffness * (target - x) - damping * v) * h;
+        x += v * h;
+      }
+      if (Math.abs(target - x) < done || now - t0 > maxMs) { restore(); return; }
+      el.textContent = x.toLocaleString('ko-KR', fmt);
       requestAnimationFrame(tick);
     } catch {
       restore();

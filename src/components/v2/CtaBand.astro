@@ -22,15 +22,18 @@ const hasSub = Astro.slots.has('sub');
     {label && <p class="br-sec-label v2-cta__label">{label}</p>}
     {hasTitle && <h2 class="br-h v2-cta__title br-reveal"><slot /></h2>}
     {hasSub && <p class="v2-cta__sub br-reveal"><slot name="sub" /></p>}
+    {/* 버튼 두 개는 같은 높이로 한 줄, 전화번호는 그 아래 한 줄(2026-10-05 대표: 셋의 크기가 제각각이라 어색) */}
     <div class="v2-cta__row br-reveal">
+      <div class="v2-cta__btns">
       <button disabled aria-describedby="chat-unavailable"
         type="button"
         class="bd-cta bd-cta--ondark v2-cta__btn"
         data-chat-tree={chatTree}
       >{buttonLabel}<svg class="br-cta-arrow" aria-hidden="true" viewBox="0 0 10 10" width="10" height="10" fill="none"><path d="M0 5h7" /><path d="M1 1l4 4-4 4" /></svg></button>
       {priceLink && <a class="br-pill" href="/price/">가격 안내 보기 <span aria-hidden="true">→</span></a>}
+      </div>
       {SITE_CONFIG.PHONE && (
-        <a class="v2-cta__phone" href={`tel:${SITE_CONFIG.PHONE}`}>{SITE_CONFIG.PHONE}</a>
+        <a class="v2-cta__phone" href={`tel:${SITE_CONFIG.PHONE}`}><span class="v2-cta__phone-label">전화</span>{SITE_CONFIG.PHONE}</a>
       )}
     </div>
   </div>
@@ -55,17 +58,29 @@ const hasSub = Astro.slots.has('sub');
   .v2-cta__row {
     margin-top: 36px;
     display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    justify-content: center;
+    flex-direction: column;
+    gap: 14px;
     align-items: center;
   }
-  /* 밴드 CTA — 흰 면 사각 문의 버튼(global.css .bd-cta--ondark + 화살표, 2026-10-02 대표 참고 버튼). 여기서는 크기만 */
-  .v2-cta__btn {
-    font-size: 18px; font-weight: 700; letter-spacing: 0.01em;
-    min-height: 64px; padding: 0 36px; /* 큰 변형 — 모서리는 .bd-cta(--radius-btn) */
+  .v2-cta__btns { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; align-items: stretch; }
+  /* 밴드 CTA — 흰 면 사각 문의 버튼(global.css .bd-cta--ondark + 화살표, 2026-10-02 대표 참고 버튼). 여기서는 크기만.
+     문의·가격 안내 두 버튼은 높이 56·글자 17·모서리 12 로 맞춘다 — 차이는 면 색(흰 면 / 틴트)으로만 낸다 */
+  .v2-cta__btn,
+  .v2-cta__btns .br-pill {
+    min-height: 56px; padding: 0 28px; font-size: 17px; font-weight: 700; letter-spacing: -0.01em;
+    border-radius: var(--radius-btn); justify-content: center;
   }
-  .v2-cta__phone { font-weight: 700; color: var(--br-ice); }
+  /* 전화 — 버튼 아래 한 줄. 누르는 자리는 44px */
+  .v2-cta__phone {
+    display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 8px;
+    font-size: 22px; font-weight: 700; letter-spacing: 0.01em; color: var(--br-ice);
+  }
+  .v2-cta__phone-label { font-size: 15px; font-weight: 600; letter-spacing: 0; color: var(--br-base); }
+  .v2-cta__phone:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 6px; }
+  /* 좁은 화면 — 두 버튼을 같은 폭으로 세로로 */
+  @media (max-width: 479px) {
+    .v2-cta__btns { flex-direction: column; width: min(100%, 320px); }
+  }
   /* 보조 알약 — 밴드 합성색(#4F6C78) 위에서 ice 글자는 3.6:1 로 미달. 흰 글자·흰 틴트로 4.5 이상 */
   .v2-cta { --pill-fg: #fff; --pill-fg-hover: #fff; --pill-bg: rgba(255, 255, 255, 0.08); --pill-bg-hover: rgba(0, 41, 58, 0.2); --pill-dot: rgba(255, 255, 255, 0.14); } /* hover 는 밝히지 않고 어둡게 — 밝히면 4.4:1 */
   @media (min-width: 768px) { .v2-cta__sub { font-size: 17px; } }
