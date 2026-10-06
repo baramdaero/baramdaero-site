@@ -1,0 +1,190 @@
+---
+// 단지별 시공 기록 — "○○아파트 시스템에어컨 설치" 를 찾는 사람(과 AI 검색)에게 첫 문장으로 답한다.
+// 문장·표·질문의 숫자는 전부 case-log.json 에서 센다(lib/caselog.ts stats). 근거 없는 말은 넣지 않는다 —
+// 일반 안내(설치 가능 여부는 실측에서, 대수는 방 수로, 견적 받는 법)는 faq.json 에 이미 있는 답과 같은 내용만 쓴다.
+import { getCollection } from 'astro:content';
+import Base from '../../../layouts/Base.astro';
+import CtaBand from '../../../components/v2/CtaBand.astro';
+import CaseCard from '../../../components/CaseCard.astro';
+import LogTable from '../../../components/cases/LogTable.astro';
+import { COMPLEXES, REGIONS, stats, brandLine, fmtDate, fmtYm, ymOf, regionSlug, LOG_UPDATED } from '../../../lib/caselog';
+import { SITE_CONFIG } from '../../../config.js';
+import faq from '../../../content/site/faq.json';
+
+export function getStaticPaths() {
+  return COMPLEXES.map((c) => ({ params: { slug: c.slug }, props: { c } }));
+}
+const { c } = Astro.props;
+const s = stats(c.records);
+const place = `${c.gu} ${c.dong} ${c.name}`;
+const allInstall = c.records.every((r) => r.t === '설치');
+const work = allInstall ? '설치' : '설치·세척';
+const one = c.records[0];
+const range = ymOf(s.first) === ymOf(s.last) ? fmtYm(ymOf(s.first)) : `${fmtYm(ymOf(s.first))}~${fmtYm(ymOf(s.last))}`;
+const unitsSentence = !s.unitsKnown ? '' : s.unitsMin === s.unitsMax ? `세대당 ${s.unitsMin}대입니다.` : `세대당 ${s.unitsMin}~${s.unitsMax}대입니다.`;
+
+// 첫 문장 = 답. 한 건이면 날짜까지, 여러 건이면 기간·브랜드·대수
+const answer = s.n === 1
+  ? `바람대로는 ${fmtDate(one.d)} ${place}에서 ${one.b ? `${one.b} ` : ''}시스템에어컨 ${one.u ? `${one.u}대 ` : ''}${one.t}${one.t === '설치' ? '를' : '을'} 마쳤습니다.`
+  : `바람대로는 ${place}에서 시스템에어컨 ${work} 현장 ${s.n}건을 마쳤습니다(${range}). ${s.brands.length ? `브랜드는 ${brandLine(s.brands)}, ` : ''}${unitsSentence}`.trim();
+
+const ask = faq.items.find((f) => f.id === 'faq-ask-first');
+const qa = [
+  {
+    q: `${c.name}에 시스템에어컨을 설치할 수 있나요?`,
+    a: `바람대로가 ${c.name}에서 마친 ${work} 기록이 ${s.n}건 있습니다. 같은 단지라도 세대마다 천장 속 높이와 배관 길이가 달라, 설치 가능 여부는 실측에서 확정합니다.`,
+  },
+  ...(s.unitsKnown >= 2 && s.unitsMode ? [{
+    q: `${c.name}에는 보통 몇 대를 설치하나요?`,
+    a: s.unitsMin === s.unitsMax
+      ? `대수가 기록된 ${s.unitsKnown}건 모두 세대당 ${s.unitsMin}대였습니다. 필요한 대수는 냉방할 방의 수로 정합니다.`
+      : `대수가 기록된 ${s.unitsKnown}건은 세대당 ${s.unitsMin}~${s.unitsMax}대였고, ${s.unitsMode.u}대가 ${s.unitsMode.n}건으로 가장 많았습니다. 필요한 대수는 냉방할 방의 수로 정합니다.`,
+  }] : []),
+  ...(s.n >= 2 && s.brands.length ? [{
+    q: `${c.name}에서는 삼성과 LG 중 어느 쪽을 설치했나요?`,
+    a: `${brandLine(s.brands)}입니다. 바람대로는 삼성·LG 모두 설치합니다.`,
+  }] : []),
+  ...((ask?.short_a || ask?.chat_a) ? [{ q: `${c.name} 시스템에어컨 견적은 어떻게 받나요?`, a: (ask.short_a || ask.chat_a) as string }] : []),
+];
+
+// 이 단지의 사진 사례(제목에 단지명이 든 것)와 같은 지역의 다른 단지
+const squash = (t: string) => t.replace(/\s+/g, '');
+const photoCases = (await getCollection('cases')).filter((e) => !e.data.sample && squash(e.data.title).includes(squash(c.name)));
+const near = (REGIONS.find((r) => r.region === c.region)?.complexes ?? []).filter((x) => x.slug !== c.slug).slice(0, 8);
+
+const title = `${c.name} 시스템에어컨 ${work} 사례 ${s.n}건 (${c.gu} ${c.dong})`;
+const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? '';
+const pageUrl = `${siteUrl}/cases/apt/${c.slug}/`;
+const org = { '@type': 'Organization', name: '바람대로', url: `${siteUrl}/` };
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: title,
+    description: answer,
+    url: pageUrl,
+    inLanguage: 'ko-KR',
+    dateModified: s.last,
+    publisher: org,
+    about: {
+      '@type': 'ApartmentComplex',
+      name: c.name,
+      address: { '@type': 'PostalAddress', addressCountry: 'KR', addressRegion: c.region.split(' ')[0], addressLocality: `${c.gu} ${c.dong}` },
+    },
+    mainEntity: { '@type': 'Service', name: `시스템에어컨 ${work}`, serviceType: `시스템에어컨 ${work}`, areaServed: `${c.gu} ${c.dong}`, provider: org },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: '홈', item: `${siteUrl}/` },
+      { '@type': 'ListItem', position: 2, name: '시공사례', item: `${siteUrl}/cases/` },
+      { '@type': 'ListItem', position: 3, name: c.region, item: `${siteUrl}/cases/region/${regionSlug(c.region)}/` },
+      { '@type': 'ListItem', position: 4, name: c.name, item: pageUrl },
+    ],
+  },
+  { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: qa.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) },
+];
+---
+<Base title={title} description={answer} jsonLd={jsonLd}>
+  <article class="bd-section apt">
+    <div class="bd-container">
+      <div class="apt__card br-glass br-glass--flat">
+        <nav class="apt__crumb" aria-label="위치">
+          <a href="/cases/">시공사례</a><span aria-hidden="true">›</span><a href={`/cases/region/${regionSlug(c.region)}/`}>{c.region}</a>
+        </nav>
+        <h1 class="apt__title">{c.name}<span class="apt__sub">시스템에어컨 {work} 사례 {s.n}건</span></h1>
+        <p class="apt__answer">{answer}</p>
+
+        <dl class="apt__facts">
+          <div><dt>위치</dt><dd>{c.gu} {c.dong}</dd></div>
+          <div><dt>마친 현장</dt><dd>{s.n}건</dd></div>
+          {s.unitsKnown > 0 && <div><dt>실내기</dt><dd>{s.unitsTotal}대</dd></div>}
+          {s.brands.length > 0 && <div><dt>브랜드</dt><dd>{brandLine(s.brands)}</dd></div>}
+          <div><dt>최근 작업</dt><dd>{fmtDate(s.last)}</dd></div>
+        </dl>
+
+        <div class="apt__cta">
+          <button disabled aria-describedby="chat-unavailable" type="button" class="bd-cta" data-chat-tree="install">이 단지 견적 문의</button>
+          {SITE_CONFIG.PHONE && <a class="br-pill" href={`tel:${SITE_CONFIG.PHONE.replace(/[^0-9]/g, '')}`}>전화 {SITE_CONFIG.PHONE}</a>}
+        </div>
+
+        <h2 class="apt__h">날짜별 기록</h2>
+        <LogTable records={c.records} showPlace={false} showRegion={false} caption={`${c.name} 시스템에어컨 시공 기록`} />
+        <p class="apt__note">일정 기록 기준 · {fmtDate(LOG_UPDATED)} 갱신</p>
+
+        {photoCases.length > 0 && (
+          <Fragment>
+            <h2 class="apt__h">사진으로 보기</h2>
+            <div class="apt__photos">{photoCases.map((e) => <CaseCard entry={e} />)}</div>
+          </Fragment>
+        )}
+
+        <section class="apt__qa">
+          <h2 class="apt__h">자주 묻는 질문</h2>
+          {qa.map((f) => (
+            <details>
+              <summary>{f.q}</summary>
+              <p>{f.a}</p>
+            </details>
+          ))}
+        </section>
+
+        <nav class="apt__more" aria-label="관련 안내">
+          <p>더 알아보기</p>
+          <ul>
+            <li><a href="/install/">설치 절차</a></li>
+            <li><a href="/price/">비용이 정해지는 방식</a></li>
+            <li><a href="/faq/">자주 묻는 질문</a></li>
+            <li><a href={`/cases/region/${regionSlug(c.region)}/`}>{c.region} 시공 기록</a></li>
+          </ul>
+        </nav>
+
+        {near.length > 0 && (
+          <nav class="apt__near" aria-label={`${c.region}의 다른 단지`}>
+            <p>{c.region}의 다른 단지</p>
+            <ul>{near.map((x) => <li><a class="br-pill" href={`/cases/apt/${x.slug}/`}>{x.name} <span class="apt__n">{x.records.length}건</span></a></li>)}</ul>
+          </nav>
+        )}
+      </div>
+    </div>
+  </article>
+
+  <CtaBand chatTree="install">
+    다음 현장이<br /><em>우리 집</em>이어도 됩니다
+    <Fragment slot="sub">기종과 대수, 설치 위치. 이 정도면 됩니다.</Fragment>
+  </CtaBand>
+</Base>
+
+<style>
+  .apt { background: transparent; }
+  .apt .bd-container { max-width: 820px; }
+  .apt__card { padding: 26px 20px 30px; }
+  .apt__crumb { display: flex; flex-wrap: wrap; gap: 6px; font-size: 13px; font-weight: 600; color: var(--br-ink-sub); }
+  .apt__crumb a { color: var(--br-teal); text-decoration: underline; text-underline-offset: 3px; }
+  .apt__title { margin: 12px 0 0; font-size: clamp(26px, 3.6vw, 38px); line-height: 1.25; text-wrap: balance; overflow-wrap: anywhere; }
+  .apt__sub { display: block; margin-top: 6px; font-family: var(--sans); font-size: 0.52em; font-weight: 600; line-height: 1.5; color: var(--br-ink-sub); }
+  /* 답 문장 — 휴대폰에서 문장 중간이 어색하게 끊기지 않게 낱말 단위로만 넘기고(pretty), 줄 길이를 34자 안팎으로 */
+  .apt__answer { margin-top: 18px; font-size: 17px; line-height: 1.8; color: var(--br-ink); max-width: 36em; text-wrap: pretty; word-break: keep-all; }
+  .apt__facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 20px; margin: 24px 0 0; padding: 20px 0; border-top: 1px solid var(--br-line); border-bottom: 1px solid var(--br-line); }
+  .apt__facts dt { font-size: 12.5px; font-weight: 600; color: var(--br-ink-sub); }
+  .apt__facts dd { margin-top: 2px; font-size: 16px; font-weight: 700; color: var(--br-ink); font-variant-numeric: tabular-nums; }
+  .apt__cta { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 22px; }
+  .apt__h { margin: 40px 0 8px; font-size: 20px; color: var(--br-ink); }
+  .apt__note { margin-top: 10px; font-size: 13px; color: var(--br-ink-sub); }
+  .apt__photos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 12px; }
+  .apt__qa details { border-bottom: 1px solid var(--br-line); }
+  .apt__qa summary { cursor: pointer; font-weight: 700; font-size: 16.5px; line-height: 1.55; padding: 16px 4px; text-wrap: pretty; }
+  .apt__qa p { font-size: 15.5px; color: var(--br-ink); padding: 0 4px 18px; line-height: 1.8; max-width: 36em; text-wrap: pretty; }
+  .apt__more, .apt__near { margin-top: 32px; }
+  .apt__more p, .apt__near p { font-size: 14px; font-weight: 700; color: var(--br-ink-sub); }
+  .apt__more ul { margin-top: 10px; list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 18px; }
+  .apt__more a { color: var(--br-teal); text-decoration: underline; text-underline-offset: 3px; font-size: 15px; }
+  .apt__near ul { margin-top: 12px; list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .apt__n { font-weight: 600; color: var(--br-ink-sub); font-variant-numeric: tabular-nums; }
+  @media (min-width: 720px) {
+    .apt__card { padding: 40px 44px 44px; }
+    .apt__facts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+  @media (max-width: 520px) { .apt__photos { grid-template-columns: 1fr; } }
+</style>

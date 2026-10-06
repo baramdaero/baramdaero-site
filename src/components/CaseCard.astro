@@ -9,7 +9,7 @@ const { entry } = Astro.props;
 const { region, space, brand, type, units, date, cover, title } = entry.data;
 // 제목에 단지명이 있으면 그걸 크게(검색어와 같은 말이 보이게). '｜' 뒤는 작은 줄로
 const [main, sub] = title ? title.split(/\s*[｜|]\s*/) : [`${space} ${brand} ${units}대`, ''];
-const dateLabel = date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long' });
+const dateLabel = date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });   // 날짜까지(2026-10-06 대표: 날짜별로)
 ---
 <a
   class="bd-case-card"

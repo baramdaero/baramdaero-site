@@ -1,0 +1,59 @@
+---
+// 시공 기록 표 — 날짜순 한 줄씩. 단지 페이지(단지 열 없음)·월별·지역별 공용.
+// 휴대폰에서는 표 대신 두 줄 카드로 접힌다(가로 스크롤 없음).
+import { fmtDate, type LogRecord } from '../../lib/caselog';
+interface Props { records: LogRecord[]; showPlace?: boolean; showRegion?: boolean; caption: string }
+const { records, showPlace = true, showRegion = true, caption } = Astro.props;
+---
+<table class="log">
+  <caption class="log__cap">{caption}</caption>
+  <thead>
+    <tr>
+      <th scope="col">날짜</th>
+      {showRegion && <th scope="col">지역</th>}
+      {showPlace && <th scope="col">단지·공간</th>}
+      <th scope="col">브랜드</th>
+      <th scope="col">대수</th>
+      <th scope="col">작업</th>
+    </tr>
+  </thead>
+  <tbody>
+    {records.map((r) => (
+      <tr>
+        <td class="log__d"><time datetime={r.d}>{fmtDate(r.d)}</time></td>
+        {showRegion && <td class="log__r">{r.r}</td>}
+        {showPlace && (
+          <td class="log__p">
+            {r.slug ? <a href={`/cases/apt/${r.slug}/`}>{r.dong} {r.apt}</a> : (r.sp ?? '')}
+          </td>
+        )}
+        <td class="log__b">{r.b ?? ''}</td>
+        <td class="log__u">{r.u ? `${r.u}대` : ''}</td>
+        <td class="log__t">{r.t}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+
+<style>
+  .log { width: 100%; border-collapse: collapse; font-size: 15px; font-variant-numeric: tabular-nums; }
+  .log__cap { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .log th { text-align: left; font-size: 13px; font-weight: 700; color: var(--br-ink-sub); padding: 10px 12px; border-bottom: 1px solid var(--br-line); white-space: nowrap; }
+  .log td { padding: 12px; border-bottom: 1px solid var(--br-line); color: var(--br-ink); vertical-align: top; }
+  .log__d { white-space: nowrap; color: var(--br-ink-sub); }
+  .log__p a { color: var(--br-teal); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, var(--br-teal) 35%, transparent); }
+  .log__u, .log__t, .log__b { white-space: nowrap; }
+  @media (hover: hover) and (pointer: fine) { .log tbody tr:hover td { background: color-mix(in srgb, var(--br-teal) 4%, transparent); } }
+
+  /* 휴대폰 — 한 건 = 두 줄 카드. 윗줄 단지(굵게), 아랫줄 날짜 · 지역 · 브랜드 대수 작업 */
+  @media (max-width: 640px) {
+    .log thead { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); }
+    .log, .log tbody { display: block; }
+    .log tr { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; padding: 13px 2px; border-bottom: 1px solid var(--br-line); }
+    .log td { display: inline; padding: 0; border: 0; font-size: 14px; }
+    .log__p { order: -1; flex: 1 1 100%; font-size: 16px !important; font-weight: 700; }
+    .log__p:empty { display: none; }
+    .log__d, .log__r { color: var(--br-ink-sub); }
+    .log td:empty { display: none; }
+  }
+</style>
