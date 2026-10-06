@@ -35,7 +35,13 @@ const lead = ([] as string[]).concat(promise?.lead ?? []).map((l) => String(l).t
         <div class="bd-container">
           <div class="v2-standards-story__card br-glass br-glass--medium">
             {promise.eyebrow && <p class="br-sec-label">{promise.eyebrow}</p>}
-            <h2 class="br-h br-reveal">{promise.heading}</h2>
+            {/* 제목 줄 — 제목 오른쪽 끝에 작은 글 한 줄이 붙는 자리(홈: 실적 기준일, 2026-10-06).
+                리빌은 줄 전체에 건다 — 제목에 걸면 줄 안 형제끼리만 차례가 매겨져 아래 부제·숫자의 60ms 차례가 한 칸씩 당겨진다.
+                큰 제목은 이동 없이 페이드만(DESIGN.md §4)이라 --fade */}
+            <div class="v2-standards-story__title br-reveal br-reveal--fade">
+              <h2 class="br-h">{promise.heading}</h2>
+              <slot name="title-aside" />
+            </div>
             {promise.sub && <p class="v2-standards-story__sub br-reveal">{promise.sub}</p>}
             {lead.length > 0 && <p class="br-sec-lead br-reveal">{lead.map((l, i) => <Fragment>{i > 0 && <br />}{l}</Fragment>)}</p>}
             {/* 제목 묶음 아래 자리(홈: 실적 숫자, 2026-10-01) */}
@@ -130,7 +136,15 @@ const lead = ([] as string[]).concat(promise?.lead ?? []).map((l) => String(l).t
 
   /* 항목별 사진 — 사진 위, 번호·제목·설명 아래. 좁은 화면은 한 줄에 하나 */
   .v2-standards-story__card { padding: 24px 20px 28px; }
-  .v2-standards-story__card .br-h { font-size: clamp(26px, 0.9rem + 1.9vw, 36px); line-height: 1.25; text-wrap: balance; }
+  .v2-standards-story__card .br-h { font-size: var(--title-fs); line-height: 1.25; text-wrap: balance; }
+  /* 제목 줄 — 제목과 오른쪽 끝의 작은 글(slot title-aside)을 한 줄에. --title-fs = 제목 글자 크기(아래 맞춤 계산에도 쓴다).
+     제목이 상자로 감싸져 global.css 의 '.br-sec-label + .br-h' 간격이 닿지 않으므로 같은 값(10px)을 줄에 준다 */
+  .v2-standards-story__title { --title-fs: clamp(26px, 0.9rem + 1.9vw, 36px); display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+  .v2-standards-story__title > .br-h { min-width: 0; }
+  .br-sec-label + .v2-standards-story__title { margin-top: 10px; }
+  /* 작은 글은 글자 아래 끝을 제목과 맞춘다(2026-10-06 대표: '높이 딱 맞추고'). 밑선(baseline)만 맞추면 2~3px 뜬다 —
+     제목 글꼴(G마켓 산스)의 한글은 밑선 아래로 글자 크기의 10.26% 내려오고 본문 글꼴은 7% 내려온다(실측). 그 차이만큼 내린다 */
+  .v2-standards-story__title > :global(:not(.br-h)) { flex: none; transform: translateY(calc(var(--title-fs) * 0.1026 - 0.07em)); }
   /* 부제 — 제목(장점) 다음 회사 한 문장. 리드보다 한 단 크고 진하게 */
   .v2-standards-story__sub { margin-top: 12px; font-size: clamp(17px, 0.85rem + 0.5vw, 20px); font-weight: 600; line-height: 1.5; color: var(--br-ink); text-wrap: balance; }
   .v2-standards-story__sub + :global(.br-sec-lead) { margin-top: 8px; }
