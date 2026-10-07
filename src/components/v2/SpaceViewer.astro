@@ -19,8 +19,7 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
 ---
 <section class:list={['bd-section', 'space3d', `space3d--${tone}`]} id={id} data-space3d>
   <div class="bd-container">
-    {(views.length > 1 || invite) && (
-      <div class="space3d__bar">
+    <div class="space3d__bar">
         {views.length > 1 && (
           <div class="space3d__tabs" role="tablist" aria-label="공간 선택">
             {views.map((v, i) => (
@@ -28,6 +27,8 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
             ))}
           </div>
         )}
+        {/* 안내 버튼과 그 층 방 목록이 한 칸을 번갈아 쓴다 — 칸 높이는 안내 버튼이 잡고 있어 목록이 떠도 도면이 밀리지 않는다 */}
+        <div class="space3d__slot">
         {/* 뷰어가 준비됐다고 알려 온 뒤에만 보인다(data-on) — 3D 가 안 뜨면 누를 것도 없다. 자리는 미리 잡아 둬 도면이 밀리지 않는다 */}
         {invite && (
           <button type="button" class="space3d__invite br-glass br-glass--heavy" data-glow="off">
@@ -37,8 +38,18 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
             <span class="space3d__invite-t"><strong>{invite[0]}</strong><span>{invite[1]}</span></span>
           </button>
         )}
-      </div>
-    )}
+          {/* 층·방 안에서만 뜨는 그 층 방 목록(아파트는 방 목록, 2026-10-06 대표 '방 이동이 안 된다'의 근본 해법).
+              창·벽 쪽으로 당겨 잡은 시점은 화면에 누를 곳이 없다 — 목록이 있어야 어디서든 옮겨 간다.
+              칸은 뷰어가 준 목록(entries)으로 스크립트가 채운다. 한 줄에 다 안 들어가면 '목록' 으로 펼친다 */}
+          <div class="space3d__go">
+            <div class="space3d__spots" role="group" aria-label="공간 목록"></div>
+            <button type="button" class="space3d__all" aria-expanded="false" aria-controls={`${id}-all`} hidden>
+              <span class="space3d__all-open">목록</span><span class="space3d__all-close">닫기</span>
+            </button>
+          </div>
+        </div>
+        <div class="space3d__spots space3d__spots--all" id={`${id}-all`} role="group" aria-label="공간 목록"></div>
+    </div>
     <div class="space3d__stage br-glass br-glass--medium" data-glow="off">
       <iframe src={views[0].src} title={views[0].title} loading="lazy"></iframe>
       {/* 방·층 안에 들어가면 나올 길 — 히어로와 같은 자리(3D 왼쪽 위)·같은 말·같은 화살표(2026-10-01, 갇힘 제보).
@@ -63,15 +74,61 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
     const back = stage.querySelector<HTMLButtonElement>('.space3d__back')!;
     const backT = back.querySelector('span')!, lv = stage.querySelector<HTMLElement>('.space3d__lv')!;
     const invite = root.querySelector<HTMLButtonElement>('.space3d__invite');
+    // 그 층 방 목록: 한 줄 띠(strip) + 한 줄에 다 안 들어갈 때 '목록'으로 펼치는 판(all). 칸은 둘에 똑같이 넣는다
+    const bar = root.querySelector<HTMLElement>('.space3d__bar')!, go = bar.querySelector<HTMLElement>('.space3d__go')!;
+    const strip = go.querySelector<HTMLElement>('.space3d__spots')!, all = bar.querySelector<HTMLElement>('.space3d__spots--all')!;
+    const allBtn = go.querySelector<HTMLButtonElement>('.space3d__all')!;
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+    const post = (m: object) => frame.contentWindow?.postMessage({ ns: 'bd3d', ...m }, '*');
+    const esc = (s: string) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+    let list: { id: string; name: string }[] = [], cur = '';   // list: 지금 층(아파트는 집)의 칸, cur: 지금 있는 칸 id
     let inRoom = false, level = '', room = '', bld = false;   // room: 지금 방·실내기 이름, bld: 건물 뷰어인가
     let first: { type: string; id: string } | null = null;   // 안내 버튼이 들어갈 첫 공간
     // 무대가 화면 아래 고정 문의 버튼(76px) 위로 올라온 뒤에만 안내를 켠다 — 첫 화면 접힘선에서 버튼이 문의 버튼 밑에 깔렸다(10-06 검증)
     let seen = !('IntersectionObserver' in window);
+    let shownAt = 0;   // 목록이 켜진 시각 — 뜨는 동안(안 보이는 동안)의 누름을 막는 데 쓴다
+    const openAll = (on: boolean) => {
+      if (on === bar.hasAttribute('data-open')) return;
+      bar.toggleAttribute('data-open', on); allBtn.setAttribute('aria-expanded', String(on)); strip.inert = on;   // 펼친 동안 띠는 쉰다(같은 칸이 두 벌)
+      // 펼친 판이 화면 아래로 잘리거나 고정 문의 버튼(아래 76px) 밑에 깔리면 그만큼만 페이지를 올린다 — 96px 은 아래 안내 버튼 기준(rootMargin)과 같은 값.
+      // 판은 여는 동안 변형(scale)돼 있어 getBoundingClientRect 대신 배치 높이(offsetHeight)로 잰다
+      const over = on ? bar.getBoundingClientRect().bottom + 8 + all.offsetHeight - (innerHeight - 96) : 0;
+      if (over > 0) scrollBy({ top: over, behavior: reduced.matches ? 'auto' : 'smooth' });
+    };
+    // 옆으로 더 있으면 끝을 흐린다(히어로 도크 syncMore 와 같다)
+    const edges = () => {
+      strip.toggleAttribute('data-more', strip.scrollWidth - strip.scrollLeft - strip.clientWidth > 4);
+      strip.toggleAttribute('data-less', strip.scrollLeft > 4);
+    };
+    // 한 줄에 다 안 들어갈 때만 '목록' 버튼을 켠다
+    const fit = () => {
+      allBtn.hidden = true;   // 버튼을 뺀 폭으로 잰다 — 버튼 폭만큼 모자란 경계에서 켜졌다 꺼졌다 하지 않게
+      const wide = strip.scrollWidth > strip.clientWidth + 1;
+      allBtn.hidden = !wide;
+      if (!wide) openAll(false);
+      edges();
+    };
+    const mark = () => {
+      for (const b of bar.querySelectorAll<HTMLElement>('.space3d__spot')) { if (b.dataset.id === cur) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current'); }
+      const c = strip.querySelector<HTMLElement>('[aria-current]');
+      // 띠 안에서만 민다 — scrollIntoView 는 띠가 화면 밖일 때 페이지까지 움직인다
+      if (c) strip.scrollTo({ left: c.offsetLeft - (strip.clientWidth - c.offsetWidth) / 2, behavior: reduced.matches ? 'auto' : 'smooth' });
+    };
+    const render = () => {
+      strip.innerHTML = all.innerHTML = list.map((e, i) => `<button type="button" class="space3d__spot" data-id="${esc(e.id)}" style="--i:${i}">${esc(e.name)}</button>`).join('');
+      strip.scrollLeft = 0;
+      fit(); mark();
+    };
     const sync = () => {
       const inLevel = !!level && level !== '건물 정면';   // 뷰어가 알려 주는 건물 전경의 이름
       if (inRoom || inLevel) stage.dataset.deep = ''; else delete stage.dataset.deep;
       // 안내는 전체가 보일 때만 — 방·층 안에서는 히어로처럼 비운다(도면 위에 그대로 떠 있지 않게)
       const deep = inRoom || inLevel;
+      // 목록은 층·방 안에서만(안내 버튼과 같은 칸). 옥상처럼 고를 칸이 없으면 띄우지 않는다
+      const listOn = deep && list.length > 0;
+      if (!listOn) { openAll(false); if (go.contains(document.activeElement) || all.contains(document.activeElement)) back.focus({ preventScroll: true }); }   // 숨는 칸에 포커스가 남지 않게
+      if (listOn && !go.hasAttribute('data-on')) shownAt = performance.now();
+      go.toggleAttribute('data-on', listOn);
       if (deep && invite && document.activeElement === invite) back.focus({ preventScroll: true });   // 누른 버튼이 숨으면 포커스가 body 로 빠진다
       const fromBack = document.activeElement === back;
       invite?.toggleAttribute('data-on', !!first && !deep && seen);
@@ -85,15 +142,26 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
       const m = e.data;
       if (!m || m.ns !== 'bd3d' || e.source !== frame.contentWindow) return;
       if (m.type === 'ready') {
+        try { frame.contentWindow!.addEventListener('pointerdown', () => openAll(false), true); } catch { /* 다른 출처 */ }
         inRoom = false; level = ''; room = ''; bld = m.viewer !== 'house'; lv.textContent = ''; backT.textContent = bld ? '건물 전체' : '전체 보기';
         // 아파트 = 첫 방(거실), 건물 = 1층(히어로가 건물을 고르면 1층부터 보여 주는 것과 같다)
         const es: { id: string; name: string }[] = m.entries || [];
         const e = m.viewer === 'house' ? es[0] : es.find((x) => /^floor:/.test(x.id) && x.name === '1층') || es.find((x) => /^floor:/.test(x.id));
         first = e ? { type: m.viewer === 'house' ? 'goRoom' : 'goUnit', id: e.id } : null;
+        list = bld ? [] : es; cur = ''; if (list.length) render();   // 아파트는 방 목록이 ready 에 온다. 건물은 층에 들어갈 때(space)
       }
-      else if (m.type === 'enter') { inRoom = true; room = m.title || ''; }
-      else if (m.type === 'home') inRoom = false;                     // 건물: 실내기 → 그 층 입구(층 안은 그대로)
-      else if (m.type === 'space') { level = m.title || ''; inRoom = false; }
+      else if (m.type === 'enter') {
+        inRoom = true; room = m.title || '';
+        // 3D 에서 묶음의 둘째 실내기를 누르면 id 가 칸 id(묶음 첫 실내기)와 다르다 — 이름으로 찾는다(뷰어가 칸 이름과 같은 title 을 보낸다).
+        // 실내기 없이 구역 바닥으로 들어온 경우(여러 대 구역)는 맞는 칸이 없다 — 표시 없이 둔다
+        cur = (list.find((x) => x.id === m.id) || list.find((x) => x.name === m.title))?.id || ''; mark();
+      }
+      else if (m.type === 'home') { inRoom = false; cur = ''; mark(); }   // 건물: 실내기 → 그 층 입구(층 안은 그대로)
+      else if (m.type === 'space') {
+        level = m.title || ''; inRoom = false; cur = '';
+        // 층 안이면 그 층 칸(id '층key/실내기')이 온다. 건물 전경(층·옥상)·옥상('building' 하나)이면 비운다 — 사라지는 동안 칸은 지우지 않는다
+        list = ((m.entries || []) as typeof list).filter((x) => String(x.id).includes('/')); if (list.length) render(); else mark();
+      }
       sync();
     });
     if (!seen) {
@@ -105,13 +173,33 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
       // 아파트: 방 → 전체. 건물: 방·실내기 → 그 층 입구(home), 층 입구 → 건물 전체
       frame.contentWindow?.postMessage(!bld || inRoom ? { ns: 'bd3d', type: 'home' } : { ns: 'bd3d', type: 'goUnit', id: 'building' }, '*');
     });
-    root.querySelectorAll<HTMLButtonElement>('.space3d__tab').forEach((tab, _, all) => {
+    // 칸을 누르면 그 방으로(띠·펼친 판 공통). 펼친 판에서 골랐으면 닫고, 포커스는 띠의 같은 칸으로
+    bar.addEventListener('click', (e) => {
+      const b = (e.target as Element).closest<HTMLElement>('.space3d__spot');
+      // 목록은 안내 버튼과 같은 자리에 0.35초 늦게 뜬다 — 안내 버튼을 두 번 누르면 아직 안 보이는 칸이 눌려 엉뚱한 방으로 들어갔다(10-07 검증).
+      // 입력 시각 기준 0.7초 + 실제로 보이는지(불투명도) 둘 다 본다: 입력이 늦게 처리되는 경우와 등장이 밀리는 경우가 따로 있었다
+      if (!b || e.timeStamp - shownAt < 700 || +getComputedStyle(go).opacity < 0.9) return;
+      post({ type: bld ? 'goUnit' : 'goRoom', id: b.dataset.id });
+      cur = b.dataset.id!; mark();   // 들어가는 돌리 중에는 뷰어가 도착 뒤로 미뤄 enter 가 늦게 온다 — 누른 칸은 바로 표시
+      if (bar.hasAttribute('data-open')) { openAll(false); strip.querySelector<HTMLElement>(`[data-id="${CSS.escape(b.dataset.id!)}"]`)?.focus({ preventScroll: true }); }
+    });
+    allBtn.addEventListener('click', (e) => { if (e.timeStamp - shownAt >= 700) openAll(!bar.hasAttribute('data-open')); });   // 칸과 같은 0.7초
+    bar.addEventListener('keydown', (e) => { if (e.key === 'Escape' && bar.hasAttribute('data-open')) { openAll(false); allBtn.focus({ preventScroll: true }); } });
+    document.addEventListener('pointerdown', (e) => { if (!bar.contains(e.target as Node)) openAll(false); });
+    bar.addEventListener('focusout', (e) => { const t = e.relatedTarget as Node | null; if (t && !go.contains(t) && !all.contains(t)) openAll(false); });
+    addEventListener('blur', () => setTimeout(() => { if (document.activeElement === frame) openAll(false); }));   // 3D 를 누른 경우 — iframe 안 누름은 부모로 안 올라온다
+    // 칸에 올리면 3D 에서 그 자리를 짚어 준다(히어로 도크와 같다)
+    for (const ev of ['pointerover', 'focusin']) bar.addEventListener(ev, (e) => post({ type: 'hover', id: (e.target as Element).closest?.<HTMLElement>('.space3d__spot')?.dataset.id ?? null }));
+    for (const ev of ['pointerleave', 'focusout']) bar.addEventListener(ev, () => post({ type: 'hover', id: null }));
+    strip.addEventListener('scroll', edges, { passive: true });
+    new ResizeObserver(fit).observe(bar);
+    root.querySelectorAll<HTMLButtonElement>('.space3d__tab').forEach((tab, _, tabs) => {
       tab.addEventListener('click', () => {
-        all.forEach((t) => t.setAttribute('aria-selected', String(t === tab)));
+        tabs.forEach((t) => t.setAttribute('aria-selected', String(t === tab)));
         // 탭 전환이 뒤로가기 기록을 쌓지 않게(뒤로가기 한 번에 iframe 만 바뀌던 것) — Exploded 와 같다
         try { frame.contentWindow!.location.replace(tab.dataset.src!); } catch { frame.src = tab.dataset.src!; }
         frame.title = tab.dataset.title!;
-        inRoom = false; level = ''; first = null; sync();   // 새 뷰어가 준비될 때까지 안내 버튼도 쉰다. 층 이름은 지우지 않는다 — 판이 사라지는 동안 글자가 먼저 비면 판이 줄었다 사라진다. 새 뷰어의 ready 가 비운다
+        inRoom = false; level = ''; first = null; list = []; cur = ''; sync();   // 새 뷰어가 준비될 때까지 안내 버튼도 쉰다. 층 이름은 지우지 않는다 — 판이 사라지는 동안 글자가 먼저 비면 판이 줄었다 사라진다. 새 뷰어의 ready 가 비운다
       });
     });
   }
@@ -132,7 +220,7 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
   }
   .space3d__invite[data-on] {
     opacity: 1; visibility: visible; translate: 0 0;
-    transition: opacity var(--dur-reveal) var(--ease-out), translate var(--dur-reveal) var(--ease-out), transform var(--dur-ui) var(--ease-out), visibility 0s;
+    transition: opacity var(--dur-reveal) var(--ease-out) var(--dur-ui), translate var(--dur-reveal) var(--ease-out) var(--dur-ui), transform var(--dur-ui) var(--ease-out), visibility 0s;
   }
   .space3d__invite svg { width: 16px; height: 16px; flex: none; color: var(--br-teal); }
   .space3d__invite-t { display: grid; }
@@ -156,7 +244,6 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
     border-radius: var(--radius);
   }
   .space3d__bar + .space3d__stage { margin-top: 12px; }
-  .space3d__stage:first-child { margin-top: 0; }
   @media (min-width: 768px) { .space3d__stage { aspect-ratio: 16 / 10; } }
   .space3d__stage iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
   .space3d__note { margin-top: 12px; font-size: 13px; color: var(--br-ink-sub); }
@@ -174,6 +261,10 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
   @media (prefers-reduced-motion: reduce) {
     .space3d__here, .space3d__stage[data-deep] .space3d__here { translate: none; transition-duration: .01s; transition-delay: 0s; }
   }
+  /* 방 목록을 펼친 동안 되돌아가기 판은 쉰다 — 펼친 판이 반쯤 덮지 않게. 스코프 블록에 둔다(스코프 속성이 붙어 위 [data-deep] 규칙을 이긴다) */
+  .space3d__bar[data-open] + .space3d__stage[data-deep] .space3d__here {
+    opacity: 0; visibility: hidden; transition: opacity var(--dur-ui) var(--ease-out), visibility 0s linear var(--dur-ui);
+  }
   .space3d__back {
     display: inline-flex; align-items: center; gap: 2px; flex: none;
     min-height: 44px; padding: 0 14px 0 8px; border: 0; border-radius: 10px; background: transparent;
@@ -186,4 +277,72 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
     font-size: 14px; font-weight: 600; color: var(--br-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .space3d__lv:empty { display: none; }
+</style>
+
+<style is:global>
+  :root:has(.space3d__stage[data-deep]) .chat__teaser { opacity: 0; visibility: hidden; transition: opacity var(--dur-ui) ease, visibility 0s linear var(--dur-ui); }
+  /* ── 그 층 방 목록(아파트는 방 목록) — 안내 버튼이 숨는 동안(층·방 안) 같은 칸에 뜬다. 칸 높이는 안내 버튼이 잡고 있어 도면이 밀리지 않는다 ──
+     칸은 스크립트가 만들어 스코프 속성이 안 붙는다 — 그래서 전역 블록이다(Hero3D 의 .h3-spot 과 같은 이유). space3d__ 접두사로만 쓴다 */
+  .space3d__bar { position: relative; }
+  .space3d__slot { position: relative; flex: 1 1 auto; min-width: 0; min-height: 52px; display: flex; }
+  .space3d__go {
+    position: absolute; z-index: 2; right: 0; top: 0; bottom: 0; margin-block: auto; height: fit-content; max-width: 100%;
+    display: flex; align-items: center; gap: 8px;
+    opacity: 0; visibility: hidden; translate: 0 6px;
+    transition: opacity var(--dur-ui) var(--ease-out), translate var(--dur-ui) var(--ease-out), visibility 0s linear var(--dur-ui);
+  }
+  /* 들어가는 카메라가 자리 잡을 즈음 뜬다 — 왼쪽 위 되돌아가기 판(.space3d__here)과 같은 박자 */
+  .space3d__go[data-on] {
+    opacity: 1; visibility: visible; translate: 0 0;
+    transition: opacity var(--dur-reveal) var(--ease-out) .35s, translate var(--dur-reveal) var(--ease-out) .35s, visibility 0s linear .35s;   /* 안 보이는 동안은 눌리지도 않게 */
+  }
+  /* 판 — 히어로 도크의 방 목록(.h3-spots)과 같은 회색 판 + 흰 칸(세그먼트, 2026-10-01 대표 지정) */
+  .space3d__spots { display: flex; gap: 2px; min-width: 0; padding: 4px; border-radius: 8px; background: var(--br-mist); box-shadow: 0 0 0 1px var(--tint-strong); }
+  .space3d__go > .space3d__spots { position: relative; flex: 0 1 auto; overflow-x: auto; scrollbar-width: none; transition: opacity var(--dur-ui) var(--ease-out); }
+  .space3d__go > .space3d__spots::-webkit-scrollbar { display: none; }
+  /* 옆으로 더 있으면 끝을 흐려서 알린다(포커스가 안에 있으면 흐림을 뺀다) — .h3-spots 와 같다 */
+  .space3d__spots[data-more] { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent); }
+  .space3d__spots[data-less] { -webkit-mask-image: linear-gradient(90deg, transparent, #000 32px); mask-image: linear-gradient(90deg, transparent, #000 32px); }
+  .space3d__spots[data-less][data-more] { -webkit-mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 48px), transparent); mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 48px), transparent); }
+  .space3d__spots:has(:focus-visible) { -webkit-mask-image: none; mask-image: none; }
+  .space3d__spot {
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    min-height: 44px; padding-inline: 14px; border-radius: 8px;
+    font-size: 15px; font-weight: 500; color: var(--br-ink-sub); white-space: nowrap;
+    transition: background-color var(--dur-color) var(--ease-out), color var(--dur-color) var(--ease-out);
+  }
+  .space3d__spot[aria-current="true"] { background: #fff; color: var(--br-ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0, 41, 58, .08); }
+  @media (hover: hover) and (pointer: fine) { .space3d__spot:hover:not([aria-current]) { color: var(--br-teal); background: rgba(255, 255, 255, .6); } }
+  .space3d__spot:active, .space3d__all:active { transform: scale(.96); }
+  .space3d__spot:focus-visible, .space3d__all:focus-visible { outline: 2px solid var(--br-teal); outline-offset: -2px; }
+  /* 한 줄에 다 안 들어갈 때만 켜지는 '목록' — 헤더 '메뉴'↔'닫기' 처럼 글자 버튼(아이콘 없음). 판과 같은 재질 */
+  .space3d__all {
+    flex: none; min-height: 52px; padding-inline: 16px; border-radius: 8px; background: var(--br-mist); box-shadow: 0 0 0 1px var(--tint-strong);
+    font-size: 15px; font-weight: 700; color: var(--br-teal); white-space: nowrap;
+  }
+  .space3d__all[hidden], .space3d__all-close, .space3d__bar[data-open] .space3d__all-open { display: none; }
+  .space3d__bar[data-open] .space3d__all-close { display: inline; }
+  /* 펼친 동안 한 줄 띠는 쉰다 — 같은 칸이 두 번 보이지 않게 */
+  .space3d__bar[data-open] .space3d__go > .space3d__spots { opacity: 0; }
+  /* 펼친 목록 — 막대 아래로 도면 위에 겹쳐 열린다(도면을 밀지 않는다). 여닫는 모션은 헤더 메뉴와 같은 스프링(DESIGN.md §4) */
+  .space3d__spots--all {
+    pointer-events: none;
+    position: absolute; z-index: 3; left: 0; right: 0; top: calc(100% + 8px);
+    flex-wrap: wrap; max-height: min(60vh, 400px); overflow-y: auto;   /* overscroll 을 막지 않는다 — 판 위 세로 스와이프도 페이지를 민다 */
+    opacity: 0; visibility: hidden; transform: translateY(-12px) scaleY(.94); transform-origin: top center;
+    transition: transform var(--dur-spring-out) var(--ease-spring-out), opacity calc(var(--dur-spring-out) * .55) ease-in calc(var(--dur-spring-out) * .45), visibility 0s linear var(--dur-spring-out);
+  }
+  .space3d__bar[data-open] .space3d__spots--all {
+    pointer-events: auto;
+    opacity: 1; visibility: visible; transform: none;
+    transition: transform var(--dur-spring) var(--ease-spring), opacity var(--dur-ui) ease, visibility 0s;
+  }
+  /* 칸 — 위에서부터 차례로 내려온다(--i = 순서, 30ms 간격, 아홉째부터는 같이 — expand.ts 의 8칸 상한과 같다). 닫힐 때는 판이 다 걷힌 뒤 제자리로 */
+  .space3d__spots--all .space3d__spot { opacity: 0; translate: 0 -8px; transition: opacity 0s linear var(--dur-spring-out), translate 0s linear var(--dur-spring-out); }
+  .space3d__bar[data-open] .space3d__spots--all .space3d__spot {
+    opacity: 1; translate: 0 0;
+    transition: opacity var(--dur-ui) ease calc(40ms + min(var(--i, 0), 8) * 30ms), translate var(--dur-spring) var(--ease-spring) calc(40ms + min(var(--i, 0), 8) * 30ms),
+                background-color var(--dur-color) var(--ease-out), color var(--dur-color) var(--ease-out);
+  }
+  @media (prefers-reduced-motion: reduce) { .space3d__go, .space3d__go[data-on], .space3d__spots--all .space3d__spot { translate: none; } .space3d__spots--all { transform: none; } }
 </style>

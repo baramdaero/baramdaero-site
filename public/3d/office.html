@@ -668,7 +668,9 @@ const mat = {
   shade: std(0x2F3538, { roughness: .45, side: THREE.DoubleSide }),
   cord: new THREE.LineBasicMaterial({ color: 0x2F3538 }),
   base: std(0xC9D1D6, { roughness: 1 }),
+  cover: std(0xC9D1D6, { roughness: 1, transparent: true, opacity: 0, depthWrite: false }), // 나갈 때 덮개(위층 슬래브와 같은 색)
   acBody: std(0xCDD3D6, { roughness: .7 }),
+  acBodyOpen: std(0xCDD3D6, { roughness: .7 }), // 노출 천장 실의 본체: 매달려 보여야 하므로 방 시점에서도 걷지 않는다
   panelWhite: std(0xF7F8F8, { roughness: .5, emissive: 0xffffff, emissiveIntensity: .08 }),
   blade: std(0xD7DCDF, { roughness: .35 }),
   slot: std(0x7F8A90, { roughness: .6 }),
@@ -1546,7 +1548,7 @@ function build4Way(u) {
   gg.translate(0, -(P4.centreDepth - P4.grilleUp) * k, 0); planarUV(gg, S, S);
   g.add(new THREE.Mesh(gg, panelMat(key)));
   const oS = mm(u.ceiling_opening_mm[0]), bh = mm(u.body_h_mm);
-  g.add(box(oS, bh, oS, mat.acBody, new THREE.Vector3(0, bh / 2 + .002, 0), false));
+  { const b = box(oS, bh, oS, mat.acBody, new THREE.Vector3(0, bh / 2 + .002, 0), false); b.renderOrder = -.5; g.add(b); } // 반투명일 때 반자(0)보다 먼저, 뒤판(-1)보다 나중에
   patchAndArrow(g, S, S, bh, 4);
   return g;
 }
@@ -1595,7 +1597,7 @@ function build1Way(u) {
     g.add(new THREE.Mesh(st, panelMat(key)));
   }
   const oL = mm(u.ceiling_opening_mm[0]), oD = mm(u.ceiling_opening_mm[1]), bh = mm(u.body_h_mm);
-  g.add(box(oL, bh, oD, mat.acBody, new THREE.Vector3(0, bh / 2 + .002, 0), false));
+  { const b = box(oL, bh, oD, mat.acBody, new THREE.Vector3(0, bh / 2 + .002, 0), false); b.renderOrder = -.5; g.add(b); }
   patchAndArrow(g, L, D, bh, 1);
   return g;
 }
@@ -1785,6 +1787,7 @@ function buildSpace(key) {
   for (const u of units) {
     const oneWay = u.model === '1way';
     const ug = oneWay ? build1Way(u) : build4Way(u);
+    if (P.rooms.find(r => r.id === u.room)?.ceiling_kind === 'exposed') ug.traverse(q => { if (q.material === mat.acBody) q.material = mat.acBodyOpen; });
     ug.position.copy(V(u.center[0], u.center[1], u.mount_z_mm));
     // 4Way: 배관 쪽 방향(판넬은 대칭) / 1Way: 토출 방향, 로컬 -z 가 토출이라 -90
     ug.rotation.y = (oneWay ? u.rotation_deg - 90 : u.rotation_deg) * DEG;
@@ -2100,14 +2103,22 @@ function buildBuilding() {
     boxPts: [0, 1].flatMap(i => [0, 1].flatMap(j => [0, 1].map(k => V(i ? px1 + 1500 : px0 - 1500, j ? py1 + 1500 : py0 - 1500, R.slab_top_mm + k * 2500)))),
   };
   [...Object.values(floorG), roofG, riserG].forEach(mergeStatic);
-  return { g, floorG, roofG, riserG, pick, labels, roof, boxPts, center: V(cx, cy, 0), aim: V(cx, cy, topZ / 2), half: Math.hypot(W, D) / 2 + mm(topZ) / 2 + 3 };
+  // 나갈 때 덮개: 층마다 바로 위 슬래브(맨 위층은 옥상 슬래브)와 같은 자리·색의 반투명 사본.
+  // 다른 층이 켜지는 프레임에 열린 천장 위 하늘이 위층 바닥으로 한 번에 바뀌던 것을 그 전에 서서히 덮는다
+  const cover = {};
+  Bd.floors.forEach((f, i) => {
+    const n = Bd.floors[i + 1], h = n ? n.slab_mm : 300, z0 = n ? n.z_mm - n.slab_mm - 30 : R.slab_top_mm - 300;
+    const m = box(W, mm(h), D, mat.cover, V(cx, cy, z0 + h / 2), false);
+    m.visible = false; m.renderOrder = -2; g.add(m); cover[f.key] = m;
+  });
+  return { g, floorG, roofG, riserG, cover, pick, labels, roof, boxPts, center: V(cx, cy, 0), aim: V(cx, cy, topZ / 2), half: Math.hypot(W, D) / 2 + mm(topZ) / 2 + 3 };
 }
 
 /* ============ sky + distant towers (room views) ============ */
 const skyGeo = new THREE.SphereGeometry(600, 32, 16);
 const skyMat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, transparent: true, opacity: 0, depthWrite: false, toneMapped: false });
 const skyGroup = new THREE.Group(); scene.add(skyGroup);
-skyGroup.add(new THREE.Mesh(skyGeo, skyMat));
+const skyMesh = new THREE.Mesh(skyGeo, skyMat); skyGroup.add(skyMesh);
 {
   const p = skyGeo.attributes.position, cols = new Float32Array(p.count * 3), c = new THREE.Color();
   const T = new THREE.Color(0x8DB6D0), Hz = new THREE.Color(0xD9E6EC), B = new THREE.Color(0xBFC3C2);
@@ -2551,6 +2562,7 @@ function flyTo(pose, kTo, turn = false) {
   // 카메라는 그대로인데 벽만 1.4초 걷혔다 덮이던 것 — dip 을 빼고 짧게 끝낸다(반자·이름·표시 링만 바뀐다)
   const same = p0.distanceTo(pose.pos) < .05 && d0.angleTo(pose.tgt.clone().sub(pose.pos)) < DEG;
   tween = { t0: performance.now(), p0, f0: camera.fov, s0: state.tanP, k0: state.k, pose, kTo, dip: fromRoom && toRoom && !same, cl0: state.ceil, cl1: ceilTarget() };
+  if (prev?.dolly === 'out') setDetail(); // 나가는 돌리 도중에 꺾이면(건물 전체 직후 옥상 등) 숨겨 둔 층·옥상을 되살린다
   // 절단 목표는 전환마다 지금 단계에서 잡는다: 층 이동 중에 구역·실내기를 눌러도 절단이 중간에 멈추지 않는다
   // 시선을 방위각·앙각으로 고르게 돌리게 하고, 피크 각속도 기준의 시간을 돌려준다
   const turnLook = () => {
@@ -2640,6 +2652,7 @@ function goZone(id, viewIdx, unitId) {
   const z = S.P.zones.find(q => q.id === id);
   if (!z) return;
   viewIdx ??= viewFor(z);
+  if (tween?.dolly === 'in') { tween.then = () => goZone(id, viewIdx, unitId); return; } // 층으로 들어가는 돌리는 끊지 않는다 — 도착한 뒤 이어 간다(끊으면 건물 밖에서 곡선 비행이 시작돼 위층을 뚫는다)
   const list = $('listSheet');
   if (!narrow() && !list.hasAttribute('data-collapsed')) { list.setAttribute('data-collapsed', ''); $('listGrab').setAttribute('aria-expanded', 'false'); state.autoCollapsed = true; }
   state.mode = 'room'; state.zone = id; state.view = viewIdx; state.unit = unitId || null;
@@ -2668,6 +2681,7 @@ function goHome() { // 구역·실내기 → 층 입구 → 건물 정면, 한 �
 }
 function activate(key) {
   if (S?.key === key) return;
+  if (S) { S.g.pipesFine.visible = false; S.g.pipes.visible = state.pipes; S.slab.visible = false; S.patchObjs.forEach(o => { o.visible = true; }); } // 떠나는 층을 건물 전경 상태로 돌려놓는다(나가는 돌리 초반에 다른 층으로 꺾으면 가는 관·해 가림판이 남았다)
   setHover(null); markUnit(null);
   S = spaces[key];
   state.view = 0;
@@ -2675,7 +2689,7 @@ function activate(key) {
 // 전체 보기에서는 층 안 가구·조명을 그리지 않는다(속도). 층 안에서는 그 층만 그린다
 function setDetail(others = state.level !== 'floor') {
   for (const sp of Object.values(spaces)) {
-    const mine = state.level === 'floor' && sp === S;
+    const mine = (state.level === 'floor' || tween?.dolly === 'out') && sp === S; // 나가는 돌리: level 은 먼저 building 으로 바뀌지만 지금 층은 끝까지 그린다
     if (mine) sp.buildFurn();   // 그 층에 들어갈 때 한 번 만든다
     sp.root.visible = mine || others;
     sp.g.furn.visible = mine;
@@ -2683,6 +2697,8 @@ function setDetail(others = state.level !== 'floor') {
     BLD.floorG[sp.key].visible = sp.root.visible;
   }
   BLD.roofG.visible = BLD.riserG.visible = others;
+  for (const m of Object.values(BLD.cover)) m.visible = false;
+  skyMesh.renderOrder = tween?.dolly === 'out' ? -3 : 0; // 나가는 돌리 동안만 하늘을 반투명 패스 맨 처음에 그린다(덮개가 그 위에 얹힌다). 늘 그렇게 두면 방으로 들어가는 비행의 벽·창틀 모습이 달라진다
   renderer.shadowMap.needsUpdate = true;
 }
 function enterLevel(level, key) {
@@ -2707,12 +2723,14 @@ function flyDolly(pose, inward) {
   const p0 = camera.position.clone(), [y0, a0] = yawPitch(camera.getWorldDirection(new THREE.Vector3())), [y1, a1] = yawPitch(pose.tgt.clone().sub(pose.pos));
   tween = { t0: performance.now(), dur: reduced.matches ? 0 : ENTRY_MS, p0, f0: camera.fov, s0: state.tanP, k0: state.k, pose, kTo: inward ? 1 : 0,
             y0, a0, y1, dy: wrapPi(y1 - y0), dolly: inward ? 'in' : 'out', cl0: state.ceil, cl1: ceilTarget() };
-  setDetail(true); // 들어가는 동안은 다른 층도 보인다
+  tween.others = inward || camera.position.z > -mm(BUILDING.footprint.outer_rect[1]); setDetail(tween.others); // 들어가는 동안은 다른 층도 보인다. 나갈 때는 카메라가 아직 건물 안이면 처음부터 끈다(tick 안에서 이어 불리면 한 프레임 켜졌다 꺼졌다)
   controls.enabled = false;
   invalidate();
 }
 function goBuilding(then) {
   if (state.level === 'building' && !tween) { postSpace(); then?.(); return; }
+  if (tween?.dolly === 'out') { tween.then = then; postSpace(); return; } // 나가는 중에 또 누르면(두 번 누름) 돌리를 그대로 잇는다 — 새로 시작하면 직선 비행으로 바뀌고 층이 숨은 채 난다
+  if (state.level === 'floor' && !state.zone && tween && !tween.dolly) { tween.then = () => goBuilding(then); return; } // 층 입구로 돌아가는 중('층 전체' 직후)이면 도착한 뒤 나간다 — 방 한가운데서 돌리를 시작하면 벽을 뚫는다
   if (state.level === 'floor' && state.zone) { backToEntry(() => goBuilding(then)); return; } // 방 안 깊숙이서 바로 나가면 벽을 뚫는다: 입구를 거쳐
   const fromFloor = state.level === 'floor';
   enterLevel('building');
@@ -2767,6 +2785,9 @@ function entryName(u) {
   const z = S.P.zones.find(q => q.id === u.zone), zn = short(z?.name_ko || u.id), L = z?.ac_layout;
   const same = S.unitsByZone[u.zone] || [];
   if (same.length < 2) return zn;
+  // '창가·안쪽'은 그 층에서 여러 줄 배치인 첫 구역만 쓴다. 다른 구역까지 쓰면 목록에 같은 이름이 두 번 나온다(카페 층 홀과 로비)
+  const main = S.P.zones.find(q => q.ac_layout?.rows > 1 && (S.unitsByZone[q.id] || []).length > 1);
+  if (L && L.rows > 1 && z !== main) return `${zn.replace(/ 홀$/, '')} ${same.indexOf(u) + 1}`;
   if (!L) return `${zn} ${same.indexOf(u) + 1}`; // 배치표 없는 구역에 여러 대: 순번
   for (const [ri, row] of L.units.entries()) {
     const ci = row.indexOf(u.id);
@@ -2791,13 +2812,15 @@ function entries() {
 // 반자 목표: 층 입구·건물·옥상은 걷고, 구역·실내기 시점은 반투명으로 덮는다 — 방 안에서도 천장 속 배관이 비쳐 보이게
 // (2026-10-06 대표: '방 안에 들어가면 바로 배관들이 천장에 보이면 좋겠다, 에어컨 회사인 만큼'. 그 전에는 1 = 불투명이라 방에 들어가면 배관이 사라졌다)
 const CEIL_ROOM = .5;
+const BODY_ROOM = .35; // 방 시점(반자가 덮인 상태)의 실내기 본체 불투명도 — 본체 속으로 들어가는 관이 비쳐 보인다. 노출 천장 실의 본체(acBodyOpen)는 그대로
 function ceilTarget() { return state.zone ? CEIL_ROOM : 0; }
 function setBlend(k) {
   state.k = k;
-  const solid = k > .999;
+  const solid = k > .999, deep = k > (tween?.dolly === 'out' ? .9 : .999); // deep: 깊이 기록. 나가는 돌리는 카메라가 움직이기 시작한 뒤(k .9)에 끈다 — 정지 직후 프레임에 먼 벽이 가까운 벽 위로 덧그려지며 튀었다
   for (const [m, base] of [[mat.wallHi, .08], [mat.mullion, .1]]) {
     m.opacity = lerp(base, 1, k);
-    if (m.transparent === solid) { m.transparent = !solid; m.depthWrite = solid; m.needsUpdate = true; }
+    if (m.transparent === solid) { m.transparent = !solid; m.needsUpdate = true; }
+    m.depthWrite = deep;
   }
   // 층 입구에서는 반자(천장판)를 걷어 천장 속 배관·실내기 본체가 계속 보이게 둔다. 구역·실내기 시점으로 들어갈 때만 반자를 덮는다
   // (2026-09-23 대표: 상가·오피스는 배관이 들어가는 동안만 잠깐 보였다. 아파트는 평면에서 이미 보여 그대로)
@@ -2814,12 +2837,17 @@ function setBlend(k) {
   // inVoid: 방→방 호 비행에서 카메라가 천장 속을 지나는 동안 — 코앞의 관·본체가 화면을 덮으므로 걷는다
   const inVoid = !!tween?.arc && camera.position.y - S.zOff > mm(S.H_CEIL) - .3;
   const above = (k <= .5 || state.ceil < .999) && !inVoid, fine = (state.level === 'floor' || tween?.dolly === 'out') && (k > .5 || !!tween?.dip);
-  S.g.pipes.visible = state.pipes && above && !fine; S.g.pipesFine.visible = state.pipes && above && fine; mat.acBody.visible = above;
+  S.g.pipes.visible = state.pipes && above && !fine; S.g.pipesFine.visible = state.pipes && above && fine; mat.acBodyOpen.visible = above;
+  { // 반자가 덮이는 만큼 본체를 걷는다(층 입구 1 → 방 시점 BODY_ROOM): 머리 위로 넘어와 본체로 들어가는 관이 방 시점에서 보인다
+    const bo = lerp(1, BODY_ROOM, clamp(state.ceil / CEIL_ROOM, 0, 1)), bSolid = bo > .999;
+    mat.acBody.opacity = bo; mat.acBody.visible = above && bo > .01;
+    if (mat.acBody.transparent === bSolid) { mat.acBody.transparent = !bSolid; mat.acBody.needsUpdate = true; } // 깊이는 계속 쓴다 — 끄면 뒤에 그리는 하늘·반투명 벽이 본체를 덮어 전환 첫머리에 본체가 통째로 사라졌다
+  }
   mat.grid.opacity = lerp(.32, .95, k); mat.grid.color.lerpColors(GRID_OVER, GRID_ROOM, k);
   mat.patch.opacity = .6 * (1 - k); mat.patchEdge.opacity = .9 * (1 - k); mat.arrow.opacity = .75 * (1 - k);
   S.patchObjs.forEach(o => { o.visible = k < .99; });
   // embed: 전체 보기 쪽으로 가는 전환에선 원경을 벽보다 먼저(k .6 에서 0) 걷어 낸다 — 복귀 첫 프레임에 창밖이 뚝 끊기지 않게
-  const far = EMBED && state.mode === 'house' ? k * clamp((k - .6) / .4, 0, 1) : k;
+  const far = EMBED && (state.mode === 'house' || tween?.res) ? k * clamp((k - .6) / .4, 0, 1) : k;
   skyMat.opacity = far; towerMat.opacity = far;
   skyGroup.visible = far > .01;
   S.slab.visible = k > .5;
@@ -2840,15 +2868,45 @@ function setBlend(k) {
 const ray = new THREE.Raycaster();
 const ndc = new THREE.Vector2();
 let pointer = null, down = null;
+// 화면 기준 허용 오차(CSS px): 멀리 있는 천장 실내기의 누름 판은 화면에서 세로 1~12px 라 광선 하나로는 5px 만 빗나가도 놓쳤다
+// (2026-10-06 실측: 390x844 실제 탭, 세로 ±5px 성공 29/104). 터치 22 = 높이 0 인 판도 세로 44px 과녁. 마우스는 10 — hover 와 클릭이 같은 함수라 짚인 것이 눌린다
+const TOL = { touch: 22, mouse: 10 };
+const pq = [0, 1, 2, 3].map(() => new THREE.Vector3()), pc = new THREE.Vector3(), wallRay = new THREE.Raycaster();
+const segDist = (x, y, a, b) => { const vx = b.x - a.x, vy = b.y - a.y, t = clamp(((x - a.x) * vx + (y - a.y) * vy) / (vx * vx + vy * vy || 1), 0, 1); return Math.hypot(x - a.x - t * vx, y - a.y - t * vy); };
+// 누름 판의 화면 사각형까지 R px 안에서 가장 가까운 실내기. 카메라 뒤·벽 뒤(판 중심 기준)는 뺀다 — 벽 뒤 실내기는 전처럼 판을 직접 맞혀야 한다
+function nearUnit(x, y, r, R, skip) {
+  let best = null;
+  for (const m of S.unitPick) {
+    if (skip.includes(m.userData.unit)) continue;
+    const pos = m.geometry.attributes.position;
+    let front = true;
+    for (let i = 0; i < 4 && front; i++) {
+      const p = pq[i].fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld).project(camera);
+      front = p.z < 1;
+      p.set((p.x + 1) / 2 * r.width, (1 - p.y) / 2 * r.height, 0);
+    }
+    if (!front) continue;
+    const d = Math.min(segDist(x, y, pq[0], pq[1]), segDist(x, y, pq[1], pq[3]), segDist(x, y, pq[3], pq[2]), segDist(x, y, pq[2], pq[0])); // PlaneGeometry 꼭짓점 순서 0-1-3-2
+    if (d >= R) continue;
+    const far = m.getWorldPosition(pc).distanceTo(camera.position);
+    wallRay.set(camera.position, pc.sub(camera.position).divideScalar(far)); wallRay.far = far - .05;
+    if (wallRay.intersectObjects(S.g.walls.children, true).length) continue;
+    R = d; best = m.userData.unit;
+  }
+  return best;
+}
 function pick(e) {
-  const r = canvas.getBoundingClientRect();
-  ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  const r = canvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  ndc.set((x / r.width) * 2 - 1, -(y / r.height) * 2 + 1);
   ray.setFromCamera(ndc, camera);
   const list = state.level === 'building' ? BLD.pick : state.level === 'floor' ? S.allPick : [];
   const d = ray.intersectObjects(list, false)[0]?.object.userData; // units sit above the floor, so they win on distance
-  const id = d ? (d.unit || d.zone || d.hid || null) : null;
+  let id = d ? (d.unit || d.zone || d.hid || null) : null;
   // 방 시점: 지금 보고 있는 실내기(같은 시점 묶음)와 지금 서 있는 구역의 바닥은 누를 대상이 아니다
-  if (id && state.zone && (S.unitsById[id] ? !!state.unit && groupOf(state.unit).some(u => u.id === id) : id === state.zone)) return null;
+  const mine = state.zone && state.unit ? groupOf(state.unit).map(u => u.id) : [];
+  // 실내기 판을 직접 못 맞혔으면 화면에서 가까운 실내기로. 바닥 구역을 직접 맞혔을 때는 반경을 반으로(바닥을 누르려는 탭을 가로채지 않게)
+  if (state.level === 'floor' && !d?.unit) id = nearUnit(x, y, r, TOL[e.pointerType === 'touch' ? 'touch' : 'mouse'] / (d ? 2 : 1), mine) || id;
+  if (id && state.zone && (S.unitsById[id] ? mine.includes(id) : id === state.zone)) return null;
   return id;
 }
 function setHover(id) {
@@ -2943,9 +3001,19 @@ function tick(now) {
       const w = inw ? late : early;
       camera.fov = lerp(tween.f0, tween.pose.fov, w); state.tanP = lerp(tween.s0, tween.pose.tanP, w); updProj();
       camera.lookAt(tmp);
-      setBlend(inw ? clamp((e - .72) / .25, 0, 1) : clamp(1 - e / .25, 0, 1)); // 층 벽·천장은 유리를 지날 때만 불투명
-      const others = inw ? e < .85 : e > .12;
+      tween.res = inw && e < .25 && tween.k0 > 0; // 나가다 되돌아 들어가는 첫 구간: 벽·원경을 나가던 곡선 그대로 잇는다
+      setBlend(inw ? Math.max(tween.k0 * clamp(1 - e / .25, 0, 1), clamp((e - .72) / .25, 0, 1)) : tween.k0 * clamp(1 - e / .25, 0, 1)); // 층 벽·천장은 유리를 지날 때만 불투명(들어가다 되돌아 나오면 지금 k 에서부터)
+      const others = inw ? e < .85 : camera.position.z > -mm(BUILDING.footprint.outer_rect[1]); // 나갈 때: 카메라가 정면 외벽 밖으로 나온 뒤부터 다른 층·옥상을 그린다(그 전에 켜면 열린 천장 위로 위층 바닥이 뜬다)
       if (tween.others !== others) { tween.others = others; setDetail(others); }
+      if (!inw) { // 덮개: 카메라가 정면 외벽을 나오는 시각(tx)까지 0→1, 다른 층이 켜지면 끈다
+        const cv = BLD.cover[S.key];
+        cv.visible = !others;
+        if (!others) { // tx: 카메라 z 가 정면 외벽에 닿는 전환 비율(z 는 1-(1-e)^2.4 로 빠진다)
+          const tx = Math.max(1e-6, Math.acos(1 - 2 * (1 - Math.pow(1 - clamp((-mm(BUILDING.footprint.outer_rect[1]) - tween.p0.z) / (tween.pose.pos.z - tween.p0.z), 0, 1), 1 / 2.4))) / Math.PI);
+          mat.cover.opacity = clamp(t / tx, 0, 1);
+        }
+      }
+      if (!inw && e >= .125) S.g.furn.visible = false; // 나갈 때 가구는 벽이 걷히는 프레임(k .5)에 끈다 — 도착 프레임에 꺼지면 '띡'
     } else {
       camera.fov = lerp(tween.f0, tween.pose.fov, e); state.tanP = lerp(tween.s0, tween.pose.tanP, clamp(e / .8, 0, 1)); updProj();
       camera.lookAt(tmp);
