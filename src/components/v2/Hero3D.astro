@@ -297,7 +297,7 @@
   $('spaces').addEventListener('click', e => { const b = e.target.closest('[data-space]'); if (b) selectSpace(b.dataset.space); });
   $('spots').addEventListener('click', e => {
     const b = e.target.closest('[data-id]');
-    if (b) st.pick[st.space] = b.dataset.id;
+    if (b) { st.pick[st.space] = b.dataset.id; for (const x of $('spots').querySelectorAll('.h3-spot')) { x.classList.toggle('is-sel', x === b); x.setAttribute('aria-pressed', String(x === b)); } }   // 들어가는 돌리 중에는 뷰어의 enter 가 도착 뒤에 온다 — 누른 칸은 바로 표시
     if (b) send(st.viewer, st.viewer === 'house' ? { type: 'goRoom', id: b.dataset.id } : { type: 'goUnit', id: b.dataset.id });
   });
   // 목록에 올리면 3D 에서 그 자리를 짚어 준다 (라벨이 없는 화면이라 '창가 1'이 어디인지 알게)
