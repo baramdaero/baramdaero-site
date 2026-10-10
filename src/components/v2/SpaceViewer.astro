@@ -51,7 +51,7 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
         <div class="space3d__spots space3d__spots--all" id={`${id}-all`} role="group" aria-label="공간 목록"></div>
     </div>
     <div class="space3d__stage br-glass br-glass--medium" data-glow="off">
-      <iframe src={views[0].src} title={views[0].title} loading="lazy"></iframe>
+      <iframe src={views[0].src} title={views[0].title} loading="lazy" tabindex="-1"></iframe>
       {/* 방·층 안에 들어가면 나올 길 — 히어로와 같은 자리(3D 왼쪽 위)·같은 말·같은 화살표(2026-10-01, 갇힘 제보).
           건물(상업공간·오피스)은 '건물 전체' + 지금 층 이름, 아파트는 '전체 보기' */}
       <div class="space3d__here">

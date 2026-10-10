@@ -67,7 +67,7 @@ if (qa.length) {
 // 같은 지역의 다른 사진 사례 — 날짜가 가까운 순으로 네 건
 const nearby = (await getCollection('cases'))
   .filter((e) => !e.data.sample && e.id !== entry.id && e.data.region === region)
-  .sort((a, b) => Math.abs(+a.data.date - +date) - Math.abs(+b.data.date - +date))
+  .sort((a, b) => Math.abs(+a.data.date - +date) - Math.abs(+b.data.date - +date) || +b.data.date - +a.data.date || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)) // 거리가 같으면 최근 것, 그것도 같으면 id 순(빌드마다 같게)
   .slice(0, 4);
 
 const specs = [

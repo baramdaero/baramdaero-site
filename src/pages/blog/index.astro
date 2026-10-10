@@ -8,7 +8,7 @@ import CtaBand from '../../components/v2/CtaBand.astro';
 // sample: true 글은 형식 참고용 템플릿 — 프로덕션 미노출 (md에서 플래그를 지우면 자동 노출)
 const posts = (await getCollection('blog'))
   .filter((p) => !p.data.sample)
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf() || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)); // 같은 날짜끼리는 id 순 — 빌드하는 기계마다 순서가 달라지지 않게
 
 // topic 그룹 — 스키마 enum 순서 고정, 글이 있는 토픽만 필터 UI에 노출.
 // topic 없는 글은 '전체' 목록에만 나온다.
