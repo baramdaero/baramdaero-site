@@ -75,7 +75,7 @@
   const wide = matchMedia('(min-width: 1024px)'), reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const frames = { house: $('f-house') };
   const VIEWERS = [...new Set(SPACES.map(s => s.viewer))];   // house · commercial(상가) · office(오피스)
-  const st = { space: 'house', viewer: 'house', ready: {}, failed: {}, entries: {}, bldKey: {}, pendingKey: null, dipTimer: 0, room: null, notice: '', pick: {}, level: {}, roofSub: {} };
+  const st = { space: 'house', viewer: 'house', ready: {}, failed: {}, entries: {}, bldKey: {}, pendingKey: null, dipTimer: 0, room: null, notice: '', pick: {}, floor: {}, going: {}, level: {}, roofSub: {} };
   const FAIL_MSG = '3D 구성도를 불러오지 못했습니다. 잠시 뒤 새로고침해 주세요.';
   const RETRY_MSG = '구성도를 불러오지 못했습니다. 탭을 다시 누르면 다시 불러옵니다.';
 
@@ -170,12 +170,14 @@
       const list = st.entries[st.space];
       // 목록은 지금 층에서 고를 것만 — 건물로 나가는 길('building')은 위 '건물 전체'가 맡는다
       const rest = list?.filter(e => e.id !== 'building') ?? [];
+      // 고른 칸: 건물의 층 줄에서는 누르고 가는 중인 층, 없으면 방금 본 층(층 안에서 방 칸을 누르면 pick 은 방 id 가 된다). 그 밖에는 누른 칸. 이 목록에 없으면 첫 칸
+      const want = (!inBld && (st.going[st.space] || st.floor[st.space])) || st.pick[st.space], cur = rest.some(e => e.id === want) ? want : rest[0]?.id;
       $('spots').innerHTML = list && !rest.length
         ? `<span class="h3-spots__load">${esc(st.roofSub[st.space] || st.level[st.space] || '')}</span>`   // 옥상: 고를 칸이 없다
         : list
         ? rest.map((e, i) => {
               // 고른 칸 하나만 흰 판(세그먼트) — 처음엔 첫 칸, 들어갔다 나오면 마지막으로 본 칸. 안내 버튼은 이 칸으로 들어간다
-              const sel = (st.pick[st.space] ?? rest[0]?.id) === e.id;
+              const sel = cur === e.id;
               return `<button type="button" class="h3-spot${sel ? ' is-sel' : ''}" aria-pressed="${sel}" data-id="${esc(e.id)}">${esc(e.name)} <small>${esc(e.sub || '')}</small></button>`;
           }).join('')
         : `<span class="h3-spots__load" role="status">구성도를 불러오는 중입니다</span>`;
@@ -304,7 +306,7 @@
   $('spaces').addEventListener('click', e => { const b = e.target.closest('[data-space]'); if (b) selectSpace(b.dataset.space); });
   $('spots').addEventListener('click', e => {
     const b = e.target.closest('[data-id]');
-    if (b) { st.pick[st.space] = b.dataset.id; for (const x of $('spots').querySelectorAll('.h3-spot')) { x.classList.toggle('is-sel', x === b); x.setAttribute('aria-pressed', String(x === b)); } }   // 들어가는 돌리 중에는 뷰어의 enter 가 도착 뒤에 온다 — 누른 칸은 바로 표시
+    if (b) { st.pick[st.space] = b.dataset.id; if (/^(floor:|roof$)/.test(b.dataset.id)) st.going[st.space] = b.dataset.id; for (const x of $('spots').querySelectorAll('.h3-spot')) { x.classList.toggle('is-sel', x === b); x.setAttribute('aria-pressed', String(x === b)); } }   // 들어가는 돌리 중에는 뷰어의 enter 가 도착 뒤에 온다 — 누른 칸은 바로 표시
     if (b) send(st.viewer, st.viewer === 'house' ? { type: 'goRoom', id: b.dataset.id } : { type: 'goUnit', id: b.dataset.id });
   });
   // 목록에 올리면 3D 에서 그 자리를 짚어 준다 (라벨이 없는 화면이라 '창가 1'이 어디인지 알게)
@@ -312,7 +314,7 @@
   for (const ev of ['pointerover', 'focusin']) $('spots').addEventListener(ev, hoverSpot);
   for (const ev of ['pointerleave', 'focusout']) $('spots').addEventListener(ev, () => send(st.viewer, { type: 'hover', id: null }));
   $('back').addEventListener('click', () => send(st.viewer, { type: 'home' }));
-  const goBuilding = () => { cancelGround(); send(st.viewer, { type: 'goUnit', id: 'building' }); };   // 직접 나간 건물에는 머문다
+  const goBuilding = () => { cancelGround(); delete st.going[st.space]; send(st.viewer, { type: 'goUnit', id: 'building' }); };   // 직접 나간 건물에는 머문다
   $('upBtn').addEventListener('click', goBuilding);
   // Esc 는 한 단계씩: 실내기 → 층 입구 → 건물 전체
   addEventListener('keydown', e => {
@@ -353,6 +355,9 @@
       st.bldKey[v] = m.key; st.entries[m.key] = m.entries; st.pendingKey = null;
       st.level[m.key] = m.title || '';
       keepRoof(m);
+      // 층 안(목록에 '건물로'가 있다)이면 어느 층인지 적어 둔다 — 실내기 칸 id 가 '<층>/<실내기>', 칸이 없으면 옥상. 도면을 눌러 들어온 층도 이걸로 안다
+      // 누른 층에 닿으면 '가는 중'을 지운다. 다른 층을 거쳐 가는 동안(스스로 1층으로 들어가던 참에 3층 칸을 누름)에는 남겨, 건물 층 줄이 잠깐 보일 때 누른 칸이 그대로 있게
+      if (m.entries?.some(e => e.id === 'building')) { const u = m.entries.find(e => e.id !== 'building'), fid = u ? 'floor:' + String(u.id).split('/')[0] : 'roof'; st.floor[m.key] = fid; if (st.going[m.key] === fid) delete st.going[m.key]; }
 
       // 응답이 오는 사이 다른 공간을 골랐으면 그 공간으로 다시 맞춘다
       if (st.viewer === v && st.space !== m.key) { st.pendingKey = st.space; send(v, { type: 'space', key: st.space }); return; }
