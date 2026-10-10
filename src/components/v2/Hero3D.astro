@@ -179,6 +179,13 @@
               return `<button type="button" class="h3-spot${sel ? ' is-sel' : ''}" aria-pressed="${sel}" data-id="${esc(e.id)}">${esc(e.name)} <small>${esc(e.sub || '')}</small></button>`;
           }).join('')
         : `<span class="h3-spots__load" role="status">구성도를 불러오는 중입니다</span>`;
+      // 목록이 바뀌면(건물의 층 줄 → 그 층의 방 줄, 공간 탭 전환) 처음부터 보여 준다 — 밀어 둔 자리가 다른 목록에 남으면 앞 칸이 가려진 채 시작한다
+      const key = `${st.space}:${rest.map(e => e.id).join('|')}`;
+      if ($('spots').dataset.key !== key) {
+        const el = $('spots'), sel = el.querySelector('.is-sel'); el.dataset.key = key; el.scrollLeft = 0;
+        // 고른 칸(건물로 돌아왔을 때 방금 본 층)이 오른쪽 밖이면 그 칸이 보이는 데까지만 민다
+        if (sel) { const over = sel.getBoundingClientRect().right - el.getBoundingClientRect().right + 56; if (over > 0) el.scrollLeft = over; }
+      }
       syncMore();
     }
     $('invite').hidden = inRoom;
