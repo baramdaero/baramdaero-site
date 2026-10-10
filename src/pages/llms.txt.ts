@@ -10,8 +10,8 @@ export const GET: APIRoute = async ({ site }) => {
   const u = (p: string) => new URL(p, site).href;
   const cases = (await getCollection('cases'))
     .filter((c) => !c.data.sample)
-    .sort((a, b) => +b.data.date - +a.data.date);
-  const posts = (await getCollection('blog')).filter((p) => !p.data.sample);
+    .sort((a, b) => +b.data.date - +a.data.date || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)); // 같은 날짜끼리는 id 순 — 빌드하는 기계마다 순서가 달라지지 않게
+  const posts = (await getCollection('blog')).filter((p) => !p.data.sample).sort((a, b) => +b.data.date - +a.data.date || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   const faqs = faq.items.filter((f) => f.status === 'live');
 
   const lines = [

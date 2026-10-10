@@ -16,7 +16,7 @@ import { RECORDS, COMPLEXES, MONTHS, REGIONS, stats, fmtYm, fmtDate, ymOf, regio
 // sample: true 사례는 비공개(사람이 사진 확인 뒤 줄을 지우면 자동 노출)
 const entries = (await getCollection('cases'))
   .filter((e) => !e.data.sample)
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf() || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)); // 같은 날짜끼리는 id 순 — 빌드하는 기계마다 순서가 달라지지 않게
 
 // 거르기 목록 — region 은 '시·도 시·구'(예: 경기 성남). 시·도는 서울 → 경기 → 인천 → 나머지 가나다
 const PROVINCE_ORDER = ['서울', '경기', '인천'];
