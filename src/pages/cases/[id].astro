@@ -146,8 +146,8 @@ const specs = [
         <p>관련 안내</p>
         <ul>
           {(type === '세척'
-            ? [['세척 안내', '/care/'], ['세척 범위', '/faq/#faq-clean-scope'], ['가격 안내', '/price/']]
-            : [['설치 안내', '/install/'], ['천장 설치 조건', '/faq/#faq-ceiling-check'], ['배관을 넣는 시기', '/faq/#faq-pre-post'], ['단배관과 다배관', '/faq/#faq-pipe-type'], ['가격 안내', '/price/']]
+            ? [['세척 안내', '/care/'], ['세척 범위', '/faq/#faq-clean-scope'], ['가격 안내', '/faq/#cat-비용']]
+            : [['설치 안내', '/install/'], ['천장 설치 조건', '/faq/#faq-ceiling-check'], ['배관을 넣는 시기', '/faq/#faq-pre-post'], ['단배관과 다배관', '/faq/#faq-pipe-type'], ['가격 안내', '/faq/#cat-비용']]
           ).map(([t, h]) => <li><a href={h}>{t}</a></li>)}
         </ul>
       </nav>

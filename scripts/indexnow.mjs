@@ -11,7 +11,7 @@ const HOST = 'baramdaero.com';
 /** 바뀐 파일 → 그 파일이 내용을 정하는 페이지 경로. 레이아웃·컴포넌트처럼 모든 쪽에 걸치는 변경은 '내용 변경'이 아니라 보내지 않는다 */
 export function pathsFor(files) {
   const out = new Set();
-  const SITE_JSON = { 'home.json': ['/'], 'brands.json': ['/'], 'faq.json': ['/faq/'], 'pricing.json': ['/price/', '/care/'], 'standards.json': ['/price/', '/install/', '/care/'] };
+  const SITE_JSON = { 'home.json': ['/'], 'brands.json': ['/'], 'faq.json': ['/faq/'], 'pricing.json': ['/care/'], 'standards.json': ['/install/', '/care/'] };
   for (const f of files) {
     let m;
     if ((m = f.match(/^src\/content\/cases\/([^/]+)\.md$/))) out.add(`/cases/${m[1]}/`).add('/cases/');

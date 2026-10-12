@@ -9,10 +9,15 @@ export const SITE_CONFIG = {
 
   KAKAO_CHANNEL_URL: '', // 카카오채널 개설 후 기입 (예: https://pf.kakao.com/_xxxxx)
   PHONE: '1544-2618',    // 2026-10-02 대표 지정 대표번호
-  // 쇼핑몰 주소 — 상점이 실제로 열린 뒤 기입한다. 빈 값이면 내비·푸터의 "예약·구매"가 렌더되지 않는다.
+  // 쇼핑몰 주소 — 상점이 실제로 열린 뒤 기입한다. 채우면 메뉴·푸터의 '가격'이 쇼핑몰로 가고,
+  // 헤더 오른쪽 위 '견적 문의' 자리에 '로그인'이 온다(견적 문의는 채팅 버튼이 맡는다).
+  // 빈 값이면 '가격'은 자주 묻는 질문의 '비용' 묶음으로 가고 오른쪽 위는 '견적 문의'다.
   // 2026-07-30: shop.baramdaero.com이 DNS 미등록(NXDOMAIN) 상태로 확인돼 빈 값으로 되돌림.
   // 링크가 살아 있으면 방문자가 브라우저 오류 페이지로 빠진다.
   SHOP_URL: '',
+  // 쇼핑몰 로그인 화면 경로 — SHOP_URL 뒤에 붙는다(shopHref). 빈 값이면 '로그인' 링크만 렌더되지 않는다.
+  // 가입 링크는 따로 두지 않는다 — 가입은 쇼핑몰 화면에서 한다(2026-10-12).
+  SHOP_LOGIN_PATH: '/login',
 
   // 채널톡 플러그인 키 — 개설 후 기입. 동일 키가 쇼핑몰(아임웹, 별도 관리)에도 설치될 예정.
   // 이 레포는 본진 연동만 담당하며 쇼핑몰 측 설치는 코드 범위 외.
@@ -26,7 +31,7 @@ export const SITE_CONFIG = {
   WELCOME_MESSAGE: '안녕하세요, 바람대로입니다.\n무엇이 필요하신가요?',
 
   // /care/ SEO 문구 — 지역+비용 키워드 구조 (검색·AI 인용 표적)
-  CARE_SEO_TITLE: '에어컨 분해세척 — 기종별 분해 범위와 표준 절차',   // 기준가는 /price/ 로 옮겼다(2026-09-24)
+  CARE_SEO_TITLE: '에어컨 분해세척 — 기종별 분해 범위와 표준 절차',   // 금액은 넣지 않는다 — 비용 안내는 /faq/ '비용' 묶음
   CARE_SEO_DESCRIPTION:
     '수도권 에어컨 분해세척 표준 절차와 기종별 분해 범위. 기종과 대수만 알려주시면 견적을 드립니다.',
 
@@ -42,3 +47,7 @@ export const SITE_CONFIG = {
   NAVER_SITE_VERIFICATION: '',
   GOOGLE_SITE_VERIFICATION: '',
 };
+
+/** 쇼핑몰 안쪽 주소. SHOP_URL 이나 경로가 비면 빈 문자열 — 부르는 쪽은 빈 값이면 링크를 그리지 않는다(죽은 링크 금지) */
+export const shopHref = (path) =>
+  SITE_CONFIG.SHOP_URL && path ? SITE_CONFIG.SHOP_URL.replace(/\/+$/, '') + path : '';

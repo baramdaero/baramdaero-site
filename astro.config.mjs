@@ -15,5 +15,7 @@ export default defineConfig({
   redirects: {
     '/story': '/',
     '/situation/newhome': '/install/',
+    // 2026-10-12 가격 페이지 폐지 — 비용 안내는 자주 묻는 질문의 '비용' 묶음이 맡는다
+    '/price': '/faq/#cat-비용',
   },
 });
