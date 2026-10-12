@@ -14,7 +14,7 @@ const s = stats(g.records);
 const seen = new Map<string, number>();
 for (const c of g.complexes) seen.set(c.name, (seen.get(c.name) ?? 0) + 1);
 const dupName = new Set([...seen].filter(([, n]) => n > 1).map(([k]) => k));
-const answer = `바람대로가 ${g.region}에서 마친 시스템에어컨 현장은 ${s.n}건입니다(${fmtYm(ymOf(s.first))}~${fmtYm(ymOf(s.last))}).${g.complexes.length ? ` 단지명이 확인된 곳은 ${g.complexes.length}곳이고,` : ''}${s.brands.length ? ` 브랜드는 ${brandLine(s.brands)}입니다.` : ''}`;
+const answer = `바람대로가 ${g.region}에서 마친 시스템에어컨 현장은 ${s.n}건입니다(${fmtYm(ymOf(s.first))}~${fmtYm(ymOf(s.last))}).${g.complexes.length ? ` 단지는 ${g.complexes.length}곳이고,` : ''}${s.brands.length ? ` 브랜드는 ${brandLine(s.brands)}입니다.` : ''}`;
 const title = `${g.region} 시스템에어컨 시공 기록 ${s.n}건`;
 const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? '';
 const pageUrl = `${siteUrl}/cases/region/${regionSlug(g.region)}/`;
