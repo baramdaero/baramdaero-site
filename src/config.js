@@ -43,6 +43,10 @@ export const SITE_CONFIG = {
   // 공유 카드 기본 이미지 1200×630 (#004E64 + 로고 리버스 중앙). 페이지별 ogImage prop으로 덮어쓴다
   OG_IMAGE: '/og-default.png',
 
+  // 검색엔진에 알리기 — 출시 전에는 false. false 면 배포 뒤 바뀐 페이지를 검색엔진에 보내지 않는다(scripts/indexnow.mjs).
+  // 출시 날 true 로 바꾸고 docs/launch-search.md 순서대로 한다(2026-10-12 대표: 색인 요청은 사업 시작 때 한꺼번에).
+  SEARCH_OPEN: false,
+
   // 사이트 인증 메타 — 발급 후 기입하면 <head>에 자동 렌더
   NAVER_SITE_VERIFICATION: '',
   GOOGLE_SITE_VERIFICATION: '',

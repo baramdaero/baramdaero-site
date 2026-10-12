@@ -3,7 +3,10 @@
 // 바뀐 파일 목록은 CHANGED(줄바꿈 구분, deploy.yml 이 git diff 로 넘김) → 주소로 바꾸고, 사이트맵에 있는 것(공개된 것)만 보낸다.
 // 키 파일은 public/<KEY>.txt (공개가 정상 — IndexNow 는 그 파일로 사이트 소유를 확인한다).
 // 사용: CHANGED="$(git diff --name-only A B)" node scripts/indexnow.mjs [--dry]   |   node scripts/indexnow.mjs --selfcheck
+//       node scripts/indexnow.mjs --all [--dry]   출시 날 한 번 — 사이트맵의 모든 주소를 보낸다
+// 출시 전(src/config.js SEARCH_OPEN: false)에는 아무것도 보내지 않는다.
 import assert from 'node:assert/strict';
+import { SITE_CONFIG } from '../src/config.js';
 
 const KEY = 'd908e0d13ce71309fe5c2e1238b5b70e';
 const HOST = 'baramdaero.com';
@@ -30,21 +33,27 @@ if (process.argv.includes('--selfcheck')) {
   assert.deepEqual(pathsFor(['src/pages/cases/index.astro']), ['/cases/']);
   console.log('indexnow selfcheck: 4/4 passed');
 } else {
+  if (!SITE_CONFIG.SEARCH_OPEN) { console.log('출시 전(SEARCH_OPEN: false) — 검색엔진에 알리지 않음'); process.exit(0); }
+  const all = process.argv.includes('--all');
   const files = (process.env.CHANGED ?? '').split('\n').map((s) => s.trim()).filter(Boolean);
   const want = pathsFor(files);
-  if (!want.length) { console.log('바뀐 페이지 없음 — 보내지 않음'); process.exit(0); }
+  if (!all && !want.length) { console.log('바뀐 페이지 없음 — 보내지 않음'); process.exit(0); }
   // 사이트맵에 있는 주소만(초안·삭제된 쪽은 없다)
   const get = async (url) => (await fetch(url)).text();
   const locs = (xml) => [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
   const index = await get(`https://${HOST}/sitemap-index.xml`);
   const live = new Map((await Promise.all(locs(index).map(get))).flatMap(locs).map((u) => [decodeURI(new URL(u).pathname), u]));
-  const urls = want.map((p) => live.get(p)).filter(Boolean);
+  const urls = all ? [...live.values()] : want.map((p) => live.get(p)).filter(Boolean);
   if (!urls.length) { console.log('공개된 페이지 변경 없음 — 보내지 않음'); process.exit(0); }
   if (process.argv.includes('--dry')) { console.log('[dry] 보낼 주소', urls.map((u) => decodeURI(new URL(u).pathname))); process.exit(0); }
-  const res = await fetch('https://api.indexnow.org/indexnow', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json; charset=utf-8' },
-    body: JSON.stringify({ host: HOST, key: KEY, keyLocation: `https://${HOST}/${KEY}.txt`, urlList: urls }),
-  });
-  console.log('api.indexnow.org', res.status, `${urls.length}개`, urls.map((u) => decodeURI(new URL(u).pathname)).join(' '));
+  // 한 번에 10,000개까지(IndexNow 규격)
+  for (let i = 0; i < urls.length; i += 10000) {
+    const part = urls.slice(i, i + 10000);
+    const res = await fetch('https://api.indexnow.org/indexnow', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      body: JSON.stringify({ host: HOST, key: KEY, keyLocation: `https://${HOST}/${KEY}.txt`, urlList: part }),
+    });
+    console.log('api.indexnow.org', res.status, `${part.length}개`, all ? '(전체)' : part.map((u) => decodeURI(new URL(u).pathname)).join(' '));
+  }
 }
