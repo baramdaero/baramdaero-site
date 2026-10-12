@@ -55,7 +55,7 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
       {eyebrow && <p class="br-sec-label">{eyebrow}</p>}
       {/* 제목이 비면 h2 를 내지 않는다(제목을 둘지는 페이지가 정한다) */}
       {titleLines.join('') && <h2 class="br-h br-reveal">{titleLines.map((line, i) => <Fragment>{i > 0 && <br />}{line}</Fragment>)}</h2>}
-      {/* 제목과 3D 안내 사이 — /install/ 은 제품 영상을 여기 둔다 */}
+      {/* 제목과 3D 안내 사이 — 지금 쓰는 페이지는 없다(/install/ 은 2026-10-12 에 자기 섹션으로 옮겼다) */}
       {Astro.slots.has('lead') && <div class="ex-lead br-reveal"><slot name="lead" /></div>}
       {/* 쉼표로 나뉜 구절은 구절째 다음 줄로 넘어간다 — 좁은 화면에서 끝에 두어 낱말만 남지 않게(브라우저의 줄 고르기에 기대지 않는다) */}
       {bodyLines.length > 0 && <p class="br-sec-lead br-reveal">{bodyLines.map((line, i) => {
@@ -135,7 +135,7 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
     const figs = [...document.querySelectorAll(`[id^="${id}-fig-"]`)];
     const tabs = [...document.querySelectorAll(`[data-ex-tab][aria-controls="${id}-panel"]`)];
     const switches = [...(stage?.closest('section')?.querySelectorAll('[data-ex-pick]') ?? [])];   // 제조사 토글(사진 칸)
-    // ⚠️ tabs.length 를 가드에 넣지 말 것 — 기종이 1개인 페이지(홈·설치)는 탭 줄을 안 그린다.
+    // ⚠️ tabs.length 를 가드에 넣지 말 것 — 기종이 1개인 페이지(홈)는 탭 줄을 안 그린다.
     // 여기서 반환하면 자동 재생(IntersectionObserver)·로드 실패 안내(armFail)까지 같이 죽는다.
     // tabs.forEach 는 빈 배열에서 no-op 이고 pick() 은 탭 핸들러에서만 불린다.
     if (!frame) return;
