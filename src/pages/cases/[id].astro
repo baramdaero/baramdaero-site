@@ -15,7 +15,7 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const { Content } = await render(entry);
-const { region, space, brand, type, units, date, cover, sample, photos, answer, qa, updated } = entry.data;
+const { region, space, brand, type, units, date, cover, sample, photos, answer, qa, updated, spec } = entry.data;
 // 같은 단지의 시공 기록(있을 때) — 단지 페이지로 잇는다
 const complex = entry.data.apt ? COMPLEX_BY_SLUG.get(entry.data.apt) : undefined;
 const title = entry.data.title || `${region} ${space} ${brand} ${type} ${units}대`;
@@ -44,6 +44,8 @@ const jsonLd: object[] = [
     mainEntityOfPage: pageUrl,
     inLanguage: 'ko-KR',
     about: { '@type': 'Service', name: `에어컨 ${type}`, areaServed: region, provider: org },
+    ...(complex ? { contentLocation: { '@type': 'ApartmentComplex', name: complex.name, address: { '@type': 'PostalAddress', addressCountry: 'KR', addressRegion: complex.region.split(' ')[0], addressLocality: `${complex.gu} ${complex.dong}` } } } : {}),
+    ...(entry.data.tags.length || spec?.models.length ? { keywords: [...entry.data.tags, ...(spec?.models ?? [])].join(', ') } : {}),
     ...(images.length ? { image: images } : {}),
   },
   {
@@ -77,6 +79,10 @@ const specs = [
   ['브랜드', brand],
   ['작업', type],
   ['대수', `${units}대`],
+  // 제원 — 실외기 마력·배관 방식, 실내기 평형, 조합비(값이 있을 때만)
+  ...(spec?.hp ? [['실외기', `${spec.hp}마력${spec.pipe ? ` · ${spec.pipe}` : ''}`]] : spec?.pipe ? [['배관', spec.pipe]] : []),
+  ...(spec?.sizes.length ? [['실내기', `${spec.sizes.join('·')}평형`]] : []),
+  ...(spec?.ratio ? [['조합비', `${spec.ratio}%`]] : []),
   ['작업일', dateLabel],
 ];
 ---
