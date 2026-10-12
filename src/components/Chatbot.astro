@@ -20,7 +20,7 @@ const TEASER = [
 ---
 <div class="chat" data-chat-root>
   <p id="chat-unavailable" class="chat__unavailable" role="status">
-    문의 기능을 준비하고 있어요. 계속 이 안내가 보이면 새로고침해 주세요.
+    문의 창을 불러오는 중입니다. 계속 보이면 새로고침해 주세요.
   </p>
   <script type="application/json" data-chat-faq set:html={faqJson} />
   <button disabled aria-describedby="chat-unavailable"
@@ -249,7 +249,7 @@ const TEASER = [
     as_leak: L(
       '먼저 전원을 꺼주세요.',
       '새는 물이 전기 부품에 닿으면',
-      '위험할 수 있습니다.',
+      '위험합니다.',
       '',
       '물이 떨어지는 원인은',
       '크게 세 가지입니다.',
@@ -263,8 +263,7 @@ const TEASER = [
     ),
     // 누수·냉방약함·소음·기타 공통 — 증상만으로 원인을 단정하지 않는다
     as_general: L(
-      '원인은 몇 가지로 나뉩니다.',
-      '정확한 구분은 확인 후',
+      '원인은 확인한 뒤',
       '안내드리겠습니다.',
       '아래 「이 내용으로 접수하기」를 눌러 주세요.',
     ),
@@ -272,7 +271,7 @@ const TEASER = [
     /* --- 트리3 설치 ---
        진입 멘트는 "말풍선 하나 = 메시지 하나" — 절차 안내와 질문을 분리한다.
        절차 자체는 홈페이지가 이미 설명했으므로 여기선 짧게, 질문은 별도 말풍선. */
-    install_start: L('몇 가지만 확인하면', '견적을 드릴 수 있습니다.'),
+    install_start: L('설치 조건을 확인하고', '견적을 드립니다.'),
     install_type_q: '어떤 설치인가요?',
     install_space: '설치 공간이 어디인가요?',
     install_brand: '브랜드를 선택해 주세요.',
