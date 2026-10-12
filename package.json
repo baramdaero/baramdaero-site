@@ -14,6 +14,7 @@
     "test:case": "node scripts/new-case.mjs --selfcheck",
     "test:rhythm": "astro build && node scripts/check-design-rhythm.mjs",
     "test:faq": "node scripts/check-faq-search.mjs",
+    "test:chat": "node scripts/check-chat-link.mjs",
     "test:shop": "astro build && node scripts/check-shop-links.mjs",
     "case:import": "node scripts/import-cases.mjs"
   },

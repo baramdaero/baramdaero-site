@@ -1,7 +1,7 @@
 ---
 // 문의 챗봇 — 메신저 대화형 UI. 4트리(세척/AS/설치/기타) 로직·분기·문구·접수카드 스펙은 v1 그대로 유지,
 // 표현 계층(말풍선·칩·입력바)과 종점 동작(채널톡 상담 연결 + 폴백)만 교체.
-// 진입점 2개: 플로팅 런처(전 페이지) + [data-chat-tree] 요소(홈 히어로 로우, /care/ CTA 등).
+// 진입점 3개: 플로팅 런처(전 페이지) + [data-chat-tree] 요소(홈 히어로 로우, /care/ CTA 등) + 주소(?chat=install — lib/chat-link.ts).
 // 연락처·채널 값은 config.js 플레이스홀더 — 빈 값 폴백은 스크립트가 처리 (CLAUDE.md 절대 규칙 2).
 import { SITE_CONFIG } from '../config.js';
 import { loadFaq } from '../lib/faq.ts';
@@ -99,6 +99,7 @@ const TEASER = [
 <script>
   import { SITE_CONFIG } from '../config.js';
   import { channelEnabled, ensureChannel, openConsult } from '../lib/channel.ts';
+  import { readChatLink } from '../lib/chat-link.ts';
 
   const root = document.querySelector('[data-chat-root]') as HTMLElement;
   const fab = root.querySelector('[data-chat-fab]') as HTMLButtonElement;
@@ -117,6 +118,8 @@ const TEASER = [
 
   type Data = Record<string, string>;
   let data: Data = {};
+  // 주소로 넘어온 '보던 상품'(맨 아래 진입점 3). data 와 달리 '처음으로'·다시 열기에도 남는다
+  let askedProduct = '';
 
   // faq.json 정제본 (빌드 타임 주입) — 홈 화면 pinned 노출 + 트리4 전체 목록
   type FaqItem = { q: string; a: string; pinned: boolean; next: { label: string; tree: string } | null };
@@ -800,6 +803,7 @@ const TEASER = [
     const lines = ['[바람대로 접수]'];
     const push = (k: string, v?: string) => { if (v) lines.push(`${k}: ${v}`); };
     push('분류', data.긴급 ? `${data.분류} (긴급)` : data.분류);
+    push('문의 제품', askedProduct);
     // '고객구분(무상/유상)'은 as.when과 함께 삭제 — 안 물으니 늘 '확인 필요'만 찍혔다
     push('공간', data.공간);
     if (data.분류 === '설치') push('브랜드·유형', [data.브랜드, data.유형].filter(Boolean).join(' · '));
@@ -1150,6 +1154,18 @@ const TEASER = [
     button.removeAttribute('aria-describedby');
   });
   document.getElementById('chat-unavailable')!.hidden = true;
+
+  // 진입점 3: 주소 — ?chat=install|clean|as|etc|menu (&model=…&name=…). 쇼핑몰 '견적 문의'가 넘어오는 길.
+  // 버튼을 살린 위 줄 뒤에 둔다(준비가 끝난 뒤에 연다). 모르는 값이면 아무 일도 하지 않는다
+  const link = readChatLink(location.search, [...Object.keys(TREE_START), 'menu']);
+  if (link) {
+    askedProduct = link.product;
+    open(TREE_START[link.tree] ?? 'home');
+    // 새로고침·뒤로 가기에 다시 열리지 않게 주소에서 지운다
+    const url = new URL(location.href);
+    ['chat', 'model', 'name'].forEach((k) => url.searchParams.delete(k));
+    history.replaceState(history.state, '', url);
+  }
 </script>
 
 <!-- is:global — 말풍선·칩·카드가 JS로 동적 생성되어 스코프 속성이 붙지 않는다. chat__ 네임스페이스로 충돌 방지. -->
@@ -1503,6 +1519,7 @@ const TEASER = [
     font-size: 13.5px;
     line-height: 1.7;
     white-space: pre-wrap;
+    overflow-wrap: anywhere; /* 띄어쓰기 없는 긴 값(주소로 온 제품 이름 등)이 카드 밖으로 밀려 나가지 않게 */
     user-select: all;
     -webkit-user-select: all;
   }
