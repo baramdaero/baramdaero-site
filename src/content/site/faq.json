@@ -46,12 +46,7 @@
       "chat_a": "",
       "price_note": "",
       "status": "live",
-      "related": [
-        {
-          "label": "기준가 안내",
-          "href": "/price/"
-        }
-      ],
+      "related": [],
       "updated": "2026-08-14",
       "keywords": [
         "설치비",

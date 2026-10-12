@@ -4,7 +4,7 @@
  *   npm run test:shop     (빌드까지 같이 돈다 — dist 가 낡으면 검사가 거짓 초록이 된다)
  *
  * config.js 의 지금 값에 맞춰 dist 를 본다.
- *   SHOP_URL 이 비었으면: '가격'은 /price/, 오른쪽 위는 견적 문의, '로그인'은 어디에도 없다.
+ *   SHOP_URL 이 비었으면: '가격'은 /faq/ 의 '비용' 묶음, 오른쪽 위는 견적 문의, '로그인'은 어디에도 없다.
  *   SHOP_URL 이 있으면: 헤더·푸터의 '가격'은 쇼핑몰 주소, 오른쪽 위는 '로그인' 하나(견적 문의 버튼 없음), 푸터에도 '로그인' 하나.
  */
 import { readFile, readdir } from 'node:fs/promises';
@@ -37,7 +37,7 @@ function check(file, html, cfg) {
   if (!header) return fails;   // 공용 틀을 안 쓰는 화면
   const shop = cfg.SHOP_URL.replace(/\/+$/, '');
   const login = shop && cfg.SHOP_LOGIN_PATH ? shop + cfg.SHOP_LOGIN_PATH : '';
-  const priceHref = cfg.SHOP_URL || '/price/';
+  const priceHref = cfg.SHOP_URL || '/faq/#cat-비용';
 
   for (const a of anchors(html)) if (a.href === '' || /undefined|null/.test(a.href ?? '')) fails.push(`${file}: 빈 주소 링크 — "${a.text}"`);
 
@@ -69,12 +69,12 @@ function check(file, html, cfg) {
   const P = (href) => `<a href="${href}">가격</a>`;
   const L = '<a href="https://s.example/login">로그인</a>';
   const Q = '<button class="bd-header__quote">견적 문의</button>';
-  assert.equal(check('x', page(P('/price/') + Q, P('/price/')), off).length, 0);
-  assert.equal(check('x', page(P('/price/') + Q, P('/price/') + L), off).length, 1, '빈 값인데 남은 로그인을 못 잡는다');
-  assert.equal(check('x', page(P('/price/'), P('/price/')), off).length, 1, '빈 값인데 사라진 견적 문의를 못 잡는다');
+  assert.equal(check('x', page(P('/faq/#cat-비용') + Q, P('/faq/#cat-비용')), off).length, 0);
+  assert.equal(check('x', page(P('/faq/#cat-비용') + Q, P('/faq/#cat-비용') + L), off).length, 1, '빈 값인데 남은 로그인을 못 잡는다');
+  assert.equal(check('x', page(P('/faq/#cat-비용'), P('/faq/#cat-비용')), off).length, 1, '빈 값인데 사라진 견적 문의를 못 잡는다');
   assert.equal(check('x', page(P(on.SHOP_URL) + L, P(on.SHOP_URL) + L), on).length, 0);
   assert.equal(check('x', page(P(on.SHOP_URL) + L + Q, P(on.SHOP_URL) + L), on).length, 1, '오른쪽 위에 둘이 있는 것을 못 잡는다');
-  assert.equal(check('x', page(P('/price/') + L, P(on.SHOP_URL) + L), on).length, 1, "쇼핑몰로 안 가는 '가격'을 못 잡는다");
+  assert.equal(check('x', page(P('/faq/#cat-비용') + L, P(on.SHOP_URL) + L), on).length, 1, "쇼핑몰로 안 가는 '가격'을 못 잡는다");
   assert.equal(check('x', page(P(on.SHOP_URL) + L, P(on.SHOP_URL) + L.replace('/login', '/signin')), on).length, 1, '흩어진 주소를 못 잡는다');
   assert.equal(check('x', page(P(on.SHOP_URL) + L, P(on.SHOP_URL) + L + '<a href="">예약</a>'), on).length, 1, '빈 주소 링크를 못 잡는다');
 }
@@ -86,4 +86,4 @@ if (fails.length) {
   console.error(fails.slice(0, 40).map((f) => `  FAIL ${f}`).join('\n') + (fails.length > 40 ? `\n  … 외 ${fails.length - 40}건` : ''));
   process.exit(1);
 }
-console.log(`shop links: ${SITE_CONFIG.SHOP_URL ? "쇼핑몰 주소 있음 — '가격'은 쇼핑몰, 오른쪽 위는 로그인 하나" : "쇼핑몰 주소 빔 — '가격'은 /price/, 오른쪽 위는 견적 문의, 로그인 0"} — 화면 ${pages.length}개 통과`);
+console.log(`shop links: ${SITE_CONFIG.SHOP_URL ? "쇼핑몰 주소 있음 — '가격'은 쇼핑몰, 오른쪽 위는 로그인 하나" : "쇼핑몰 주소 빔 — '가격'은 /faq/ 비용 묶음, 오른쪽 위는 견적 문의, 로그인 0"} — 화면 ${pages.length}개 통과`);

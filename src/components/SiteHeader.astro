@@ -36,8 +36,9 @@ const nav = [
   ...(realCases >= 3 ? [{ href: '/cases/', label: '사례', full: '시공사례', name: '시공사례' }] : []),
   // wide: JS 가 안 도는 모바일(한 줄 메뉴 폴백)에서만 숨는다 — 6칸이면 390px 에서 54px 넘친다(2026-09-24 실측).
   // JS 가 돌면 640px 이하는 '메뉴' 버튼 펼침 목록이라 가격도 들어간다
-  // 쇼핑몰 주소가 있으면 '가격'은 쇼핑몰로 간다(2026-10-12 박민혁: 가격은 예약·구매 화면으로) — 비면 /price/ 그대로
-  { href: SITE_CONFIG.SHOP_URL || '/price/', label: '가격', full: '가격', wide: true },
+  // 가격 페이지는 없앴다(2026-10-12 박민혁: /faq/ 에서 비용도 알려 주면 된다, 가격은 예약·구매 화면으로).
+  // 쇼핑몰 주소가 있으면 쇼핑몰로, 비면 자주 묻는 질문의 '비용' 묶음으로 간다
+  { href: SITE_CONFIG.SHOP_URL || '/faq/#cat-비용', label: '가격', full: '가격', wide: true },
   { href: '/faq/', label: 'FAQ', full: '자주 묻는 질문', name: '자주 묻는 질문(FAQ)' },
 ];
 const path = Astro.url.pathname;
