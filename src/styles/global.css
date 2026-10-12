@@ -13,6 +13,10 @@
   /* 브랜드 그라디언트(2026-10-02 대표 결정, DESIGN.md §6 예외) — 틸 토큰끼리만 섞는다. 오른쪽 아래 모서리에서 ice 가 번져 올라온다.
      grad-wide = 서브 히어로처럼 넓은 면(왼쪽 위 제목 자리는 teal-deep 그대로) */
   --br-grad-wide: radial-gradient(120% 140% at 100% 115%, color-mix(in oklab, var(--br-ice) 38%, var(--br-teal)) 0%, var(--br-teal) 32%, var(--br-teal-deep) 72%);
+  /* grad-light = 밝은 서브 히어로(/faq/, 2026-10-12 대표). base 에서 ice 로 오른쪽으로 짙어지고, 그 위에 비스듬한 흰 띠 한 줄. 글자 자리(왼쪽)는 거의 base */
+  --br-grad-light:
+    linear-gradient(118deg, transparent 52%, color-mix(in srgb, #fff 46%, transparent) 64%, transparent 78%),
+    linear-gradient(96deg, color-mix(in oklab, var(--br-ice) 16%, var(--br-base)) 0%, color-mix(in oklab, var(--br-ice) 46%, var(--br-base)) 52%, color-mix(in oklab, var(--br-ice) 88%, var(--br-base)) 100%);
 
   /* 타이포 — 본문 Pretendard. 제목(h1·h2)은 맨 아래 G마켓 산스 블록 (세리프 폐기) */
   --sans: 'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', sans-serif;
@@ -154,7 +158,7 @@ button {
 
 /* 어두운 섹션 — 알약 배경이 하던 대비를 색으로 만든다.
    새로 어두운 섹션을 만들면 여기에 클래스를 추가한다(빠지면 라벨이 배경에 묻힌다). */
-.v2-phero,
+.v2-phero:not(.v2-phero--light),
 .v2-scrub,
 .v2-triage--deep,
 .care-process__story--deep,
@@ -642,7 +646,7 @@ html.br-js .br-reveal.br-h { transform: none; }
 /* 포커스 링 — 전역 값은 라이트 구간용(teal)이라 딥 구간에서 1.65:1 로 묻힌다.
    딥 표면 위에서는 ice 로 바꾼다 (ice/teal-deep 11.72:1, DESIGN.md §1 대비표) */
 .bd-footer :focus-visible,
-.v2-phero :focus-visible,
+.v2-phero:not(.v2-phero--light) :focus-visible,
 .sit-close :focus-visible,
 .v2-triage--deep :focus-visible,
 .care-close :focus-visible,
