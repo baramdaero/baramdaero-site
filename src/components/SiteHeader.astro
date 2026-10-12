@@ -36,12 +36,12 @@ const nav = [
   ...(realCases >= 3 ? [{ href: '/cases/', label: '사례', full: '시공사례', name: '시공사례' }] : []),
   // wide: JS 가 안 도는 모바일(한 줄 메뉴 폴백)에서만 숨는다 — 6칸이면 390px 에서 54px 넘친다(2026-09-24 실측).
   // JS 가 돌면 640px 이하는 '메뉴' 버튼 펼침 목록이라 가격도 들어간다
-  { href: '/price/', label: '가격', full: '가격', wide: true },
+  // 쇼핑몰 주소가 있으면 '가격'은 쇼핑몰로 간다(2026-10-12 박민혁: 가격은 예약·구매 화면으로) — 비면 /price/ 그대로
+  { href: SITE_CONFIG.SHOP_URL || '/price/', label: '가격', full: '가격', wide: true },
   { href: '/faq/', label: 'FAQ', full: '자주 묻는 질문', name: '자주 묻는 질문(FAQ)' },
 ];
 const path = Astro.url.pathname;
-// 쇼핑몰 회원 화면 — 로그인 여부는 이 사이트에서 알 수 없어(다른 출처) 상태와 무관한 말 하나만 둔다.
-// SHOP_URL 이나 경로가 비면 빈 값 → 아래 두 자리 모두 미렌더
+// 쇼핑몰 로그인 화면 — 로그인 여부는 이 사이트에서 알 수 없어(다른 출처) 상태와 무관한 말 하나만 둔다
 const loginHref = shopHref(SITE_CONFIG.SHOP_LOGIN_PATH);
 
 /** 현재 페이지 판정. href가 '/'이면 startsWith가 모든 경로에 참이 되어 항상 현재로 표시된다
@@ -66,6 +66,7 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
         {nav.map((item, i) => (
           <a
             href={item.href}
+            rel={item.href.startsWith('http') ? 'noopener' : undefined}
             style={`--i:${i}`}
             class:list={['bd-header__link', item.wide && 'bd-header__link--wide']}
             aria-label={item.name}
@@ -73,20 +74,17 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
           ><span class="bd-header__label bd-header__label--short">{item.label}</span
           ><span class="bd-header__label bd-header__label--full">{item.full}</span></a>
         ))}
-        {/* 펼침 목록 안에서만 보인다 — 넓은 화면은 오른쪽 슬롯의 같은 링크가 맡는다 */}
-        {loginHref && <a href={loginHref} style={`--i:${nav.length}`} class="bd-header__link bd-header__link--member" rel="noopener">로그인</a>}
       </div>
     </nav>
-    {/* 우측 액션 슬롯 — 대표번호·CTA가 들어올 자리.
-        SHOP_URL이 비면 슬롯째 미렌더한다: 빈 요소를 남기면 inner의 gap이 그대로 붙어
-        메뉴가 이유 없이 왼쪽으로 밀린다. 슬롯이 생기면 메뉴는 gap만큼 밀릴 뿐이고,
-        폭은 flex가 알아서 나눈다 (고정값 재조정 불요). */}
-    {/* 견적 문의 — 모든 페이지 오른쪽 위에 고정(2026-09-30 대표: "시공문의·견적문의로 잘 유도되게").
-        채팅창 첫 메뉴(설치 견적·세척 견적·A/S)를 연다 → 채널톡 상담. 채팅 스크립트가 켜기 전까지는 비활성 */}
+    {/* 오른쪽 위 — 한 가지만 둔다.
+        쇼핑몰 주소가 비었으면 견적 문의(2026-09-30 대표: "시공문의·견적문의로 잘 유도되게"): 채팅창 첫 메뉴(설치 견적·세척 견적·A/S)를 연다 → 채널톡 상담.
+        채팅 스크립트가 켜기 전까지는 비활성.
+        쇼핑몰 주소가 있으면 로그인만(2026-10-12 박민혁: 로그인·견적 문의·예약·구매 셋이 나란하면 이상하다 — 견적 문의는 아래 채팅 버튼이 맡고,
+        예약·구매는 메뉴 '가격'이 맡는다) */}
     <div class="bd-header__actions">
-      {loginHref && <a href={loginHref} class="bd-header__link bd-header__member" rel="noopener">로그인</a>}
-      <button type="button" class="bd-header__quote" data-chat-tree="menu" disabled aria-describedby="chat-unavailable">견적 문의</button>
-      {SITE_CONFIG.SHOP_URL && <a href={SITE_CONFIG.SHOP_URL} class="bd-header__cta" rel="noopener">예약·구매</a>}
+      {loginHref
+        ? <a href={loginHref} class="bd-header__quote bd-header__login" rel="noopener">로그인</a>
+        : <button type="button" class="bd-header__quote" data-chat-tree="menu" disabled aria-describedby="chat-unavailable">견적 문의</button>}
     </div>
   </div>
 </header>
@@ -197,23 +195,8 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   }
   .bd-header__link:hover,
   .bd-header__link[aria-current='page'] { opacity: 1; }
-  /* 회원 링크 — 메뉴 글자와 같은 결(버튼 아님). 한 화면에 한 곳만: 넓으면 오른쪽 슬롯, '메뉴' 펼침(아래 800px)에서는 목록 안 */
-  .bd-header__link--member { display: none; }
-  /* 오른쪽 슬롯의 회원 링크는 960px 부터 — 로고 174 + 메뉴 6칸 421 + 슬롯 231(로그인·견적 문의·예약·구매)이 942px 에서 맞는다(2026-10-12 실측).
-     그 아래에서는 푸터의 같은 링크가 남는다 */
-  @media (max-width: 959px) { .bd-header__member { display: none; } }
   /* 라벨 전환 — display:none은 접근성 트리에서도 제외되므로 한 링크가 두 번 읽히지 않는다 */
   .bd-header__label--full { display: none; }
-  .bd-header__cta {
-    font-size: 14px;
-    font-weight: 600;
-    padding: 10px 18px;
-    border-radius: 6px;
-    background: var(--copper);
-    color: #fff;
-    transition: background-color var(--dur-color) ease, transform var(--dur-spring) var(--ease-spring);
-  }
-  .bd-header__cta:hover { background: var(--copper-deep); }
   .bd-header__actions { display: flex; align-items: center; gap: 8px; margin-left: 12px; flex: none; }
   .bd-header__quote {
     min-height: 40px; padding: 0 16px; border: 0; border-radius: 10px; /* 문의 버튼 사각(2026-10-02) — 40px 높이라 한 단 작게 */
@@ -227,10 +210,11 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   /* 누르면 빠르게 눌리고, 떼면 스프링으로 돌아온다(위 transition) */
   .bd-header__quote:active { transform: scale(0.96); transition-duration: var(--dur-color), calc(var(--dur-color) / 2); transition-timing-function: ease, ease-out; }
   .bd-header__quote:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; }
-  .bd-header__cta:active { transform: scale(0.96); transition-duration: var(--dur-color), calc(var(--dur-color) / 2); transition-timing-function: ease, ease-out; }
+  /* 로그인은 같은 모양의 링크 — 버튼과 달리 글자를 가운데로 맞춰 줘야 한다 */
+  .bd-header__login { display: inline-flex; align-items: center; }
 
   .bd-header__link,
-  .bd-header__cta,
+  .bd-header__login,
   .bd-header__brand { white-space: nowrap; }
 
   /* 상업용 메뉴 추가 후 390px에서 고정 여백이 넘쳐, 모바일도 남는 폭만 배분한다. */
@@ -283,7 +267,6 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   /* ⚠️ 이 800 은 아래 스크립트의 matchMedia 와 같은 값이어야 한다 */
   @media (max-width: 800px) {
     .bd-header.has-menu .bd-header__menu-btn { display: inline-flex; }
-    .bd-header.has-menu .bd-header__link--member { display: inline-flex; }
     /* 펼침 목록 — 헤더 바로 아래 전체 폭. 글자는 전체 명칭, 한 줄 52px.
        닫힌 상태도 같은 모양을 갖는다(여닫는 동안 그 모양에서 오간다) — 평소에 보이고 안 보이고는 display 로 가른다 */
     .bd-header.has-menu .bd-header__links {
@@ -362,7 +345,6 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     .bd-header__inner { gap: 10px; padding: 0 8px; height: 56px; }
     .bd-header__links { gap: 10px; }
     .bd-header__link { font-size: 12px; padding: 12px 0; }
-    .bd-header__cta { padding: 8px 11px; font-size: 12px; }
   }
 </style>
 
