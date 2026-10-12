@@ -1,0 +1,39 @@
+---
+// 쇼핑몰 회원 쿠폰 안내 띠 — 섹션 사이에 놓는 한 줄(홈·/price/ 용). 아직 어느 페이지에도 놓지 않았다:
+// 문구와 자리가 정해지면 페이지에서 <MemberCoupon /> 한 줄로 부른다.
+// 쇼핑몰 주소(SHOP_URL)가 비면 통째로 미렌더. 버튼은 가입 경로(SHOP_JOIN_PATH)가 있으면 '회원가입',
+// 없으면 로그인 화면으로 간다 — 누를 곳이 없으면 띠도 그리지 않는다.
+// 금액·할인율·기간은 쓰지 않는다(2-발화기준 §2). 가입·로그인 폼은 여기서 만들지 않는다 — 링크만.
+import { SITE_CONFIG, shopHref } from '../../config.js';
+
+const joinHref = shopHref(SITE_CONFIG.SHOP_JOIN_PATH);
+const href = joinHref || shopHref(SITE_CONFIG.SHOP_LOGIN_PATH);
+---
+{href && (
+  <aside class="member-coupon" aria-label="쇼핑몰 회원 쿠폰">
+    <div class="bd-container">
+      <div class="member-coupon__inner br-reveal">
+        <p class="member-coupon__text">쇼핑몰 회원에게 쿠폰을 드립니다.</p>
+        <a class="br-pill" href={href} rel="noopener">{joinHref ? '회원가입' : '로그인'} <span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+  </aside>
+)}
+
+<style>
+  /* 면은 ice(액센트), 글자는 ink — DESIGN.md §1 'ice 넓은 면 위 텍스트는 teal·ink 계열만'(ink/ice 12.9:1, teal/ice 7.1:1) */
+  .member-coupon__inner {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px;
+    padding: 16px 20px;
+    border-radius: var(--radius);
+    background: var(--br-ice);
+    /* 버튼은 흰 면 — 틴트(teal 6%)는 ice 위에서 면이 안 보인다. 글자 teal/흰 9.2:1 */
+    --pill-bg: #fff;
+    --pill-bg-hover: color-mix(in srgb, #fff 72%, var(--br-ice));
+  }
+  .member-coupon__text { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; color: var(--br-ink); }
+  @media (min-width: 768px) {
+    .member-coupon__inner { padding: 18px 20px 18px 28px; }
+    .member-coupon__text { font-size: 17px; }
+  }
+</style>

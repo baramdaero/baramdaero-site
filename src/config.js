@@ -13,6 +13,10 @@ export const SITE_CONFIG = {
   // 2026-07-30: shop.baramdaero.com이 DNS 미등록(NXDOMAIN) 상태로 확인돼 빈 값으로 되돌림.
   // 링크가 살아 있으면 방문자가 브라우저 오류 페이지로 빠진다.
   SHOP_URL: '',
+  // 쇼핑몰 회원 화면 경로 — SHOP_URL 뒤에 붙는다(shopHref). 빈 값이면 그 링크만 렌더되지 않는다.
+  // 가입 경로는 쇼핑몰을 연 뒤 로그아웃 상태 화면에서 주소를 확인하고 기입한다 — 추측으로 채우지 않는다.
+  SHOP_LOGIN_PATH: '/login',
+  SHOP_JOIN_PATH: '',
 
   // 채널톡 플러그인 키 — 개설 후 기입. 동일 키가 쇼핑몰(아임웹, 별도 관리)에도 설치될 예정.
   // 이 레포는 본진 연동만 담당하며 쇼핑몰 측 설치는 코드 범위 외.
@@ -42,3 +46,7 @@ export const SITE_CONFIG = {
   NAVER_SITE_VERIFICATION: '',
   GOOGLE_SITE_VERIFICATION: '',
 };
+
+/** 쇼핑몰 안쪽 주소. SHOP_URL 이나 경로가 비면 빈 문자열 — 부르는 쪽은 빈 값이면 링크를 그리지 않는다(죽은 링크 금지) */
+export const shopHref = (path) =>
+  SITE_CONFIG.SHOP_URL && path ? SITE_CONFIG.SHOP_URL.replace(/\/+$/, '') + path : '';

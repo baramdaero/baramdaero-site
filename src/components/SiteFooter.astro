@@ -1,11 +1,12 @@
 ---
 // 푸터 v2 — teal-deep. 구 버전은 src/legacy/SiteFooter-v1.astro.txt 보존.
 // 배경이 다크라 로고는 reverse 고정 (톤 전환 없음).
-import { SITE_CONFIG } from '../config.js';
+import { SITE_CONFIG, shopHref } from '../config.js';
 import { getCollection } from 'astro:content';
 const realCases = (await getCollection('cases')).filter((e) => !e.data.sample).length;
 import wideReverseUrl from '../assets/logo/baramdaero-wide-reverse.svg?url';
 const year = new Date().getFullYear();
+const loginHref = shopHref(SITE_CONFIG.SHOP_LOGIN_PATH);
 ---
 <footer class="bd-footer">
   <div class="bd-container bd-footer__inner">
@@ -23,6 +24,8 @@ const year = new Date().getFullYear();
       <a href="/blog/">블로그</a>
       {/* SHOP_URL이 비면 미렌더 — 죽은 링크 차단 (헤더와 동일 규칙) */}
       {SITE_CONFIG.SHOP_URL && <a href={SITE_CONFIG.SHOP_URL} rel="noopener">예약·구매</a>}
+      {/* 쇼핑몰 회원 화면 — 로그인 여부는 이 사이트에서 알 수 없어(다른 출처) 상태와 무관한 말 하나만 둔다 */}
+      {loginHref && <a href={loginHref} rel="noopener">로그인</a>}
     </nav>
     <p class="bd-footer__cta">
       <button disabled aria-describedby="chat-unavailable" type="button" class="bd-cta bd-cta--ondark bd-footer__ask" data-chat-tree="menu">문의하기<svg class="br-cta-arrow" aria-hidden="true" viewBox="0 0 10 10" width="10" height="10" fill="none"><path d="M0 5h7" /><path d="M1 1l4 4-4 4" /></svg></button>
