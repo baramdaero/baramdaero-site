@@ -120,14 +120,14 @@ if (items.length) {
         <Fragment>
           <div class="faq-hero">
           {/* 처음 온 분 안내 — 첫 화면 맨 위. 누르면 아래 '순서대로 보기' 를 펼쳐 1단계로.
-              마우스를 대면 뒤판이 왼쪽 아래를 축으로 기울고 앞면이 반투명 유리가 된다(Uiverse 'Btn' 그대로, 2026-10-02 대표 지정) */}
+              마우스를 대면 살짝 떠오르고 화살표가 밀린다(사이트 버튼 .bd-cta 와 같은 움직임, 2026-10-13) */}
           {GUIDES.length > 0 && (
             <div class="faq-starts">
               <p class="faq-starts__t">처음이신가요?</p>
               {GUIDES.map((g) => (
                 <a class="faq-start" href={`#faq-guide-${g.key}`} data-faq-guide-go={g.key}>
-                  <span class="faq-start__face"><span class="faq-start__k">{g.name}</span><span class="faq-start__s">자주 묻는 질문 <span aria-hidden="true">→</span></span></span>
-                  <span class="faq-start__bg" aria-hidden="true"></span>
+                  <span class="faq-start__k">{g.name}</span>
+                  <span class="faq-start__s">자주 묻는 질문 <span aria-hidden="true">→</span></span>
                 </a>
               ))}
             </div>
@@ -727,46 +727,33 @@ if (items.length) {
     .faq-hero .faq-starts { order: 2; margin-top: 4px; }
   }
 
-  /* 안내 버튼 — Uiverse 'Btn' 의 움직임 그대로: 마우스를 대면(터치는 누를 때) 뒤판이 왼쪽 아래를 축으로 기울고 앞면이 반투명 유리가 된다.
-     2026-10-12 밝은 히어로에 맞춰 색만 바꿨다 — 평소엔 흰 앞면이 뒤판(옅은 틸)을 덮고, 대면 앞면이 비치면서 뒤판이 드러난다 */
+  /* 안내 버튼 — 흰 카드 하나. 대면(터치는 누를 때) 살짝 떠오르고 테두리가 진해지며 화살표가 밀린다.
+     2026-10-13: 뒤판이 기울고 앞면이 유리가 되는 Uiverse 'Btn' 움직임은 어색해서 걷어냈다 */
   /* 설치·세척 두 칸 나란히 — 휴대폰·넓은 화면 모두 */
   .faq-starts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; max-width: 600px; }
   .faq-starts__t { grid-column: 1 / -1; font-size: 15px; font-weight: 700; color: var(--br-ink-sub); }
   @media (min-width: 960px) { .faq-starts { width: 340px; } }
   .faq-start {
-    position: relative; isolation: isolate;
-    display: flex; min-height: 60px; border-radius: 10px;
-    color: var(--br-ink); text-decoration: none; cursor: pointer;
-  }
-  .faq-start__face {
-    flex: 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px;
+    display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px;
     min-height: 88px; padding: 14px 18px; border-radius: 10px;
     border: 1px solid color-mix(in srgb, var(--br-teal) 24%, transparent);
     background-color: #fff;
-    -webkit-backdrop-filter: blur(0px); backdrop-filter: blur(0px);
+    color: var(--br-ink); text-decoration: none; cursor: pointer;
     letter-spacing: 0.8px; white-space: nowrap;
-    transition: background-color 0.3s, -webkit-backdrop-filter 0.3s, backdrop-filter 0.3s;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
   }
   .faq-start__k { font-size: 22px; font-weight: 700; line-height: 1.2; }
   .faq-start__s { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--br-teal); }
-  .faq-start__s > span { display: inline-block; transition: transform 0.3s; }
-  .faq-start__bg {
-    position: absolute; inset: 0; z-index: -1;
-    background: color-mix(in oklab, var(--br-ice) 70%, var(--br-teal));   /* 옅은 틸 — 앞면이 비칠 때와 기울어 나올 때만 보인다 */
-    border-radius: 10px; pointer-events: none;
-    transform-origin: bottom left;   /* 원본은 정사각 버튼이라 35°. 가로로 긴 버튼은 35°면 뒤판이 위 글자를 덮어서, 왼쪽 아래를 축으로 8°만 든다 */
-    transition: transform 0.3s;
-  }
+  .faq-start__s > span { display: inline-block; transition: transform 0.2s; }
   .faq-start:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 3px; }
-  .faq-start:focus-visible .faq-start__bg, .faq-start:active .faq-start__bg { transform: rotate(8deg); }
-  .faq-start:focus-visible .faq-start__face, .faq-start:active .faq-start__face { background-color: color-mix(in srgb, #fff 58%, transparent); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+  .faq-start:active { transform: translateY(0); box-shadow: none; }
   @media (hover: hover) and (pointer: fine) {
-    .faq-start:hover .faq-start__bg { transform: rotate(8deg); }
-    .faq-start:hover .faq-start__face { background-color: color-mix(in srgb, #fff 58%, transparent); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+    .faq-start:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--br-teal) 55%, transparent); box-shadow: 0 10px 22px -12px rgba(0, 41, 58, 0.4); }
     .faq-start:hover .faq-start__s > span { transform: translateX(4px); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .faq-start__face, .faq-start__bg { transition: none; }
+    .faq-start, .faq-start__s > span { transition: none; }
+    .faq-start:hover { transform: none; }
   }
   /* JS 가 돌면 아래 펼침 버튼은 숨긴다 — 히어로 카드가 그 일을 한다(같은 버튼 두 개 금지). JS 가 없으면 카드는 이 펼침으로 내려온다 */
   :global(html.br-js) .faq-guide > .faq-guide__open { display: none; }
