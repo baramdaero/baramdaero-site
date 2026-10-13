@@ -100,6 +100,7 @@ const TEASER = [
   import { SITE_CONFIG } from '../config.js';
   import { channelEnabled, ensureChannel, openConsult } from '../lib/channel.ts';
   import { readChatLink } from '../lib/chat-link.ts';
+  import { intakeEnabled, newReceiptId, recordIntake } from '../lib/intake.ts';
 
   const root = document.querySelector('[data-chat-root]') as HTMLElement;
   const fab = root.querySelector('[data-chat-fab]') as HTMLButtonElement;
@@ -281,7 +282,7 @@ const TEASER = [
     // 위치 — 공간에 따라 아파트명 / 건물명으로 갈린다
     install_place_home: L('설치할 곳의 아파트명과 층수를', '적어주세요.'),
     install_place_shop: L('설치할 곳의 건물명과 층수를', '적어주세요.'),
-    install_place_hint_home: '예: 바람아파트 101동 15층',
+    install_place_hint_home: '예: 바람아파트 15층',
     install_place_hint_shop: '예: 바람빌딩 3층',
     install_live: L('지금 살고 계신 곳인가요,', '입주 예정인 곳인가요?'),
     install_operating: '현재 공간 상태를 알려주세요.',
@@ -799,7 +800,8 @@ const TEASER = [
   }
 
   /* ---------- 접수카드 (텍스트 생성 스펙 v1 그대로) ---------- */
-  function buildCard(): string {
+  /** id 가 있으면 마지막 줄에 접수번호를 붙인다(없으면 줄을 추가하지 않는다) */
+  function buildCard(id?: string): string {
     const lines = ['[바람대로 접수]'];
     const push = (k: string, v?: string) => { if (v) lines.push(`${k}: ${v}`); };
     push('분류', data.긴급 ? `${data.분류} (긴급)` : data.분류);
@@ -815,6 +817,7 @@ const TEASER = [
     push('인테리어', data.인테리어);
     push('지역', data.지역);
     push('증상', data.증상);
+    push('접수번호', id);
     return lines.join('\n');
   }
 
@@ -833,6 +836,14 @@ const TEASER = [
       ta.remove();
       return ok;
     }
+  }
+
+  /** 접수 버튼 바로 아래 한 줄 — 그 버튼이 카드를 기록할 때만 단다(주소가 있어 id 가 있을 때). 전화·복사 버튼 아래에는 달지 않는다 */
+  function intakeNote(): HTMLParagraphElement {
+    const p = document.createElement('p');
+    p.className = 'chat__card-note';
+    p.textContent = '접수하신 내용은 확인용으로 저장됩니다.';
+    return p;
   }
 
   function ctaButton(label: string, kind: 'primary' | 'ghost' | 'sub' = 'primary'): HTMLButtonElement {
@@ -863,7 +874,7 @@ const TEASER = [
 
   /** 채널톡 없음·실패 시 기존 폴백 동작 그대로: 자동복사 + 토스트 + 카카오/전화/복사 안내.
       silent=true면 자동복사·토스트 생략 (호출측이 이미 복사·안내한 경우) */
-  function renderFallbackCtas(text: string, wrap: HTMLElement, silent = false) {
+  function renderFallbackCtas(text: string, id: string | undefined, wrap: HTMLElement, silent = false) {
     if (!silent) {
       copyText(text).then((ok) => {
         if (ok) toast('복사되었습니다. 상담 창에 붙여넣어 주세요.');
@@ -872,11 +883,13 @@ const TEASER = [
     if (KAKAO) {
       const btn = ctaButton('카톡으로 접수하기', 'primary');
       btn.addEventListener('click', async () => {
+        if (id) recordIntake(text, id);
         await copyText(text);
         toast('복사되었습니다. 상담 창에 붙여넣어 주세요.');
         window.open(KAKAO, '_blank', 'noopener');
       });
       wrap.appendChild(btn);
+      if (id) wrap.appendChild(intakeNote());
     } else if (PHONE) {
       wrap.appendChild(ctaTel(`전화로 접수하기 ${PHONE}`, 'primary'));
     } else {
@@ -891,7 +904,9 @@ const TEASER = [
   }
 
   function renderCard() {
-    const text = buildCard();
+    // 받는 곳(주소)이 있을 때만 접수번호를 만든다 — 없으면 카드는 번호·안내 없이 그대로다
+    const id = intakeEnabled() ? newReceiptId() : undefined;
+    const text = buildCard(id);
     const card = document.createElement('div');
     card.className = 'chat__card';
     const label = document.createElement('p');
@@ -914,6 +929,7 @@ const TEASER = [
       const consult = ctaButton('이 내용으로 접수하기', isUrgent && PHONE ? 'ghost' : 'primary');
       consult.addEventListener('click', async () => {
         consult.disabled = true;
+        if (id) recordIntake(text, id); // 채널 연결을 기다리기 전에 — 연결이 실패해도 기록은 남는다
         const ok = (await ensureChannel()) && openConsult(text);
         consult.disabled = false;
         if (ok) {
@@ -922,7 +938,7 @@ const TEASER = [
           await copyText(text);
           toast('상담 연결이 안 됩니다. 접수 내용은 복사해 두었으니 전화로 연락 주세요.');
           consult.remove();
-          renderFallbackCtas(text, wrap, true);
+          renderFallbackCtas(text, id, wrap, true);
           scrollDown();
         }
       });
@@ -930,14 +946,16 @@ const TEASER = [
       if (isUrgent && PHONE) {
         wrap.appendChild(ctaTel(`전화하기 ${PHONE}`, 'primary'));
         wrap.appendChild(consult);
+        if (id) wrap.appendChild(intakeNote());
       } else {
         wrap.appendChild(consult);
+        if (id) wrap.appendChild(intakeNote());
         if (PHONE) wrap.appendChild(ctaTel(`전화하기 ${PHONE}`, 'ghost'));
       }
       // 쇼핑몰이 열리면 접수 카드에서 바로 상품으로 — SHOP_URL 이 비면 렌더되지 않는다
       if (SITE_CONFIG.SHOP_URL) wrap.appendChild(ctaHref('상품 보고 바로 예약하기', SITE_CONFIG.SHOP_URL, 'ghost'));
     } else {
-      renderFallbackCtas(text, wrap);
+      renderFallbackCtas(text, id, wrap);
     }
 
     const home = ctaButton('처음으로', 'sub');
@@ -1513,6 +1531,14 @@ const TEASER = [
     text-transform: uppercase;
     color: var(--silver);
     margin-bottom: 8px;
+  }
+  /* 접수 버튼 아래 저장 안내 — 12px, ink-sub(새 색 없음). 버튼 열(.chat__ctas) 안이라 간격은 열의 gap 을 쓴다 */
+  .chat__card-note {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.6;
+    text-align: center;
+    color: var(--br-ink-sub);
   }
   .chat__card pre {
     font-family: var(--sans);
