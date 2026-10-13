@@ -4,6 +4,8 @@
 import { SITE_CONFIG, shopHref } from '../config.js';
 import { getCollection } from 'astro:content';
 const realCases = (await getCollection('cases')).filter((e) => !e.data.sample).length;
+// 블로그 링크는 공개 글이 3편 이상일 때만 — 글 1편짜리 목록이 '준비 중'으로 보이지 않게 (2026-10-13)
+const realPosts = (await getCollection('blog')).filter((e) => !e.data.sample).length;
 import wideReverseUrl from '../assets/logo/baramdaero-wide-reverse.svg?url';
 const year = new Date().getFullYear();
 const loginHref = shopHref(SITE_CONFIG.SHOP_LOGIN_PATH);
@@ -22,7 +24,7 @@ const loginHref = shopHref(SITE_CONFIG.SHOP_LOGIN_PATH);
       {/* 쇼핑몰 주소가 있으면 '가격'은 쇼핑몰로, 비면 자주 묻는 질문의 '비용' 묶음으로 — 헤더 메뉴와 같은 규칙 */}
       <a href={SITE_CONFIG.SHOP_URL || '/faq/#cat-비용'} rel={SITE_CONFIG.SHOP_URL ? 'noopener' : undefined}>가격</a>
       <a href="/faq/">자주 묻는 질문</a>
-      <a href="/blog/">블로그</a>
+      {realPosts >= 3 && <a href="/blog/">블로그</a>}
       {/* 쇼핑몰 주소나 경로가 비면 미렌더 — 죽은 링크 차단 */}
       {loginHref && <a href={loginHref} rel="noopener">로그인</a>}
     </nav>
