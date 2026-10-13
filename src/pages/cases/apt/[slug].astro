@@ -119,7 +119,7 @@ const jsonLd = [
 
         <h2 class="apt__h">날짜별 기록</h2>
         <LogTable records={c.records} showPlace={false} showRegion={false} caption={`${c.name} 시스템에어컨 시공 기록`} />
-        <p class="apt__note">일정 기록 기준 · {fmtDate(LOG_UPDATED)} 갱신{about && ' · 준공·세대수는 한국부동산원 공동주택 단지 목록'}</p>
+        <p class="apt__note">실제 시공기록 기준 · {fmtDate(LOG_UPDATED)} 갱신{about && ' · 준공·세대수는 한국부동산원 공동주택 단지 목록'}</p>
 
         {photoCases.length > 0 && (
           <Fragment>
