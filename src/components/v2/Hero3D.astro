@@ -75,7 +75,7 @@
   const wide = matchMedia('(min-width: 1024px)'), reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const frames = { house: $('f-house') };
   const VIEWERS = [...new Set(SPACES.map(s => s.viewer))];   // house · commercial(상가) · office(오피스)
-  const st = { space: 'house', viewer: 'house', ready: {}, failed: {}, entries: {}, bldKey: {}, pendingKey: null, dipTimer: 0, room: null, notice: '', pick: {}, floor: {}, going: {}, level: {}, roofSub: {} };
+  const st = { space: 'house', viewer: 'house', ready: {}, failed: {}, entries: {}, bldKey: {}, pendingKey: null, dipTimer: 0, room: null, notice: '', pick: {}, floor: {}, going: {}, level: {}, roofSub: {}, zoom: {} };
   const FAIL_MSG = '3D 구성도를 불러오지 못했습니다. 잠시 뒤 새로고침해 주세요.';
   const RETRY_MSG = '구성도를 불러오지 못했습니다. 탭을 다시 누르면 다시 불러옵니다.';
 
@@ -159,6 +159,7 @@
     if (inBld) $('upT').textContent = st.level[st.space] || '';
     hero.toggleAttribute('data-room', inRoom);
     hero.toggleAttribute('data-deep', deep);
+    hero.toggleAttribute('data-zoom', !!st.zoom[st.viewer]); // 전체 보기를 두 손가락으로 확대한 동안 — 도면이 문구 밑으로 들어온다
     if (hero.dataset.space !== st.space) { hero.dataset.space = st.space; requestAnimationFrame(() => sendInset()); } // 문구가 숨거나 나타난 뒤 자리를 다시 잰다
     $('spots').hidden = inRoom;
     $('here').hidden = !inRoom;
@@ -376,6 +377,9 @@
       renderDock();
       $('live').textContent = `${m.title}, ${m.sub || ''}`;
       if (fromDock) $('back').focus({ preventScroll: true }); // 누른 버튼이 숨으면 포커스가 body 로 빠진다
+    } else if (m.type === 'zoom') {
+      st.zoom[v] = !!m.on;
+      hero.toggleAttribute('data-zoom', !!st.zoom[st.viewer]);
     } else if (m.type === 'home' && v === st.viewer) {
       const fromBack = document.activeElement === $('back'), was = st.room?.id;
       st.room = null;
@@ -490,7 +494,9 @@
   transition: opacity var(--dur-reveal) var(--ease-out);
 }
 .h3-spacer { flex: 1; min-height: 200px; pointer-events: none; }
-.h3-hero[data-room] .h3-head, .h3-hero[data-deep] .h3-head { opacity: 0; }
+.h3-hero[data-room] .h3-head, .h3-hero[data-deep] .h3-head, .h3-hero[data-zoom] .h3-head { opacity: 0; }
+/* 전체 보기를 두 손가락으로 확대한 동안(data-zoom, 2026-10-12)은 커진 도면이 문구 밑으로 들어온다 — 방 안처럼 문구·안내 판을 걷고, 끝까지 축소하면 돌아온다 */
+.h3-hero[data-zoom] .h3-invite { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity var(--dur-color) var(--ease-out), visibility 0s var(--dur-color); } /* 흐려진 뒤에 숨긴다 — 띡 사라지지 않게 */
 /* 상업공간·오피스는 문구 없이 건물만(2026-10-01 대표) — 문구·업종 줄·안내 판을 숨기고 그 자리를 도면이 쓴다 */
 .h3-hero[data-space]:not([data-space="house"]) .h3-head,
 .h3-hero[data-space]:not([data-space="house"]) .h3-kicker,
@@ -516,7 +522,7 @@
   display: flex; align-items: center; gap: 10px; margin: 16px var(--h3-gutter) 0 auto; min-height: 56px; /* 도면 위 오른쪽(2026-10-01 대표) */
   padding: 10px 16px; text-align: left;
   font-size: 13px; line-height: 1.35; color: var(--br-ink-sub);
-  transition: background-color var(--dur-color) var(--ease-out);
+  transition: background-color var(--dur-color) var(--ease-out), opacity var(--dur-color) var(--ease-out); /* opacity: 확대를 풀었을 때 넓은 화면에서도 흐려지며 돌아오게 */
 }
 .h3-invite svg { width: 16px; height: 16px; flex: none; color: var(--br-teal); }
 .h3-invite__t { display: grid; }
@@ -533,8 +539,9 @@
   font-size: clamp(20px, 2vw, 25px); font-weight: 700; letter-spacing: -0.01em; /* 2026-10-01 대표: 좀 더 크게 */
   color: var(--br-ink-sub); /* 라벨 — 제목(ink)과 경쟁하지 않게 */
   pointer-events: none;
+  transition: opacity var(--dur-reveal) var(--ease-out); /* 제목(.h3-head)과 같은 박자로 걷히고 돌아온다 */
 }
-.h3-hero[data-room] .h3-kicker, .h3-hero[data-deep] .h3-kicker { opacity: 0; }
+.h3-hero[data-room] .h3-kicker, .h3-hero[data-deep] .h3-kicker, .h3-hero[data-zoom] .h3-kicker { opacity: 0; }
 @media (max-width: 1023px) { .h3-hero[data-touch3d] .h3-kicker { opacity: 0; } }
 .h3-head p { margin-top: 20px; font-size: 17px; line-height: 1.7; color: var(--br-ink-sub); max-width: 34em; }
 
@@ -619,7 +626,7 @@
 .h3-note:empty { display: none; }   /* 평상시엔 할 말이 없다 — 빈 줄로 자리만 먹지 않게 */
 .h3-note.fail { color: var(--br-ink); }
 /* 방 안에서는 실내 위에 떠서 읽기 어렵다 */
-.h3-hero[data-room] .h3-note:not(.fail), .h3-hero[data-deep] .h3-note:not(.fail) { visibility: hidden; }
+.h3-hero[data-room] .h3-note:not(.fail), .h3-hero[data-deep] .h3-note:not(.fail), .h3-hero[data-zoom] .h3-note:not(.fail) { visibility: hidden; }
 
 /* 휴대폰·태블릿(2026-10-01 대표 지적 2건)
    ① 건물·층 안(data-deep)·방 안에서는 제목처럼 안내 판도 숨긴다 — 3D 위에 그대로 떠 있었다
