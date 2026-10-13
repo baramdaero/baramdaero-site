@@ -5,6 +5,7 @@
 // 상담 창구는 카카오톡 채널 하나(2026-11-20, 채널톡 걷어냄). 사이트는 외부 상담 스크립트를 싣지 않고, 챗봇·/faq/ 가 카카오 채팅 주소를 새 창으로 연다.
 // 자동 수집은 구글 애널리틱스(Base.astro) 하나다 — 도구가 늘거나 빠지면 1·2·3·8절을 같이 고친다.
 // 5절 카카오 수탁자는 쇼핑몰 방침 제4조와 같은 말이다(2026-11-20 쇼핑몰 반영).
+// config.js INTAKE_ENDPOINT 를 채우면 챗봇이 접수 카드를 그 주소로 보낸다 — 그때는 2절 저장 문장과 3·5절을 같이 고친다.
 import Base from '../../layouts/Base.astro';
 import PageHero from '../../components/v2/PageHero.astro';
 import { SITE_CONFIG, shopHref } from '../../config.js';
