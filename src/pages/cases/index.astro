@@ -11,7 +11,7 @@ import PageHero from '../../components/v2/PageHero.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
 import { normFaq } from '../../scripts/faq-rank';
 import LogTable from '../../components/cases/LogTable.astro';
-import { RECORDS, COMPLEXES, MONTHS, REGIONS, stats, fmtYm, fmtDate, ymOf, regionSlug, LOG_UPDATED } from '../../lib/caselog';
+import { RECORDS, COMPLEXES, MONTHS, REGIONS, fmtYm, fmtDate, regionSlug, LOG_UPDATED } from '../../lib/caselog';
 
 // sample: true 사례는 비공개(사람이 사진 확인 뒤 줄을 지우면 자동 노출)
 const entries = (await getCollection('cases'))
@@ -27,7 +27,6 @@ const allRegions = [...new Set([...entries.map((e) => e.data.region), ...REGIONS
 const provinces = [...new Set(allRegions.map(provOf))].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b, 'ko'));
 const cities = allRegions.sort((a, b) => a.localeCompare(b, 'ko'));
 const PAGE = 12;
-const total = stats(RECORDS);
 const LATEST = 20;
 /** 첫 화면에 싣는 단지 수 — 나머지는 /cases/apt-index.json 에서 받아 그린다 */
 const APT_FIRST = 12;
@@ -60,7 +59,7 @@ const jsonLd = [
   {/* 제목은 '시공사례' 그대로(2026-10-06 대표: '기록을 쌓는 중입니다' 폐기) — 제목이 분류를 말하므로 라벨 행은 뺀다 */}
   <PageHero>
     시공사례
-    <Fragment slot="sub">{fmtYm(ymOf(total.first))}부터 마친 현장 {total.n.toLocaleString('ko-KR')}건 · 단지 {COMPLEXES.length.toLocaleString('ko-KR')}곳</Fragment>
+    <Fragment slot="sub">바람대로가 직접 마친 실제 시공기록 · 단지 {COMPLEXES.length.toLocaleString('ko-KR')}곳</Fragment>
   </PageHero>
 
   {/* 사진 사례도 기록도 없으면 섹션째 그리지 않는다 */}
@@ -126,7 +125,7 @@ const jsonLd = [
         <section class="case-sec">
           <h2 class="case-sec__h">날짜별 기록</h2>
           <LogTable records={RECORDS.slice(0, LATEST)} caption="최근 시공 기록" />
-          <p class="case-sec__note">일정 기록 기준 · {fmtDate(LOG_UPDATED)} 갱신</p>
+          <p class="case-sec__note">실제 시공기록 기준 · {fmtDate(LOG_UPDATED)} 갱신</p>
           <ul class="case-months">
             {MONTHS.map((m) => <li><a class="br-pill" href={`/cases/log/${m.ym}/`}>{fmtYm(m.ym)} <span class="case-months__n">{m.records.length}건</span></a></li>)}
           </ul>
