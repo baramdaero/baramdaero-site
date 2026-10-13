@@ -562,6 +562,21 @@ if (EMBED) {
     controls.enableDamping = dampSaved;
   };
   for (const ev of ['pointerup', 'pointercancel']) canvas.addEventListener(ev, polarUnlock, true);
+  // 두 손가락 확대(2026-10-12 대표 '휴대폰에서 확대가 안 된다'). 휠은 여전히 페이지 스크롤이다 — 휠 이벤트가 OrbitControls 에 닿기 전에
+  // 무대에서 끊는다(확대도 preventDefault 도 하지 않는다). 가운데 버튼 끌기도 확대라 같이 끈다
+  stage.addEventListener('wheel', e => e.stopPropagation(), { capture: true, passive: true });
+  controls.mouseButtons.MIDDLE = null;
+  // 캔버스에 두 손가락이면 브라우저가 페이지를 밀거나 키우지 않게 막는다(한 손가락 세로 스와이프는 그대로 페이지로)
+  canvas.addEventListener('touchmove', e => {
+    if (e.targetTouches.length < 2) return;
+    if (e.cancelable) e.preventDefault();
+    // 처음 구도에서는 손가락 간격이 10px 넘게 달라지기 전까지 확대로 치지 않는다 — OrbitControls 는 손가락 하나가 움직일 때마다 간격을 다시 재서,
+    // 두 손가락을 나란히 밀기만 해도(먼저 온 쪽이 좁힘 → 처음 구도라 잘림, 둘째가 넓힘) 확대가 남았다. 이미 확대한 구도에서는 좁힘·넓힘이 서로 지워져 필요 없다
+    if (tween) return;
+    if (zoomHold) { const [a, b] = e.targetTouches; if (Math.abs(Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) - zoomHold.gap) < 10) { camera.position.copy(zoomHold.pos); controls.target.copy(zoomHold.tgt); controls.update(); return; } zoomHold = null; }
+    zoomTrack();
+  }, { passive: false });
+  for (const ev of ['gesturestart', 'gesturechange']) canvas.addEventListener(ev, e => e.preventDefault());
 }
 controls.enableDamping = !reduced.matches;
 controls.dampingFactor = 0.08;
@@ -2581,7 +2596,7 @@ function fitPose(T, dir) {
     t2.addScaledVector(new THREE.Vector3(1, 0, 0).applyQuaternion(best.q), best.cx * mpp).addScaledVector(new THREE.Vector3(0, 1, 0).applyQuaternion(best.q), best.cy * mpp);
   }
   const pad = T === BLD ? 1.1 : 1; // 건물은 아래·위 끝이 화면 가장자리에 붙지 않게
-  return { pos: t2.clone().addScaledVector(best.dir, best.dist * pad), tgt: t2, fov, tanP: 0, kind: 'house', dir: best.dir };
+  return { pos: t2.clone().addScaledVector(best.dir, best.dist * pad), tgt: t2, fov, tanP: 0, kind: 'house', dir: best.dir, box: new THREE.Box3().setFromPoints(T.boxPts).expandByPoint(t2) }; // box = 확대한 구도를 묶는 모형 상자
 }
 const levelTarget = () => state.level === 'building' ? BLD : state.level === 'roof' ? ROOF : S;
 // 지금 단계(건물·층·옥상)의 전체 보기. 방향은 그 단계에 들어올 때 정한 것을 계속 쓴다(창 크기가 바뀌어도 돌지 않게)
@@ -2620,6 +2635,56 @@ function viewPoseOf(v, sp) {
     fov: Math.min(full, 150), kind: 'room',
   };
 }
+// embed 전체 보기의 두 손가락 확대. zoomHome = 처음 구도(방 시점에서는 null), zoomD = 직전 거리, zoomOn = 부모에 알린 상태(확대한 동안 홈 화면이 문구를 걷는다),
+// zoomFar = 직전 걸음에 시선이 처음 조준에서 벗어나 있던 정도, zoomHold = 두 손가락을 댄 순간의 간격·구도(간격이 달라지기 전까지 되돌려 놓는다)
+let zoomHome = null, zoomD = 0, zoomOn = false, zoomFar = 0, zoomHold = null, zoomMin = 6; // zoomMin = 가까이 한계(그 구도의 본래 값)
+const zoomNote = rest => { const on = !!zoomHome && camera.position.distanceTo(controls.target) < controls.maxDistance * (zoomOn && !rest ? .93 : .9); if (on !== zoomOn) post({ type: 'zoom', on: zoomOn = on }); }; // 켜고 끄는 문턱을 달리해 경계에서 깜빡이지 않게
+// 가까이 한계: 모형 상자의 반지름. 좁은 화면은 여기에 더해 화면 좁은 쪽에 모형 긴 변의 0.3(방 하나쯤)은 담기는 거리까지만 — 그보다 가까우면 벽 한 장만 보인다
+const zoomNear = pose => { const s = pose.box.getSize(new THREE.Vector3()); return Math.max(s.length() / 2, .3 * Math.max(s.x, s.y, s.z) / (2 * Math.tan(pose.fov * DEG / 2) * Math.min(1, camera.aspect))); };
+// 축마다 상자 반폭으로 나눈 공간에서, 시선(직선)이 처음 조준에 가장 가까워지는 점 q 와 그 크기(네제곱 노름 — 타원체보다 귀퉁이를 더 내줘 귀퉁이 방까지 간다)
+const zoomAim = () => { const h = zoomHome.box.getSize(new THREE.Vector3()).multiplyScalar(.5), P = camera.position.clone().sub(zoomHome.tgt).divide(h), D = controls.target.clone().sub(camera.position).divide(h), q = P.addScaledVector(D, -P.dot(D) / D.lengthSq()); return { q, h, far: Math.sqrt(Math.hypot(q.x * q.x, q.y * q.y, q.z * q.z)) }; };
+// 축소하는 만큼 조준을 처음 자리로 되돌린다(확대는 손가락 자리로 들어가 조준이 옮겨져 있다) — 끝까지 오므리면 처음 구도 그대로. 카메라와 조준을 같이 옮겨 시선은 돌지 않는다
+function zoomTrack() {
+  if (!zoomHome || tween) return;
+  const max = controls.maxDistance, d = camera.position.distanceTo(controls.target);
+  // 축소가 3% 넘게 쌓였을 때만 되돌린다 — 걸음마다 되돌리면 손가락 떨림(간격 1~2px 의 벌림·오므림)만으로도 화면이 처음 자리 쪽으로 흘러간다. 다 오므렸으면 남은 어긋남까지 마저
+  const k = d > max * .999 ? 1 : d > zoomD * 1.03 ? Math.min(1, (d - zoomD) / (max - zoomD)) : 0;
+  if (k) { const sh = zoomHome.tgt.clone().sub(controls.target).multiplyScalar(k); camera.position.add(sh); controls.target.add(sh); controls.update(); zoomD = d; }
+  zoomBound(true); zoomD = Math.min(zoomD, camera.position.distanceTo(controls.target)); zoomNote(); // zoomD = 되돌림의 기준 거리(가장 깊이 들어간 곳)
+}
+// 확대한 구도를 모형에 묶는다(지도 앱이 경계 밖으로 못 밀리게 하는 것과 같다).
+// 조준: 화면 가운데를 지나는 시선이 모형 안쪽(상자의 0.85배, 귀퉁이는 둥글게)을 지나게 한다 — 화면 가운데가 늘 모형 위라 빈 자리를 벌려도 모형이 화면을 떠나지 않는다.
+//       모형 위를 벌릴 때는 걸리지 않아 손가락 자리로 그대로 들어간다. 처음 구도·돌려 놓기만 한 구도는 건드리지 않는다(시선이 처음 조준을 지난다)
+// 카메라: 상자(1m 여유) 밖. 조준이 한쪽으로 치우친 채 돌리면 모형 속을 지나간다 — 시선 방향 그대로 상자 밖까지 물린다
+function zoomBound(aim) { // aim: 확대·축소하는 중(조준을 다시 잡는다). 그 밖(돌리는 중·멈춘 프레임)에는 카메라만 지킨다 — 돌리는 축이 움직이면 안 된다
+  if (!zoomHome || tween) return;
+  const box = zoomHome.box, t = controls.target;
+  if (aim) {
+    // 한계는 0.85, 다만 이미 그보다 벗어나 있으면(확대한 뒤 돌린 경우) 지금 정도까지 — 손가락을 대는 순간 화면이 옆으로 튀지 않게. 안쪽으로 돌아오면 한계도 따라 줄어든다
+    const { q, h, far } = zoomAim(), lim = Math.max(.85, zoomFar);
+    if (far > lim) { const sh = q.clone().multiplyScalar(lim / far - 1).multiply(h); camera.position.add(sh); t.add(sh); q.multiplyScalar(lim / far); }
+    zoomFar = Math.min(far, lim);
+    // 조준을 시선 위의 그 점 q 로 다시 놓는다(보이는 것은 그대로다). OrbitControls 는 확대할 때 조준을 카메라 앞 일정 거리에 두어 조준이 모형 위·아래로 흘러간다 —
+    // 그러면 '거리'가 모형까지의 거리가 아니게 되어 확대 한계가 듣지 않고, 돌릴 때 축이 엉뚱한 곳에 선다. 거리는 한계 안에서만 고친다(벗어나면 OrbitControls 가 카메라를 한 번에 당기거나 민다)
+    const f = t.clone().sub(camera.position).normalize(), was = camera.position.distanceTo(t);
+    t.copy(camera.position).addScaledVector(f, clamp(q.multiply(h).add(zoomHome.tgt).sub(camera.position).dot(f), controls.minDistance, controls.maxDistance));
+    zoomD += camera.position.distanceTo(t) - was; // 조준만 옮겨 '거리'가 달라진 만큼 기준 거리도 같이 옮긴다(카메라는 그대로다 — 축소로 읽으면 안 된다)
+  }
+  const o = camera.position.clone().sub(t), d = o.length(); o.divideScalar(d);
+  let out = Infinity; // 조준에서 카메라 쪽으로 나가는 선이 상자를 벗어나는 거리
+  for (const a of ['x', 'y', 'z']) if (Math.abs(o[a]) > 1e-6) out = Math.min(out, ((o[a] > 0 ? box.max[a] + 1 : box.min[a] - 1) - t[a]) / o[a]);
+  if (d < out) camera.position.copy(t).addScaledVector(o, Math.min(out, controls.maxDistance));
+}
+// 확대한 채 다른 곳으로 떠나면 먼저 처음 구도로 물러난 뒤 간다(0.42초, 방향은 그대로) — 승인된 비행 경로·시간은 처음 거리에서 출발하는 것이다
+function unzoom(go, ms = 420) {
+  if (tween?.unzoom) { tween.then = go; return true; }
+  if (!zoomHome || tween || camera.position.distanceTo(controls.target) > controls.maxDistance * .999) return false;
+  const dir = camera.position.clone().sub(controls.target).normalize();
+  flyTo(Object.assign({}, zoomHome, { pos: zoomHome.tgt.clone().addScaledVector(dir, controls.maxDistance) }), 0);
+  if (tween.dur) tween.dur = ms;
+  Object.assign(tween, { unzoom: true, then: go });
+  return true;
+}
 function configControls(kind, pose) {
   controls.enabled = true;
   if (kind === 'room') {
@@ -2630,8 +2695,9 @@ function configControls(kind, pose) {
     Object.assign(controls, { enablePan: true, enableZoom: true, rotateSpeed: .55, minDistance: 6, maxDistance: Math.max(110, pose.pos.distanceTo(pose.tgt) * 1.3), minPolarAngle: .1, maxPolarAngle: 1.36 });
     controls.target.copy(pose.tgt);
   }
-  if (EMBED) Object.assign(controls, { enableZoom: false, enablePan: false }); // 히어로 위 휠은 페이지 스크롤 (스크롤 하이재킹 금지)
-  if (polarSaved) { polarSaved = [controls.minPolarAngle, controls.maxPolarAngle]; controls.minPolarAngle = controls.maxPolarAngle = controls.getPolarAngle(); } // 터치 중 모드가 바뀌면 새 범위를 받아 두고 다시 잠근다
+  // 사이트 안(embed): 휠은 페이지 스크롤(스크롤 하이재킹 금지). 전체 보기에서만 두 손가락 확대를 받는다 — 손가락 자리로 들어가고, 처음 구도보다 멀어지지 않는다
+  if (EMBED) { zoomHome = kind === 'house' && pose.box ? pose : null; zoomHold = null; Object.assign(controls, zoomHome ? { enableZoom: true, enablePan: false, zoomToCursor: true, minDistance: zoomMin = Math.max(controls.minDistance, zoomNear(pose)), maxDistance: zoomD = Math.min(controls.maxDistance, pose.pos.distanceTo(pose.tgt)) } : { enableZoom: false, enablePan: false }); zoomNote(); }
+  if (polarSaved) { polarSaved = [controls.minPolarAngle, controls.maxPolarAngle]; controls.minPolarAngle = controls.maxPolarAngle = Math.acos(clamp((camera.position.y - controls.target.y) / camera.position.distanceTo(controls.target), -1, 1)); } // 터치 중 모드가 바뀌면 새 범위를 받아 두고 다시 잠근다. 각은 지금 자세에서 구한다 — getPolarAngle() 은 마지막 update() 때 값(비행 전)이라 도착 시야가 기울었다
   controls.update();
 }
 function flyTo(pose, kTo, turn = false) {
@@ -2810,6 +2876,7 @@ function flyDolly(pose, inward, rest) {
   invalidate();
 }
 function goBuilding(then) {
+  if (unzoom(() => goBuilding(then))) return;
   if (state.level === 'building' && !tween) { postSpace(); then?.(); return; }
   if (tween?.dolly === 'out') { tween.then = then; postSpace(); return; } // 나가는 중에 또 누르면(두 번 누름) 돌리를 그대로 잇는다 — 새로 시작하면 직선 비행으로 바뀌고 층이 숨은 채 난다
   if (state.level === 'floor' && !state.zone && tween && !tween.dolly) { tween.then = () => goBuilding(then); return; } // 층 입구로 돌아가는 중('층 전체' 직후)이면 도착한 뒤 나간다 — 방 한가운데서 돌리를 시작하면 벽을 뚫는다
@@ -2823,6 +2890,7 @@ function goBuilding(then) {
 }
 function goFloor(key, then) {
   if (!DATA[key]) return;
+  if (unzoom(() => goFloor(key, then))) return;
   if (state.level === 'floor' && S.key === key) { if (state.zone) backToEntry(then); else { postSpace(); then?.(); } return; }
   if (state.level === 'floor') { goBuilding(() => goFloor(key, then)); return; } // 다른 층: 정면으로 나왔다가 다시 들어간다
   const rest = state.level === 'building' && !tween; // 건물 전경에 멈춰 있다가 들어가는가(전환을 끊고 들어가면 위치와 시선이 어긋나 있다)
@@ -2832,6 +2900,7 @@ function goFloor(key, then) {
   postSpace();
 }
 function goRoof() {
+  if (unzoom(goRoof)) return;
   if (state.level === 'roof' && !tween) return postSpace();
   if (state.level === 'floor') { goBuilding(goRoof); return; }
   enterLevel('roof');
@@ -3013,9 +3082,31 @@ function setHover(id) {
 const pickable = () => state.level === 'building' || state.level === 'floor';
 canvas.addEventListener('pointermove', e => { pointer = e; if (pickable() && !tween && !e.buttons) setHover(pick(e)); });
 canvas.addEventListener('pointerleave', () => { pointer = null; setHover(null); });
+// 캔버스에 둘째 손가락이 닿으면 탭이 아니다(확대). 방 시점(확대 없음)에서는 손가락을 다 뗄 때까지 회전도 멈춘다
+// — 그냥 두면 OrbitControls 가 두 손가락의 가운데를 회전 끝점으로 삼아 시야가 한 번에 튄다
+canvas.addEventListener('touchstart', e => {
+  if (e.targetTouches.length < 2) return;
+  down = null;
+  if (!controls.enableZoom) controls.enableRotate = false;
+  if (zoomHome && !tween) {
+    const [a, b] = e.targetTouches, { q, h, far } = zoomAim(), f = controls.target.clone().sub(camera.position).normalize();
+    zoomD = camera.position.distanceTo(controls.target); zoomFar = far;
+    // 가까이 한계는 이 손짓 동안 '지금 모형까지의 거리'보다 깊지 않게 잡는다. 확대한 뒤 돌리면 그 거리가 본래 한계보다 짧아져 있을 수 있는데,
+    // 본래 한계를 그대로 쓰면 오므림만 먹고 벌림은 막혀 손가락 떨림에 화면이 뒤로 흘러간다(한 번에 맞추면 카메라가 튄다)
+    controls.minDistance = Math.min(zoomMin, Math.max(1, q.multiply(h).add(zoomHome.tgt).sub(camera.position).dot(f)));
+    zoomHold = zoomD > controls.maxDistance * .999 ? { gap: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY), pos: camera.position.clone(), tgt: controls.target.clone() } : null;
+  }
+}, { passive: true });
+for (const ev of ['touchend', 'touchcancel']) canvas.addEventListener(ev, e => {
+  if (e.targetTouches.length) return;
+  controls.enableRotate = true; zoomHold = null;
+  // 조금만(10% 안) 확대한 채 손을 떼면 마저 처음 구도로(짧게 0.22초) — 거의 같은 구도인데 문구만 숨은 채 남거나 어정쩡하게 커진 채 남지 않게
+  if (zoomHome && !tween && camera.position.distanceTo(controls.target) > controls.maxDistance * .9) unzoom(() => {}, 220);
+  zoomNote(true);
+}, { passive: true });
 canvas.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY, t: performance.now() }; });
 canvas.addEventListener('pointerup', e => {
-  if (!down || !pickable() || tween) return;
+  if (!down || !pickable() || (tween && !tween.unzoom)) return; // 확대에서 물러나는 중의 탭은 받는다 — 물러난 뒤 그 층으로 이어 간다
   const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
   if (moved < (e.pointerType === 'touch' ? 12 : 6) && performance.now() - down.t < (e.pointerType === 'touch' ? 900 : 600)) /* 손가락 떨림 5~15px 로 탭이 버려지던 것 */ {
     const id = pick(e);
@@ -3054,6 +3145,7 @@ const tmp = new THREE.Vector3(), fwd = new THREE.Vector3(), right = new THREE.Ve
 const northG = $('northG');
 // 전환 중 크기·inset 이 바뀌면 새 크기 기준으로 목표 구도와 가림 영역을 다시 잡는다
 function retargetTween() {
+  if (tween.unzoom) return; // 확대에서 물러나는 중: 그대로 끝낸다(이어지는 비행이 새 크기로 구도를 잡는다)
   const cur = occNow, o1 = occlusion();
   applyViewport(o1);
   tween.pose = currentPose();
@@ -3127,6 +3219,7 @@ function tick(now) {
     }
   } else {
     moving = controls.update(); // 댐핑 꼬리가 남아 있으면 true
+    zoomBound();
     if (pickable() && pointer && !pointer.buttons) setHover(pick(pointer));
   }
   if (state.k < .02) {
