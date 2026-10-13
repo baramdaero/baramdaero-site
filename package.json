@@ -15,7 +15,9 @@
     "test:rhythm": "astro build && node scripts/check-design-rhythm.mjs",
     "test:faq": "node scripts/check-faq-search.mjs",
     "test:shop": "astro build && node scripts/check-shop-links.mjs",
-    "case:import": "node scripts/import-cases.mjs"
+    "case:import": "node scripts/import-cases.mjs",
+    "case:wm": "node scripts/watermark-cases.mjs",
+    "test:wm": "node scripts/watermark-cases.mjs --selfcheck && node scripts/watermark-cases.mjs --check"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
