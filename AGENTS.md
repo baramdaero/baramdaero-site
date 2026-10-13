@@ -34,6 +34,7 @@
 - `src/content/cases/` — 시공사례 md (frontmatter: region, space, brand, type, units, date, cover)
 - `src/content/blog/` — 블로그 md
 - `src/components/Chatbot.astro` — 문의 챗봇 (4트리: 세척/AS/설치/기타). 진입점 2개: 플로팅 버튼 + 세션 1회 티저(모바일 8초 / 데스크톱 12초)
+- `src/lib/chat-link.ts` — 주소로 챗봇 열기: `?chat=install|clean|as|etc|menu`, 보던 상품은 `&model=…&name=…` → 접수 카드 '문의 제품' 한 줄 (쇼핑몰 견적 문의가 넘어오는 길). 검사 `npm run test:chat`
 - 히어로: 사전 렌더 왕복 루프 mp4 (`config.HERO_VIDEO`). canvas 프레임 캡처 방식 구현 금지
 - `docs/standards/` — 기준 체계 4문서 (렌더 대상 아님, Astro는 `src/pages/`만 라우팅).
   추적분은 0·2·3, 1은 미추적 (절대 규칙 6)
