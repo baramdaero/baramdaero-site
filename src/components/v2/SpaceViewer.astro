@@ -60,6 +60,8 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
           <span>전체 보기</span>
         </button>
         <p class="space3d__lv"></p>
+        {/* 그 층만 위에서 본다(굵은 배관이 방마다 가는 길). 다시 누르면 층 안으로 — 홈 히어로와 같은 단추(2026-10-14) */}
+        <button type="button" class="space3d__top" aria-pressed="false" hidden>위에서 보기</button>
       </div>
     </div>
     <p class="space3d__note">{NOTE}</p>
@@ -73,6 +75,9 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
     // 방(아파트)·층(건물) 안이면 되돌아가기 판을 띄운다. 뷰어가 알려 주는 bd3d 메시지로만 판단한다
     const back = stage.querySelector<HTMLButtonElement>('.space3d__back')!;
     const backT = back.querySelector('span')!, lv = stage.querySelector<HTMLElement>('.space3d__lv')!;
+    const topBtn = stage.querySelector<HTMLButtonElement>('.space3d__top')!;
+    const here = stage.querySelector<HTMLElement>('.space3d__here')!;
+    let top = false, insetT = 0;   // top: 그 층을 위에서 보는 중인가(뷰어가 알려 준다), insetT: 뷰어에 알린 위쪽 여백
     const invite = root.querySelector<HTMLButtonElement>('.space3d__invite');
     // 그 층 방 목록: 한 줄 띠(strip) + 한 줄에 다 안 들어갈 때 '목록'으로 펼치는 판(all). 칸은 둘에 똑같이 넣는다
     const bar = root.querySelector<HTMLElement>('.space3d__bar')!, go = bar.querySelector<HTMLElement>('.space3d__go')!;
@@ -137,13 +142,17 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
       // 층 안에서 방을 눌러 옮겨 다니다가 층 전체를 다시 볼 길이 없었다(2026-10-06 대표: '방 이동이 안 된다')
       if (bld && deep) backT.textContent = inRoom ? '층 전체' : '건물 전체';
       if (bld && deep) lv.textContent = inRoom && room ? room : level;   // 나갈 때는 지우지 않는다 — 사라지는 동안 글자가 먼저 비지 않게
+      if (deep) { topBtn.hidden = !(bld && list.length > 0); topBtn.setAttribute('aria-pressed', String(top)); }
+      // 위에서 보는 동안은 되돌아가기 판 아래부터 그리게 한다 — 판이 층 귀퉁이의 배관을 가리지 않게. 끄면 원래대로(값이 달라질 때만 보낸다)
+      const tIn = top ? here.offsetTop + here.offsetHeight + 8 : 0;
+      if (tIn !== insetT) { insetT = tIn; post({ type: 'inset', l: 0, r: 0, t: tIn, b: 0, rt: 0, rb: 0 }); }   // 층 안에서만(옥상은 칸이 없다). 나갈 때는 판이 사라진 뒤에 남지 않게 다음 들어올 때 다시 정한다
     };
     addEventListener('message', (e) => {
       const m = e.data;
       if (!m || m.ns !== 'bd3d' || e.source !== frame.contentWindow) return;
       if (m.type === 'ready') {
         try { frame.contentWindow!.addEventListener('pointerdown', () => openAll(false), true); } catch { /* 다른 출처 */ }
-        inRoom = false; level = ''; room = ''; bld = m.viewer !== 'house'; lv.textContent = ''; backT.textContent = bld ? '건물 전체' : '전체 보기';
+        inRoom = false; level = ''; room = ''; top = false; bld = m.viewer !== 'house'; lv.textContent = ''; backT.textContent = bld ? '건물 전체' : '전체 보기';
         // 아파트 = 첫 방(거실), 건물 = 1층(히어로가 건물을 고르면 1층부터 보여 주는 것과 같다)
         const es: { id: string; name: string }[] = m.entries || [];
         const e = m.viewer === 'house' ? es[0] : es.find((x) => /^floor:/.test(x.id) && x.name === '1층') || es.find((x) => /^floor:/.test(x.id));
@@ -151,7 +160,7 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
         list = bld ? [] : es; cur = ''; if (list.length) render();   // 아파트는 방 목록이 ready 에 온다. 건물은 층에 들어갈 때(space)
       }
       else if (m.type === 'enter') {
-        inRoom = true; room = m.title || '';
+        inRoom = true; room = m.title || ''; top = false;   // 위에서 보다가 실내기를 누르면 그 시점으로 내려온다
         // 3D 에서 묶음의 둘째 실내기를 누르면 id 가 칸 id(묶음 첫 실내기)와 다르다 — 이름으로 찾는다(뷰어가 칸 이름과 같은 title 을 보낸다).
         // 실내기 없이 구역 바닥으로 들어온 경우(여러 대 구역)는 제목이 구역 이름이다('강의실 B' ↔ 칸 '강의실 B 1·2').
         // 그 이름으로 시작하는 칸이 하나뿐이면 그 칸을 표시하고, 여럿이면('강의실 A 1'·'강의실 A 2') 표시 없이 둔다
@@ -160,7 +169,7 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
       }
       else if (m.type === 'home') { inRoom = false; cur = ''; mark(); }   // 건물: 실내기 → 그 층 입구(층 안은 그대로)
       else if (m.type === 'space') {
-        level = m.title || ''; inRoom = false; cur = '';
+        level = m.title || ''; inRoom = false; cur = ''; top = !!m.top;
         // 층 안이면 그 층 칸(id '층key/실내기')이 온다. 건물 전경(층·옥상)·옥상('building' 하나)이면 비운다 — 사라지는 동안 칸은 지우지 않는다
         list = ((m.entries || []) as typeof list).filter((x) => String(x.id).includes('/')); if (list.length) render(); else mark();
       }
@@ -171,6 +180,7 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
       io.observe(stage);
     }
     invite?.addEventListener('click', () => { if (first) frame.contentWindow?.postMessage({ ns: 'bd3d', ...first }, '*'); });
+    topBtn.addEventListener('click', () => post({ type: 'top', on: !top }));
     back.addEventListener('click', () => {
       // 아파트: 방 → 전체. 건물: 방·실내기 → 그 층 입구(home), 층 입구 → 건물 전체
       frame.contentWindow?.postMessage(!bld || inRoom ? { ns: 'bd3d', type: 'home' } : { ns: 'bd3d', type: 'goUnit', id: 'building' }, '*');
@@ -279,6 +289,20 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
     font-size: 14px; font-weight: 600; color: var(--br-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .space3d__lv:empty { display: none; }
+  .space3d__top {
+    flex: none; min-height: 44px; margin: 0 4px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent;
+    color: var(--br-ink-sub); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: background-color var(--dur-color) var(--ease-out), color var(--dur-color) var(--ease-out);
+  }
+  .space3d__top[aria-pressed="true"] { background: rgba(0, 78, 100, .1); color: var(--br-teal); }   /* 흰 판 위라 켜진 표시는 옅은 청록 */
+  @media (hover: hover) and (pointer: fine) { .space3d__top:hover { color: var(--br-teal); } }
+  /* 좁은 화면: '위에서 보기'는 둘째 줄(두 줄 격자 — 줄바꿈으로 하면 판이 폭 가득 넓어진다) */
+  @media (max-width: 760px) {
+    .space3d__here { display: grid; grid-template-columns: auto minmax(0, auto); justify-content: start; }
+    .space3d__top { grid-column: 1 / -1; justify-self: start; margin: 0 4px 4px; }
+  }
+  .space3d__top:active { transform: scale(.96); }
+  .space3d__top:focus-visible { outline: 2px solid var(--br-teal); outline-offset: -2px; }
 </style>
 
 <style is:global>

@@ -2600,7 +2600,7 @@ function fitPose(T, dir) {
 }
 const levelTarget = () => state.level === 'building' ? BLD : state.level === 'roof' ? ROOF : S;
 // 지금 단계(건물·층·옥상)의 전체 보기. 방향은 그 단계에 들어올 때 정한 것을 계속 쓴다(창 크기가 바뀌어도 돌지 않게)
-function housePose() { const p = fitPose(levelTarget(), state.levelDir); state.levelDir = p.dir; return p; }
+function housePose() { const p = fitPose(state.level === 'floor' ? topTarget() : levelTarget(), state.levelDir); state.levelDir = p.dir; return p; }
 // 지금 보고 있는 방향(수평에 가까우면 위에서 내려다보게 세운다)
 function currentViewDir() {
   const d = camera.getWorldDirection(new THREE.Vector3()).negate(), hz = Math.hypot(d.x, d.z);
@@ -2700,9 +2700,101 @@ function configControls(kind, pose) {
   if (polarSaved) { polarSaved = [controls.minPolarAngle, controls.maxPolarAngle]; controls.minPolarAngle = controls.maxPolarAngle = Math.acos(clamp((camera.position.y - controls.target.y) / camera.position.distanceTo(controls.target), -1, 1)); } // 터치 중 모드가 바뀌면 새 범위를 받아 두고 다시 잠근다. 각은 지금 자세에서 구한다 — getPolarAngle() 은 마지막 update() 때 값(비행 전)이라 도착 시야가 기울었다
   controls.update();
 }
+// ---- 층 위에서 보기(2026-10-14 대표 '각 층의 배관을 보고 싶은데 잘 안 보인다' → '위에서 보기 추가') ----
+// 층 안(눈높이)에서는 가까운 배관 한두 줄만 가는 선으로 보인다 — 그 층만 위에서 내려다보는 구도를 더한다(굵은 배관이 방마다 가는 길이 보인다).
+// 구도는 원래 있던 '그 단계의 전체 보기'(housePose — 층에서는 그 층 상자)를 쓴다. 층에 들어가는 방식(돌리 줌 → 눈높이)과 층 안의 다른 비행은 그대로다.
+// 오르내리는 비행은 아파트 뷰어와 같은 방식: 자세는 방위·앙각으로만 정하고, 천장 아래에서는 서 있던 자리의 수직선으로만 움직이며(벽을 옆으로 뚫지 않는다),
+// 천장 위에서는 늘 층 안의 한 점을 본다. 경로를 240점 미리 계산해 자세 최고 각속도가 rate 를 넘지 않게 시간을 늘린다
+const isTop = () => state.level === 'floor' && state.mode === 'house';
+const TOP = { ms: [2200, 4400], rate: 120, lift: [3.5, 8], reach: 4, fine: 6 }; // ms 범위 · °/s · 선 자리 위로 뜨는 높이 m(거리의 1/4, 이 범위 안) · 안에서 나갈 때 과녁 거리 m · 슬래브 위 이 높이(m)까지는 가는 관
+const sstep = x => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); };
+const azel = d => [Math.atan2(d.x, d.z), Math.asin(clamp(d.y, -1, 1))];
+const dirOf = (az, el, o = new THREE.Vector3()) => o.set(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
+const flight = { pos: new THREE.Vector3(), yaw: 0, pitch: 0 }, lookPt = new THREE.Vector3();
+const SUN_I = sun.intensity;
+const floorBox = () => S.box ||= new THREE.Box3().setFromPoints(S.boxPts);
+const inRect = (x, z, pad = 0) => { const b = floorBox(); return x > b.min.x + pad && x < b.max.x - pad && z > b.min.z + pad && z < b.max.z - pad; };
+const inside = p => p.y - S.zOff < mm(S.H_CEIL) && inRect(p.x, p.z); // 반자 아래 + 그 층 사각형 안 = 층 안
+// 위에서 보는 구도는 그 층에 그려지는 것 전부(코어·바깥벽 = 건물 외곽선)가 들게 맞춘다 — 안목 상자로만 맞추면 좁은 화면에서 코어가 화면 밖으로 나간다
+const topTarget = () => {
+  if (!S.topPts) { const [x0, y0, x1, y1] = BUILDING.footprint.outer_rect, b = floorBox(); S.topPts = [...S.boxPts, ...[x0, x1].flatMap(x => [y0, y1].flatMap(y => [0, 1].map(h => V(x, y).setY(b.min.y + h))))]; } // 코어는 1m 높이로 잘려 그려진다
+  return { ...S, boxPts: S.topPts };
+};
+// 지금 층 위에 떠 있는가 — 멈춰 있으면 위에서 보는 중인지로, 오르내리는 비행 중이면 카메라 자리로 본다(이 값을 상태를 바꾸기 전에 받아 둔다)
+const aloft = () => tween ? !!tween.mode && !inside(camera.position) : isTop();
+function flyTop(pose, kTo, fromIn) {
+  const toRoom = kTo > .5, p0 = camera.position.clone(), d0 = camera.getWorldDirection(new THREE.Vector3());
+  const d1 = pose.tgt.clone().sub(pose.pos).normalize(), [az0, el0] = azel(d0), [az1, el1] = azel(d1);
+  const tw = { t0: performance.now(), dur: 0, p0, f0: camera.fov, s0: state.tanP, k0: state.k, pose, kTo, cl0: state.ceil, cl1: ceilTarget() };
+  // 과녁 점 둘레 자세 {L 과녁, az, el, d 거리}. 시작 쪽은 지금 자세에서 만든다(비행 중에 다시 눌러도 이어진다)
+  const flat = fromIn || el0 >= -.09; // 층 안이거나 수평 이상을 보는 중: 눈높이 reach 앞이 과녁. 위아래 각(tilt)과 층 밖을 향한 방위(turn)는 제자리에서 푼다
+  let azS = az0, reach = TOP.reach;
+  if (flat) { // reach 앞 점이 그 층 사각형(0.3m 안쪽)에 드는 가장 가까운 방위
+    const ok = az => inRect(p0.x + Math.sin(az) * reach, p0.z + Math.cos(az) * reach, .3);
+    let k = 0; while (k <= 180 && !ok(az0 + k * DEG) && !ok(az0 - k * DEG)) k++;
+    if (k > 180) { azS = Math.atan2(S.center.x - p0.x, S.center.z - p0.z); reach = Math.max(.5, Math.min(reach, Math.hypot(S.center.x - p0.x, S.center.z - p0.z))); }
+    else azS = ok(az0 + k * DEG) ? az0 + k * DEG : az0 - k * DEG;
+  }
+  const lift = clamp(p0.distanceTo(pose.pos) * .25, ...TOP.lift);
+  const over = (vp, az, r) => ({ L: dirOf(az, 0).multiplyScalar(r).add(vp), az, el: -Math.atan2(lift, r), d: Math.hypot(lift, r) }); // 자리 vp 바로 위 lift 높이에서, 그 높이의 r 앞을 내려다보는 자세
+  const here = () => flat ? { L: dirOf(azS, 0).multiplyScalar(reach).add(p0), az: azS, el: 0, d: reach }
+    : (d => ({ L: p0.clone().addScaledVector(d0, d), az: az0, el: el0, d }))(clamp((p0.y - S.zOff - .9) / Math.sin(-el0), 2, 160)); // 내려다보는 중: 시선이 그 층 바닥 높이와 만나는 점(위에서 보기에서는 과녁 그 자리)
+  const home = () => ({ L: pose.tgt, az: az1, el: el1, d: pose.pos.distanceTo(pose.tgt) });
+  const out = fromIn && !toRoom;
+  const [a, b] = toRoom ? [here(), over(pose.pos, az1, Math.max(.5, Math.hypot(pose.tgt.x - pose.pos.x, pose.tgt.z - pose.pos.z)))] : [out ? over(p0, azS, reach) : here(), home()];
+  // 올려다본 각과 층 밖을 향한 방위는 뜨기 전에 제자리에서 푼다(hold) — 그대로 뜨면 한동안 빈 하늘·건물 밖만 보인다. 내려다본 각은 뜨면서 풀린다
+  const tilt = flat ? el0 : 0, turn = flat ? wrapPi(az0 - azS) : 0, need = Math.hypot(Math.max(0, tilt), turn) / DEG * 1.5 / TOP.rate * 1000, level = need > 1 ? Math.max(300, need) : 0;
+  Object.assign(tw, { mode: toRoom ? 'in' : out ? 'out' : 'air', a, b, daz: wrapPi(b.az - a.az), lift: toRoom || out ? lift : 0, tilt, turn, hold: level / (level + TOP.ms[0]) });
+  // 모습(층 안 = 해 가림판 켜짐 · 그 층 그림자 ↔ 위에서 = 꺼짐)은 비행마다 많아야 한 번, 해를 0 으로 줄여 놓은 프레임에 바꾼다(tick 의 setBlend).
+  // 바꾸는 때는 카메라가 슬래브를 지나는 무렵(xt). 섞임 한가운데서 바꾸면 층 전체가 보이는 순간에 바닥 햇빛이 한 프레임에 켜지고,
+  // 카메라 높이로만 정하면 다른 비행을 끊고 시작할 때(이미 슬래브 근처) 첫 프레임에 해가 꺼진다
+  let xt = null;
+  if (!reduced.matches) {
+    const N = 240, o = { pos: new THREE.Vector3() };
+    let peak = 0; // 한 칸(시간의 1/N)에 자세가 도는 최대 각 — 방위는 수직축, 앙각은 수평축 둘레라 둘이 직각이다
+    topAt(tw, 0, o);
+    const under = () => o.pos.y - S.zOff < S.slab.position.y, u0 = under();
+    for (let i = 1, y = o.yaw, q = o.pitch; i <= N; i++) { topAt(tw, i / N, o); peak = Math.max(peak, Math.hypot(wrapPi(o.yaw - y), o.pitch - q)); y = o.yaw; q = o.pitch; if (xt == null && under() !== u0) xt = i / N; }
+    tw.dur = clamp(peak * N / DEG / TOP.rate * 1000, TOP.ms[0], TOP.ms[1] + level); // 제자리에서 시선을 푸는 몫(level)은 상한 밖
+  }
+  { const in0 = S.slab.visible, w0 = in0 ? .05 : .15, w1 = in0 ? .15 : .05; // 해를 줄이고 되살리는 몫(비행 시간 비율): 슬래브 위쪽에서는 길게, 아래쪽에서는 짧게
+    Object.assign(tw, { tNow: 0, sun0: sun.intensity / SUN_I - 1, far0: skyMat.opacity, near0: camera.near, void0: !!tween?.arc && p0.y - S.zOff > mm(S.H_CEIL) - .3, look: in0 === toRoom ? null : { in0, t: clamp(xt ?? 0, w0, 1 - w1), w0, w1 } }); } // sun0 = 줄어든 채 이어받은 해(다른 오르내림을 끊었을 때, 처음 10% 에 푼다) · far0 = 그때의 창밖 원경 · void0 = 호 비행이 천장 속에서 관·본체를 걷어 둔 채였나
+  tween = tw;
+  controls.enabled = false;
+  invalidate();
+}
+function topAt(tw, t, o) { // 진행 t(0..1) → o.pos 자리 · o.yaw/o.pitch 자세(rad). 반환은 섞임·화각에 쓰는 진행률
+  // in: 앞 75% 에 과녁 둘레로 돌아 내려설 자리 위에 서고, 뒤 50% 에 곧게 내려앉는다(겹치는 25% 는 아직 천장 위). out 은 그 거울, air 는 둘레 보간만
+  const s = clamp((t - tw.hold) / (1 - tw.hold), 0, 1); // 고개 내리는 몫을 뺀 비행 진행
+  const u = tw.mode === 'in' ? sstep(s / .75) : tw.mode === 'out' ? sstep((s - .25) / .75) : sstep(s);
+  const c = tw.mode === 'in' ? sstep((s - .5) / .5) : tw.mode === 'out' ? 1 - sstep(s / .5) : 0;
+  const { a, b } = tw, az = a.az + tw.daz * u, el = lerp(a.el, b.el, u), d = lerp(a.d, b.d, u);
+  lookPt.lerpVectors(a.L, b.L, u);
+  dirOf(az, el, o.pos).multiplyScalar(-d).add(lookPt); o.pos.y -= tw.lift * c;
+  const hk = tw.hold ? 1 - sstep(t / tw.hold) : 0; // 제자리에서 푸는 몫
+  o.yaw = az + tw.turn * hk;
+  o.pitch = Math.atan2(lookPt.y - o.pos.y, d * Math.cos(el)) + tw.tilt * (tw.tilt > 0 ? hk : 1 - sstep(s / .35)); // 과녁을 보는 앙각 + 보던 위아래 각(올려다본 각은 뜨기 전에, 내려다본 각은 뜨면서 풀린다)
+  return sstep(s);
+}
+// 층 위에서 보기 ↔ 층 입구(눈높이). on 을 안 주면 뒤집는다. 방·실내기 시점에서 부르면 그 자리에서 떠오른다
+function goTop(on = !isTop(), then) {
+  if (state.level !== 'floor') return;
+  if (unzoom(() => goTop(on, then))) return;
+  if (tween?.dolly) { tween.then = () => goTop(on, then); return; } // 층으로 들어오는 돌리는 끊지 않는다 — 도착한 뒤 이어 간다
+  if (on === isTop()) { postSpace(); then?.(); return; }
+  const up = aloft();
+  state.mode = on ? 'house' : 'room'; state.zone = null; state.unit = null; markUnit(null); setHover(null);
+  if (state.autoCollapsed) { $('listSheet').removeAttribute('data-collapsed'); $('listGrab').setAttribute('aria-expanded', 'true'); state.autoCollapsed = false; }
+  syncUI();
+  if (on) { state.levelDir = null; flyWith(housePose, pose => flyTop(pose, 0, !up)); } // 방향은 그 층에 맞는 것을 새로 고른다(건물 정면 방향을 물려받지 않는다)
+  else flyWith(() => entryPose(S), pose => (up ? flyTop(pose, 1, false) : flyTo(pose, 1)));
+  tween.then = then;
+  postSpace();
+}
 function flyTo(pose, kTo, turn = false) {
   // 방→방 전환 중(dip)에는 벽이 잠깐 걷혀 k 가 .5 아래로 내려가도 방에서 출발한 것으로 본다
-  const prev = tween, fromRoom = state.k > .5 || !!prev?.dip, toRoom = kTo > .5, p0 = camera.position.clone(), d0 = camera.getWorldDirection(new THREE.Vector3());
+  const prev = tween, fromRoom = state.k > .5 || !!prev?.dip || (!!prev?.mode && inside(camera.position)), // 오르내리던 비행을 층 안에서 끊은 것도 방에서 출발
+    toRoom = kTo > .5, p0 = camera.position.clone(), d0 = camera.getWorldDirection(new THREE.Vector3());
   // same: 도착 자세가 지금과 같다(층 입구와 시점이 같은 실내기, 구역 → 그 방 실내기, 그 방 → 층 전체).
   // 카메라는 그대로인데 벽만 1.4초 걷혔다 덮이던 것 — dip 을 빼고 짧게 끝낸다(반자·이름·표시 링만 바뀐다)
   const same = p0.distanceTo(pose.pos) < .05 && d0.angleTo(pose.tgt.clone().sub(pose.pos)) < DEG;
@@ -2798,6 +2890,8 @@ function goZone(id, viewIdx, unitId) {
   if (!z) return;
   viewIdx ??= viewFor(z);
   if (tween?.dolly === 'in') { tween.then = () => goZone(id, viewIdx, unitId); return; } // 층으로 들어가는 돌리는 끊지 않는다 — 도착한 뒤 이어 간다(끊으면 건물 밖에서 곡선 비행이 시작돼 위층을 뚫는다)
+  if (unzoom(() => goZone(id, viewIdx, unitId))) return; // 위에서 보기를 확대해 둔 채 누름: 처음 구도로 물러난 뒤 간다
+  const up = aloft();
   const list = $('listSheet');
   if (!narrow() && !list.hasAttribute('data-collapsed')) { list.setAttribute('data-collapsed', ''); $('listGrab').setAttribute('aria-expanded', 'false'); state.autoCollapsed = true; }
   state.mode = 'room'; state.zone = id; state.view = viewIdx; state.unit = unitId || null;
@@ -2811,7 +2905,7 @@ function goZone(id, viewIdx, unitId) {
   applyViewport(o1);
   const pose = viewPose(viewIdx);
   if (EMBED && o0) applyViewport(o0);
-  flyTo(pose, 1);
+  if (up) flyTop(pose, 1, false); else flyTo(pose, 1);
   if (EMBED) {
     if (o0) Object.assign(tween, { o0, o1 });
     const u = unitId && S.unitsById[unitId], us = S.unitsByZone[id] || [];
@@ -2821,6 +2915,7 @@ function goZone(id, viewIdx, unitId) {
   }
 }
 function goHome() { // 구역·실내기 → 층 입구 → 건물 정면, 한 단계씩
+  if (isTop()) return goTop(false); // 위에서 보는 중이면 층 입구로
   if (state.level === 'floor') return state.zone ? backToEntry() : goBuilding();
   if (state.level === 'roof') goBuilding();
 }
@@ -2879,6 +2974,7 @@ function goBuilding(then) {
   if (unzoom(() => goBuilding(then))) return;
   if (state.level === 'building' && !tween) { postSpace(); then?.(); return; }
   if (tween?.dolly === 'out') { tween.then = then; postSpace(); return; } // 나가는 중에 또 누르면(두 번 누름) 돌리를 그대로 잇는다 — 새로 시작하면 직선 비행으로 바뀌고 층이 숨은 채 난다
+  if (isTop()) { goTop(false, () => goBuilding(then)); return; } // 위에서 보던 중(올라가는 중 포함): 그 자리에서 층 입구로 내려온 뒤 나간다(위에서 바로 빠지면 다시 켜지는 위층들이 화면을 덮는다)
   if (state.level === 'floor' && !state.zone && tween && !tween.dolly) { tween.then = () => goBuilding(then); return; } // 층 입구로 돌아가는 중('층 전체' 직후)이면 도착한 뒤 나간다 — 방 한가운데서 돌리를 시작하면 벽을 뚫는다
   if (state.level === 'floor' && state.zone) { backToEntry(() => goBuilding(then)); return; } // 방 안 깊숙이서 바로 나가면 벽을 뚫는다: 입구를 거쳐
   const fromFloor = state.level === 'floor';
@@ -2909,10 +3005,11 @@ function goRoof() {
   postSpace();
 }
 function backToEntry(then) {
+  const up = aloft();
   state.mode = 'room'; state.zone = null; state.unit = null; markUnit(null); setHover(null);
   if (state.autoCollapsed) { $('listSheet').removeAttribute('data-collapsed'); $('listGrab').setAttribute('aria-expanded', 'true'); state.autoCollapsed = false; }
   syncUI();
-  flyWith(() => entryPose(S), pose => flyTo(pose, 1));
+  flyWith(() => entryPose(S), pose => (up ? flyTop(pose, 1, false) : flyTo(pose, 1)));
   tween.then = then;
   post({ type: 'home' }); // 히어로: 실내기 이름 → 그 층 목록
 }
@@ -2931,7 +3028,7 @@ function placeLevel(k) {
   configControls(p.kind, p);
 }
 const levelTitle = () => state.level === 'building' ? '건물 정면' : state.level === 'roof' ? '옥상 실외기실' : FLOOR[S.key].name_ko;
-const postSpace = () => { if (readySent) post({ type: 'space', key: hostKey, entries: entries(), title: levelTitle() }); };
+const postSpace = () => { if (readySent) post({ type: 'space', key: hostKey, entries: entries(), title: levelTitle(), top: isTop() }); }; // top = 그 층을 위에서 보는 중
 // 히어로 목록: 실내기 단위. 한 구역에 여러 대면 창가/안쪽 + 순번(방위·라벨이 숨은 화면이라 '서·동'은 알아볼 수 없다), 한 대면 구역 이름
 function entryName(u) {
   const z = S.P.zones.find(q => q.id === u.zone), zn = short(z?.name_ko || u.id), L = z?.ac_layout;
@@ -2987,8 +3084,11 @@ function setBlend(k) {
   // 반자가 불투명(1)일 때만 가려진다. 층 안(k > .5)에서는 가는 관으로 바꾼다
   // dip(층 안 이동) 동안에도 가는 관을 유지하고, 건물로 나갈 때(dolly out)는 벽이 걷히는 k .5 에서 굵은 관으로 바꾼다
   // inVoid: 방→방 호 비행에서 카메라가 천장 속을 지나는 동안 — 코앞의 관·본체가 화면을 덮으므로 걷는다
-  const inVoid = !!tween?.arc && camera.position.y - S.zOff > mm(S.H_CEIL) - .3;
-  const above = (k <= .5 || state.ceil < .999) && !inVoid, fine = (state.level === 'floor' || tween?.dolly === 'out') && (k > .5 || !!tween?.dip);
+  const tw = tween?.mode ? tween : null, lk = tw?.look, cy = camera.position.y - S.zOff; // tw = 위에서 보기로 오르내리는 비행
+  if (tw?.void0 && cy >= S.slab.position.y + TOP.fine) tw.void0 = false; // 호 비행(관·본체를 걷어 둔 채)을 끊고 올라가기 시작했으면 굵은 관이 켜지는 높이까지 그대로 둔다 — 누른 프레임에 코앞의 관·본체가 한 번에 켜지지 않게
+  const inVoid = !!tw?.void0 || (!!tween?.arc && cy > mm(S.H_CEIL) - .3);
+  const inK = tw ? (lk ? (tw.tNow < lk.t) === lk.in0 : S.slab.visible) : k > .5; // 층 안 모습(해 가림판·그림자 범위)인가
+  const above = (k <= .5 || state.ceil < .999) && !inVoid, fine = (state.level === 'floor' || tween?.dolly === 'out') && ((tw ? cy < S.slab.position.y + TOP.fine : k > .5) || !!tween?.dip);
   S.g.pipes.visible = state.pipes && above && !fine; S.g.pipesFine.visible = state.pipes && above && fine; mat.acBodyOpen.visible = above;
   { // 반자가 덮이는 만큼 본체를 걷는다(층 입구 1 → 방 시점 BODY_ROOM): 머리 위로 넘어와 본체로 들어가는 관이 방 시점에서 보인다
     const bo = lerp(1, BODY_ROOM, clamp(state.ceil / CEIL_ROOM, 0, 1)), bSolid = bo > .999;
@@ -2999,19 +3099,22 @@ function setBlend(k) {
   mat.patch.opacity = .6 * (1 - k); mat.patchEdge.opacity = .9 * (1 - k); mat.arrow.opacity = .75 * (1 - k);
   S.patchObjs.forEach(o => { o.visible = k < .99; });
   // embed: 전체 보기 쪽으로 가는 전환에선 원경을 벽보다 먼저(k .6 에서 0) 걷어 낸다 — 복귀 첫 프레임에 창밖이 뚝 끊기지 않게
-  const far = EMBED && (state.mode === 'house' || tween?.res) ? k * clamp((k - .6) / .4, 0, 1) : k;
+  let far = EMBED && (state.mode === 'house' || tween?.res) ? k * clamp((k - .6) / .4, 0, 1) : k;
+  if (tw) far = clamp(far + (tw.farD ??= tw.far0 - far) * (1 - sstep(tw.tNow / .15)), 0, 1); // 오르내리는 비행: 시작 때 보이던 만큼에서 이어 간다
   skyMat.opacity = far; towerMat.opacity = far;
   skyGroup.visible = far > .01;
-  S.slab.visible = k > .5;
+  S.slab.visible = inK;
+  // 오르내리는 비행: 가림판을 바꾸는 때(lk.t)에 해가 0 이 되게 그 앞뒤로 줄였다 되살린다 — 바닥 햇빛이 한 프레임에 켜지거나 꺼지지 않는다
+  sun.intensity = SUN_I * (tw ? clamp(Math.min(1, lk ? Math.abs(tw.tNow - lk.t) / (tw.tNow < lk.t ? lk.w0 : lk.w1) : 1) + tw.sun0 * (1 - sstep(tw.tNow / .1)), 0, 1) : 1);
   $('labels').classList.toggle('off', k > .02 || state.mode !== 'house');
   lightForBlend();
   // 안개는 방 시점의 원경용: 폰에서 건물 전체가 90m 넘게 떨어지면 흐려진다
   scene.fog.near = k > .01 ? 90 : 1e5; scene.fog.far = k > .01 ? 520 : 2e5;
   // 멀리서 볼 때 near 0.05 는 깊이 정밀도가 모자라 얇은 틈이 깜박인다
-  const near = k > .5 ? .05 : .5;
+  const near = tw ? (tw.void0 ? tw.near0 : cy < mm(S.H_CEIL) ? .05 : .5) : k > .5 ? .05 : .5; // 오르내리는 비행은 반자 위부터 코앞을 자른다(호 비행을 끊고 시작했으면 관이 다시 켜질 때까지 그때 값 그대로)
   if (camera.near !== near) { camera.near = near; updProj(); }
   // 해 그림자: 방 시점은 그 층 크기로(해상도), 그 밖은 건물 전체
-  const sunFor = k > .5 ? S : BLD;
+  const sunFor = inK ? S : BLD;
   if (sunTarget !== sunFor) placeSun(sunFor);
   renderer.shadowMap.needsUpdate = true;
 }
@@ -3149,6 +3252,7 @@ function retargetTween() {
   const cur = occNow, o1 = occlusion();
   applyViewport(o1);
   tween.pose = currentPose();
+  if (tween.mode && tween.pose.kind === 'house') { const p = tween.pose, [az, el] = azel(p.tgt.clone().sub(p.pos).normalize()); tween.daz += wrapPi(az - tween.b.az); tween.b = { L: p.tgt, az, el, d: p.pos.distanceTo(p.tgt) }; }
   if (tween.o0) { tween.o1 = o1; applyViewport(cur); }
 }
 // 돌리의 도는 일정: 돌 각도 turn 을 피크 각속도 kT 로 도는 데 드는 시간 비율과 꼭대기 평평함(pw) / 각속도가 1-|x|^pw 꼴(0에서 시작해 0으로 끝난다)인 진행 0→1
@@ -3159,13 +3263,15 @@ function tick(now) {
   let moving = false;
   frameQueued = false; // 먼저 푼다: tick 안에서 예외가 나도 다음 요청이 막히지 않게
   if (tween) {
-    const t = tween.dur ? clamp((now - tween.t0) / tween.dur, 0, 1) : 1, e = ease(t);
+    const t = tween.dur ? clamp((now - tween.t0) / tween.dur, 0, 1) : 1, e = tween.mode ? topAt(tween, tween.tNow = t, flight) : ease(t); // mode = 층 위에서 보기로 오르내리는 비행(flyTop)
     const dolly = tween.dolly, inw = dolly === 'in';
     state.ceil = lerp(tween.cl0, tween.cl1, e); // 반자는 카메라와 같이 서서히
-    if (tween.c1) { const u = 1 - e; camera.position.copy(tween.p0).multiplyScalar(u * u * u).addScaledVector(tween.c1, 3 * u * u * e).addScaledVector(tween.c2, 3 * u * e * e).addScaledVector(tween.pose.pos, e * e * e); }
+    if (tween.mode) camera.position.copy(flight.pos);
+    else if (tween.c1) { const u = 1 - e; camera.position.copy(tween.p0).multiplyScalar(u * u * u).addScaledVector(tween.c1, 3 * u * u * e).addScaledVector(tween.c2, 3 * u * e * e).addScaledVector(tween.pose.pos, e * e * e); }
     else camera.position.lerpVectors(tween.p0, tween.pose.pos, e);
     if (tween.arc) camera.position.y += Math.sin(Math.PI * e) * tween.arc; // e 기준: 출발·착지에서 수직 속도 0
-    if (tween.q0) tmp.lerpVectors(tween.q0, tween.pose.tgt, clamp(e / .9, 0, 1)); // 과녁을 조금 먼저 맞춰 도착 직전 에어컨이 위로 떴다 내려앉지 않게
+    if (tween.mode) { /* 자세는 아래에서 방위·앙각으로 바로 준다 */ }
+    else if (tween.q0) tmp.lerpVectors(tween.q0, tween.pose.tgt, clamp(e / .9, 0, 1)); // 과녁을 조금 먼저 맞춰 도착 직전 에어컨이 위로 떴다 내려앉지 않게
     else {
       const [y1, a1] = yawPitch(tmp.subVectors(tween.pose.tgt, tween.pose.pos)), yaw = tween.y0 + (tween.dy + wrapPi(y1 - tween.y1)) * e, pitch = lerp(tween.a0, a1, e);
       tmp.set(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch)).add(camera.position);
@@ -3206,7 +3312,7 @@ function tick(now) {
       if (!inw && e >= .125) S.g.furn.visible = false; // 나갈 때 가구는 벽이 걷히는 프레임(k .5)에 끈다 — 도착 프레임에 꺼지면 '띡'
     } else {
       camera.fov = lerp(tween.f0, tween.pose.fov, e); state.tanP = lerp(tween.s0, tween.pose.tanP, clamp(e / .8, 0, 1)); updProj();
-      camera.lookAt(tmp);
+      if (tween.mode) camera.rotation.set(flight.pitch, flight.yaw + Math.PI, 0, 'YXZ'); else camera.lookAt(tmp); // 카메라는 -Z 를 본다
       setBlend(clamp(lerp(tween.k0, tween.kTo, e) - (tween.dip ? .75 * Math.sin(Math.PI * e) : 0), 0, 1));
     }
     if (tween.o0) { const o = tween.o1; applyViewport({ w: o.w, h: o.h, a: lerp(tween.o0.a, o.a, e), b: lerp(tween.o0.b, o.b, e), top: lerp(tween.o0.top, o.top, e), bot: lerp(tween.o0.bot, o.bot, e) }); }
@@ -3259,6 +3365,7 @@ if (EMBED) {
       hostKey = HOST_BLD;
       goBuilding();
     } else if (m.type === 'home') { if (state.zone) backToEntry(); } // 히어로 '뒤로'는 실내기 → 층 입구만. 건물로는 목록의 '건물 정면'으로
+    else if (m.type === 'top') goTop(m.on == null ? undefined : !!m.on); // 층 위에서 보기 ↔ 층 입구
     else if (m.type === 'hover') {
       const id = String(m.id || ''), [k, u] = id.split('/');
       if (pickable() && !tween) setHover(u ? (k === S.key && S.unitsById[u] ? u : null) : id || null);
@@ -3287,8 +3394,9 @@ if (EMBED) {
     }
   });
   // ready 는 장면을 다 만든 직후 동기로 (rAF 에 묶으면 백그라운드 탭에서 오지 않는다)
+  spaces[KEYS[0]].buildFurn(); // 1층 가구는 여기서 미리 만든다 — 건물을 고르면 1초 뒤 1층으로 들어가는데, 그 순간에 만들면 들어가는 돌리의 첫머리가 0.3초 멈춘다(느린 폰). 다른 층은 들어갈 때 만든다
   post({ type: 'ready', key: hostKey, entries: entries() });
   readySent = true;
 }
-window.__c3d = { goZone, goUnit, goHome, goFloor, goBuilding, goRoof, fitPose, housePose, occlusion, state, get S() { return S; }, get BLD() { return BLD; }, get tween() { return tween; }, tick, camera, controls, renderer, scene };
+window.__c3d = { goTop, goZone, goUnit, goHome, goFloor, goBuilding, goRoof, fitPose, housePose, occlusion, state, get S() { return S; }, get BLD() { return BLD; }, get tween() { return tween; }, tick, camera, controls, renderer, scene };
 </script>
