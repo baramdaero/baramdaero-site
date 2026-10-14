@@ -31,6 +31,8 @@
         건물 전체
       </button>
       <p class="h3-here__t" id="upT"></p>
+      {/* 그 층만 위에서 본다(굵은 배관이 방마다 가는 길이 보인다). 다시 누르면 층 안으로. 2026-10-14 대표: '각 층의 배관을 보고 싶은데 잘 안 보인다' → '위에서 보기 추가' */}
+      <button class="h3-spot h3-topbtn" id="topBtn" type="button" aria-pressed="false" hidden>위에서 보기</button>
     </div>
 
     <button class="h3-invite h3-glass" id="invite" type="button">
@@ -75,7 +77,7 @@
   const wide = matchMedia('(min-width: 1024px)'), reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const frames = { house: $('f-house') };
   const VIEWERS = [...new Set(SPACES.map(s => s.viewer))];   // house · commercial(상가) · office(오피스)
-  const st = { space: 'house', viewer: 'house', ready: {}, failed: {}, entries: {}, bldKey: {}, pendingKey: null, dipTimer: 0, room: null, notice: '', pick: {}, floor: {}, going: {}, level: {}, roofSub: {}, zoom: {} };
+  const st = { space: 'house', viewer: 'house', ready: {}, failed: {}, entries: {}, bldKey: {}, pendingKey: null, dipTimer: 0, room: null, notice: '', pick: {}, floor: {}, going: {}, level: {}, roofSub: {}, zoom: {}, top: {}, houseAt: 0 }; // top: 그 건물의 층을 위에서 보는 중인가(뷰어가 알려 준다)
   const FAIL_MSG = '3D 구성도를 불러오지 못했습니다. 잠시 뒤 새로고침해 주세요.';
   const RETRY_MSG = '구성도를 불러오지 못했습니다. 탭을 다시 누르면 다시 불러옵니다.';
 
@@ -94,44 +96,52 @@
     const kr = document.querySelector('.h3-kicker')?.getBoundingClientRect();
     if (kr && kr.height) hero.style.setProperty('--kick-c', Math.round(kr.top + kr.height / 2 - hr.top) + 'px');
     const hdr = (document.querySelector('.bd-header')?.offsetHeight || 64), b = Math.round(hr.bottom - dock.getBoundingClientRect().top + 16);
+    // 그 층을 위에서 보는 동안은 왼쪽 위 판(건물 전체·층 이름·위에서 보기) 아래부터 그리게 한다 — 판이 층 귀퉁이의 배관을 가리지 않게
+    const upB = viewer === st.viewer && st.top[st.space] ? $('up').offsetTop + $('up').offsetHeight + 8 : 0;
     const m = viewer !== 'house'
-      ? { l: 0, r: 0, t: hdr + 8, b }                      // 건물 — 문구·안내 판이 없으니 헤더 아래 전부
+      ? { l: 0, r: 0, t: Math.max(hdr + 8, upB), b }       // 건물 — 문구·안내 판이 없으니 헤더 아래 전부
       : wide.matches
       ? { l: Math.round(hi.right - hr.left + 32), r: 0, t: Math.max(hdr, Math.round($('invite').getBoundingClientRect().bottom - hr.top + 16) || TIP_BAND), b } // 오른쪽은 뷰어가 빈 영역 폭의 8%를 여백으로 둔다
       : { l: 0, r: 0, t: Math.round(Math.max(hi.bottom, $('invite').getBoundingClientRect().bottom) - hr.top + 12), b }; // 좁은 화면: 안내 버튼 아래부터
     return { type: 'inset', ...m, rt: hdr, rb: b };
   }
   const lastInset = {};
-  function sendInset(force) {
+  function sendInset(only) { // only = 뷰어 이름: 그 뷰어에만, 같은 값이어도 다시 보낸다(막 준비된 뷰어). 다른 뷰어는 건드리지 않는다 — 뒤에서 준비된 건물 때문에 보던 뷰어가 자리를 다시 잡지 않게
     const cur = insetMsg(st.viewer);
     for (const [k, v] of Object.entries({ l: cur.l, t: cur.t, r: cur.r, b: cur.b })) stage.style.setProperty('--free-' + k, v + 'px');
     for (const v of VIEWERS) {
       const m = insetMsg(v), key = JSON.stringify(m);
-      if (!st.ready[v] || (!force && lastInset[v] === key)) continue; // 같은 값을 또 보내면 뷰어가 카메라를 다시 잡는다(인트로가 깨진다)
+      if (v !== (only || st.viewer)) continue; // 가려진 뷰어에는 안 보낸다(돌아오면 그때 맞춘다) — 위에서 보기를 켠 채 떠날 때, 흐려지는 건물이 여백이 바뀐 inset 을 받아 구도를 다시 잡았다
+      if (!st.ready[v] || (!only && lastInset[v] === key)) continue; // 같은 값을 또 보내면 뷰어가 카메라를 다시 잡는다(인트로가 깨진다)
       lastInset[v] = key; send(v, m);
     }
   }
   const ro = new ResizeObserver(() => sendInset());
   for (const el of [hero, headIn, dock, $('invite'), document.querySelector('.h3-kicker')].filter(Boolean)) ro.observe(el);
 
-  function ensureFrame(viewer) {
+  function ensureFrame(viewer, key = st.space) {
     if (frames[viewer]) return frames[viewer];
     const f = document.createElement('iframe');
     f.id = 'f-' + viewer; f.tabIndex = -1;
     f.title = '3D 구성도 · ' + (SPACES.find(s => s.viewer === viewer)?.name || '');
-    f.src = '/3d/' + viewer + '.html?embed#' + st.space; // 처음 누른 공간으로 바로 연다
+    f.src = '/3d/' + viewer + '.html?embed#' + key; // 처음 누른 공간으로 바로 연다(미리 불러올 때는 그 뷰어의 공간)
     stage.appendChild(f);
     frames[viewer] = f;
     armTimeout(viewer);
     return f;
   }
   // 대상이 준비될 때까지 이전 화면을 그대로 둔다 (빈 화면으로 끊기지 않게)
+  let swapTimer = 0;
   function showFrame(viewer) {
     const ready = st.ready[viewer];
     for (const [v, f] of Object.entries(frames)) {
       if (!f) continue;
       if (ready) { f.classList.toggle('on', v === viewer); f.classList.remove('hold'); }
       else f.classList.toggle('hold', v !== viewer && f.classList.contains('on'));
+    }
+    if (ready && hero.dataset.shown !== viewer) {
+      hero.dataset.shown = viewer; // 문구는 화면이 실제로 바뀔 때 걷는다 — 불러오는 동안 앞 화면이 문구만 잃은 채 서 있지 않게
+      hero.setAttribute('data-swap', ''); clearTimeout(swapTimer); swapTimer = setTimeout(() => hero.removeAttribute('data-swap'), 700); // 바뀌는 동안 문구도 화면과 같은 곡선·시간으로 흐려진다
     }
   }
 
@@ -149,6 +159,7 @@
   function renderSpaces() {
     $('spaces').innerHTML = SPACES.map(s => `<button type="button" data-space="${s.key}" aria-pressed="${s.key === st.space}">${esc(s.name)}</button>`).join('');
   }
+  let lastSpots = null;
   function renderDock() {
     const inRoom = !!st.room;
     // 층·옥상 안(뷰어가 '건물로' 항목을 주는 상태)은 도면이 화면을 가득 채운다 — 헤드라인과 겹친다
@@ -157,9 +168,15 @@
     // 건물로 나가는 길은 3D 왼쪽 위에 따로 — 지금 층 이름과 함께. 실내기 시점에서도 그대로 둔다(건물까지 한 번에)
     $('up').toggleAttribute('data-on', inBld);
     if (inBld) $('upT').textContent = st.level[st.space] || '';
-    hero.toggleAttribute('data-room', inRoom);
-    hero.toggleAttribute('data-deep', deep);
-    hero.toggleAttribute('data-zoom', !!st.zoom[st.viewer]); // 전체 보기를 두 손가락으로 확대한 동안 — 도면이 문구 밑으로 들어온다
+    const onFloor = inBld && st.entries[st.space].some(e => e.id !== 'building'); // 층 안(옥상은 고를 칸이 없고, 이미 위에서 본다)
+    $('topBtn').hidden = !onFloor; $('topBtn').setAttribute('aria-pressed', String(onFloor && !!st.top[st.space]));
+    // 누른 공간이 아직 안 떴으면(불러오는 중) 문구·안내 판은 앞 화면 것 그대로 둔다 — 방 안에서 건물 탭을 누르면 문구가 떠올랐다가 화면이 바뀌며 다시 사라졌다. 화면이 바뀔 때 다시 불린다
+    const pending = !!hero.dataset.shown && hero.dataset.shown !== st.viewer;
+    if (!pending) {
+      hero.toggleAttribute('data-room', inRoom);
+      hero.toggleAttribute('data-deep', deep);
+      hero.toggleAttribute('data-zoom', !!st.zoom[st.viewer]); // 전체 보기를 두 손가락으로 확대한 동안 — 도면이 문구 밑으로 들어온다
+    }
     if (hero.dataset.space !== st.space) { hero.dataset.space = st.space; requestAnimationFrame(() => sendInset()); } // 문구가 숨거나 나타난 뒤 자리를 다시 잰다
     $('spots').hidden = inRoom;
     $('here').hidden = !inRoom;
@@ -173,7 +190,7 @@
       const rest = list?.filter(e => e.id !== 'building') ?? [];
       // 고른 칸: 건물의 층 줄에서는 누르고 가는 중인 층, 없으면 방금 본 층(층 안에서 방 칸을 누르면 pick 은 방 id 가 된다). 그 밖에는 누른 칸. 이 목록에 없으면 첫 칸
       const want = (!inBld && (st.going[st.space] || st.floor[st.space])) || st.pick[st.space], cur = rest.some(e => e.id === want) ? want : rest[0]?.id;
-      $('spots').innerHTML = list && !rest.length
+      const html = list && !rest.length
         ? `<span class="h3-spots__load">${esc(st.roofSub[st.space] || st.level[st.space] || '')}</span>`   // 옥상: 고를 칸이 없다
         : list
         ? rest.map((e, i) => {
@@ -182,17 +199,19 @@
               return `<button type="button" class="h3-spot${sel ? ' is-sel' : ''}" aria-pressed="${sel}" data-id="${esc(e.id)}">${esc(e.name)} <small>${esc(e.sub || '')}</small></button>`;
           }).join('')
         : `<span class="h3-spots__load" role="status">구성도를 불러오는 중입니다</span>`;
+      if (html !== lastSpots) $('spots').innerHTML = lastSpots = html; // 내용이 같으면 다시 만들지 않는다 — 칸이 새 요소로 바뀌면 칩 안내·키보드 포커스가 끊기고 줄이 다시 떠오른다
       // 목록이 바뀌면(건물의 층 줄 → 그 층의 방 줄, 공간 탭 전환) 처음부터 보여 준다 — 밀어 둔 자리가 다른 목록에 남으면 앞 칸이 가려진 채 시작한다
       const key = `${st.space}:${rest.map(e => e.id).join('|')}`;
       if ($('spots').dataset.key !== key) {
         const el = $('spots'), sel = el.querySelector('.is-sel'); el.dataset.key = key; el.scrollLeft = 0;
+        el.classList.remove('swap'); void el.offsetWidth; el.classList.add('swap'); // 목록이 통째로 바뀔 때 떠오르게 한다
         // 고른 칸(건물로 돌아왔을 때 방금 본 층)이 오른쪽 밖이면 그 칸이 보이는 데까지만 민다
         if (sel) { const over = sel.getBoundingClientRect().right - el.getBoundingClientRect().right + 56; if (over > 0) el.scrollLeft = over; }
       }
       syncMore();
     }
-    $('invite').hidden = inRoom;
-    $('inviteWhy').textContent = deep
+    if (!pending) $('invite').hidden = inRoom;
+    if (!pending && st.space === 'house') $('inviteWhy').textContent = deep
       ? '에어컨을 누르면 그 자리에서 봅니다'
       : st.space === 'house'
         ? '방마다 에어컨 자리와 천장 속 배관 경로를 확인할 수 있습니다'
@@ -249,7 +268,10 @@
     if (el && el.tagName === 'IFRAME' && stage.contains(el)) engage(false);
   }, 0));
   stage.addEventListener('pointerdown', () => { cancelGround(); engage(false); });
-  for (const el of [dock, $('up')]) el.addEventListener('pointerdown', () => { cancelGround(); engage(false); });
+  for (const el of [dock, $('up')]) el.addEventListener('pointerdown', e => {
+    if (!e.target.closest?.('#spaces [aria-pressed="true"]')) cancelGround(); // 이미 고른 공간 탭을 또 누른 것은 빼고 — 그 탭은 아무 일도 안 해 1층 진입이 다시 걸리지 않는다
+    engage(false);
+  });
 
   // 빌딩 탭: 건물을 한 번 보여 준 다음 1층으로 내려간다. 거기서 왼쪽 위 '건물 전체'를 누르면 전체 구성도로 올라간다
   let groundTimer = 0;
@@ -264,6 +286,33 @@
     groundTimer = setTimeout(() => {
       if (st.viewer === v && !st.room) send(v, { type: 'goUnit', id: g.id });
     }, reduced.matches ? 300 : 1000);
+  }
+
+  // 건물 뷰어 미리 불러오기: 처음 누를 때 1~2초 기다린 뒤 끊기며 바뀌었다(뷰어를 그때 불러와 5초 중 4초쯤 화면이 멈췄다, 2026-10-13 휴대폰 조건 실측).
+  // 히어로가 보이고 3초 동안 아무것도 안 만질 때 하나씩 불러 둔다 — 그러면 처음 눌러도 두 번째처럼 바로 바뀐다. 데이터 절약·느린 망에서는 안 한다
+  let quietTimer = 0, lastAct = 0;
+  const act = () => { lastAct = performance.now(); }; // 손이 닿은 때 — 뷰어 안의 누름·움직임은 부모로 안 올라와, 뷰어가 준비되면 그 창에 직접 건다(아래 ready)
+  function preloadSoon(e, ms = 3000) {
+    clearTimeout(quietTimer);
+    const next = SPACES.find(s => !frames[s.viewer]), c = navigator.connection, from = performance.now();
+    if (!next || !st.ready.house || (c && (c.saveData || /2g|3g/.test(c.effectiveType || '')))) return;
+    const go = () => {
+      const now = performance.now(), touring = !tourDone && !reduced.matches && now > st.houseAt + 6200 && now < st.houseAt + 30000; // 칩 안내는 집 준비 7초 뒤부터 약 4초 — 그동안 불러오면 안내가 버벅인다. 끝날 때까지 0.4초마다 다시 본다(모션 줄이기는 안내가 없다, 30초는 안전판)
+      const wait = Math.max(from + ms, lastAct + 3000, touring ? now + 400 : 0) - now; // 도면을 끌어 돌리는 중이면 손을 뗀 뒤 3초까지 미룬다(불러오는 동안 화면이 잠깐씩 멈춘다)
+      if (wait > 30) { quietTimer = setTimeout(go, wait); return; }
+      if (document.visibilityState !== 'visible') return; // 가려진 탭: 돌아오면 다시 건다(아래 visibilitychange)
+      if (hero.getBoundingClientRect().bottom < innerHeight * .5 || VIEWERS.some(v => frames[v] && !st.ready[v] && !st.failed[v])) { quietTimer = setTimeout(go, 3000); return; } // 히어로가 안 보이거나, 불러오는 중인 뷰어가 있으면(기다리는 건물과 겹쳐 받지 않게) 조금 뒤에 다시 본다
+      ensureFrame(next.viewer, next.key);
+    };
+    quietTimer = setTimeout(go, ms);
+  }
+  hero.addEventListener('pointerdown', e => { act(); preloadSoon(); }, true);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') preloadSoon(); });
+  // 막 불러온 뷰어는 첫 그리기(셰이더 준비)에 화면이 몇 번 멈춘다 — 멈춤이 지나간 뒤에 겹쳐 바꾼다(바뀌는 동안 끊기지 않게). 길어도 2.5초
+  function whenCalm(cb) {
+    const t0 = performance.now(); let ok = 0, last = 0;
+    const step = t => { ok = last && t - last < 40 ? ok + 1 : 0; last = t; if (ok >= 3 || performance.now() - t0 > 2500) cb(); else requestAnimationFrame(step); };
+    requestAnimationFrame(step);
   }
 
   function selectSpace(key) {
@@ -317,12 +366,15 @@
   $('back').addEventListener('click', () => send(st.viewer, { type: 'home' }));
   const goBuilding = () => { cancelGround(); delete st.going[st.space]; send(st.viewer, { type: 'goUnit', id: 'building' }); };   // 직접 나간 건물에는 머문다
   $('upBtn').addEventListener('click', goBuilding);
-  // Esc 는 한 단계씩: 실내기 → 층 입구 → 건물 전체
+  $('topBtn').addEventListener('click', () => { cancelGround(); send(st.viewer, { type: 'top', on: $('topBtn').getAttribute('aria-pressed') !== 'true' }); });
+  // Esc 는 한 단계씩: 실내기 → 층 입구 → 건물 전체. 층을 위에서 보는 중이면 층 입구로
   addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     const a = document.activeElement;
     if (a && a !== document.body && !hero.contains(a)) return;   // 챗봇·메뉴를 Esc 로 닫을 때 3D 까지 같이 나가지 않게(body 는 통과 — 사파리는 버튼 클릭에 포커스를 안 준다)
-    if (st.room) send(st.viewer, { type: 'home' }); else if ($('up').hasAttribute('data-on')) goBuilding();
+    if (st.room) send(st.viewer, { type: 'home' });
+    else if (st.top[st.space] && !$('topBtn').hidden) { cancelGround(); send(st.viewer, { type: 'top', on: false }); }
+    else if ($('up').hasAttribute('data-on')) goBuilding();
   });
 
   // 터치 기기 '3D 직접 돌리기' 잠금은 걷었다(2026-10-02 대표: 휴대폰에서 '아래 도면을 눌러 보세요'인데 도면이 안 눌림).
@@ -337,24 +389,27 @@
     const m = e.data;
     if (!m || m.ns !== 'bd3d' || !frames[m.viewer] || e.source !== frames[m.viewer].contentWindow) return;
     const v = m.viewer;
+    if (m.type !== 'ready' && m.type !== 'zoom' && v === st.viewer) preloadSoon(); // 만지는 동안에는 미리 불러오지 않는다
     if (m.type === 'ready') {
       st.ready[v] = true; st.failed[v] = false;
-      if (v !== 'house') st.notice = '';
-      if (v === 'house') st.entries.house = m.entries; else { st.bldKey[v] = m.key; st.entries[m.key] = m.entries; keepRoof(m); }
-      sendInset(true);
+      if (v !== 'house' && st.viewer === v) st.notice = '';
+      if (v === 'house') { st.entries.house = m.entries; st.houseAt = performance.now(); } else { st.bldKey[v] = m.key; st.entries[m.key] = m.entries; keepRoof(m); }
+      sendInset(v);
+      try { for (const ev of ['pointerdown', 'pointermove']) frames[v].contentWindow.addEventListener(ev, act, { capture: true, passive: true }); } catch (err) {} // 뷰어를 만지는 동안에는 다른 건물을 미리 불러오지 않는다
       if (v === 'house') {
         // 대체 이미지를 이미 보여 줬으면 인트로 없이 바로 겹쳐 바꾼다 (집을 이미 본 사람에게 다시 방에서 시작하지 않는다)
         if (posterShown) setTimeout(() => hero.removeAttribute('data-poster'), 300); else send(v, { type: 'intro' });
         startTour();
       }
       if (v !== 'house' && spaceOf(st.space).viewer === v && st.space !== m.key) send(v, { type: 'space', key: st.space });
-      showFrame(st.viewer);
-      renderDock();
-      if (v !== 'house') groundFirst(v);
+      if (v === 'house') { showFrame(st.viewer); renderDock(); }
+      else if (st.viewer !== v) { /* 뒤에서 미리 불러온 건물: 화면도 도크도 건드리지 않는다(칩 안내·포커스가 끊겼다) */ }
+      else whenCalm(() => { showFrame(st.viewer); renderDock(); groundFirst(v); }); // 기다리던 건물: 첫 그리기의 멈춤이 지나간 뒤에 목록과 함께 바꾼다
+      preloadSoon(null, v === 'house' ? 4500 : 3000); // 집 인트로(3초)가 끝나고 한숨 돌린 뒤부터
     } else if (m.type === 'space') {
       const fromDock = dock.contains(document.activeElement) || $('up').contains(document.activeElement);
       st.bldKey[v] = m.key; st.entries[m.key] = m.entries; st.pendingKey = null;
-      st.level[m.key] = m.title || '';
+      st.level[m.key] = m.title || ''; st.top[m.key] = !!m.top;
       keepRoof(m);
       // 층 안(목록에 '건물로'가 있다)이면 어느 층인지 적어 둔다 — 실내기 칸 id 가 '<층>/<실내기>', 칸이 없으면 옥상. 도면을 눌러 들어온 층도 이걸로 안다
       // 누른 층에 닿으면 '가는 중'을 지운다. 다른 층을 거쳐 가는 동안(스스로 1층으로 들어가던 참에 3층 칸을 누름)에는 남겨, 건물 층 줄이 잠깐 보일 때 누른 칸이 그대로 있게
@@ -365,16 +420,22 @@
       requestAnimationFrame(() => frames[v]?.classList.remove('dip'));
       if (st.viewer === v) {
         st.room = null; renderDock();
+        sendInset(); // 위에서 보기를 켜고 끄면 위쪽 여백이 달라진다(값이 같으면 안 보낸다)
         groundFirst(v);
         if (m.title) $('live').textContent = m.title === '건물 정면' ? '건물 전체' : m.title; // 건물 전체 · 3층 학원 · 옥상 실외기실(뷰어는 전경을 '건물 정면'이라 부른다)
         // 누른 칩이 목록째 바뀌거나 '건물 전체'가 숨으면 포커스가 body 로 빠진다. 옥상은 고를 칸이 없어 '건물 전체'가 받는다
-        if (fromDock && !dock.contains(document.activeElement)) ($('spots').querySelector('.h3-spot') || $('upBtn')).focus({ preventScroll: true });
+        // 왼쪽 위 판의 단추('위에서 보기', 내려오는 동안의 '건물 전체')는 누른 뒤에도 그 자리에 있으니 포커스를 둔다(옮기면 Enter 를 또 눌렀을 때 첫 칸의 실내기로 들어간다)
+        const ae = document.activeElement, keep = $('up').contains(ae) && !ae.hidden && $('up').hasAttribute('data-on');
+        if (fromDock && !keep && !dock.contains(document.activeElement)) ($('spots').querySelector('.h3-spot') || $('upBtn')).focus({ preventScroll: true });
       }
-    } else if (m.type === 'enter' && v === st.viewer) {
+    } else if (m.type === 'enter' && v !== st.viewer) {
+      if (v !== 'house') st.top[st.bldKey[v]] = false; // 가려진 건물이 늦게 알려 온 진입(확대에서 물러난 뒤 등): 돌아왔을 때 '위에서 보기'가 켜진 채 남지 않게
+    } else if (m.type === 'enter') {
       const fromDock = dock.contains(document.activeElement);
       if (!fromDock) engage(true);   // 도면을 눌러 들어왔을 때 문구를 비운다(칩으로 들어온 건 그대로)
-      st.room = { id: m.id, title: m.title, sub: m.sub };
+      st.room = { id: m.id, title: m.title, sub: m.sub }; st.top[st.space] = false; // 위에서 보다가 실내기를 누르면 그 시점으로 내려온다
       renderDock();
+      if (v !== 'house') sendInset(); // 위에서 보는 동안 비워 둔 위쪽 여백을 되돌린다(값이 같으면 안 보낸다)
       $('live').textContent = `${m.title}, ${m.sub || ''}`;
       if (fromDock) $('back').focus({ preventScroll: true }); // 누른 버튼이 숨으면 포커스가 body 로 빠진다
     } else if (m.type === 'zoom') {
@@ -404,7 +465,7 @@
   function fail(viewer) {
     st.failed[viewer] = true; // iframe 은 남겨 둔다 — 늦게라도 ready 가 오면 그때 회복한다
     if (viewer === 'house') showPoster();
-    else if (st.viewer !== 'house') { // 살아 있는 아파트로 되돌리고 이유를 알린다 — 탭을 다시 누르면 새로 불러온다
+    else if (st.viewer === viewer) { // 기다리던(보고 있던) 건물이 실패: 살아 있는 아파트로 되돌리고 이유를 알린다 — 탭을 다시 누르면 새로 불러온다. 뒤에서 미리 불러오던 것이면 그대로 둔다
       st.space = 'house'; st.viewer = 'house'; st.room = null; st.notice = RETRY_MSG;
       if (st.ready.house) showFrame('house');
     }
@@ -471,11 +532,12 @@
 .h3-stage { position: absolute; inset: 0; z-index: -1; }
 .h3-stage iframe {
   position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent;
-  transition: opacity var(--dur-reveal) var(--ease-out), visibility 0s linear var(--dur-reveal);
+  /* 공간을 바꿀 때 앞 화면이 흐려지며 새 화면이 떠오른다. 앞이 빠른 곡선(--ease-out)은 0.15초 만에 거의 다 바뀌어 뚝 끊겨 보였다 → 양쪽이 고르게 섞이는 곡선 */
+  transition: opacity var(--dur-reveal) cubic-bezier(.4, 0, .2, 1), visibility 0s linear var(--dur-reveal);
 }
 /* 숨김은 JS 게이트 아래에서만 (DESIGN.md §4 no-JS 안전장치) */
 .h3js .h3-stage iframe { opacity: 0; visibility: hidden; }
-.h3js .h3-stage iframe.on { opacity: 1; visibility: visible; transition: opacity var(--dur-reveal) var(--ease-out), visibility 0s; }
+.h3js .h3-stage iframe.on { opacity: 1; visibility: visible; transition: opacity var(--dur-reveal) cubic-bezier(.4, 0, .2, 1), visibility 0s; }
 .h3js .h3-stage iframe.on.dip { opacity: 0; transition: opacity var(--dur-ui) var(--ease-out); } /* 빌딩↔빌딩: 같은 iframe 안 전환을 짧게 끊었다 잇는다 */
 /* 대체 이미지: 3D 가 늦거나 못 뜰 때. 위치는 JS 가 빈 영역(--free-*)으로 맞춘다 */
 .h3-poster {
@@ -498,9 +560,11 @@
 /* 전체 보기를 두 손가락으로 확대한 동안(data-zoom, 2026-10-12)은 커진 도면이 문구 밑으로 들어온다 — 방 안처럼 문구·안내 판을 걷고, 끝까지 축소하면 돌아온다 */
 .h3-hero[data-zoom] .h3-invite { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity var(--dur-color) var(--ease-out), visibility 0s var(--dur-color); } /* 흐려진 뒤에 숨긴다 — 띡 사라지지 않게 */
 /* 상업공간·오피스는 문구 없이 건물만(2026-10-01 대표) — 문구·업종 줄·안내 판을 숨기고 그 자리를 도면이 쓴다 */
-.h3-hero[data-space]:not([data-space="house"]) .h3-head,
-.h3-hero[data-space]:not([data-space="house"]) .h3-kicker,
-.h3-hero[data-space]:not([data-space="house"]) .h3-invite { opacity: 0; visibility: hidden; pointer-events: none; }
+.h3-hero[data-shown]:not([data-shown="house"]) .h3-head,
+.h3-hero[data-shown]:not([data-shown="house"]) .h3-kicker,
+.h3-hero[data-shown]:not([data-shown="house"]) .h3-invite { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity var(--dur-reveal) cubic-bezier(.4, 0, .2, 1), visibility 0s linear var(--dur-reveal); } /* 화면이 바뀔 때(data-shown) 화면과 같은 곡선으로 흐려진 뒤에 숨긴다 — 띡 사라지지 않게 */
+/* 화면이 바뀌는 0.7초 동안(data-swap)은 돌아오는 문구도 화면과 같은 곡선·시간으로 — 앞이 빠른 곡선이면 문구가 0.2초 앞서 떠올라 앞 건물 위에 얹힌다 */
+.h3-hero[data-swap][data-shown="house"] .h3-head, .h3-hero[data-swap][data-shown="house"] .h3-kicker, .h3-hero[data-swap][data-shown="house"] .h3-invite { transition: opacity var(--dur-reveal) cubic-bezier(.4, 0, .2, 1); }
 /* 좁은 화면은 도면이 글자 뒤를 지나간다 — 만지기 시작하면 헤드라인을 비운다.
    넓은 화면은 도면이 오른쪽 빈 영역(--free-l)에 갇혀 겹치지 않으므로 문구를 그대로 둔다 */
 @media (max-width: 1023px) { .h3-hero[data-touch3d] .h3-head { opacity: 0; } }
@@ -572,6 +636,10 @@
 .h3-spots { display: flex; gap: 2px; padding: 4px; min-width: 0; overflow-x: auto; scrollbar-width: none;
   border-radius: 8px; background: var(--br-mist); box-shadow: 0 0 0 1px var(--tint-line); }
 .h3-spots::-webkit-scrollbar { display: none; }
+/* 목록이 통째로 바뀔 때(공간 탭·층 ↔ 방) 칸들이 떠오른다 */
+.h3-spots.swap > * { animation: h3-swap var(--dur-ui) var(--ease-out) both; }
+@keyframes h3-swap { from { opacity: .3; } } /* 0 에서 시작하면 목록 자리가 잠깐 비어 깜빡인다 */
+@media (prefers-reduced-motion: reduce) { .h3-spots.swap > * { animation: none; } }
 /* 옆으로 더 있으면 끝을 흐려서 알린다 (포커스가 안에 있으면 흐림을 뺀다) */
 .h3-spots[data-more] { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent); }
 .h3-spots[data-less] { -webkit-mask-image: linear-gradient(90deg, transparent, #000 32px); mask-image: linear-gradient(90deg, transparent, #000 32px); }
@@ -620,6 +688,14 @@
   transition: opacity var(--dur-reveal) var(--ease-out) .35s, translate var(--dur-reveal) var(--ease-out) .35s, visibility 0s; }
 .h3-up .h3-here__t { padding-right: 12px; }
 .h3-up .h3-here__t:empty { display: none; }
+/* 위에서 보기: 도크의 칸과 같은 모양, 켜진 동안 흰 판 */
+.h3-topbtn { flex: none; }
+/* 좁은 화면: '위에서 보기'는 둘째 줄. 줄바꿈(flex-wrap)으로 하면 판이 화면 폭까지 넓어져서, 두 줄 격자로 내용만큼만 차지하게 한다 */
+@media (max-width: 760px) {
+  .h3-up { display: grid; grid-template-columns: auto minmax(0, auto); justify-content: start; column-gap: 8px; }
+  .h3-topbtn { grid-column: 1 / -1; justify-self: start; }
+}
+.h3-topbtn[aria-pressed="true"] { background: #fff; color: var(--br-ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0, 41, 58, .08); }
 @media (prefers-reduced-motion: reduce) { .h3-up, .h3-up[data-on] { translate: none; transition-duration: .01s; transition-delay: 0s; } }
 
 .h3-note { padding: 10px 2px 0; font-size: 13px; line-height: 1.5; color: var(--br-ink-sub); }

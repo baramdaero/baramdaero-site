@@ -434,22 +434,11 @@ const n0 = v => Number(v).toLocaleString('ko-KR');
 const n2 = v => Number(v).toFixed(2);
 const lerp = THREE.MathUtils.lerp;
 const clamp = THREE.MathUtils.clamp;
-// ---- 카메라 전환(멀미 방지, 2026-09-17) ----
-// sine in-out: 피크 속도가 평균의 π/2 배(이전 cubic 은 3배)
-const ease = t => (1 - Math.cos(Math.PI * t)) / 2;
-// 이전 방식(직선 이동 + 과녁 점 lerp)은 과녁이 카메라 앞을 스칠 때 화면이 초당 수백~수천 도로 휙 돌았다.
-// 방→방: 방위각·앙각으로 고르게 돈다. 전체↔방: 방 시점 뒤·위(back·up × 이동 거리)를 지나는 곡선으로 드나들어 방 안에서 뒤돌지 않는다
-const yawPitch = v => [Math.atan2(v.x, v.z), Math.atan2(v.y, Math.hypot(v.x, v.z))];
-const wrapPi = a => Math.atan2(Math.sin(a), Math.cos(a));
-// 방→방 시간: 피크 각속도(π/2 × 회전각 / 시간)가 degps 를 넘지 않게 min~max 안에서. 전체↔방은 far
-const CAM = { min: 1400, max: 2400, degps: 120, far: 2200, back: .25, up: .35, drop: .1 };
-const camMs = turnDeg => clamp(Math.PI / 2 * turnDeg / CAM.degps * 1000, CAM.min, CAM.max);
-let lookDist = 4; // 마지막 도착 시점의 과녁 거리: 방→전체 곡선에서 시선이 출발하는 점
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-const state = { mode: 'house', room: null, view: 0, pipes: true, k: 0, hover: null, autoCollapsed: false };
+const state = { mode: 'house', room: null, view: 0, pipes: true, k: 0, hover: null, autoCollapsed: false, spot: null }; // spot = 방 안에서 걸어가 선 자리(goSpot)
 // ---- embed: 부모(히어로)가 덮는 영역·요청 렌더 ----
 const EMBED = document.documentElement.classList.contains('embed');
-const INTRO_MS = 3000; // 첫 화면 인트로(에어컨에서 전체로 당겨 나옴). 방 이동(CAM.max)보다 느리게
+const INTRO_MS = 3000; // 첫 화면 인트로(에어컨에서 전체로 당겨 나옴)의 최소 시간
 // inset: 전체 보기(l,r,t,b)와 방 시점(rt,rb)에서 부모 UI 가 덮는 픽셀. occNow = 마지막으로 투영에 건 값(전환 중 보간 출발점)
 let inset = { l: 0, r: 0, t: 0, b: 0, rt: 0, rb: 0 }, frameQueued = false, readySent = false, occNow = null, introPending = false;
 // embed 는 멈춰 있을 때 그리지 않는다: 위에 backdrop-filter 유리가 얹혀 매 프레임 그리면 GPU 가 계속 돈다
@@ -499,7 +488,7 @@ if (EMBED) {
   }, true);
   const polarUnlock = () => {
     if (!polarSaved) return;
-    controls.update();
+    if (!tween) controls.update(); // 비행 중에는 카메라에 손대지 않는다 — 묵은 과녁 둘레로 옮겨 놓아 그 순간의 탭이 엉뚱한 데를 짚었다
     [controls.minPolarAngle, controls.maxPolarAngle] = polarSaved; polarSaved = null;
     controls.enableDamping = dampSaved;
   };
@@ -1222,7 +1211,7 @@ function housePose() {
     const q = cam.quaternion, r = new THREE.Vector3(1, 0, 0).applyQuaternion(q), u = new THREE.Vector3(0, 1, 0).applyQuaternion(q);
     tgt.addScaledVector(r, cx * mpp).addScaledVector(u, cy * mpp);
   }
-  return { pos: tgt.clone().addScaledVector(dir, dist), tgt, fov, box: new THREE.Box3().setFromPoints(HOUSE_BOX).expandByPoint(tgt) }; // box = 확대한 구도를 묶는 모형 상자
+  return { pos: tgt.clone().addScaledVector(dir, Math.min(dist, 90)), tgt, fov, box: new THREE.Box3().setFromPoints(HOUSE_BOX).expandByPoint(tgt) }; // box = 확대한 구도를 묶는 모형 상자
 }
 function roomPose(id, i) {
   if (id === OU.room) {
@@ -1250,6 +1239,7 @@ function roomPose(id, i) {
     }
   }
   const full = 2 * Math.atan(Math.tan(band / 2) * H2 / freeH) / DEG;
+  if (state.spot && id === state.room) { pos.copy(state.spot.pos); tgt.copy(pos).add(state.spot.dir); } // 걸어가 선 자리(goSpot). 화각은 위에서 정해진 시점으로 구한 것 그대로 — 선 자리에서 구하면 좁은 화면 크롭이 풀려 넓어진다
   return { pos, tgt, fov: Math.min(full, 150), kind: 'room' };
 }
 // embed 전체 보기의 두 손가락 확대. zoomHome = 처음 구도(방 시점에서는 null), zoomD = 직전 거리, zoomOn = 부모에 알린 상태(확대한 동안 홈 화면이 문구를 걷는다),
@@ -1317,38 +1307,88 @@ function configControls(kind, pose) {
   if (polarSaved) { polarSaved = [controls.minPolarAngle, controls.maxPolarAngle]; controls.minPolarAngle = controls.maxPolarAngle = Math.acos(clamp((camera.position.y - controls.target.y) / camera.position.distanceTo(controls.target), -1, 1)); } // 터치 중 모드가 바뀌면 새 범위를 받아 두고 다시 잠근다. 각은 지금 자세에서 구한다 — getPolarAngle() 은 마지막 update() 때 값(비행 전)이라 도착 시야가 기울었다
   controls.update();
 }
-function flyTo(pose, kTo, durMs) {
-  // 방→방 전환 중(dip)에는 벽이 잠깐 걷혀 k 가 .5 아래로 내려가도 방에서 출발한 것으로 본다
-  const prev = tween, fromRoom = state.k > .5 || !!prev?.dip, toRoom = kTo > .5, p0 = camera.position.clone(), d0 = camera.getWorldDirection(new THREE.Vector3());
-  tween = { t0: performance.now(), p0, f0: camera.fov, k0: state.k, pose, kTo, dip: fromRoom && toRoom };
-  // 시선을 방위각·앙각으로 고르게 돌리게 하고, 피크 각속도 기준의 시간을 돌려준다
-  const turnLook = () => {
-    const [y0, a0] = yawPitch(d0), [y1, a1] = yawPitch(pose.tgt.clone().sub(pose.pos)), dy = wrapPi(y1 - y0);
-    Object.assign(tween, { y0, a0, y1, dy });
-    return camMs(Math.hypot(dy * Math.cos((a0 + a1) / 2), a1 - a0) / DEG);
-  };
-  let dur;
-  if (fromRoom && toRoom) { // 방→방: 가까이서 크게 돈다
-    tween.arc = Math.min(3, p0.distanceTo(pose.pos) * .25);
-    dur = turnLook();
+// 카메라 전환 — 엔진 집 뷰어·건물 뷰어와 같은 방식(2026-10-13). 예전 방식(09-17: 곡선 이동 + 과녁 점 lerp)은 과녁이 카메라 앞·아래를
+// 스칠 때 자세가 초당 수백~수천 도로 돌았다(멀미 — 시선 방향만 재서 놓쳤다). 지키는 것 셋:
+//  ① 자세는 방위·앙각 둘로만 정한다. 과녁 점을 lookAt 하면 카메라가 과녁 위를 지나는 순간 방위가 뒤집혀 화면이 시선축 둘레로 돈다
+//     (시선 '방향'만 재면 놓친다 — 자세 전체로 잰다).
+//  ② 전체↔방: 천장 아래에서는 방 시점의 수직선 위에만 있는다 — 위에서 곧게 내려앉고 곧게 올라간다(천장은 아랫면만 그려 위에서 지날 때는 안 보인다).
+//  ③ 전체↔방: 천장 위에서는 늘 집 안의 한 점을 본다 — 과녁 점 둘레의 방위·앙각·거리를 보간한다.
+//     방에서 바깥벽 쪽이나 위를 보고 있었으면 뜨기 전에 제자리에서 집 안쪽·수평으로 돌린다(그 시간 몫이 hold).
+// 방→방은 직선 + 살짝 넘기 + 시선 각 보간. 시간은 그리지 않고 경로만 240점 계산해 자세 최고 각속도가 rate 를 넘지 않게 늘린다.
+// commercial3d 와 다른 점 하나: 집 시점은 카메라를 기울인다(렌즈 시프트가 없다) → 내려앉는 동안 도착 앙각(tiltEnd)까지 든다.
+const CAM = { house: [2200, 4400], room: [1400, 2400], rate: 120, lift: [3.5, 8], reach: 4 }; // ms 범위 · °/s · 방 시점 위로 뜨는 높이 m(거리의 1/4, 이 범위 안) · 방에서 나갈 때 과녁 거리 m
+const easeCam = t => (1 - Math.cos(Math.PI * t)) / 2; // sine in-out: 최고 속도가 평균의 π/2 배(3차 in-out 은 3배)
+const sstep = x => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); };
+const azel = d => [Math.atan2(d.x, d.z), Math.asin(clamp(d.y, -1, 1))];
+const dirOf = (az, el, o = new THREE.Vector3()) => o.set(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
+const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
+const flight = { pos: new THREE.Vector3(), yaw: 0, pitch: 0 }, lookPt = new THREE.Vector3();
+let arrived = 'house'; // 마지막으로 도착한 곳 — 멈춰 있을 때는 이것으로, 비행 중에는 카메라 자리(inside)로 방 안인지 본다
+// 천장 아래 + 집 사각형 안 = 방 안. 섞임 값 k 로 판정하면 방→방 비행 중(천장을 비치게 하느라 k 가 내려간다) 전체에서 온 것으로 잘못 읽는다
+const inRect = (x, z, pad = 0) => x > pad && x < mm(E.front_width) - pad && -z > pad && -z < mm(E.depth_center_right) - pad;
+const inside = p => p.y < mm(PLAN.ceiling.default_mm) && inRect(p.x, p.z);
+function flyTo(pose, kTo, minMs = 0) {
+  const toRoom = kTo > .5, fromIn = tween ? inside(camera.position) : arrived === 'room'; // 멈춰 있을 때 자리로 보면 바짝 당겨 낮게 본 전체 보기도 '방 안'이 된다
+  const p0 = camera.position.clone(), d0 = camera.getWorldDirection(new THREE.Vector3());
+  const d1 = pose.tgt.clone().sub(pose.pos).normalize();
+  const [az0, el0] = azel(d0), [az1, el1] = azel(d1);
+  const moved = p0.distanceTo(pose.pos) > .01;
+  if (!tween && pose.kind && !moved && d0.angleTo(d1) < .01 && Math.abs(state.k - kTo) < .01) { configControls(state.mode, pose); invalidate(); return; } // 멈춰 있고 이미 그 자리·그 방향(같은 방·실외기 시점을 다시 고름): 헛비행 없이 끝. 비행 중에는 타지 않는다 — 내려앉는 마지막 두세 프레임에 다시 누르면 비행이 버려져 시야가 꺾였다
+  const tw = { t0: 0, dur: 0, f0: camera.fov, k0: state.k, pose, kTo, dip: fromIn && toRoom && moved && !pose.walk };
+  if (fromIn && toRoom) { // 방→방: 직선 + 살짝 넘기 + 시선 각 보간
+    Object.assign(tw, { mode: 'line', p0, az0, daz: wrap(az1 - az0), el0, el1, arc: pose.walk ? 0 : Math.min(3, p0.distanceTo(pose.pos) * .25) });
   } else {
-    // 시선은 과녁 점을 따라간다(집이 화면에 남는다). 다만 전환 도중에 새 전환이 오면(인트로 중 목록·탭 클릭 등) 과녁 점이 카메라 옆을 스쳐
-    // 초당 천 도 가까이 돌 수 있어 방위각·앙각으로 돌린다(검토 2026-09-17)
-    if (prev) dur = turnLook(); else tween.q0 = fromRoom ? p0.clone().addScaledVector(d0, lookDist) : controls.target.clone();
-    if (fromRoom !== toRoom) { // 전체↔방: 방 시점의 뒤·위를 지나는 곡선. 방 쪽 끝에서 시선 방향 그대로 들어가고 나와 뒤돌아서지 않는다
-      // 마지막 구간은 방 시점 바로 위(drop)에서 수직으로 천장을 지난다: 뒤에서 수평으로 들어오면 뒷벽을 뚫는 순간 화면이 벽으로 찬다
-      const D = p0.distanceTo(pose.pos), rp = fromRoom ? p0 : pose.pos, rd = fromRoom ? d0.clone() : pose.tgt.clone().sub(pose.pos);
-      rd.y = 0; rd.normalize();
-      const back = rp.clone().addScaledVector(rd, -CAM.back * D), over = rp.clone();
-      back.y += CAM.up * D; over.y += CAM.drop * D;
-      [tween.c1, tween.c2] = fromRoom ? [over, back] : [back, over];
-      // 세로 폰은 전체 보기가 멀어(D 약 78m) 같은 시간이면 막판 회전이 빨라진다: 거리 60m 넘으면 최대 1.3배까지 늘린다
-      dur = Math.max(dur || 0, CAM.far * clamp(D / 60, 1, 1.3));
-    } else dur = Math.max(dur || 0, CAM.min);
+    // 과녁 점 둘레 자세 {L 과녁, az, el, d 거리}. 시작 쪽은 지금 자세에서 만든다(묵은 controls.target 을 쓰지 않는다 — 비행 중에 다시 눌러도 이어진다)
+    const flat = fromIn || el0 >= -.09; // 방 안이거나 수평 이상을 보는 중: 눈높이 reach 앞이 과녁. 위아래 각(tilt)과 집 밖을 향한 방위(turn)는 제자리에서 푼다
+    let azS = az0, reach = CAM.reach;
+    if (flat) { // reach 앞 점이 집 사각형(0.3m 안쪽)에 드는 가장 가까운 방위
+      const ok = az => inRect(p0.x + Math.sin(az) * reach, p0.z + Math.cos(az) * reach, .3);
+      let k = 0; while (k <= 180 && !ok(az0 + k * DEG) && !ok(az0 - k * DEG)) k++;
+      if (k > 180) { azS = Math.atan2(HOUSE_C.x - p0.x, HOUSE_C.z - p0.z); reach = Math.max(.5, Math.min(reach, Math.hypot(HOUSE_C.x - p0.x, HOUSE_C.z - p0.z))); } // 좁은 집: 가운데 쪽
+      else azS = ok(az0 + k * DEG) ? az0 + k * DEG : az0 - k * DEG;
+    }
+    const lift = clamp(p0.distanceTo(pose.pos) * .25, ...CAM.lift);
+    const over = (vp, az, r) => ({ L: dirOf(az, 0).multiplyScalar(r).add(vp), az, el: -Math.atan2(lift, r), d: Math.hypot(lift, r) }); // 방 시점 vp 바로 위 lift 높이에서, 시점 높이의 r 앞을 내려다보는 자세
+    const here = () => flat ? { L: dirOf(azS, 0).multiplyScalar(reach).add(p0), az: azS, el: 0, d: reach }
+      : (d => ({ L: p0.clone().addScaledVector(d0, d), az: az0, el: el0, d }))(clamp((p0.y - .9) / Math.sin(-el0), 2, 90)); // 내려다보는 중: 시선이 바닥 높이와 만나는 점(전체 보기에서는 과녁 그 자리 — 90 = 먼 한계. 이보다 짧게 자르면 허공을 중심으로 돌아 집이 화면 밖으로 나간다)
+    const home = () => ({ L: pose.tgt, az: az1, el: el1, d: pose.pos.distanceTo(pose.tgt) });
+    const out = fromIn && !toRoom;
+    const [a, b] = toRoom ? [here(), over(pose.pos, az1, Math.max(.5, Math.hypot(pose.tgt.x - pose.pos.x, pose.tgt.z - pose.pos.z)))] : [out ? over(p0, azS, reach) : here(), home()];
+    // 올려다본 각과 집 밖을 향한 방위는 뜨기 전에 제자리에서 푼다(hold) — 그대로 뜨면 한동안 빈 하늘·집 밖만 보인다. 내려다본 각은 뜨면서 풀린다
+    const tilt = flat ? el0 : 0, turn = flat ? wrap(az0 - azS) : 0, need = Math.hypot(Math.max(0, tilt), turn) / DEG * 1.5 / CAM.rate * 1000, level = need > 1 ? Math.max(300, need) : 0; // 몇 도짜리도 0.3초는 들여 까딱하지 않게
+    Object.assign(tw, { mode: toRoom ? 'in' : out ? 'out' : 'air', a, b, daz: wrap(b.az - a.az), lift: toRoom || out ? lift : 0, tilt, turn, level, hold: level / (level + CAM.house[0]), tiltEnd: toRoom ? el1 : 0 });
   }
-  tween.dur = reduced.matches ? 0 : (durMs ?? dur);
-  controls.enabled = false;
+  if (!reduced.matches) {
+    const N = 240, o = { pos: new THREE.Vector3() };
+    let peak = 0; // 한 칸(시간의 1/N)에 자세가 도는 최대 각 — 방위는 수직축, 앙각은 수평축 둘레라 둘이 직각이다
+    tweenAt(tw, 0, o);
+    for (let i = 1, y = o.yaw, q = o.pitch; i <= N; i++) { tweenAt(tw, i / N, o); peak = Math.max(peak, Math.hypot(wrap(o.yaw - y), o.pitch - q)); y = o.yaw; q = o.pitch; }
+    const [lo, hi] = tw.mode === 'line' ? CAM.room : CAM.house;
+    tw.dur = Math.max(minMs, clamp(peak * N / DEG / CAM.rate * 1000, lo, hi + (tw.level || 0))); tw.u = 0; // 제자리에서 시선을 푸는 몫(level)은 상한 밖 — 같이 묶으면 위·바깥벽을 보다 나갈 때 비행 몫이 눌려 한도를 넘는다
+  }
+  tween = tw;
+  controls.enabled = false; canvas.style.cursor = ''; // 손 모양은 도착한 뒤 멈춘 프레임이 다시 잡는다
   invalidate();
+}
+function tweenAt(tw, t, o) { // 진행 t(0..1) → o.pos 자리 · o.yaw/o.pitch 자세(rad). 반환은 섞임·화각에 쓰는 진행률
+  if (tw.mode === 'line') {
+    const e = easeCam(t);
+    o.pos.lerpVectors(tw.p0, tw.pose.pos, e); o.pos.y += Math.sin(Math.PI * e) * tw.arc; // e 기준: 출발·착지에서 수직 속도 0
+    o.yaw = tw.az0 + tw.daz * e; o.pitch = lerp(tw.el0, tw.el1, e);
+    return e;
+  }
+  // in: 앞 75% 에 과녁 둘레로 돌아 방 시점 위에 서고, 뒤 50% 에 곧게 내려앉는다(겹치는 25% 는 아직 천장 위). out 은 그 거울, air 는 둘레 보간만
+  const s = clamp((t - tw.hold) / (1 - tw.hold), 0, 1); // 고개 내리는 몫을 뺀 비행 진행
+  const u = tw.u = tw.mode === 'in' ? sstep(s / .75) : tw.mode === 'out' ? sstep((s - .25) / .75) : sstep(s); // tw.u = 마지막으로 그린 진행(retargetTween 이 쓴다)
+  const c = tw.mode === 'in' ? sstep((s - .5) / .5) : tw.mode === 'out' ? 1 - sstep(s / .5) : 0;
+  const { a, b } = tw, az = a.az + tw.daz * u, el = lerp(a.el, b.el, u), d = lerp(a.d, b.d, u);
+  lookPt.lerpVectors(a.L, b.L, u);
+  dirOf(az, el, o.pos).multiplyScalar(-d).add(lookPt); o.pos.y -= tw.lift * c;
+  const hk = tw.hold ? 1 - sstep(t / tw.hold) : 0; // 제자리에서 푸는 몫
+  o.yaw = az + tw.turn * hk;
+  o.pitch = Math.atan2(lookPt.y - o.pos.y, d * Math.cos(el)) + tw.tilt * (tw.tilt > 0 ? hk : 1 - sstep(s / .35)) // 과녁을 보는 앙각 + 보던 위아래 각(올려다본 각은 뜨기 전에, 내려다본 각은 뜨면서 풀린다)
+    + tw.tiltEnd * c; // 내려앉으며 도착 앙각까지
+  return sstep(s);
 }
 function syncUI() {
   const inRoom = state.mode !== 'house';
@@ -1365,7 +1405,7 @@ function goRoom(id, viewIdx = 0) {
   introPending = false;
   const list = $('listSheet');
   if (!narrow() && !list.hasAttribute('data-collapsed')) { list.setAttribute('data-collapsed', ''); $('listGrab').setAttribute('aria-expanded', 'false'); state.autoCollapsed = true; }
-  state.mode = id === OU.room ? 'ou' : 'room'; state.room = id; state.view = viewIdx;
+  state.mode = id === OU.room ? 'ou' : 'room'; state.room = id; state.view = viewIdx; state.spot = null;
   setHover(null);
   syncUI();
   renderDetail(id, viewIdx);
@@ -1374,12 +1414,21 @@ function goRoom(id, viewIdx = 0) {
   const pose = roomPose(id, viewIdx);
   if (EMBED && o0) applyViewport(o0);
   flyTo(pose, pose.kind === 'room' ? 1 : 0);
-  if (EMBED && o0) Object.assign(tween, { o0, o1 });
+  if (EMBED && o0) { if (tween) Object.assign(tween, { o0, o1 }); else applyViewport(o1); }
   post({ type: 'enter', id, title: dispName(id), sub: id === OU.room ? '실외기' : modelKo(acByRoom[id].model) });
+}
+// 방 안에서 지금 방의 바닥을 누르면 그 자리로 걸어간다(2026-10-13 대표 '방 바닥을 클릭하면 그쪽으로'). 보던 방향·눈높이 그대로, 벽에서 0.4m 는 띄운다(방은 모두 사각형)
+// ponytail: 가구는 안 피한다(보이는 바닥만 누를 수 있어 서는 자리는 대개 빈 곳) — 가구 속에 서는 일이 생기면 가구 상자와도 거리를 둔다
+function goSpot(p) {
+  const [x0, y0, x1, y1] = bbox(rooms[state.room].polygon), m = 400;
+  const pos = V(clamp(p.x * 1000, x0 + m, x1 - m), clamp(-p.z * 1000, y0 + m, y1 - m), camera.position.y * 1000), d = pos.distanceTo(camera.position);
+  if (d < .25) return; // 제자리
+  state.spot = { pos, dir: camera.getWorldDirection(new THREE.Vector3()) };
+  flyTo({ pos, tgt: pos.clone().add(state.spot.dir), fov: camera.fov, kind: 'room', walk: true }, 1, clamp(d * 450, 0, 2200)); // 먼 자리는 천천히(5m 에 2.2초)
 }
 function goHome() {
   if (state.mode === 'house' && !tween) return;
-  state.mode = 'house'; state.room = null;
+  state.mode = 'house'; state.room = null; state.spot = null;
   setHover(null); // 방 안에서 짚어 둔 옆 방 강조가 나가는 비행 내내 남지 않게
   if (state.autoCollapsed) { $('listSheet').removeAttribute('data-collapsed'); $('listGrab').setAttribute('aria-expanded', 'true'); state.autoCollapsed = false; }
   syncUI();
@@ -1429,11 +1478,11 @@ setBlend(0);
 /* ============ interaction ============ */
 const ray = new THREE.Raycaster();
 const ndc = new THREE.Vector2();
-let pointer = null, down = null;
+let pointer = null, down = null, spot = null; // spot = 방 안에서 맨 앞에 보이는 것이 지금 방의 바닥(러그 포함)일 때 그 점 — 누르면 그리로 걸어간다(pick 이 채운다)
 function pick(e) {
   const r = canvas.getBoundingClientRect();
   ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
-  ray.setFromCamera(ndc, camera);
+  ray.setFromCamera(ndc, camera); spot = null;
   // 실내기를 먼저 맞춘다 — 천장에 떠 있어 바닥만 맞추면 광선이 실내기를 지나 뒤쪽 바닥(옆 방)에 닿았다(2026-10-02 실측 5대 중 2대만 맞음)
   // 면만 친다: 바람 표시 외곽선(선)은 판정 폭이 1m 라 손가락 밑이 옆 방 바닥이어도 걸렸다(전체 보기에서 누른 곳 다섯에 하나가 옆 방으로 갔다).
   // 숨겨 둔 것(방 안의 천장 속 본체·바람 표시)도 뺀다 — 보이는 것만 맞힌 것으로 친다
@@ -1450,12 +1499,14 @@ function pick(e) {
   // 방 안(2026-10-12 대표 '안에서 터치하면 그 공간으로'): 벽·반자가 선 채라 광선이 그것을 지나 옆 방에 닿는다 — 맨 앞에 보이는 것으로 정한다.
   // 벽·반자가 앞이면 없음, 가구가 앞이면 그 가구가 놓인 방(식탁을 눌러 주방으로), 지금 있는 방과 실외기실은 고르지 않는다
   const wall = ray.intersectObjects([...groups.walls.children, ...groups.ceil.children], true)[0]?.distance ?? Infinity;
+  let on = f ? f.point : null; // 맨 앞에 보이는 바닥 점(가구가 앞이면 없음. 러그는 바닥으로 친다)
   const fu = ray.intersectObjects(groups.furn.children, true)[0];
   if (fu && fu.distance < Math.min(wall, at)) {
-    at = fu.distance;
+    at = fu.distance; on = fu.object.material === FURN.rug ? fu.point : null;
     ray.set(fu.point.clone().setY(9), new THREE.Vector3(0, -1, 0));
     id = ray.intersectObjects(floorMeshes, false)[0]?.object.userData.room || null;
   }
+  if (at < wall && id === state.room && on) spot = on;
   return at < wall && id !== state.room && id !== OU.room ? id : null;
 }
 function setHover(id) {
@@ -1467,7 +1518,8 @@ function setHover(id) {
   canvas.style.cursor = id ? 'pointer' : '';
   invalidate();
 }
-canvas.addEventListener('pointermove', e => { pointer = e; if (!tween && !e.buttons) setHover(pick(e)); });
+const hoverAt = e => { setHover(pick(e)); canvas.style.cursor = state.hover || spot ? 'pointer' : ''; }; // 걸어갈 수 있는 바닥 위에서도 손 모양
+canvas.addEventListener('pointermove', e => { pointer = e; if (down) down.far = Math.max(down.far, Math.hypot(e.clientX - down.x, e.clientY - down.y)); if (!tween && !e.buttons) hoverAt(e); });
 canvas.addEventListener('pointerleave', () => { pointer = null; setHover(null); });
 // 캔버스에 둘째 손가락이 닿으면 탭이 아니다(확대). 방 시점(확대 없음)에서는 손가락을 다 뗄 때까지 회전도 멈춘다
 // — 그냥 두면 OrbitControls 가 두 손가락의 가운데를 회전 끝점으로 삼아 시야가 한 번에 튄다
@@ -1491,14 +1543,14 @@ for (const ev of ['touchend', 'touchcancel']) canvas.addEventListener(ev, e => {
   if (zoomHome && !tween && camera.position.distanceTo(controls.target) > controls.maxDistance * .9) unzoom(() => {}, 220);
   zoomNote(true);
 }, { passive: true });
-canvas.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+canvas.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY, t: performance.now(), far: 0 }; });
 canvas.addEventListener('pointerup', e => {
   // 전체 보기에서는 카메라가 움직이는 중(인트로·화면 맞춤)에도 탭을 받는다 — flyTo 가 진행 중 전환을 이어받는다(10-02 '첫 탭이 안 먹음').
   // 방 안에서는 멈춰 있을 때만: 보이는 다른 방을 누르면 그 방으로 옮겨 간다
   if (e.pointerType === 'mouse') { pointer = e; invalidate(); } // 끌어 돌린 뒤 마우스를 안 움직여도 놓은 자리로 표시를 다시 잡는다
   if (!down || (state.mode !== 'house' && tween)) { down = null; return; }
   const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
-  if (moved < (e.pointerType === 'touch' ? 12 : 6) && performance.now() - down.t < (e.pointerType === 'touch' ? 900 : 600)) /* 손가락 떨림 5~15px 로 탭이 버려지던 것 */ { const id = pick(e); if (id) goRoom(id); }
+  if (moved < (e.pointerType === 'touch' ? 12 : 6) && performance.now() - down.t < (e.pointerType === 'touch' ? 900 : 600)) /* 손가락 떨림 5~15px 로 탭이 버려지던 것 */ { const id = pick(e); if (id) goRoom(id); else if (spot && down.far < (e.pointerType === 'touch' ? 12 : 6)) goSpot(spot); } // 걸어가기는 누른 동안 가장 멀리 간 거리로도 본다 — 흔들다 제자리에서 뗀 끌기는 탭이 아니다
   down = null;
 });
 $('btnHome').addEventListener('click', goHome);
@@ -1532,33 +1584,33 @@ function retargetTween() {
   if (tween.unzoom) return; // 확대에서 물러나는 중: 그대로 끝낸다(이어지는 비행이 새 크기로 구도를 잡는다)
   const cur = occNow, o1 = occlusion();
   applyViewport(o1);
-  if (state.mode === 'house') tween.pose = housePose(); else if (state.room) tween.pose = roomPose(state.room, state.view);
-  if (tween.o0) { tween.o1 = o1; applyViewport(cur); }
+  // 지금 그려진 값은 그대로 두고 남은 길만 새 목표로 잇는다: 값 = 출발 + (도착 − 출발)·진행 이라 도착만 바꾸면 그 프레임에 진행만큼 튄다 → 출발도 같이 옮긴다
+  const keep = v => v < .98 ? v / (1 - v) : 0, ke = keep(tween.e || 0), fov = tween.pose.fov;
+  if (state.mode === 'house') {
+    const p = tween.pose = housePose(), [az, el] = azel(p.tgt.clone().sub(p.pos).normalize()), a = tween.a, b0 = tween.b, ku = keep(tween.u || 0), daz = wrap(az - b0.az); // 방위는 달라진 만큼만 — 다시 재면 도는 방향이 뒤집힐 수 있다
+    const b = { L: p.tgt, az: a.az + tween.daz + daz, el, d: p.pos.distanceTo(p.tgt) };
+    tween.a = { L: a.L.clone().addScaledVector(b.L.clone().sub(b0.L), -ku), az: a.az - daz * ku, el: a.el - (b.el - b0.el) * ku, d: a.d - (b.d - b0.d) * ku };
+    tween.b = b; tween.daz = b.az - tween.a.az;
+  } else if (state.room) tween.pose = roomPose(state.room, state.view); // 방·실외기 시점은 자리가 정해져 있어 화각만 달라진다
+  tween.f0 -= (tween.pose.fov - fov) * ke;
+  if (tween.o0) { const o0 = tween.o0, was = tween.o1; tween.o0 = { a: o0.a - (o1.a - was.a) * ke, b: o0.b - (o1.b - was.b) * ke, top: o0.top - (o1.top - was.top) * ke, bot: o0.bot - (o1.bot - was.bot) * ke }; tween.o1 = o1; applyViewport(cur); }
 }
 function tick(now) {
   let moving = false;
   frameQueued = false; // 먼저 푼다: tick 안에서 예외가 나도 다음 요청이 막히지 않게
   if (tween) {
-    const t = tween.dur ? clamp((now - tween.t0) / tween.dur, 0, 1) : 1, e = ease(t);
-    if (tween.c1) { const u = 1 - e; camera.position.copy(tween.p0).multiplyScalar(u * u * u).addScaledVector(tween.c1, 3 * u * u * e).addScaledVector(tween.c2, 3 * u * e * e).addScaledVector(tween.pose.pos, e * e * e); }
-    else camera.position.lerpVectors(tween.p0, tween.pose.pos, e);
-    if (tween.arc) camera.position.y += Math.sin(Math.PI * e) * tween.arc; // e 기준: 출발·착지에서 수직 속도 0
-    if (tween.q0) tmp.lerpVectors(tween.q0, tween.pose.tgt, e);
-    else {
-      const [y1, a1] = yawPitch(tmp.subVectors(tween.pose.tgt, tween.pose.pos)), yaw = tween.y0 + (tween.dy + wrapPi(y1 - tween.y1)) * e, pitch = lerp(tween.a0, a1, e);
-      tmp.set(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch)).add(camera.position);
-    }
+    const t = tween.dur ? clamp((now - (tween.t0 ||= now)) / tween.dur, 0, 1) : 1, e = tween.e = tweenAt(tween, t, flight); // 출발 시각은 첫 프레임에 잡는다. tween.e = 마지막으로 그린 진행
+    camera.position.copy(flight.pos); camera.rotation.set(flight.pitch, flight.yaw + Math.PI, 0, 'YXZ'); // 카메라는 -Z 를 본다
     camera.fov = lerp(tween.f0, tween.pose.fov, e); camera.updateProjectionMatrix();
-    camera.lookAt(tmp);
-    // 인트로는 카메라가 천장을 지나기 전에(진행 약 3%, 곡선상 천장 통과는 약 6%) 천장·벽 윗면을 걷어 낸다. 시간이 아니라 진행률에 묶어야 이징·경로를 바꿔도 천장을 뚫고 나가지 않는다
+    // 인트로는 떠오르기 시작하면 곧(진행 약 3%) 천장·벽 윗면을 걷어 낸다 — 제자리에서 시선을 내리는 동안(hold)은 방 그대로
     setBlend(tween.intro ? clamp(1 - e / .03, 0, 1) : clamp(lerp(tween.k0, tween.kTo, e) - (tween.dip ? .75 * Math.sin(Math.PI * e) : 0), 0, 1));
     if (tween.o0) { const o = tween.o1; applyViewport({ w: o.w, h: o.h, a: lerp(tween.o0.a, o.a, e), b: lerp(tween.o0.b, o.b, e), top: lerp(tween.o0.top, o.top, e), bot: lerp(tween.o0.bot, o.bot, e) }); }
     if (tween.postHome && (state.k < .3 || t >= 1)) { tween.postHome = false; post({ type: 'home' }); }
-    if (t >= 1) { const p = tween.pose, then = tween.then; lookDist = p.pos.distanceTo(p.tgt); tween = null; setBlend(p.kind === 'room' ? 1 : 0); configControls(state.mode, p); then?.(); }
+    if (t >= 1) { const p = tween.pose, then = tween.then; tween = null; arrived = p.kind || 'house'; setBlend(p.kind === 'room' ? 1 : 0); configControls(state.mode, p); then?.(); }
   } else {
     moving = controls.update(); // 댐핑 꼬리가 남아 있으면 true
     zoomBound();
-    if (pointer && !pointer.buttons) setHover(pick(pointer));
+    if (pointer && !pointer.buttons) hoverAt(pointer);
   }
   if (state.k < .02) {
     const w = stage.clientWidth, h = stage.clientHeight;
@@ -1597,8 +1649,8 @@ if (EMBED) {
     const i = (viewsByRoom.living || []).findIndex(v => v.id === 'living_ac');
     if (i < 0) return;
     const p = roomPose('living', i);
-    camera.position.copy(p.pos); camera.fov = p.fov; camera.updateProjectionMatrix(); camera.lookAt(p.tgt); lookDist = p.pos.distanceTo(p.tgt);
-    configControls('room', p); // 과녁을 카메라 바로 앞에 둬야 다음 update 가 카메라를 집 과녁 쪽으로 끌어가지 않는다
+    camera.position.copy(p.pos); camera.fov = p.fov; camera.updateProjectionMatrix(); camera.lookAt(p.tgt);
+    arrived = 'room'; configControls('room', p); // 과녁을 카메라 바로 앞에 둬야 다음 update 가 카메라를 집 과녁 쪽으로 끌어가지 않는다
     setBlend(1); invalidate();
     introPending = true; // 출발 전에 들어온 inset 이 카메라를 전체 보기로 옮기지 않게
     // 방 재질로 바뀐 셰이더가 컴파일되는 두 프레임을 지난 뒤 출발해야 앞부분이 건너뛰지 않는다
