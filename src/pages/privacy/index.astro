@@ -1,0 +1,139 @@
+---
+// 개인정보 처리방침 — 본 사이트(baramdaero.com) 문의 챗봇·전화 문의에 적용한다. 쇼핑몰은 쇼핑몰 방침이 따로 있다(아임웹).
+// 값은 config.js 에서만 읽는다: 상호·책임자·메일은 BUSINESS, 시행일은 PRIVACY_EFFECTIVE(비면 줄이 빠진다).
+// 문구는 쇼핑몰 방침(2026-10-17 기준)과 같은 말이어야 한다 — 보유기간·수탁자·책임자가 갈라지면 한쪽을 고친다.
+// 채널톡이 시작되는 때(src/lib/channel.ts ensureChannel): 문의 챗봇 패널을 열 때, /faq/ 에서 질문할 때. 바꾸면 아래 2·8절 문구도 같이 고친다.
+import Base from '../../layouts/Base.astro';
+import PageHero from '../../components/v2/PageHero.astro';
+import { SITE_CONFIG, shopHref } from '../../config.js';
+
+const biz = SITE_CONFIG.BUSINESS;
+const officer = biz.PRIVACY_OFFICER;
+const phone = SITE_CONFIG.PHONE;
+const tel = phone.replace(/\D/g, '');
+const shopPolicy = shopHref('/?mode=privacy');   // 쇼핑몰이 열리기 전에는 빈 값 — 쇼핑몰 문장이 통째로 빠진다
+
+const TOC = [
+  ['purpose', '처리 목적'],
+  ['items', '처리하는 항목'],
+  ['retention', '보유 기간'],
+  ['third', '제3자 제공'],
+  ['outsourcing', '처리 위탁'],
+  ['destroy', '파기'],
+  ['rights', '권리와 행사 방법'],
+  ['cookie', '쿠키'],
+  ['safety', '안전성 확보 조치'],
+  ['officer', '개인정보 보호책임자'],
+  ['remedy', '권익침해 구제'],
+  ['change', '방침의 변경'],
+];
+---
+<Base title="개인정보 처리방침" description={`${biz.NAME}가 바람대로 사이트에서 문의하신 분의 개인정보를 처리하는 목적·항목·보유 기간과 권리 행사 방법.`}>
+  <PageHero light>개인정보 처리방침</PageHero>
+
+  <section class="bd-section pv">
+    <div class="bd-container pv__wrap">
+      <p class="pv__lead">{biz.NAME}(이하 ‘회사’)는 바람대로 사이트(baramdaero.com)에서 문의하시는 분의 개인정보를 「개인정보 보호법」에 따라 처리합니다. 처리하는 목적·항목·보유 기간과 권리를 행사하는 방법을 알려 드립니다.</p>
+      {shopPolicy && <p>쇼핑몰의 회원가입과 주문에는 <a href={shopPolicy} rel="noopener">쇼핑몰의 개인정보처리방침</a>이 따로 적용됩니다.</p>}
+
+      <nav class="pv__toc" aria-label="목차">
+        <ol>
+          {TOC.map(([id, label]) => <li><a href={`#${id}`}>{label}</a></li>)}
+        </ol>
+      </nav>
+
+      <h2 id="purpose">1. 처리 목적</h2>
+      <p>회사는 다음 목적으로만 개인정보를 처리합니다. 목적이 바뀌면 「개인정보 보호법」 제18조에 따라 따로 동의를 받습니다.</p>
+      <ul>
+        <li>설치·세척·관리 문의에 대한 답변과 견적 안내</li>
+        <li>방문 일정 조율과 작업 안내</li>
+        <li>작업 뒤 문의와 AS 처리</li>
+      </ul>
+
+      <h2 id="items">2. 처리하는 항목</h2>
+      <p>회사는 문의하시는 분이 직접 알려 주시는 항목과 자동으로 수집되는 항목을 처리하며, 문의 처리에 필요한 최소한의 개인정보만 처리합니다.</p>
+      <ul>
+        <li>직접 알려 주시는 항목: 이름, 연락처(전화번호·이메일), 설치·작업 장소(지역·주소), 에어컨 대수와 종류, 문의 내용, 첨부 파일</li>
+        <li>자동으로 수집되는 항목: 접속 일시, IP 주소, 접속 국가·도시, 브라우저·운영체제·기기 종류, 언어 설정, 유입 경로, 페이지 조회 기록, 쿠키 식별 값</li>
+      </ul>
+      <p>자동 수집은 문의 챗봇을 열거나 자주 묻는 질문 페이지에서 질문을 하면 채널톡이 함께 실행되면서 시작됩니다. 직접 알려 주시는 항목은 문의 챗봇이나 전화로 받습니다.</p>
+
+      <h2 id="retention">3. 보유 기간</h2>
+      <p>문의 응대 기록(문의 내용, 직접 알려 주신 항목, 자동으로 수집된 항목)은 문의를 받은 날부터 3년간 보관한 뒤 파기합니다. 연락처를 남기지 않은 방문자의 접속 정보는 채널톡이 90일간 보관한 뒤 삭제합니다. 법령에 따라 더 보관해야 하는 정보는 그 법령이 정한 기간 동안 보관합니다.</p>
+
+      <h2 id="third">4. 제3자 제공</h2>
+      <p>회사는 문의하신 분의 개인정보를 제3자에게 제공하지 않습니다. 법령에 따라 제공해야 하는 경우만 그 법령이 정한 범위에서 제공합니다.</p>
+
+      <h2 id="outsourcing">5. 처리 위탁</h2>
+      <dl class="pv__dl">
+        <div><dt>수탁자</dt><dd>주식회사 채널코퍼레이션</dd></div>
+        <div><dt>위탁 업무</dt><dd>채널톡 상담 시스템 운영과 상담 내용 저장</dd></div>
+        <div><dt>위탁 기간</dt><dd>채널톡 이용 기간</dd></div>
+      </dl>
+      <p>수탁자가 다시 위탁하는 업체와 국외 이전은 <a href="https://channel.io/kr/privacy" rel="noopener">채널톡 개인정보처리방침</a>에서 확인할 수 있습니다.</p>
+
+      <h2 id="destroy">6. 파기</h2>
+      <dl class="pv__dl">
+        <div><dt>파기 절차</dt><dd>회사는 보유 기간이 지났거나 처리 목적을 이룬 개인정보를 선정하고, 개인정보 보호책임자의 승인을 받아 지체 없이 파기합니다.</dd></div>
+        <div><dt>파기 방법</dt><dd>채널톡에 저장된 상담 내용과 고객 정보를 포함한 전자 파일은 복구할 수 없는 방법으로 삭제하고, 종이 문서는 분쇄하거나 소각합니다.</dd></div>
+      </dl>
+      <p>법령에 따라 계속 보관해야 하는 정보는 다른 정보와 따로 보관합니다.</p>
+
+      <h2 id="rights">7. 권리와 행사 방법</h2>
+      <p>문의하신 분은 언제든지 자신의 개인정보에 대해 열람, 정정, 삭제, 처리정지를 요구하고 동의를 철회할 수 있습니다. 아래 보호책임자에게 전화나 이메일로 요청하시면 회사가 지체 없이 조치하고 결과를 알려 드립니다.</p>
+      <p>대리인을 통한 요청은 위임장을 받아 처리합니다. 법령에 따라 보관해야 하는 정보의 삭제와, 다른 사람의 권리를 침해하는 열람은 제한됩니다.</p>
+
+      <h2 id="cookie">8. 쿠키</h2>
+      <p>이 사이트는 쿠키를 직접 저장하지 않습니다. 문의 챗봇을 열거나 자주 묻는 질문 페이지에서 질문을 하면 채널톡이 함께 실행되어, 방문자를 구분하기 위한 쿠키(ch-veil-id)와 브라우저 저장소 값을 저장하고, 마지막으로 채널톡이 실행된 때부터 1년이 지나면 이 값을 초기화합니다. 브라우저 설정에서 쿠키 저장을 거부하거나 지울 수 있고, 문의는 전화{phone && <> <a href={`tel:${tel}`}>{phone}</a></>}로도 하실 수 있습니다.</p>
+
+      <h2 id="safety">9. 안전성 확보 조치</h2>
+      <ul>
+        <li>문의 기록은 업무에 필요한 담당자만 볼 수 있습니다.</li>
+        <li>사이트와 문의 챗봇은 HTTPS로 암호화해 통신합니다.</li>
+      </ul>
+
+      <h2 id="officer">10. 개인정보 보호책임자</h2>
+      <p>개인정보 처리에 관한 문의, 불만 처리, 열람 청구는 아래 보호책임자가 접수하고 처리합니다.</p>
+      <dl class="pv__dl">
+        <div><dt>성명</dt><dd>{officer.NAME}</dd></div>
+        <div><dt>직책</dt><dd>{officer.TITLE}</dd></div>
+        {phone && <div><dt>전화</dt><dd><a href={`tel:${tel}`}>{phone}</a></dd></div>}
+        <div><dt>이메일</dt><dd><a href={`mailto:${biz.EMAIL}`}>{biz.EMAIL}</a></dd></div>
+      </dl>
+
+      <h2 id="remedy">11. 권익침해 구제</h2>
+      <p>개인정보 침해로 도움이 필요하면 아래 기관에 신고하거나 상담을 신청할 수 있습니다.</p>
+      <ul>
+        <li>개인정보 분쟁조정위원회: 1833-6972, kopico.go.kr</li>
+        <li>개인정보침해 신고센터(한국인터넷진흥원): 국번 없이 118, privacy.kisa.or.kr</li>
+        <li>경찰청: 국번 없이 182, ecrm.police.go.kr</li>
+      </ul>
+
+      <h2 id="change">12. 방침의 변경</h2>
+      <p>이 방침을 바꾸면 시행하기 전에 이 페이지에 알립니다.{SITE_CONFIG.PRIVACY_EFFECTIVE && <> 이 방침은 {SITE_CONFIG.PRIVACY_EFFECTIVE}부터 시행합니다.</>}</p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .pv { padding-top: 56px; }
+  /* 긴 글이라 읽는 폭만 줄이고, 왼쪽 끝은 히어로 제목과 맞춘다 */
+  .pv__wrap > * { max-width: 760px; }
+  .pv p, .pv li, .pv dd, .pv dt { font-size: 16px; line-height: 1.8; color: var(--br-ink-sub); }
+  @media (min-width: 768px) { .pv p, .pv li, .pv dd, .pv dt { font-size: 17px; } }
+  .pv p { margin-top: 12px; text-wrap: pretty; }
+  .pv .pv__lead { margin-top: 0; color: var(--br-ink); }
+  /* 목차 앵커로 들어오면 고정 헤더 아래로 제목이 내려오게 */
+  .pv h2 { font-size: 22px; line-height: 1.4; color: var(--br-ink); margin-top: 48px; scroll-margin-top: 80px; }
+  .pv ul { margin-top: 12px; padding-left: 1.2em; list-style: disc; }
+  .pv ul li + li { margin-top: 6px; }
+  /* 본문 속 링크는 teal 밑줄 — DESIGN.md §1 글자색 3단(누를 수 있는 것만 teal). 긴 주소만 줄 끝에서 꺾는다 */
+  .pv a { color: var(--br-teal); text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
+  .pv__toc { margin-top: 32px; padding: 20px 24px; background: var(--br-mist); border-radius: var(--radius); }
+  .pv__toc ol { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0 16px; }
+  .pv__toc a { display: inline-flex; align-items: center; min-height: 44px; text-decoration: none; font-weight: 600; font-size: 16px; }
+  .pv__dl { margin-top: 12px; display: grid; gap: 8px; }
+  .pv__dl > div { display: grid; grid-template-columns: 6em 1fr; gap: 12px; }
+  .pv dt { color: var(--br-ink); font-weight: 600; }
+  .pv dd { margin: 0; }
+</style>

@@ -36,7 +36,8 @@ const biz = SITE_CONFIG.BUSINESS;
     <p class="bd-footer__legal">
       <span>{biz.NAME}</span>&nbsp;· <span>대표 {biz.REPRESENTATIVE}</span>&nbsp;· <span>사업자등록번호 {biz.REG_NO}</span><br />
       {biz.ADDRESS}{SITE_CONFIG.PHONE && <>&nbsp;· <span>전화 {SITE_CONFIG.PHONE}</span></>}<br />
-      © {year} 바람대로
+      © {year} 바람대로<br />
+      <a class="bd-footer__policy" href="/privacy/">개인정보 처리방침</a>
     </p>
   </div>
 </footer>
@@ -72,4 +73,19 @@ const biz = SITE_CONFIG.BUSINESS;
   /* 사업자 정보는 읽혀야 하므로 보조 글자색 흰 75%(DESIGN.md §1). 항목 단위로만 줄을 바꾼다 */
   .bd-footer__legal { font-size: 12px; line-height: 1.7; color: rgba(255, 255, 255, 0.75); }
   .bd-footer__legal span { white-space: nowrap; }
+  /* 개인정보 처리방침 링크는 다른 고지와 구분되게 흰색 700 (개인정보 보호법 표준 지침). 터치 높이 44 */
+  .bd-footer__policy {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color var(--dur-color) ease;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .bd-footer__policy:hover { color: var(--br-ice); }
+  }
 </style>
