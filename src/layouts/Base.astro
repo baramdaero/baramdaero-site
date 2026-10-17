@@ -32,6 +32,9 @@ const businessJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'HVACBusiness',
   name: SITE_CONFIG.SITE_NAME,
+  // 브랜드(name)와 운영 법인을 잇는다 — 값은 푸터와 같은 config 의 BUSINESS (사업자등록증 기준)
+  legalName: SITE_CONFIG.BUSINESS.NAME,
+  taxID: SITE_CONFIG.BUSINESS.REG_NO,
   slogan: SITE_CONFIG.SLOGAN,
   url: siteUrl,
   image: `${siteUrl}${SITE_CONFIG.HERO_POSTER}`,
