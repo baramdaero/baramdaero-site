@@ -9,6 +9,7 @@ const realPosts = (await getCollection('blog')).filter((e) => !e.data.sample).le
 import wideReverseUrl from '../assets/logo/baramdaero-wide-reverse.svg?url';
 const year = new Date().getFullYear();
 const loginHref = shopHref(SITE_CONFIG.SHOP_LOGIN_PATH);
+const mypageHref = loginHref ? shopHref(SITE_CONFIG.SHOP_MYPAGE_PATH) : '';
 const biz = SITE_CONFIG.BUSINESS;
 ---
 <footer class="bd-footer">
@@ -27,7 +28,8 @@ const biz = SITE_CONFIG.BUSINESS;
       <a href="/faq/">자주 묻는 질문</a>
       {realPosts >= 3 && <a href="/blog/">블로그</a>}
       {/* 쇼핑몰 주소나 경로가 비면 미렌더 — 죽은 링크 차단 */}
-      {loginHref && <a href={loginHref} rel="noopener">로그인</a>}
+      {loginHref && <a href={loginHref} rel="noopener" referrerpolicy="unsafe-url" data-shop-login={mypageHref ? '' : undefined}>로그인</a>}
+      {mypageHref && <a href={mypageHref} rel="noopener" class="bd-footer__mypage">마이페이지</a>}
     </nav>
     <p class="bd-footer__cta">
       <button disabled aria-describedby="chat-unavailable" type="button" class="bd-cta bd-cta--ondark bd-footer__ask" data-chat-tree="menu">문의하기<svg class="br-cta-arrow" aria-hidden="true" viewBox="0 0 10 10" width="10" height="10" fill="none"><path d="M0 5h7" /><path d="M1 1l4 4-4 4" /></svg></button>
@@ -67,6 +69,10 @@ const biz = SITE_CONFIG.BUSINESS;
   /* 색·모양·떠오름은 문의 버튼(.bd-cta--ondark) — 여기서는 작은 크기만 */
   .bd-footer__ask { min-height: 44px; padding: 0 18px; font-size: 15px; cursor: pointer; }
   .bd-footer__nav a:hover { color: var(--br-ice); }
+  /* 로그인한 방문자(<html class="bd-member">, 헤더가 정한다)에게는 '로그인' 자리에 '마이페이지' — 헤더와 같은 규칙 */
+  .bd-footer__mypage { display: none; }
+  :global(html.bd-member) .bd-footer__mypage { display: revert; }
+  :global(html.bd-member) .bd-footer__nav [data-shop-login] { display: none; }
   .bd-footer__nav--sub { font-size: 13px; align-items: center; }
   .bd-footer__navlabel { color: rgba(255, 255, 255, 0.5); }
   .bd-footer__hairline { border: 0; border-top: 1px solid rgba(255, 255, 255, 0.15); }

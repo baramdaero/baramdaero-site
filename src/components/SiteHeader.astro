@@ -11,6 +11,7 @@
 import { SITE_CONFIG, shopHref } from '../config.js';
 import { getCollection } from 'astro:content';
 import lockupSvg from '../assets/logo/baramdaero-lockup-anim.svg?raw';
+import shopSessionRaw from '../scripts/shop-session.js?raw';
 
 interface Props {
   variant?: 'overlay' | 'solid';
@@ -43,8 +44,11 @@ const nav = [
   { href: '/faq/', label: 'FAQ', full: '자주 묻는 질문', name: '자주 묻는 질문(FAQ)' },
 ];
 const path = Astro.url.pathname;
-// 쇼핑몰 로그인 화면 — 로그인 여부는 이 사이트에서 알 수 없어(다른 출처) 상태와 무관한 말 하나만 둔다
+// 쇼핑몰 로그인 화면. 로그인 여부는 다른 출처라 직접 못 읽는다 — 쇼핑몰 공통 코드가 남기는 공용 쿠키(bd_login)를
+// 아래 스크립트가 읽어, 로그인한 방문자에게는 '로그인' 자리에 '마이페이지'를 보인다(src/scripts/shop-session.js)
 const loginHref = shopHref(SITE_CONFIG.SHOP_LOGIN_PATH);
+const mypageHref = loginHref ? shopHref(SITE_CONFIG.SHOP_MYPAGE_PATH) : '';
+const shopSessionJs = shopSessionRaw.replace(/^\s*\/\/.*\n/gm, '');
 
 /** 현재 페이지 판정. href가 '/'이면 startsWith가 모든 경로에 참이 되어 항상 현재로 표시된다
  *  — 정확 일치로 분기해 둔다. 지금 메뉴엔 '/'가 없지만 홈 항목이 추가되면 바로 걸리는 자리다.
@@ -52,6 +56,7 @@ const loginHref = shopHref(SITE_CONFIG.SHOP_LOGIN_PATH);
  *  현재 위치를 두 번 읽는다. */
 const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
 ---
+{mypageHref && <script is:inline set:html={shopSessionJs} />}
 <header class:list={['bd-header', `bd-header--${variant}`]}>
   <div class="bd-header__inner">
     <a href="/" class="bd-header__brand" aria-label="바람대로 홈">
@@ -85,7 +90,11 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
         예약·구매는 메뉴 '예약·구매'가 맡는다) */}
     <div class="bd-header__actions">
       {loginHref
-        ? <a href={loginHref} class="bd-header__quote bd-header__login" rel="noopener">로그인</a>
+        ? <>
+            {/* referrerpolicy: 쇼핑몰이 로그인 뒤 이 화면으로 돌려보내려고 방금 보던 주소를 리퍼러로 받는다(기본값은 도메인만 보낸다) */}
+            <a href={loginHref} class="bd-header__quote bd-header__login" rel="noopener" referrerpolicy="unsafe-url" data-shop-login={mypageHref ? '' : undefined}>로그인</a>
+            {mypageHref && <a href={mypageHref} class="bd-header__quote bd-header__login bd-header__mypage" rel="noopener">마이페이지</a>}
+          </>
         : <button type="button" class="bd-header__quote" data-chat-tree="menu" disabled aria-describedby="chat-unavailable">견적 문의</button>}
     </div>
   </div>
@@ -152,15 +161,10 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     gap: 12px;
     flex-shrink: 0;
   }
-  /* 767px 이하에서는 슬롯을 접는다. 폭 예산이 물리적으로 부족하기 때문이다 —
-     더미(대표번호+버튼 177px)로 실측하면 390px에서 177px, 641px에서 16px 넘쳤다
-     (641px 필요폭 633 = 로고 115 + gap 28 + 메뉴 285 + gap 28 + 슬롯 177 > 가용 593).
-     겹침이 아니라 자리 부족이라 간격 조정으로는 못 푼다.
-     ⚠️ 슬롯에 실제 내용이 들어갈 때 이 구간 정책(축약 CTA만 노출 / 햄버거 등)을
-     다시 정할 것 — 지금은 SHOP_URL이 비어 슬롯 자체가 미렌더라 영향이 없다. */
-  @media (max-width: 767px) {
-    .bd-header__actions { display: none; }
-  }
+  /* 모바일에서도 슬롯은 접지 않는다 — '로그인'(68px) 또는 '마이페이지'(92px) 하나뿐이라 폭이 든다.
+     실측(2026-10-19): 768·390·360px 모두 로고·메뉴 버튼과 겹치거나 가로로 넘치지 않는다.
+     예전에 여기 있던 '767px 이하에서 슬롯 접기' 규칙은 아래 .bd-header__actions 의 display:flex 에 덮여 한 번도 적용된 적이 없어 지웠다.
+     슬롯에 내용이 더 들어가면 이 폭 예산을 다시 잴 것 */
 
   /* 로고 — 높이 고정·width auto (비율 무변경). 톤 전환은 기존 상태 클래스만 사용.
      08-24 축소: 기존 36/40px의 2/3 — "커 보인다"는 실물 판단을 워드마크 14px
@@ -214,6 +218,11 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   .bd-header__quote:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; }
   /* 로그인은 같은 모양의 링크 — 버튼과 달리 글자를 가운데로 맞춰 줘야 한다 */
   .bd-header__login { display: inline-flex; align-items: center; }
+  /* 쇼핑몰에서 로그인한 방문자(<html class="bd-member">)에게는 '로그인' 자리에 '마이페이지' 하나.
+     마이페이지는 기본이 숨김이라 스크립트가 안 돌면 '로그인'이 남는다 */
+  .bd-header__mypage { display: none; }
+  :global(html.bd-member) .bd-header__mypage { display: inline-flex; }
+  :global(html.bd-member) .bd-header__login[data-shop-login] { display: none; }
 
   .bd-header__link,
   .bd-header__login,
