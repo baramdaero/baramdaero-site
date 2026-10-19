@@ -1149,7 +1149,7 @@ function renderDetail(id, viewIdx) {
 }
 
 /* ============ state / camera ============ */
-let tween = null;
+let tween = null, lastNow = 0; // lastNow = 마지막 tick 의 시각(걸음을 이어 받을 때 눈에 보이던 속도를 잰다)
 // must match the CSS breakpoint (viewport width), not the stage width: at 761-792px they disagreed
 const NARROW = matchMedia('(max-width: 760px)');
 const narrow = () => NARROW.matches;
@@ -1336,7 +1336,7 @@ function flyTo(pose, kTo, minMs = 0) {
   if (!tween && pose.kind && !moved && d0.angleTo(d1) < .01 && Math.abs(state.k - kTo) < .01) { configControls(state.mode, pose); invalidate(); return; } // 멈춰 있고 이미 그 자리·그 방향(같은 방·실외기 시점을 다시 고름): 헛비행 없이 끝. 비행 중에는 타지 않는다 — 내려앉는 마지막 두세 프레임에 다시 누르면 비행이 버려져 시야가 꺾였다
   const tw = { t0: 0, dur: 0, f0: camera.fov, k0: state.k, pose, kTo, dip: fromIn && toRoom && moved && !pose.walk };
   if (fromIn && toRoom) { // 방→방: 직선 + 살짝 넘기 + 시선 각 보간
-    Object.assign(tw, { mode: 'line', p0, az0, daz: wrap(az1 - az0), el0, el1, arc: pose.walk ? 0 : Math.min(3, p0.distanceTo(pose.pos) * .25) });
+    Object.assign(tw, { mode: 'line', p0, az0, daz: wrap(az1 - az0), el0, el1, arc: pose.walk ? 0 : Math.min(3, p0.distanceTo(pose.pos) * .25), walk: !!pose.walk, out: !!pose.m0, m0: pose.m0 || 0, t0: pose.m0 ? lastNow : 0 }); // 이어 걷기는 마지막으로 그린 프레임에서 이어 센다(카메라가 지금 그 프레임의 자리라 다음 프레임이 한 걸음 앞 — 제자리에 서거나 두 걸음 뛰지 않는다). 아니면 첫 프레임에 잡는다
   } else {
     // 과녁 점 둘레 자세 {L 과녁, az, el, d 거리}. 시작 쪽은 지금 자세에서 만든다(묵은 controls.target 을 쓰지 않는다 — 비행 중에 다시 눌러도 이어진다)
     const flat = fromIn || el0 >= -.09; // 방 안이거나 수평 이상을 보는 중: 눈높이 reach 앞이 과녁. 위아래 각(tilt)과 집 밖을 향한 방위(turn)는 제자리에서 푼다
@@ -1364,7 +1364,7 @@ function flyTo(pose, kTo, minMs = 0) {
     tweenAt(tw, 0, o);
     for (let i = 1, y = o.yaw, q = o.pitch; i <= N; i++) { tweenAt(tw, i / N, o); peak = Math.max(peak, Math.hypot(wrap(o.yaw - y), o.pitch - q)); y = o.yaw; q = o.pitch; }
     const [lo, hi] = tw.mode === 'line' ? CAM.room : CAM.house;
-    tw.dur = Math.max(minMs, clamp(peak * N / DEG / CAM.rate * 1000, lo, hi + (tw.level || 0))); tw.u = 0; // 제자리에서 시선을 푸는 몫(level)은 상한 밖 — 같이 묶으면 위·바깥벽을 보다 나갈 때 비행 몫이 눌려 한도를 넘는다
+    tw.dur = pose.walk ? minMs : Math.max(minMs, clamp(peak * N / DEG / CAM.rate * 1000, lo, hi + (tw.level || 0))); tw.u = 0; // 걸음은 돌지 않아 각속도 몫이 없다 — 방 시점 최소 시간(1.4초)을 씌우면 1.5m 걸음도 1.4초 걸린다 // 제자리에서 시선을 푸는 몫(level)은 상한 밖 — 같이 묶으면 위·바깥벽을 보다 나갈 때 비행 몫이 눌려 한도를 넘는다
   }
   tween = tw;
   controls.enabled = false; canvas.style.cursor = ''; // 손 모양은 도착한 뒤 멈춘 프레임이 다시 잡는다
@@ -1372,7 +1372,7 @@ function flyTo(pose, kTo, minMs = 0) {
 }
 function tweenAt(tw, t, o) { // 진행 t(0..1) → o.pos 자리 · o.yaw/o.pitch 자세(rad). 반환은 섞임·화각에 쓰는 진행률
   if (tw.mode === 'line') {
-    const e = easeCam(t);
+    const e = tw.out ? tw.m0 * t * (t - 1) * (t - 1) + t * t * (3 - 2 * t) : easeCam(t); // out = 걷던 중에 이어 걷기: 출발 기울기 m0 인 Hermite — 멈췄다 다시 출발하지 않게(m0 ≤ 3 이면 단조)
     o.pos.lerpVectors(tw.p0, tw.pose.pos, e); o.pos.y += Math.sin(Math.PI * e) * tw.arc; // e 기준: 출발·착지에서 수직 속도 0
     o.yaw = tw.az0 + tw.daz * e; o.pitch = lerp(tw.el0, tw.el1, e);
     return e;
@@ -1424,7 +1424,20 @@ function goSpot(p) {
   const pos = V(clamp(p.x * 1000, x0 + m, x1 - m), clamp(-p.z * 1000, y0 + m, y1 - m), camera.position.y * 1000), d = pos.distanceTo(camera.position);
   if (d < .25) return; // 제자리
   state.spot = { pos, dir: camera.getWorldDirection(new THREE.Vector3()) };
-  flyTo({ pos, tgt: pos.clone().add(state.spot.dir), fov: camera.fov, kind: 'room', walk: true }, 1, clamp(d * 450, 0, 2200)); // 먼 자리는 천천히(5m 에 2.2초)
+  // 걸음 시간은 거리에 비례한다(1.5m 에 0.7초 · 5m 에 1.7초).
+  // 걷는 도중에 또 누르면 가던 속도 중 새 방향 성분을 이어 받는다(3차 Hermite: 출발 기울기 m0 · 도착 기울기 0) — 처음부터 느리게 출발하면 멈칫한다.
+  // 새 방향으로 옆으로 틀수록 이어 받는 몫이 줄고(cos), 반대로 돌아서면 0(그냥 새로 출발). m0 가 3 을 넘으면 곡선이 목표를 지나치니 시간을 줄여(최소 450ms) m0 ≤ 3 으로 맞춘다
+  let dur = clamp(300 + d * 280, 450, 1700), m0 = 0;
+  const w = tween && tween.walk && tween;
+  if (w && w.t0) {
+    const tt = clamp((lastNow - w.t0) / w.dur, 0, 1), L = w.p0.distanceTo(w.pose.pos); // lastNow = 마지막으로 그린 프레임의 시각 — 눈에 보이던 속도를 잰다
+    if (L > 1e-3) {
+      const sl = w.out ? w.m0 * (3 * tt * tt - 4 * tt + 1) + 6 * tt * (1 - tt) : Math.PI / 2 * Math.sin(Math.PI * tt); // 진행 e 의 기울기
+      const cos = ((w.pose.pos.x - w.p0.x) * (pos.x - camera.position.x) + (w.pose.pos.z - w.p0.z) * (pos.z - camera.position.z)) / (L * d), v0 = L / w.dur * sl * cos; // v0 m/ms = 새 방향 성분
+      if (v0 > 1e-5) { dur = clamp(Math.min(dur, 3 * d / v0), 450, 1700); m0 = Math.min(3, v0 * dur / d); }
+    }
+  }
+  flyTo({ pos, tgt: pos.clone().add(state.spot.dir), fov: camera.fov, kind: 'room', walk: true, m0 }, 1, dur);
 }
 function goHome() {
   if (state.mode === 'house' && !tween) return;
@@ -1479,6 +1492,8 @@ setBlend(0);
 const ray = new THREE.Raycaster();
 const ndc = new THREE.Vector2();
 let pointer = null, down = null, spot = null; // spot = 방 안에서 맨 앞에 보이는 것이 지금 방의 바닥(러그 포함)일 때 그 점 — 누르면 그리로 걸어간다(pick 이 채운다)
+// 카메라 자리에서 p 쪽으로 가되 p 앞 back m 에서 멈추는 자리(바닥 높이는 goSpot 이 눈높이로 바꾼다). 이미 그 안이면 제자리
+const standBefore = (p, back) => { const c = camera.position, dx = p.x - c.x, dz = p.z - c.z, L = Math.hypot(dx, dz), k = L > back ? (L - back) / L : 0; return new THREE.Vector3(c.x + dx * k, 0, c.z + dz * k); };
 function pick(e) {
   const r = canvas.getBoundingClientRect();
   ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
@@ -1487,26 +1502,30 @@ function pick(e) {
   // 면만 친다: 바람 표시 외곽선(선)은 판정 폭이 1m 라 손가락 밑이 옆 방 바닥이어도 걸렸다(전체 보기에서 누른 곳 다섯에 하나가 옆 방으로 갔다).
   // 숨겨 둔 것(방 안의 천장 속 본체·바람 표시)도 뺀다 — 보이는 것만 맞힌 것으로 친다
   const a = ray.intersectObjects(groups.ac.children, true).find(h => h.object.isMesh && h.object.visible && h.object.material.visible);
-  let id = null, at = Infinity;
+  let id = null, at = Infinity, acPt = null;
   if (a) {
     let g = a.object; while (g.parent && g.parent !== groups.ac) g = g.parent;
     const u = PLAN.ac_units.find(x => acGroups[x.id] === g);
-    if (u && CLICKABLE.has(u.room)) { id = u.room; at = a.distance; }
+    if (u && CLICKABLE.has(u.room)) { id = u.room; at = a.distance; acPt = a.point; }
   }
   const f = !id && ray.intersectObjects(floorMeshes, false)[0];
   if (f) { id = f.object.userData.room; at = f.distance; }
   if (state.mode !== 'room') return state.mode === 'house' ? id : null; // 실외기실 시점에서는 누르기가 없다(예전 그대로)
   // 방 안(2026-10-12 대표 '안에서 터치하면 그 공간으로'): 벽·반자가 선 채라 광선이 그것을 지나 옆 방에 닿는다 — 맨 앞에 보이는 것으로 정한다.
   // 벽·반자가 앞이면 없음, 가구가 앞이면 그 가구가 놓인 방(식탁을 눌러 주방으로), 지금 있는 방과 실외기실은 고르지 않는다
-  const wall = ray.intersectObjects([...groups.walls.children, ...groups.ceil.children], true)[0]?.distance ?? Infinity;
-  let on = f ? f.point : null; // 맨 앞에 보이는 바닥 점(가구가 앞이면 없음. 러그는 바닥으로 친다)
+  const wh = ray.intersectObjects([...groups.walls.children, ...groups.win.children, ...groups.ceil.children], true)[0], wall = wh ? wh.distance : Infinity; // 창(유리·창틀)도 벽처럼 — 빼면 화면의 20~28% 가 눌러도 아무 일 없다
+  let on = f ? f.point : null, front = null; // 맨 앞에 보이는 바닥 점(가구가 앞이면 없음. 러그는 바닥으로 친다) · front = 앞이 가구일 때 [그 점, 그 앞에서 멈출 거리 m]
   const fu = ray.intersectObjects(groups.furn.children, true)[0];
   if (fu && fu.distance < Math.min(wall, at)) {
-    at = fu.distance; on = fu.object.material === FURN.rug ? fu.point : null;
+    const rug = fu.object.material === FURN.rug;
+    at = fu.distance; on = rug ? fu.point : null; acPt = null; if (!rug) front = [fu.point.clone(), .9];
     ray.set(fu.point.clone().setY(9), new THREE.Vector3(0, -1, 0));
     id = ray.intersectObjects(floorMeshes, false)[0]?.object.userData.room || null;
   }
-  if (at < wall && id === state.room && on) spot = on;
+  // 걸어갈 곳(2026-10-19 대표: 누르면 안 가지는 곳이 많다): 맨 앞에 보이는 것이 지금 방의 바닥이면 그 점, 가구·벽이면 그 앞 0.9m, 반자·실내기면 그 밑으로
+  const inCeil = o => { for (; o; o = o.parent) if (o === groups.ceil) return true; return false; };
+  if (at < wall && id === state.room) spot = on || (front ? standBefore(front[0], front[1]) : acPt ? standBefore(acPt, 0) : null);
+  else if (wh && wall <= at) spot = standBefore(wh.point, inCeil(wh.object) ? 0 : .9);
   return at < wall && id !== state.room && id !== OU.room ? id : null;
 }
 function setHover(id) {
@@ -1543,12 +1562,12 @@ for (const ev of ['touchend', 'touchcancel']) canvas.addEventListener(ev, e => {
   if (zoomHome && !tween && camera.position.distanceTo(controls.target) > controls.maxDistance * .9) unzoom(() => {}, 220);
   zoomNote(true);
 }, { passive: true });
-canvas.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY, t: performance.now(), far: 0 }; });
+canvas.addEventListener('pointerdown', e => { down = e.pointerType === 'mouse' && e.button !== 0 ? null : { x: e.clientX, y: e.clientY, t: performance.now(), far: 0 }; }); // 마우스 오른쪽·가운데 단추는 탭이 아니다
 canvas.addEventListener('pointerup', e => {
   // 전체 보기에서는 카메라가 움직이는 중(인트로·화면 맞춤)에도 탭을 받는다 — flyTo 가 진행 중 전환을 이어받는다(10-02 '첫 탭이 안 먹음').
   // 방 안에서는 멈춰 있을 때만: 보이는 다른 방을 누르면 그 방으로 옮겨 간다
   if (e.pointerType === 'mouse') { pointer = e; invalidate(); } // 끌어 돌린 뒤 마우스를 안 움직여도 놓은 자리로 표시를 다시 잡는다
-  if (!down || (state.mode !== 'house' && tween)) { down = null; return; }
+  if (!down || (state.mode !== 'house' && tween && !tween.walk)) { down = null; return; } // 걷는 도중의 탭은 받는다(새 자리로 이어 간다)
   const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
   if (moved < (e.pointerType === 'touch' ? 12 : 6) && performance.now() - down.t < (e.pointerType === 'touch' ? 900 : 600)) /* 손가락 떨림 5~15px 로 탭이 버려지던 것 */ { const id = pick(e); if (id) goRoom(id); else if (spot && down.far < (e.pointerType === 'touch' ? 12 : 6)) goSpot(spot); } // 걸어가기는 누른 동안 가장 멀리 간 거리로도 본다 — 흔들다 제자리에서 뗀 끌기는 탭이 아니다
   down = null;
@@ -1596,6 +1615,7 @@ function retargetTween() {
   if (tween.o0) { const o0 = tween.o0, was = tween.o1; tween.o0 = { a: o0.a - (o1.a - was.a) * ke, b: o0.b - (o1.b - was.b) * ke, top: o0.top - (o1.top - was.top) * ke, bot: o0.bot - (o1.bot - was.bot) * ke }; tween.o1 = o1; applyViewport(cur); }
 }
 function tick(now) {
+  lastNow = now;
   let moving = false;
   frameQueued = false; // 먼저 푼다: tick 안에서 예외가 나도 다음 요청이 막히지 않게
   if (tween) {
