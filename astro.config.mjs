@@ -1,5 +1,6 @@
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
+import { SITE_CONFIG } from './src/config.js';
 
 // 루트 도메인 baramdaero.com — sitemap·robots·JSON-LD·OG 절대 URL 기준.
 // DNS 연결 전에도 이 값 유지 (Pages 커스텀 도메인은 public/CNAME).
@@ -15,7 +16,8 @@ export default defineConfig({
   redirects: {
     '/story': '/',
     '/situation/newhome': '/install/',
-    // 2026-10-12 가격 페이지 폐지 — 비용 안내는 자주 묻는 질문의 '비용' 묶음이 맡는다
-    '/price': '/faq/#cat-비용',
+    // 2026-10-12 가격 페이지 폐지 — 비용 안내는 자주 묻는 질문의 '비용' 묶음이 맡는다.
+    // 쇼핑몰 주소가 있으면 옛 주소도 쇼핑몰로 보낸다(메뉴·푸터 '가격'과 같은 규칙, 2026-10-19)
+    '/price': SITE_CONFIG.SHOP_URL || '/faq/#cat-비용',
   },
 });
