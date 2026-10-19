@@ -38,7 +38,8 @@ const nav = [
   // JS 가 돌면 640px 이하는 '메뉴' 버튼 펼침 목록이라 가격도 들어간다
   // 가격 페이지는 없앴다(2026-10-12 박민혁: /faq/ 에서 비용도 알려 주면 된다, 가격은 예약·구매 화면으로).
   // 쇼핑몰 주소가 있으면 쇼핑몰로, 비면 자주 묻는 질문의 '비용' 묶음으로 간다
-  { href: SITE_CONFIG.SHOP_URL || '/faq/#cat-비용', label: '가격', full: '가격', wide: true },
+  // 글자는 가는 곳에 맞춘다 — 쇼핑몰은 가격표가 아니라 예약·구매 화면이다(2026-10-19 대표: '가격'이 자사몰로 이어지면 이상하다). 비면 '가격'(FAQ 비용 묶음)
+  { href: SITE_CONFIG.SHOP_URL || '/faq/#cat-비용', label: SITE_CONFIG.SHOP_URL ? '예약·구매' : '가격', full: SITE_CONFIG.SHOP_URL ? '예약·구매' : '가격', wide: true },
   { href: '/faq/', label: 'FAQ', full: '자주 묻는 질문', name: '자주 묻는 질문(FAQ)' },
 ];
 const path = Astro.url.pathname;
@@ -81,7 +82,7 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
         쇼핑몰 주소가 비었으면 견적 문의(2026-09-30 대표: "시공문의·견적문의로 잘 유도되게"): 채팅창 첫 메뉴(설치 견적·세척 견적·A/S)를 연다 → 채널톡 상담.
         채팅 스크립트가 켜기 전까지는 비활성.
         쇼핑몰 주소가 있으면 로그인만(2026-10-12 박민혁: 로그인·견적 문의·예약·구매 셋이 나란하면 이상하다 — 견적 문의는 아래 채팅 버튼이 맡고,
-        예약·구매는 메뉴 '가격'이 맡는다) */}
+        예약·구매는 메뉴 '예약·구매'가 맡는다) */}
     <div class="bd-header__actions">
       {loginHref
         ? <a href={loginHref} class="bd-header__quote bd-header__login" rel="noopener">로그인</a>

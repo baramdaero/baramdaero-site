@@ -689,13 +689,15 @@
 .h3-up .h3-here__t { padding-right: 12px; }
 .h3-up .h3-here__t:empty { display: none; }
 /* 위에서 보기: 도크의 칸과 같은 모양, 켜진 동안 흰 판 */
-.h3-topbtn { flex: none; }
+.h3-topbtn { flex: none; background: #fff; color: var(--br-teal); font-weight: 600; border: 1px solid var(--br-teal); box-shadow: 0 1px 2px rgba(0, 41, 58, .08); }   /* 판 안의 글자로 읽히지 않게(2026-10-19 대표: 버튼이 안 보인다) — 흰 면 + 청록 선, 켜지면 청록 면 */
+@media (hover: hover) { .h3-topbtn:hover { background: #f1f7f9; } }
+.h3-topbtn:focus-visible { outline-offset: 2px; }   /* 바깥에 둔다 — 켜진 청록 면 안쪽에서는 청록 선이 면에 묻힌다 */
 /* 좁은 화면: '위에서 보기'는 둘째 줄. 줄바꿈(flex-wrap)으로 하면 판이 화면 폭까지 넓어져서, 두 줄 격자로 내용만큼만 차지하게 한다 */
 @media (max-width: 760px) {
   .h3-up { display: grid; grid-template-columns: auto minmax(0, auto); justify-content: start; column-gap: 8px; }
   .h3-topbtn { grid-column: 1 / -1; justify-self: start; }
 }
-.h3-topbtn[aria-pressed="true"] { background: #fff; color: var(--br-ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0, 41, 58, .08); }
+.h3-topbtn[aria-pressed="true"], .h3-topbtn[aria-pressed="true"]:hover { background: var(--br-teal); color: #fff; border-color: var(--br-teal); box-shadow: none; }
 @media (prefers-reduced-motion: reduce) { .h3-up, .h3-up[data-on] { translate: none; transition-duration: .01s; transition-delay: 0s; } }
 
 .h3-note { padding: 10px 2px 0; font-size: 13px; line-height: 1.5; color: var(--br-ink-sub); }
