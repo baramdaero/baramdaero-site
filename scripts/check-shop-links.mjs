@@ -82,6 +82,12 @@ function check(file, html, cfg) {
 const pages = await walk(path.join(ROOT, 'dist'));
 assert.ok(pages.length > 0, 'dist 에 html 이 없다 — 먼저 npm run build');
 const fails = pages.flatMap(([f, html]) => check(f, html, SITE_CONFIG));
+{ // 옛 /price/ 주소(리다이렉트 한 장)는 메뉴 '가격'과 같은 곳으로 간다
+  const old = pages.find(([f]) => /(^|[\\/])price[\\/]index\.html$/.test(f));
+  const want = SITE_CONFIG.SHOP_URL || '/faq/#cat-비용';
+  if (!old) fails.push('옛 /price/ 주소가 dist 에 없다 — 외부 링크가 끊긴다');
+  else if (!old[1].includes(`url=${want}`)) fails.push(`/price/ 가 '가격'과 다른 곳으로 간다 (기대 ${want})`);
+}
 if (fails.length) {
   console.error(fails.slice(0, 40).map((f) => `  FAIL ${f}`).join('\n') + (fails.length > 40 ? `\n  … 외 ${fails.length - 40}건` : ''));
   process.exit(1);
