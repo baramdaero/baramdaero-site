@@ -290,19 +290,19 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
   }
   .space3d__lv:empty { display: none; }
   .space3d__top {
-    flex: none; min-height: 44px; margin: 0 4px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent;
-    color: var(--br-ink-sub); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
-    transition: background-color var(--dur-color) var(--ease-out), color var(--dur-color) var(--ease-out);
+    flex: none; min-height: 44px; margin: 0 4px; padding: 0 12px; border: 1px solid var(--br-teal); border-radius: 8px; background: #fff;
+    color: var(--br-teal); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;   /* 판 안의 글자로 읽히지 않게: 흰 면 + 청록 선, 켜지면 청록 면 */
+    transition: background-color var(--dur-color) var(--ease-out), color var(--dur-color) var(--ease-out), border-color var(--dur-color) var(--ease-out);
   }
-  .space3d__top[aria-pressed="true"] { background: rgba(0, 78, 100, .1); color: var(--br-teal); }   /* 흰 판 위라 켜진 표시는 옅은 청록 */
-  @media (hover: hover) and (pointer: fine) { .space3d__top:hover { color: var(--br-teal); } }
+  .space3d__top[aria-pressed="true"], .space3d__top[aria-pressed="true"]:hover { background: var(--br-teal); color: #fff; border-color: var(--br-teal); }
+  @media (hover: hover) and (pointer: fine) { .space3d__top:hover { background: #f1f7f9; } }
   /* 좁은 화면: '위에서 보기'는 둘째 줄(두 줄 격자 — 줄바꿈으로 하면 판이 폭 가득 넓어진다) */
   @media (max-width: 760px) {
     .space3d__here { display: grid; grid-template-columns: auto minmax(0, auto); justify-content: start; }
     .space3d__top { grid-column: 1 / -1; justify-self: start; margin: 0 4px 4px; }
   }
   .space3d__top:active { transform: scale(.96); }
-  .space3d__top:focus-visible { outline: 2px solid var(--br-teal); outline-offset: -2px; }
+  .space3d__top:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; }   /* 바깥에 둔다 — 켜진 청록 면 안쪽에서는 선이 면에 묻힌다 */
 </style>
 
 <style is:global>

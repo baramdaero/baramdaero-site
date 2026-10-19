@@ -24,7 +24,7 @@ const biz = SITE_CONFIG.BUSINESS;
       <a href="/commercial/">상업용</a>
       {realCases >= 3 && <a href="/cases/">시공사례</a>}
       {/* 쇼핑몰 주소가 있으면 '가격'은 쇼핑몰로, 비면 자주 묻는 질문의 '비용' 묶음으로 — 헤더 메뉴와 같은 규칙 */}
-      <a href={SITE_CONFIG.SHOP_URL || '/faq/#cat-비용'} rel={SITE_CONFIG.SHOP_URL ? 'noopener' : undefined}>가격</a>
+      <a href={SITE_CONFIG.SHOP_URL || '/faq/#cat-비용'} rel={SITE_CONFIG.SHOP_URL ? 'noopener' : undefined}>{SITE_CONFIG.SHOP_URL ? '예약·구매' : '가격'}</a>
       <a href="/faq/">자주 묻는 질문</a>
       {realPosts >= 3 && <a href="/blog/">블로그</a>}
       {/* 쇼핑몰 주소나 경로가 비면 미렌더 — 죽은 링크 차단 */}
