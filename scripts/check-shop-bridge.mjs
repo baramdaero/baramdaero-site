@@ -48,8 +48,10 @@ function browser({ storageThrows = false, writeThrows = false } = {}) {
     store, cookies,
     /** 화면 하나를 연다(어느 탭이든). 돌려주는 값 = 쇼핑몰 코드가 보낸 곳(없으면 null) */
     /** uid: 'auto' 면 로그인 여부에 맞춰(로그인 'm…', 로그아웃 ''), 'none' 이면 변수가 없는 화면, 그 밖의 값은 그대로.
+     *  guest(IS_GUEST): 'auto' 면 로그아웃 true·로그인 false, 'none' 이면 변수 없음, 그 밖의 값은 그대로.
+     *  navType: 이 화면이 열린 방식('navigate'·'reload'·'back_forward'…), 'none' 이면 탐색 기록을 못 읽는 환경.
      *  lateUid: 코드가 처음 돌 때는 변수가 없고 load 때 생기는 경우의 값('none' 이면 load 가 와도 끝내 없다) */
-    visit({ path = '/', search = '', referrer = '', loggedIn = false, now = 0, framed = false, popup = false, uid = 'auto', lateUid } = {}) {
+    visit({ path = '/', search = '', referrer = '', loggedIn = false, now = 0, framed = false, popup = false, uid = 'auto', guest = 'auto', navType = 'navigate', lateUid } = {}) {
       let redirected = null;
       const listeners = {};
       const win = { opener: popup ? {} : null, addEventListener: (type, fn) => { (listeners[type] ??= []).push(fn); } };
@@ -57,6 +59,8 @@ function browser({ storageThrows = false, writeThrows = false } = {}) {
       win.self = win;
       if (uid === 'auto') win.MEMBER_UID = loggedIn ? 'm20261019abcdef1234567' : '';
       else if (uid !== 'none') win.MEMBER_UID = uid;
+      if (guest === 'auto') { if (uid !== 'none') win.IS_GUEST = !loggedIn; } else if (guest !== 'none') win.IS_GUEST = guest;
+      if (navType !== 'none') win.performance = { getEntriesByType: (t) => (t === 'navigation' ? [{ type: navType }] : []) };
       const document = {
         referrer,
         set cookie(v) { cookies.push(v); },
@@ -66,7 +70,7 @@ function browser({ storageThrows = false, writeThrows = false } = {}) {
       };
       const location = { pathname: path, search, origin: SHOP, replace: (u) => { redirected = u; } };
       vm.runInNewContext(CODE, { window: win, document, location, localStorage, URL, Date: { now: () => T0 + now } });
-      if (lateUid !== undefined && listeners.load) { if (lateUid !== 'none') win.MEMBER_UID = lateUid; listeners.load.forEach((fn) => fn()); }
+      if (lateUid !== undefined && listeners.load) { if (lateUid !== 'none') { win.MEMBER_UID = lateUid; win.IS_GUEST = lateUid === ''; } listeners.load.forEach((fn) => fn()); }
       return redirected;
     },
   };
@@ -98,9 +102,10 @@ const put = (b, u, t = T0) => b.store.set('bd_return', JSON.stringify({ u, t }))
 {
   const t = browser();
   t.visit({ path: '/login', referrer: MAIN_CARE, now: 0 });
-  t.visit({ path: '/shop_join', referrer: `${SHOP}/login`, now: 1 * MIN });
-  t.visit({ path: '/shop_join_agree', referrer: `${SHOP}/shop_join`, now: 2 * MIN });
-  assert.equal(t.visit({ path: '/', referrer: `${SHOP}/shop_join_agree`, loggedIn: true, now: 4 * MIN }), MAIN_CARE);
+  // 실제 순서: /login 의 '회원가입'(/site_join_pattern_choice → /site_join_agree) → 가입 양식 /site_join → 완료
+  t.visit({ path: '/site_join_agree', search: '?back_url=L2xvZ2lu&type_code=', referrer: `${SHOP}/login`, now: 1 * MIN });
+  t.visit({ path: '/site_join', referrer: `${SHOP}/site_join_agree?back_url=L2xvZ2lu&type_code=`, now: 2 * MIN });
+  assert.equal(t.visit({ path: '/', referrer: `${SHOP}/site_join`, loggedIn: true, now: 4 * MIN }), MAIN_CARE);
 }
 // 4. 낡은 표시로 '마이페이지'를 눌러 아임웹이 /login?back_url=… 로 보낸 경우 — 기억하지 않고, 앞서 남은 기억도 버려 로그인 뒤 본 사이트로 튕기지 않는다
 {
@@ -214,9 +219,9 @@ assert.equal(browser().visit({ path: '/shop_mypage', loggedIn: true, now: 0 }), 
   const t = browser();
   t.visit({ path: '/login', referrer: MAIN_CARE, now: 0 });
   t.visit({ path: '/', referrer: `${SHOP}/login`, now: 1 * MIN });   // 로그인 화면에서 곧바로 나온 화면은 아직 흐름 안이다
-  t.visit({ path: '/shop_join', referrer: `${SHOP}/`, now: 3 * MIN });
+  t.visit({ path: '/site_join', referrer: `${SHOP}/`, now: 3 * MIN });
   assert.equal(t.store.size, 0, '돌아다니다 시작한 가입이 기억을 버리지 않았다');
-  assert.equal(t.visit({ path: '/', referrer: `${SHOP}/shop_join`, loggedIn: true, now: 5 * MIN }), null);
+  assert.equal(t.visit({ path: '/', referrer: `${SHOP}/site_join`, loggedIn: true, now: 5 * MIN }), null);
 }
 // 15. 상품 화면에서 로그인 화면을 거치지 않고(모달 등) 로그인 — 돌아가지 않는다
 {
@@ -277,8 +282,8 @@ for (const [search, referrer] of [
   const t = browser();
   t.visit({ path: '/login', referrer: MAIN_CARE, now: 0 });
   t.visit({ path: '/oauth', search: '?code=abc', referrer: 'https://nid.naver.com/', now: 1 * MIN });
-  t.visit({ path: '/shop_join', referrer: `${SHOP}/oauth`, now: 3 * MIN });
-  assert.equal(t.visit({ path: '/', referrer: `${SHOP}/shop_join`, loggedIn: true, now: 6 * MIN }), MAIN_CARE);
+  t.visit({ path: '/site_join', referrer: `${SHOP}/oauth`, now: 3 * MIN });
+  assert.equal(t.visit({ path: '/', referrer: `${SHOP}/site_join`, loggedIn: true, now: 6 * MIN }), MAIN_CARE);
 }
 
 // ── 로그인 판별 — 2026-10-20 쇼핑몰이 공개된 것을 보고 로그아웃 상태를 확인했더니, 로그아웃 화면에도 숨은 로그아웃 링크가 1개 있어
@@ -313,4 +318,66 @@ for (const bad of ['none', null, 0, 12345, {}, ['x']]) {
   assert.equal(t.store.size, 1, `상태를 모르는데(${label}) 저장값을 건드렸다`);
 }
 
-console.log('shop bridge: 쇼핑몰 Footer Code — 24개 흐름 통과(돌아다니기 3개·소셜 로그인 5개·로그인 판별 3개 포함), 문서 해시 일치');
+// ── 2026-10-20 독립 검토(v2.1)에서 나온 것 — 실제 쇼핑몰 화면과의 어긋남을 메운다 ──
+// 25. 로그인·가입 흐름 경로가 실제 쇼핑몰과 같다: /login 의 '회원가입' 링크(/site_join_pattern_choice → /site_join_agree)와 가입 양식(/site_join),
+//     숨은 틀(/backpg/…)이 리퍼러여도 기억을 유지한다. 404 인 /shop_join 을 흐름으로 보지 않는다
+for (const ref of [`${SHOP}/site_join_agree?back_url=&type_code=`, `${SHOP}/site_join`, `${SHOP}/backpg/login.cm`, `${SHOP}/backpg/join.cm`, `${SHOP}/oauth?code=x`]) {
+  const t = browser();
+  t.visit({ path: '/login', referrer: MAIN_CARE, now: 0 });
+  t.visit({ path: '/site_join', referrer: ref, now: 1 * MIN });
+  assert.ok(stored(t), `리퍼러 ${ref} 에서 기억을 버렸다`);
+}
+{
+  const t = browser();
+  t.visit({ path: '/login', referrer: MAIN_CARE, now: 0 });
+  t.visit({ path: '/site_join', referrer: `${SHOP}/shop_join`, now: 1 * MIN });   // /shop_join 은 없는 주소 — 일반 화면으로 본다
+  assert.equal(t.store.size, 0, '없는 주소 /shop_join 을 가입 흐름으로 봤다');
+}
+// 26. 낡은 '마이페이지'(로그인 풀림) — 실제로는 /shop_mypage 의 자바스크립트 이동으로 /?mode=login&back_url=… 에 닿는다(경로는 /, 리퍼러는 쇼핑몰의 /shop_mypage)
+{
+  const t = browser();
+  t.visit({ path: '/login', referrer: MAIN_CARE, now: 0 });
+  t.visit({ path: '/', search: '?mode=login&back_url=L3Nob3BfbXlwYWdl', referrer: `${SHOP}/shop_mypage`, now: 1 * MIN });
+  assert.equal(t.store.size, 0, "'마이페이지'에서 넘어온 로그인이 앞의 기억을 버리지 않았다");
+  assert.equal(t.visit({ path: '/shop_mypage', referrer: `${SHOP}/`, loggedIn: true, now: 2 * MIN }), null);
+}
+// 27. 본 사이트의 '쇼핑몰' 링크(리퍼러가 도메인뿐)로 쇼핑몰 홈에 온 것은 저장하지 않는다 — '/login' 에서만 저장한다
+{
+  const t = browser();
+  t.visit({ path: '/', referrer: 'https://baramdaero.com/', now: 0 });
+  assert.equal(t.store.size, 0, '쇼핑몰 홈 도착을 복귀 주소로 저장했다');
+  assert.equal(t.visit({ path: '/shop_cart', referrer: `${SHOP}/`, loggedIn: true, now: 1 * MIN }), null);
+}
+// 28. 뒤로·앞으로 가기로 다시 열린 낡은 '로그인' 화면 — 그 사이 로그아웃했을 수 있으니 로그인 표시도 이동도 하지 않는다(아임웹이 곧 새로고침한다)
+{
+  const t = browser();
+  put(t, MAIN_CARE);
+  assert.equal(t.visit({ now: 1 * MIN, loggedIn: true, navType: 'back_forward' }), null, '낡은 화면에서 본 사이트로 보냈다');
+  assert.equal(t.cookies.length, 0, '낡은 화면에서 로그인 표시를 켰다');
+  assert.equal(t.store.size, 1, '낡은 화면에서 저장값을 건드렸다');
+  for (const nt of ['navigate', 'reload', 'prerender', 'none']) {
+    const u = browser();
+    put(u, MAIN_CARE);
+    assert.equal(u.visit({ now: 1 * MIN, loggedIn: true, navType: nt }), MAIN_CARE, `탐색 종류 ${nt} 에서 돌아오지 않았다`);
+    assert.ok(u.cookies.includes(COOKIE_ON), `탐색 종류 ${nt} 에서 로그인 표시를 못 켰다`);
+  }
+  const g = browser();
+  g.visit({ path: '/login', referrer: MAIN_CARE, now: 0, navType: 'back_forward' });
+  assert.ok(stored(g), '뒤로 가기로 열린 로그아웃 /login 에서 복귀 주소를 못 저장했다');
+}
+// 29. IS_GUEST 와 어긋나면 상태를 모르는 것으로 본다 — 비어 있지 않은 MEMBER_UID 가 방문자(IS_GUEST true)에게 오거나, 빈 값인데 IS_GUEST 가 false 이거나, IS_GUEST 가 없다
+for (const [label, opts] of [
+  ['방문자인데 값이 비어 있지 않음', { uid: 'guest-123', guest: true }],
+  ['값이 비었는데 IS_GUEST false', { uid: '', guest: false }],
+  ['IS_GUEST 없음(로그인)', { loggedIn: true, guest: 'none' }],
+  ['IS_GUEST 없음(로그아웃)', { guest: 'none' }],
+  ['IS_GUEST 가 문자열', { loggedIn: true, guest: 'false' }],
+]) {
+  const t = browser();
+  put(t, MAIN_CARE);
+  assert.equal(t.visit({ now: 1 * MIN, ...opts }), null, `${label}: 보냈다`);
+  assert.equal(t.cookies.length, 0, `${label}: 쿠키를 건드렸다`);
+  assert.equal(t.store.size, 1, `${label}: 저장값을 건드렸다`);
+}
+
+console.log('shop bridge: 쇼핑몰 Footer Code — 29개 흐름 통과(돌아다니기 3개·소셜 로그인 5개·로그인 판별 3개·실제 쇼핑몰 경로·낡은 화면·IS_GUEST 합의 5개 포함), 문서 해시 일치');
