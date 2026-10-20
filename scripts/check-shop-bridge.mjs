@@ -1,10 +1,10 @@
 /**
- * 쇼핑몰 Footer Code 초안 검사 — docs/shop-login-bridge.md 의 코드를 그대로 꺼내 가짜 화면에서 여러 흐름으로 돌린다.
+ * 쇼핑몰 Footer Code 검사 — docs/shop-login-bridge.md 의 코드를 그대로 꺼내 가짜 화면에서 여러 흐름으로 돌린다.
  *
  *   npm run test:shop   (링크·스크립트 검사 뒤에 같이 돈다)  또는  node scripts/check-shop-bridge.mjs
  *
- * 쇼핑몰은 비공개라 진짜 화면에서는 아직 못 돌려 본다. 그 전에 흐름의 논리(돌아오기·튕김 방지·주소 검증)만이라도 고정해 둔다.
- * 아임웹이 실제로 로그인 뒤 어디로 보내는지, 로그인 판별 요소가 무엇인지는 여기서 알 수 없다(문서의 '넣기 전에').
+ * 쇼핑몰이 비공개라 로그아웃 상태 흐름은 진짜 화면에서 아직 못 돌려 본다. 그 흐름의 논리(저장·돌아오기·튕김 방지·주소 검증)를 여기서 고정해 둔다.
+ * 로그인한 화면에서의 동작(판별 요소, 돌아오기, 주소 검증)은 2026-10-19 실제 화면에서 확인했다. 아임웹이 로그인 뒤 어디로 보내는지, 로그아웃 상태 화면은 여기서 알 수 없다(문서의 '공개 뒤에 확인할 것').
  */
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -151,4 +151,4 @@ for (const evil of [
 // 12. 기억 없이 로그인한 화면은 그대로 둔다
 assert.equal(tab().visit({ path: '/shop_mypage', loggedIn: true, now: 0 }), null);
 
-console.log('shop bridge: 쇼핑몰 Footer Code 초안 — 12개 흐름 통과');
+console.log('shop bridge: 쇼핑몰 Footer Code — 12개 흐름 통과');
