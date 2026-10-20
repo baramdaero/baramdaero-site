@@ -3,9 +3,10 @@
  *
  *   npm run test:shop   (링크·스크립트 검사 뒤에 같이 돈다)  또는  node scripts/check-shop-bridge.mjs
  *
- * 쇼핑몰이 비공개라 로그아웃 상태 흐름은 진짜 화면에서 아직 못 돌려 본다. 그 흐름의 논리(저장·돌아오기·튕김 방지·주소 검증)를 여기서 고정해 둔다.
- * 로그인한 화면에서의 동작(판별 요소, 돌아오기, 주소 검증)은 2026-10-19 실제 화면에서 확인했다. 아임웹이 로그인 뒤 어디로 보내는지,
- * 로그아웃 상태 화면, 소셜 로그인(카카오·네이버 등)이 실제로 팝업인지 화면 이동인지는 여기서 알 수 없다 — 소셜 로그인은 두 방식 모두를 가정해 돌려 본다.
+ * 쇼핑몰 코드의 논리(로그인 판별·저장·돌아오기·튕김 방지·주소 검증)를 여기서 고정해 둔다. 2026-10-20 로그아웃·로그인 두 상태의 실제 화면에서
+ * 같은 동작을 확인했다(문서의 '확인한 것'). 실제 비밀번호 로그인·가입, 일반 회원 계정의 MEMBER_UID 값, 소셜 로그인(카카오·네이버 등)이
+ * 팝업인지 화면 이동인지는 여기서 알 수 없다 — 소셜 로그인은 두 방식 모두를 가정해 돌려 본다.
+ * 가짜 화면은 실제와 같게 만든다: 로그아웃 화면에도 숨은 로그아웃 링크가 있고, 로그인 여부는 window.MEMBER_UID(로그아웃은 빈 문자열)로만 드러난다.
  * 문서에 적힌 코드의 SHA-256 이 블록과 같은지도 본다(코드를 고쳤는데 쇼핑몰에 넣은 것과의 대조값을 안 고치는 일을 막는다).
  */
 import { readFile } from 'node:fs/promises';
@@ -20,7 +21,7 @@ assert.ok(m, '문서에서 Footer Code 블록을 못 찾았다');
 const CODE = m[1];
 {
   // '아래 블록은 v2**(2252자, SHA-256 `…`)' 한 줄 — 쇼핑몰에 들어 있는 이전 버전(v1)의 해시와 헷갈리지 않게 이 줄만 본다
-  const stated = doc.match(/아래 블록은 v\d+\*\*\((\d+)자, SHA-256 `([0-9a-f]{64})`\)/);
+  const stated = doc.match(/아래 블록은 v\d+(?:\.\d+)?\*\*\((\d+)자, SHA-256 `([0-9a-f]{64})`\)/);
   assert.ok(stated, "문서에 '아래 블록은 vN**(길이자, SHA-256 `…`)' 줄이 없다");
   const block = `<script>\n${CODE}</script>`;
   assert.equal(block.length, Number(stated[1]), '문서에 적힌 길이가 코드 블록과 다르다 — 코드를 고쳤으면 해시와 길이를 다시 적는다');
@@ -46,20 +47,26 @@ function browser({ storageThrows = false, writeThrows = false } = {}) {
   return {
     store, cookies,
     /** 화면 하나를 연다(어느 탭이든). 돌려주는 값 = 쇼핑몰 코드가 보낸 곳(없으면 null) */
-    visit({ path = '/', search = '', referrer = '', loggedIn = false, now = 0, framed = false, popup = false }) {
+    /** uid: 'auto' 면 로그인 여부에 맞춰(로그인 'm…', 로그아웃 ''), 'none' 이면 변수가 없는 화면, 그 밖의 값은 그대로.
+     *  lateUid: 코드가 처음 돌 때는 변수가 없고 load 때 생기는 경우의 값('none' 이면 load 가 와도 끝내 없다) */
+    visit({ path = '/', search = '', referrer = '', loggedIn = false, now = 0, framed = false, popup = false, uid = 'auto', lateUid } = {}) {
       let redirected = null;
-      const win = { opener: popup ? {} : null };
+      const listeners = {};
+      const win = { opener: popup ? {} : null, addEventListener: (type, fn) => { (listeners[type] ??= []).push(fn); } };
       win.top = framed ? {} : win;
       win.self = win;
+      if (uid === 'auto') win.MEMBER_UID = loggedIn ? 'm20261019abcdef1234567' : '';
+      else if (uid !== 'none') win.MEMBER_UID = uid;
       const document = {
         referrer,
         set cookie(v) { cookies.push(v); },
         get cookie() { return ''; },
-        // 로그인한 화면에는 로그아웃 링크가 있다(문서 '확인한 것' — 로그인 상태 홈·마이페이지에서 확인)
-        querySelector: (sel) => (loggedIn && sel === 'a[href*="logout"]' ? {} : null),
+        // 로그아웃 화면에도 숨은 로그아웃 링크가 있다(알림 패널, 2026-10-20 실제 공개 화면) — 이 링크로 로그인을 판단하면 안 된다
+        querySelector: (sel) => (sel === 'a[href*="logout"]' ? {} : null),
       };
       const location = { pathname: path, search, origin: SHOP, replace: (u) => { redirected = u; } };
       vm.runInNewContext(CODE, { window: win, document, location, localStorage, URL, Date: { now: () => T0 + now } });
+      if (lateUid !== undefined && listeners.load) { if (lateUid !== 'none') win.MEMBER_UID = lateUid; listeners.load.forEach((fn) => fn()); }
       return redirected;
     },
   };
@@ -274,4 +281,36 @@ for (const [search, referrer] of [
   assert.equal(t.visit({ path: '/', referrer: `${SHOP}/shop_join`, loggedIn: true, now: 6 * MIN }), MAIN_CARE);
 }
 
-console.log('shop bridge: 쇼핑몰 Footer Code — 21개 흐름 통과(돌아다니기 3개·소셜 로그인 5개 포함), 문서 해시 일치');
+// ── 로그인 판별 — 2026-10-20 쇼핑몰이 공개된 것을 보고 로그아웃 상태를 확인했더니, 로그아웃 화면에도 숨은 로그아웃 링크가 1개 있어
+//    링크로 판단하던 v1·v2 가 방문자 모두를 로그인으로 오판했다(본 사이트에 '마이페이지'가 뜸). 로그인 여부는 window.MEMBER_UID 로 본다 ──
+// 22. 로그아웃 방문자는 로그인으로 오판하지 않는다 — 로그인 표시를 켜지 않고 끄며, 복귀 주소로 보내지 않는다
+{
+  const t = browser();
+  assert.equal(t.visit({ path: '/', loggedIn: false, now: 0 }), null);
+  assert.ok(t.cookies.includes(COOKIE_OFF), '로그아웃 화면에서 로그인 표시를 끄지 않았다');
+  assert.ok(!t.cookies.some((c) => c.startsWith('bd_login=1')), '로그아웃 방문자에게 로그인 표시를 켰다');
+  t.visit({ path: '/login', referrer: MAIN_CARE, now: 1 * MIN });
+  assert.ok(stored(t), '로그아웃 화면 /login 에서 복귀 주소를 못 저장했다');
+  assert.equal(t.visit({ path: '/', loggedIn: false, referrer: `${SHOP}/login`, now: 2 * MIN }), null, '로그아웃 방문자를 본 사이트로 보냈다');
+}
+// 23. 변수가 아직 없으면 load 에서 다시 본다(로그인 변수가 늦게 생기는 경우)
+{
+  const t = browser();
+  put(t, MAIN_CARE);
+  assert.equal(t.visit({ now: 1 * MIN, uid: 'none', lateUid: 'm20261019abcdef1234567' }), MAIN_CARE, '늦게 생긴 로그인 변수를 load 에서 못 봤다');
+  assert.ok(t.cookies.includes(COOKIE_ON));
+  const o = browser();
+  o.visit({ now: 0, uid: 'none', lateUid: '' });
+  assert.ok(o.cookies.includes(COOKIE_OFF), '늦게 생긴 빈 변수(로그아웃)를 load 에서 못 봤다');
+}
+// 24. 로그인 상태를 알 수 없으면(변수가 끝내 없거나 문자열이 아니다) 쿠키·저장값·이동 어느 것도 건드리지 않는다
+for (const bad of ['none', null, 0, 12345, {}, ['x']]) {
+  const t = browser();
+  put(t, MAIN_CARE);
+  const label = bad === 'none' ? '변수 없음' : JSON.stringify(bad);
+  assert.equal(t.visit({ now: 1 * MIN, uid: bad, lateUid: 'none' }), null, `상태를 모르는데(${label}) 보냈다`);
+  assert.equal(t.cookies.length, 0, `상태를 모르는데(${label}) 쿠키를 건드렸다`);
+  assert.equal(t.store.size, 1, `상태를 모르는데(${label}) 저장값을 건드렸다`);
+}
+
+console.log('shop bridge: 쇼핑몰 Footer Code — 24개 흐름 통과(돌아다니기 3개·소셜 로그인 5개·로그인 판별 3개 포함), 문서 해시 일치');
