@@ -10,9 +10,11 @@ import PageHero from '../../components/v2/PageHero.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
 import { loadFaqPage, renderFaqMd, faqPlainText, FAQ_CATEGORIES } from '../../lib/faq.ts';
 import { normFaq } from '../../scripts/faq-rank';
-import { SITE_CONFIG } from '../../config.js';
+import { SITE_CONFIG, shopHref } from '../../config.js';
 
 const items = loadFaqPage();
+// 쇼핑몰 질문 게시판 — 값이 없으면 링크를 그리지 않는다(DESIGN.md §6 예외, docs/shop-question-board.md)
+const boardHref = shopHref(SITE_CONFIG.SHOP_BOARD_PATH);
 /** 분류마다 처음 보이는 문항 수 — 나머지는 'N개 더 보기'로 접힌다 */
 const FAQ_VISIBLE = 5;
 
@@ -338,6 +340,14 @@ if (items.length) {
           <p class="faq-page__pending-title">질문 목록을 준비하고 있습니다.</p>
           <button disabled aria-describedby="chat-unavailable" type="button" class="bd-cta" data-chat-tree="menu">바로 문의하기<svg class="br-cta-arrow" aria-hidden="true" viewBox="0 0 10 10" width="10" height="10" fill="none"><path d="M0 5h7" /><path d="M1 1l4 4-4 4" /></svg></button>
         </div>
+      )}
+
+      {/* 글로 남기는 질문 — 쇼핑몰의 회원 전용 게시판으로 가는 보조 링크. 접수 창구가 아니다(접수는 챗봇·채널톡, DESIGN.md §6 예외) */}
+      {boardHref && items.length > 0 && (
+        <p class="faq-board">
+          <span class="faq-board__t">질문 게시판은 로그인한 회원이 글로 질문을 남기는 곳입니다.</span>
+          <a class="br-pill" href={boardHref} rel="noopener">질문 게시판 <span aria-hidden="true">→</span></a>
+        </p>
       )}
     </div>
   </section>
@@ -916,6 +926,9 @@ if (items.length) {
   .faq-more summary:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; border-radius: 4px; }
   .faq-more[open] .faq-more__open,
   .faq-more:not([open]) .faq-more__close { display: none; }
+
+  .faq-board { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; margin: 48px 0 0; }
+  .faq-board__t { font-size: 15px; line-height: 1.6; color: var(--br-ink-sub); }
 
   .faq-page__pending { text-align: center; padding: 24px 0; }
   .faq-page__pending-title { font-size: 20px; font-weight: 700; color: var(--br-ink); margin-bottom: 24px; }
