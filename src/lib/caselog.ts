@@ -63,6 +63,24 @@ export const REGIONS: { region: string; records: LogRecord[]; complexes: Complex
   .map(([region, records]) => ({ region, records, complexes: COMPLEXES.filter((c) => c.region === region) }))
   .sort((a, b) => provRank(a.region) - provRank(b.region) || b.records.length - a.records.length);
 
+/** 시공사례 구분 — 공간(space·sp) 값으로 가른다. 아파트 / 주택 / 빌라 / 오피스텔 / 상업용(사무실·상가·병원·공장·학원·매장 등). 공간을 모르는 기록은 '전체'에만 보인다 */
+export type Kind = 'apt' | 'house' | 'villa' | 'officetel' | 'biz';
+export const KINDS: { key: Kind; label: string }[] = [
+  { key: 'apt', label: '아파트' },
+  { key: 'house', label: '주택' },
+  { key: 'villa', label: '빌라' },
+  { key: 'officetel', label: '오피스텔' },
+  { key: 'biz', label: '상업용' },
+];
+export const kindOf = (space?: string): Kind | undefined => {
+  if (!space) return undefined;
+  if (space === '아파트') return 'apt';
+  if (space === '주택') return 'house';
+  if (space === '빌라') return 'villa';
+  if (space === '오피스텔') return 'officetel';
+  return 'biz';
+};
+
 /** 한 묶음의 집계 — 문장·표에 쓰는 숫자는 여기서만 나온다 */
 export function stats(records: LogRecord[]) {
   const dates = records.map((r) => r.d).sort();
