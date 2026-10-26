@@ -1,6 +1,7 @@
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import { SITE_CONFIG } from './src/config.js';
+import rehypeLiteralTilde from './scripts/rehype-literal-tilde.mjs';
 
 // 루트 도메인 baramdaero.com — sitemap·robots·JSON-LD·OG 절대 URL 기준.
 // DNS 연결 전에도 이 값 유지 (Pages 커스텀 도메인은 public/CNAME).
@@ -25,7 +26,8 @@ export default defineConfig({
   site,
   trailingSlash: 'ignore',
   integrations: [sitemap()],
-  markdown: { rehypePlugins: [rehypeLazyImages] },
+  // rehypeLiteralTilde: '5~5.5cm' 같은 범위가 취소선으로 렌더되는 것을 막는다(원문 md 는 그대로, scripts/rehype-literal-tilde.mjs)
+  markdown: { rehypePlugins: [rehypeLazyImages, rehypeLiteralTilde] },
   // 2026-09-30 구조 정리 — 합친 페이지의 옛 주소는 새 자리로 보낸다(외부 링크·검색 결과 보존)
   redirects: {
     '/story': '/',
