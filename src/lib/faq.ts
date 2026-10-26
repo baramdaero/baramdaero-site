@@ -183,6 +183,7 @@ export function faqPlainText(src: string): string {
     .replace(/^##\s+/gm, '')
     .replace(/^\-\s+/gm, '')
     .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/^\|[\s\-|:]+\|$/gm, '')   // 표 구분 행(|---|---|) — 화면 표(renderFaqMd)도 같은 모양을 거른다
     .replace(/^\|.*\|$/gm, (row) => row.replace(/\|/g, ' ').trim())
     .replace(/\s+/g, ' ')
     .trim();
