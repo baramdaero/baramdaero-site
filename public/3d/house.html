@@ -497,15 +497,14 @@ if (EMBED) {
   // 무대에서 끊는다(확대도 preventDefault 도 하지 않는다). 가운데 버튼 끌기도 확대라 같이 끈다
   stage.addEventListener('wheel', e => e.stopPropagation(), { capture: true, passive: true });
   controls.mouseButtons.MIDDLE = null;
-  // 캔버스에 두 손가락이면 브라우저가 페이지를 밀거나 키우지 않게 막는다(한 손가락 세로 스와이프는 그대로 페이지로)
+  // 캔버스에 두 손가락이면 브라우저가 페이지를 밀거나 키우지 않게 막는다(한 손가락 세로 스와이프는 그대로 페이지로).
+  // 두 손가락 확대·이동은 OrbitControls 의 DOLLY_PAN 을 끄고 직접 한다(2026-10-27 대표 '확대·축소가 하고 싶은 데서 안 되고 한 지점에서만 된다·위치를 못 옮긴다·시야가 이상한 데로 간다')
+  // — 지도 앱처럼 처음 짚은 바닥 점이 손가락 가운데 밑에 그대로 남도록 확대·축소·이동을 한 번에 푼다(mapMove). 시선 방향은 두 손가락으로 바꾸지 않는다(돌리기는 한 손가락)
+  controls.touches.TWO = -1;
   canvas.addEventListener('touchmove', e => {
     if (e.targetTouches.length < 2) return;
     if (e.cancelable) e.preventDefault();
-    // 처음 구도에서는 손가락 간격이 10px 넘게 달라지기 전까지 확대로 치지 않는다 — OrbitControls 는 손가락 하나가 움직일 때마다 간격을 다시 재서,
-    // 두 손가락을 나란히 밀기만 해도(먼저 온 쪽이 좁힘 → 처음 구도라 잘림, 둘째가 넓힘) 확대가 남았다. 이미 확대한 구도에서는 좁힘·넓힘이 서로 지워져 필요 없다
-    if (tween) return;
-    if (zoomHold) { const [a, b] = e.targetTouches; if (Math.abs(Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) - zoomHold.gap) < 10) { camera.position.copy(zoomHold.pos); controls.target.copy(zoomHold.tgt); controls.update(); return; } zoomHold = null; }
-    zoomTrack();
+    mapMove(e.targetTouches);
   }, { passive: false });
   for (const ev of ['gesturestart', 'gesturechange']) canvas.addEventListener(ev, e => e.preventDefault());
 }
@@ -1282,6 +1281,42 @@ function zoomBound(aim) { // aim: 확대·축소하는 중(조준을 다시 잡�
   for (const a of ['x', 'y', 'z']) if (Math.abs(o[a]) > 1e-6) out = Math.min(out, ((o[a] > 0 ? box.max[a] + 1 : box.min[a] - 1) - t[a]) / o[a]);
   if (d < out) camera.position.copy(t).addScaledVector(o, Math.min(out, controls.maxDistance));
 }
+// 두 손가락 지도식 조작(embed 전체 보기). 처음 짚은 바닥 점 P0 가 손가락 가운데 밑에 그대로 남도록, 시선 방향은 두고 카메라 자리와 조준을 푼다:
+//   거리 = 처음 거리 × (처음 손가락 간격 ÷ 지금 간격)  — 벌리면 가까이, 오므리면 멀리
+//   조준 T 는 높이 y0(처음 구도의 조준 높이)의 면 위, 카메라 C = T − 시선·거리. 손가락 가운데를 지나는 광선이 P0 를 지나도록 C.y 에서 광선 길이를 구한다
+// 확대·축소·이동이 같은 식이라 손가락 자리가 곧 확대 중심이고, 나란히 밀면 이동이다. 모형 상자 밖으로는 못 민다(지도 앱과 같다), 다 오므리면 처음 조준으로 모인다
+let mg = null;
+const mgCam = new THREE.PerspectiveCamera();
+function mapStart(ts) {
+  mg = null;
+  if (!zoomHome || tween || ts.length < 2) return;
+  const r = canvas.getBoundingClientRect(), [a, b] = ts, gap = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  if (gap < 8) return;
+  const y0 = zoomHome.tgt.y, f = controls.target.clone().sub(camera.position).normalize();
+  if (f.y > -.05) return; // 거의 수평 시선이면 바닥 점이 정해지지 않는다(전체 보기는 내려다보는 구도라 늘 아래쪽)
+  ndc.set(((a.clientX + b.clientX) / 2 - r.left) / r.width * 2 - 1, -(((a.clientY + b.clientY) / 2 - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const P0 = new THREE.Vector3();
+  if (!ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -y0), P0)) P0.copy(controls.target);
+  mg = { gap, P0, f, y0, dist0: camera.position.distanceTo(controls.target), q: camera.quaternion.clone(), left: r.left, top: r.top, w: r.width, h: r.height };
+}
+function mapMove(ts) {
+  if (!mg || !zoomHome || tween || ts.length < 2) return;
+  const [a, b] = ts, gap = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  if (gap < 8) return;
+  const dist = clamp(mg.dist0 * mg.gap / gap, controls.minDistance, controls.maxDistance);
+  mgCam.copy(camera); mgCam.position.set(0, 0, 0); mgCam.quaternion.copy(mg.q); mgCam.updateMatrixWorld(true); // 시선은 처음 그대로 — 광선 방향만 얻는다
+  ndc.set(((a.clientX + b.clientX) / 2 - mg.left) / mg.w * 2 - 1, -(((a.clientY + b.clientY) / 2 - mg.top) / mg.h) * 2 + 1);
+  ray.setFromCamera(ndc, mgCam);
+  const r1 = ray.ray.direction;
+  if (r1.y > -1e-3) return; // 손가락 가운데가 지평선 위로 올라간 순간은 건너뛴다
+  const cy = mg.y0 - mg.f.y * dist, C = mg.P0.clone().addScaledVector(r1, -(mg.P0.y - cy) / r1.y), T = C.clone().addScaledVector(mg.f, dist);
+  const box = zoomHome.box, sz = box.getSize(new THREE.Vector3()), k = clamp((dist / controls.maxDistance - .88) / .12, 0, 1);
+  T.x = clamp(T.x, box.min.x - sz.x * .12, box.max.x + sz.x * .12); T.z = clamp(T.z, box.min.z - sz.z * .12, box.max.z + sz.z * .12);
+  if (k) { T.x = lerp(T.x, zoomHome.tgt.x, k * k); T.z = lerp(T.z, zoomHome.tgt.z, k * k); } // 다 오므리면 처음 조준 — 처음 구도로 돌아간다
+  camera.position.copy(T).addScaledVector(mg.f, -dist); controls.target.copy(T); controls.update();
+  zoomD = dist; zoomNote();
+}
 // 확대한 채 다른 곳으로 떠나면 먼저 처음 구도로 물러난 뒤 간다(0.42초, 방향은 그대로) — 승인된 비행 경로·시간은 처음 거리에서 출발하는 것이다
 function unzoom(go, ms = 420) {
   if (tween?.unzoom) { tween.then = go; return true; }
@@ -1299,7 +1334,7 @@ function configControls(kind, pose) {
     const dir = pose.tgt.clone().sub(pose.pos).normalize();
     controls.target.copy(pose.pos).addScaledVector(dir, .01);
   } else {
-    Object.assign(controls, { enablePan: kind === 'house', enableZoom: true, rotateSpeed: .55, minDistance: kind === 'ou' ? 2 : 6, maxDistance: kind === 'ou' ? 14 : 90, minPolarAngle: .1, maxPolarAngle: 1.36 });
+    Object.assign(controls, { enablePan: kind === 'house', enableZoom: true, zoomToCursor: kind === 'house' && !EMBED, rotateSpeed: .55, minDistance: kind === 'ou' ? 2 : 6, maxDistance: kind === 'ou' ? 14 : 90, minPolarAngle: .1, maxPolarAngle: 1.36 });
     controls.target.copy(pose.tgt);
   }
   // 사이트 안(embed): 휠은 페이지 스크롤(스크롤 하이재킹 금지). 전체 보기에서만 두 손가락 확대를 받는다 — 손가락 자리로 들어가고, 처음 구도보다 멀어지지 않는다
@@ -1399,13 +1434,37 @@ function syncUI() {
   $('hint').textContent = state.mode === 'room' ? '드래그로 방 안 둘러보기 · Esc 전체 보기' : state.mode === 'ou' ? '드래그 회전 · 휠 확대 · Esc 전체 보기' : '방 바닥을 누르면 그 방 안 시점으로 이동 · 드래그 회전 · 휠 확대';
   document.querySelectorAll('.room-btn').forEach(b => b.setAttribute('aria-current', String(b.dataset.room === state.room)));
 }
-function goRoom(id, viewIdx = 0) {
+// 전체 보기에서 방 바닥을 누르면 그 방의 기본 시점이 아니라 누른 자리에 서서 들어간다(2026-10-27 대표 '바닥이나 공간을 누르면 그 위치로 이동').
+// 눈높이·내려다보는 기울기는 기본 시점 그대로, 벽에서 0.4m 는 띄운다. 방향은 보던 방향(전체 보기 카메라의 수평 방향) — 그쪽이 벽·유리 앞 1.8m 안이면
+// 방 가운데 쪽, 그것도 막히면 가장 트인 쪽으로 돌려 세운다(기본 시점의 방향을 그대로 쓰면 벽 앞에 서서 벽만 보였다). 기본 시점과 거의 같은 자리거나
+// 방이 좁으면 기본 시점(에어컨 정면 구도가 가장 잘 짜여 있다)
+function enterSpot(id, viewIdx, at) {
+  const base = roomPose(id, viewIdx), [x0, y0, x1, y1] = bbox(rooms[id].polygon), m = 400;
+  const pos = V(clamp(at.x * 1000, x0 + m, x1 - m), clamp(-at.z * 1000, y0 + m, y1 - m), base.pos.y * 1000);
+  if (pos.distanceTo(base.pos) < .6) return null;
+  const bx0 = x0 / 1000, bx1 = x1 / 1000, bz0 = -y1 / 1000, bz1 = -y0 / 1000; // 월드 좌표의 방 상자(방은 모두 사각형)
+  const free = (dx, dz) => Math.min(dx > 1e-6 ? (bx1 - pos.x) / dx : dx < -1e-6 ? (bx0 - pos.x) / dx : Infinity, dz > 1e-6 ? (bz1 - pos.z) / dz : dz < -1e-6 ? (bz0 - pos.z) / dz : Infinity);
+  const h0 = camera.getWorldDirection(new THREE.Vector3()), hl0 = Math.hypot(h0.x, h0.z);
+  const cx = (bx0 + bx1) / 2 - pos.x, cz = (bz0 + bz1) / 2 - pos.z, cl = Math.hypot(cx, cz);
+  const cands = [];
+  if (hl0 > .2) cands.push([h0.x / hl0, h0.z / hl0]);
+  if (cl > 1) cands.push([cx / cl, cz / cl]);
+  cands.push([1, 0], [-1, 0], [0, 1], [0, -1]);
+  const fr = cands.map(c => free(c[0], c[1])), best = Math.max(...fr);
+  if (best < 2.2) return null; // 좁은 방(어느 쪽을 봐도 2.2m 안에 벽)은 기본 시점이 낫다 — 한 귀퉁이에서 방을 가로질러 보게 짜여 있다
+  const pick = cands[fr.findIndex(v => v >= Math.max(1.8, best * .8))]; // 보던 방향을 먼저, 막히면 가장 트인 쪽
+  const bd = base.tgt.clone().sub(base.pos), tilt = bd.y / Math.max(.2, Math.hypot(bd.x, bd.z)); // 기본 시점의 내려다보는 기울기
+  return { pos, dir: new THREE.Vector3(pick[0], tilt, pick[1]).normalize() };
+}
+function goRoom(id, viewIdx = 0, at = null) {
   if (!CLICKABLE.has(id)) return;
-  if (unzoom(() => goRoom(id, viewIdx))) return;
+  if (unzoom(() => goRoom(id, viewIdx, at))) return;
+  pendingSpot = null;
   introPending = false;
   const list = $('listSheet');
   if (!narrow() && !list.hasAttribute('data-collapsed')) { list.setAttribute('data-collapsed', ''); $('listGrab').setAttribute('aria-expanded', 'false'); state.autoCollapsed = true; }
   state.mode = id === OU.room ? 'ou' : 'room'; state.room = id; state.view = viewIdx; state.spot = null;
+  if (at && EMBED && state.mode === 'room') state.spot = enterSpot(id, viewIdx, at);
   setHover(null);
   syncUI();
   renderDetail(id, viewIdx);
@@ -1420,6 +1479,7 @@ function goRoom(id, viewIdx = 0) {
 // 방 안에서 지금 방의 바닥을 누르면 그 자리로 걸어간다(2026-10-13 대표 '방 바닥을 클릭하면 그쪽으로'). 보던 방향·눈높이 그대로, 벽에서 0.4m 는 띄운다(방은 모두 사각형)
 // ponytail: 가구는 안 피한다(보이는 바닥만 누를 수 있어 서는 자리는 대개 빈 곳) — 가구 속에 서는 일이 생기면 가구 상자와도 거리를 둔다
 function goSpot(p) {
+  ripple(p);
   const [x0, y0, x1, y1] = bbox(rooms[state.room].polygon), m = 400;
   const pos = V(clamp(p.x * 1000, x0 + m, x1 - m), clamp(-p.z * 1000, y0 + m, y1 - m), camera.position.y * 1000), d = pos.distanceTo(camera.position);
   if (d < .25) return; // 제자리
@@ -1441,6 +1501,7 @@ function goSpot(p) {
 }
 function goHome() {
   if (state.mode === 'house' && !tween) return;
+  pendingSpot = null;
   state.mode = 'house'; state.room = null; state.spot = null;
   setHover(null); // 방 안에서 짚어 둔 옆 방 강조가 나가는 비행 내내 남지 않게
   if (state.autoCollapsed) { $('listSheet').removeAttribute('data-collapsed'); $('listGrab').setAttribute('aria-expanded', 'true'); state.autoCollapsed = false; }
@@ -1491,13 +1552,19 @@ setBlend(0);
 /* ============ interaction ============ */
 const ray = new THREE.Raycaster();
 const ndc = new THREE.Vector2();
-let pointer = null, down = null, spot = null; // spot = 방 안에서 맨 앞에 보이는 것이 지금 방의 바닥(러그 포함)일 때 그 점 — 누르면 그리로 걸어간다(pick 이 채운다)
+// floorHit = 맨 앞이 바닥일 때 그 점(전체 보기에서 누른 자리로 들어가는 데 쓴다) · pendingSpot = 방으로 들어오는 동안 짚은 바닥 자리(도착하면 걸어간다)
+let pointer = null, down = null, spot = null, floorHit = null, pendingSpot = null; // spot = 방 안에서 맨 앞에 보이는 것이 지금 방의 바닥(러그 포함)일 때 그 점 — 누르면 그리로 걸어간다(pick 이 채운다)
 // 카메라 자리에서 p 쪽으로 가되 p 앞 back m 에서 멈추는 자리(바닥 높이는 goSpot 이 눈높이로 바꾼다). 이미 그 안이면 제자리
 const standBefore = (p, back) => { const c = camera.position, dx = p.x - c.x, dz = p.z - c.z, L = Math.hypot(dx, dz), k = L > back ? (L - back) / L : 0; return new THREE.Vector3(c.x + dx * k, 0, c.z + dz * k); };
+// 걸어갈 자리 표시: 누른 바닥에 틸 고리가 퍼지며 사라진다 — 걷는 데 0.5~1.7초 걸려 눌렀는데 반응이 없는 것처럼 보이던 것(2026-10-27 대표 '바닥을 눌러도 그 위치로 제대로 안 간다')
+const rippleM = new THREE.Mesh(new THREE.RingGeometry(.1, .16, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x004E64, transparent: true, opacity: 0, depthWrite: false, depthTest: false }));
+rippleM.visible = false; rippleM.renderOrder = 20; scene.add(rippleM);
+let rippleT = 0;
+function ripple(p) { rippleM.position.set(p.x, .03, p.z); rippleT = performance.now(); rippleM.visible = true; invalidate(); }
 function pick(e) {
   const r = canvas.getBoundingClientRect();
   ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
-  ray.setFromCamera(ndc, camera); spot = null;
+  ray.setFromCamera(ndc, camera); spot = null; floorHit = null;
   // 실내기를 먼저 맞춘다 — 천장에 떠 있어 바닥만 맞추면 광선이 실내기를 지나 뒤쪽 바닥(옆 방)에 닿았다(2026-10-02 실측 5대 중 2대만 맞음)
   // 면만 친다: 바람 표시 외곽선(선)은 판정 폭이 1m 라 손가락 밑이 옆 방 바닥이어도 걸렸다(전체 보기에서 누른 곳 다섯에 하나가 옆 방으로 갔다).
   // 숨겨 둔 것(방 안의 천장 속 본체·바람 표시)도 뺀다 — 보이는 것만 맞힌 것으로 친다
@@ -1509,7 +1576,7 @@ function pick(e) {
     if (u && CLICKABLE.has(u.room)) { id = u.room; at = a.distance; acPt = a.point; }
   }
   const f = !id && ray.intersectObjects(floorMeshes, false)[0];
-  if (f) { id = f.object.userData.room; at = f.distance; }
+  if (f) { id = f.object.userData.room; at = f.distance; floorHit = f.point; }
   if (state.mode !== 'room') return state.mode === 'house' ? id : null; // 실외기실 시점에서는 누르기가 없다(예전 그대로)
   // 방 안(2026-10-12 대표 '안에서 터치하면 그 공간으로'): 벽·반자가 선 채라 광선이 그것을 지나 옆 방에 닿는다 — 맨 앞에 보이는 것으로 정한다.
   // 벽·반자가 앞이면 없음, 가구가 앞이면 그 가구가 놓인 방(식탁을 눌러 주방으로), 지금 있는 방과 실외기실은 고르지 않는다
@@ -1545,19 +1612,12 @@ canvas.addEventListener('pointerleave', () => { pointer = null; setHover(null); 
 canvas.addEventListener('touchstart', e => {
   if (e.targetTouches.length < 2) return;
   down = null;
-  if (!controls.enableZoom) controls.enableRotate = false;
-  if (zoomHome && !tween) {
-    const [a, b] = e.targetTouches, { q, h, far } = zoomAim(), f = controls.target.clone().sub(camera.position).normalize();
-    zoomD = camera.position.distanceTo(controls.target); zoomFar = far;
-    // 가까이 한계는 이 손짓 동안 '지금 모형까지의 거리'보다 깊지 않게 잡는다. 확대한 뒤 돌리면 그 거리가 본래 한계보다 짧아져 있을 수 있는데,
-    // 본래 한계를 그대로 쓰면 오므림만 먹고 벌림은 막혀 손가락 떨림에 화면이 뒤로 흘러간다(한 번에 맞추면 카메라가 튄다)
-    controls.minDistance = Math.min(zoomMin, Math.max(1, q.multiply(h).add(zoomHome.tgt).sub(camera.position).dot(f)));
-    zoomHold = zoomD > controls.maxDistance * .999 ? { gap: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY), pos: camera.position.clone(), tgt: controls.target.clone() } : null;
-  }
+  controls.enableRotate = false; // 둘째 손가락이 닿으면 손가락을 다 뗄 때까지 회전은 멈춘다 — 한 손가락만 남아도 갑자기 돌지 않게
+  mapStart(e.targetTouches);
 }, { passive: true });
 for (const ev of ['touchend', 'touchcancel']) canvas.addEventListener(ev, e => {
   if (e.targetTouches.length) return;
-  controls.enableRotate = true; zoomHold = null;
+  controls.enableRotate = true; mg = null;
   // 조금만(10% 안) 확대한 채 손을 떼면 마저 처음 구도로(짧게 0.22초) — 거의 같은 구도인데 문구만 숨은 채 남거나 어정쩡하게 커진 채 남지 않게
   if (zoomHome && !tween && camera.position.distanceTo(controls.target) > controls.maxDistance * .9) unzoom(() => {}, 220);
   zoomNote(true);
@@ -1567,9 +1627,14 @@ canvas.addEventListener('pointerup', e => {
   // 전체 보기에서는 카메라가 움직이는 중(인트로·화면 맞춤)에도 탭을 받는다 — flyTo 가 진행 중 전환을 이어받는다(10-02 '첫 탭이 안 먹음').
   // 방 안에서는 멈춰 있을 때만: 보이는 다른 방을 누르면 그 방으로 옮겨 간다
   if (e.pointerType === 'mouse') { pointer = e; invalidate(); } // 끌어 돌린 뒤 마우스를 안 움직여도 놓은 자리로 표시를 다시 잡는다
-  if (!down || (state.mode !== 'house' && tween && !tween.walk)) { down = null; return; } // 걷는 도중의 탭은 받는다(새 자리로 이어 간다)
-  const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
-  if (moved < (e.pointerType === 'touch' ? 12 : 6) && performance.now() - down.t < (e.pointerType === 'touch' ? 900 : 600)) /* 손가락 떨림 5~15px 로 탭이 버려지던 것 */ { const id = pick(e); if (id) goRoom(id); else if (spot && down.far < (e.pointerType === 'touch' ? 12 : 6)) goSpot(spot); } // 걸어가기는 누른 동안 가장 멀리 간 거리로도 본다 — 흔들다 제자리에서 뗀 끌기는 탭이 아니다
+  if (!down) return;
+  const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y), touch = e.pointerType === 'touch';
+  const isTap = moved < (touch ? 14 : 6) && performance.now() - down.t < (touch ? 900 : 600); // 손가락 떨림 5~15px 로 탭이 버려지던 것
+  if (state.mode !== 'house' && tween && !tween.walk) { // 방으로 들어오는 중에 짚은 바닥은 기억해 두었다 도착하면 그리로 걸어간다(예전에는 그냥 버렸다)
+    if (isTap && down.far < (touch ? 14 : 6)) { pick(e); pendingSpot = spot ? spot.clone() : null; }
+    down = null; return;
+  }
+  if (isTap) { const id = pick(e); if (id) { if (floorHit && state.mode === 'house') ripple(floorHit); goRoom(id, 0, state.mode === 'house' ? floorHit : null); } else if (spot && down.far < (touch ? 14 : 6)) goSpot(spot); } // 걸어가기는 누른 동안 가장 멀리 간 거리로도 본다 — 흔들다 제자리에서 뗀 끌기는 탭이 아니다
   down = null;
 });
 $('btnHome').addEventListener('click', goHome);
@@ -1626,7 +1691,7 @@ function tick(now) {
     setBlend(tween.intro ? clamp(1 - e / .03, 0, 1) : clamp(lerp(tween.k0, tween.kTo, e) - (tween.dip ? .75 * Math.sin(Math.PI * e) : 0), 0, 1));
     if (tween.o0) { const o = tween.o1; applyViewport({ w: o.w, h: o.h, a: lerp(tween.o0.a, o.a, e), b: lerp(tween.o0.b, o.b, e), top: lerp(tween.o0.top, o.top, e), bot: lerp(tween.o0.bot, o.bot, e) }); }
     if (tween.postHome && (state.k < .3 || t >= 1)) { tween.postHome = false; post({ type: 'home' }); }
-    if (t >= 1) { const p = tween.pose, then = tween.then; tween = null; arrived = p.kind || 'house'; setBlend(p.kind === 'room' ? 1 : 0); configControls(state.mode, p); then?.(); }
+    if (t >= 1) { const p = tween.pose, then = tween.then; tween = null; arrived = p.kind || 'house'; setBlend(p.kind === 'room' ? 1 : 0); configControls(state.mode, p); then?.(); if (pendingSpot && !tween && state.mode === 'room') { const ps = pendingSpot; pendingSpot = null; goSpot(ps); } }
   } else {
     moving = controls.update(); // 댐핑 꼬리가 남아 있으면 true
     zoomBound();
@@ -1640,6 +1705,7 @@ function tick(now) {
       l.el.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px) translate(-50%,-50%)`;
     }
   }
+  if (rippleM.visible) { const rk = (now - rippleT) / 700; if (rk >= 1) rippleM.visible = false; else { rippleM.scale.setScalar(1 + 5 * (1 - Math.pow(1 - rk, 3))); rippleM.material.opacity = .85 * (1 - rk); moving = true; } }
   camera.getWorldDirection(fwd); fwd.y = 0;
   if (fwd.lengthSq() > 1e-8) { // 정수리에서 내려다보면 수평 성분이 0 -> normalize 가 NaN, 나침반 transform 이 깨진다
     fwd.normalize();
