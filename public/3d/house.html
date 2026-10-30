@@ -498,7 +498,7 @@ if (EMBED) {
   stage.addEventListener('wheel', e => e.stopPropagation(), { capture: true, passive: true });
   controls.mouseButtons.MIDDLE = null;
   // 캔버스에 두 손가락이면 브라우저가 페이지를 밀거나 키우지 않게 막는다(한 손가락 세로 스와이프는 그대로 페이지로).
-  // 두 손가락 확대·이동은 OrbitControls 의 DOLLY_PAN 을 끄고 직접 한다(2026-10-27 대표 '확대·축소가 하고 싶은 데서 안 되고 한 지점에서만 된다·위치를 못 옮긴다·시야가 이상한 데로 간다')
+  // 두 손가락 확대·이동은 OrbitControls 의 DOLLY_PAN 을 끄고 직접 한다
   // — 지도 앱처럼 처음 짚은 바닥 점이 손가락 가운데 밑에 그대로 남도록 확대·축소·이동을 한 번에 푼다(mapMove). 시선 방향은 두 손가락으로 바꾸지 않는다(돌리기는 한 손가락)
   controls.touches.TWO = -1;
   canvas.addEventListener('touchmove', e => {
@@ -1434,7 +1434,7 @@ function syncUI() {
   $('hint').textContent = state.mode === 'room' ? '드래그로 방 안 둘러보기 · Esc 전체 보기' : state.mode === 'ou' ? '드래그 회전 · 휠 확대 · Esc 전체 보기' : '방 바닥을 누르면 그 방 안 시점으로 이동 · 드래그 회전 · 휠 확대';
   document.querySelectorAll('.room-btn').forEach(b => b.setAttribute('aria-current', String(b.dataset.room === state.room)));
 }
-// 전체 보기에서 방 바닥을 누르면 그 방의 기본 시점이 아니라 누른 자리에 서서 들어간다(2026-10-27 대표 '바닥이나 공간을 누르면 그 위치로 이동').
+// 전체 보기에서 방 바닥을 누르면 그 방의 기본 시점이 아니라 누른 자리에 서서 들어간다.
 // 눈높이·내려다보는 기울기는 기본 시점 그대로, 벽에서 0.4m 는 띄운다. 방향은 보던 방향(전체 보기 카메라의 수평 방향) — 그쪽이 벽·유리 앞 1.8m 안이면
 // 방 가운데 쪽, 그것도 막히면 가장 트인 쪽으로 돌려 세운다(기본 시점의 방향을 그대로 쓰면 벽 앞에 서서 벽만 보였다). 기본 시점과 거의 같은 자리거나
 // 방이 좁으면 기본 시점(에어컨 정면 구도가 가장 잘 짜여 있다)
@@ -1556,7 +1556,7 @@ const ndc = new THREE.Vector2();
 let pointer = null, down = null, spot = null, floorHit = null, pendingSpot = null; // spot = 방 안에서 맨 앞에 보이는 것이 지금 방의 바닥(러그 포함)일 때 그 점 — 누르면 그리로 걸어간다(pick 이 채운다)
 // 카메라 자리에서 p 쪽으로 가되 p 앞 back m 에서 멈추는 자리(바닥 높이는 goSpot 이 눈높이로 바꾼다). 이미 그 안이면 제자리
 const standBefore = (p, back) => { const c = camera.position, dx = p.x - c.x, dz = p.z - c.z, L = Math.hypot(dx, dz), k = L > back ? (L - back) / L : 0; return new THREE.Vector3(c.x + dx * k, 0, c.z + dz * k); };
-// 걸어갈 자리 표시: 누른 바닥에 틸 고리가 퍼지며 사라진다 — 걷는 데 0.5~1.7초 걸려 눌렀는데 반응이 없는 것처럼 보이던 것(2026-10-27 대표 '바닥을 눌러도 그 위치로 제대로 안 간다')
+// 걸어갈 자리 표시: 누른 바닥에 틸 고리가 퍼지며 사라진다 — 걷는 데 0.5~1.7초 걸려 눌렀는데 반응이 없는 것처럼 보이던 것
 const rippleM = new THREE.Mesh(new THREE.RingGeometry(.1, .16, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x004E64, transparent: true, opacity: 0, depthWrite: false, depthTest: false }));
 rippleM.visible = false; rippleM.renderOrder = 20; scene.add(rippleM);
 let rippleT = 0;

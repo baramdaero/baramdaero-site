@@ -567,7 +567,7 @@ if (EMBED) {
   stage.addEventListener('wheel', e => e.stopPropagation(), { capture: true, passive: true });
   controls.mouseButtons.MIDDLE = null;
   // 캔버스에 두 손가락이면 브라우저가 페이지를 밀거나 키우지 않게 막는다(한 손가락 세로 스와이프는 그대로 페이지로).
-  // 두 손가락 확대·이동은 OrbitControls 의 DOLLY_PAN 을 끄고 직접 한다(2026-10-27 대표 '확대·축소가 하고 싶은 데서 안 되고 한 지점에서만 된다·위치를 못 옮긴다·시야가 이상한 데로 간다')
+  // 두 손가락 확대·이동은 OrbitControls 의 DOLLY_PAN 을 끄고 직접 한다
   // — 지도 앱처럼 처음 짚은 바닥 점이 손가락 가운데 밑에 그대로 남도록 확대·축소·이동을 한 번에 푼다(mapMove). 시선 방향은 두 손가락으로 바꾸지 않는다(돌리기는 한 손가락)
   controls.touches.TWO = -1;
   canvas.addEventListener('touchmove', e => {
