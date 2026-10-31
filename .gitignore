@@ -16,3 +16,7 @@ skills-lock.json
 
 # Local photo replacement backups
 .photo-editor-backups/
+
+# 로컬 작업물·브라우저 도구 산출물 — 공개 레포 금지
+/work/
+.playwright-mcp/

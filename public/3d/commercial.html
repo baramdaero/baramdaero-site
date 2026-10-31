@@ -566,15 +566,14 @@ if (EMBED) {
   // 무대에서 끊는다(확대도 preventDefault 도 하지 않는다). 가운데 버튼 끌기도 확대라 같이 끈다
   stage.addEventListener('wheel', e => e.stopPropagation(), { capture: true, passive: true });
   controls.mouseButtons.MIDDLE = null;
-  // 캔버스에 두 손가락이면 브라우저가 페이지를 밀거나 키우지 않게 막는다(한 손가락 세로 스와이프는 그대로 페이지로)
+  // 캔버스에 두 손가락이면 브라우저가 페이지를 밀거나 키우지 않게 막는다(한 손가락 세로 스와이프는 그대로 페이지로).
+  // 두 손가락 확대·이동은 OrbitControls 의 DOLLY_PAN 을 끄고 직접 한다
+  // — 지도 앱처럼 처음 짚은 바닥 점이 손가락 가운데 밑에 그대로 남도록 확대·축소·이동을 한 번에 푼다(mapMove). 시선 방향은 두 손가락으로 바꾸지 않는다(돌리기는 한 손가락)
+  controls.touches.TWO = -1;
   canvas.addEventListener('touchmove', e => {
     if (e.targetTouches.length < 2) return;
     if (e.cancelable) e.preventDefault();
-    // 처음 구도에서는 손가락 간격이 10px 넘게 달라지기 전까지 확대로 치지 않는다 — OrbitControls 는 손가락 하나가 움직일 때마다 간격을 다시 재서,
-    // 두 손가락을 나란히 밀기만 해도(먼저 온 쪽이 좁힘 → 처음 구도라 잘림, 둘째가 넓힘) 확대가 남았다. 이미 확대한 구도에서는 좁힘·넓힘이 서로 지워져 필요 없다
-    if (tween) return;
-    if (zoomHold) { const [a, b] = e.targetTouches; if (Math.abs(Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) - zoomHold.gap) < 10) { camera.position.copy(zoomHold.pos); controls.target.copy(zoomHold.tgt); controls.update(); return; } zoomHold = null; }
-    zoomTrack();
+    mapMove(e.targetTouches);
   }, { passive: false });
   for (const ev of ['gesturestart', 'gesturechange']) canvas.addEventListener(ev, e => e.preventDefault());
 }
@@ -2675,6 +2674,42 @@ function zoomBound(aim) { // aim: 확대·축소하는 중(조준을 다시 잡�
   for (const a of ['x', 'y', 'z']) if (Math.abs(o[a]) > 1e-6) out = Math.min(out, ((o[a] > 0 ? box.max[a] + 1 : box.min[a] - 1) - t[a]) / o[a]);
   if (d < out) camera.position.copy(t).addScaledVector(o, Math.min(out, controls.maxDistance));
 }
+// 두 손가락 지도식 조작(embed 전체 보기). 처음 짚은 바닥 점 P0 가 손가락 가운데 밑에 그대로 남도록, 시선 방향은 두고 카메라 자리와 조준을 푼다:
+//   거리 = 처음 거리 × (처음 손가락 간격 ÷ 지금 간격)  — 벌리면 가까이, 오므리면 멀리
+//   조준 T 는 높이 y0(처음 구도의 조준 높이)의 면 위, 카메라 C = T − 시선·거리. 손가락 가운데를 지나는 광선이 P0 를 지나도록 C.y 에서 광선 길이를 구한다
+// 확대·축소·이동이 같은 식이라 손가락 자리가 곧 확대 중심이고, 나란히 밀면 이동이다. 모형 상자 밖으로는 못 민다(지도 앱과 같다), 다 오므리면 처음 조준으로 모인다
+let mg = null;
+const mgCam = new THREE.PerspectiveCamera();
+function mapStart(ts) {
+  mg = null;
+  if (!zoomHome || tween || ts.length < 2) return;
+  const r = canvas.getBoundingClientRect(), [a, b] = ts, gap = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  if (gap < 8) return;
+  const y0 = zoomHome.tgt.y, f = controls.target.clone().sub(camera.position).normalize();
+  if (f.y > -.05) return; // 거의 수평 시선이면 바닥 점이 정해지지 않는다(전체 보기는 내려다보는 구도라 늘 아래쪽)
+  ndc.set(((a.clientX + b.clientX) / 2 - r.left) / r.width * 2 - 1, -(((a.clientY + b.clientY) / 2 - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const P0 = new THREE.Vector3();
+  if (!ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -y0), P0)) P0.copy(controls.target);
+  mg = { gap, P0, f, y0, dist0: camera.position.distanceTo(controls.target), q: camera.quaternion.clone(), left: r.left, top: r.top, w: r.width, h: r.height };
+}
+function mapMove(ts) {
+  if (!mg || !zoomHome || tween || ts.length < 2) return;
+  const [a, b] = ts, gap = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  if (gap < 8) return;
+  const dist = clamp(mg.dist0 * mg.gap / gap, controls.minDistance, controls.maxDistance);
+  mgCam.copy(camera); mgCam.position.set(0, 0, 0); mgCam.quaternion.copy(mg.q); mgCam.updateMatrixWorld(true); // 시선은 처음 그대로 — 광선 방향만 얻는다
+  ndc.set(((a.clientX + b.clientX) / 2 - mg.left) / mg.w * 2 - 1, -(((a.clientY + b.clientY) / 2 - mg.top) / mg.h) * 2 + 1);
+  ray.setFromCamera(ndc, mgCam);
+  const r1 = ray.ray.direction;
+  if (r1.y > -1e-3) return; // 손가락 가운데가 지평선 위로 올라간 순간은 건너뛴다
+  const cy = mg.y0 - mg.f.y * dist, C = mg.P0.clone().addScaledVector(r1, -(mg.P0.y - cy) / r1.y), T = C.clone().addScaledVector(mg.f, dist);
+  const box = zoomHome.box, sz = box.getSize(new THREE.Vector3()), k = clamp((dist / controls.maxDistance - .88) / .12, 0, 1);
+  T.x = clamp(T.x, box.min.x - sz.x * .12, box.max.x + sz.x * .12); T.z = clamp(T.z, box.min.z - sz.z * .12, box.max.z + sz.z * .12);
+  if (k) { T.x = lerp(T.x, zoomHome.tgt.x, k * k); T.z = lerp(T.z, zoomHome.tgt.z, k * k); } // 다 오므리면 처음 조준 — 처음 구도로 돌아간다
+  camera.position.copy(T).addScaledVector(mg.f, -dist); controls.target.copy(T); controls.update();
+  zoomD = dist; zoomNote();
+}
 // 확대한 채 다른 곳으로 떠나면 먼저 처음 구도로 물러난 뒤 간다(0.42초, 방향은 그대로) — 승인된 비행 경로·시간은 처음 거리에서 출발하는 것이다
 function unzoom(go, ms = 420) {
   if (tween?.unzoom) { tween.then = go; return true; }
@@ -3190,19 +3225,12 @@ canvas.addEventListener('pointerleave', () => { pointer = null; setHover(null); 
 canvas.addEventListener('touchstart', e => {
   if (e.targetTouches.length < 2) return;
   down = null;
-  if (!controls.enableZoom) controls.enableRotate = false;
-  if (zoomHome && !tween) {
-    const [a, b] = e.targetTouches, { q, h, far } = zoomAim(), f = controls.target.clone().sub(camera.position).normalize();
-    zoomD = camera.position.distanceTo(controls.target); zoomFar = far;
-    // 가까이 한계는 이 손짓 동안 '지금 모형까지의 거리'보다 깊지 않게 잡는다. 확대한 뒤 돌리면 그 거리가 본래 한계보다 짧아져 있을 수 있는데,
-    // 본래 한계를 그대로 쓰면 오므림만 먹고 벌림은 막혀 손가락 떨림에 화면이 뒤로 흘러간다(한 번에 맞추면 카메라가 튄다)
-    controls.minDistance = Math.min(zoomMin, Math.max(1, q.multiply(h).add(zoomHome.tgt).sub(camera.position).dot(f)));
-    zoomHold = zoomD > controls.maxDistance * .999 ? { gap: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY), pos: camera.position.clone(), tgt: controls.target.clone() } : null;
-  }
+  controls.enableRotate = false; // 둘째 손가락이 닿으면 손가락을 다 뗄 때까지 회전은 멈춘다 — 한 손가락만 남아도 갑자기 돌지 않게
+  mapStart(e.targetTouches);
 }, { passive: true });
 for (const ev of ['touchend', 'touchcancel']) canvas.addEventListener(ev, e => {
   if (e.targetTouches.length) return;
-  controls.enableRotate = true; zoomHold = null;
+  controls.enableRotate = true; mg = null;
   // 조금만(10% 안) 확대한 채 손을 떼면 마저 처음 구도로(짧게 0.22초) — 거의 같은 구도인데 문구만 숨은 채 남거나 어정쩡하게 커진 채 남지 않게
   if (zoomHome && !tween && camera.position.distanceTo(controls.target) > controls.maxDistance * .9) unzoom(() => {}, 220);
   zoomNote(true);

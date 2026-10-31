@@ -75,6 +75,9 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scroll-behavior: smooth;
+  /* 휴대폰에서 맨 위에서 3D 를 아래로 끌면 '당겨서 새로고침'이 걸려 쪽이 다시 불러와졌다.
+     3D 문서(iframe)는 세로 끌기를 페이지 스크롤로 넘겨 주는 구조라 막을 곳은 바깥 쪽 하나다 */
+  overscroll-behavior-y: none;
 }
 
 body {

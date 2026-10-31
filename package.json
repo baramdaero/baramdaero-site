@@ -24,5 +24,8 @@
     "@astrojs/sitemap": "^3.7.3",
     "@channel.io/channel-web-sdk-loader": "^2.0.2",
     "astro": "^5.10.0"
+  },
+  "overrides": {
+    "sharp": "0.35.5"
   }
 }
