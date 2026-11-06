@@ -444,6 +444,7 @@
     } else if (m.type === 'home' && v === st.viewer) {
       const fromBack = document.activeElement === $('back'), was = st.room?.id;
       st.room = null;
+      hero.removeAttribute('data-touch3d'); // 도면을 눌러 방에 들어가며 비운 첫 화면 문구를 전체 보기로 돌아오면 되돌린다(예전에는 한 번 만지면 영구히 사라졌다)
       renderDock();
       $('live').textContent = v === 'house' ? '전체 보기' : '층 전체';
       if (fromBack) ($('spots').querySelector(`[data-id="${CSS.escape(was || '')}"]`) || $('spaces').querySelector('[aria-pressed="true"]')).focus({ preventScroll: true });

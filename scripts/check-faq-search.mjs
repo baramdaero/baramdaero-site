@@ -90,4 +90,8 @@ assert.equal(decideFaq('에어컨', docs).kind, 'pick');
 assert.equal(decideFaq('ㅁㄴㅇㄹ', docs).kind, 'none');
 assert.equal(decideFaq('   ', docs).kind, 'none');
 
+// 6) JSON-LD·검색 텍스트용 평문에 마크다운 표 구분 행('---')이 남으면 안 된다
+const leaked = loadFaqPage().filter((f) => /(^|\s)-{3,}(\s|$)/.test(faqPlainText(f.a))).map((f) => f.id);
+assert.deepEqual(leaked, [], '평문에 표 구분 행이 남은 문항');
+
 console.log(`faq 검색 검사 통과 — live ${docs.length}문항`);

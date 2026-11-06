@@ -1,10 +1,24 @@
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import { SITE_CONFIG } from './src/config.js';
+import rehypeLiteralTilde from './scripts/rehype-literal-tilde.mjs';
 
 // 루트 도메인 baramdaero.com — sitemap·robots·JSON-LD·OG 절대 URL 기준.
 // DNS 연결 전에도 이 값 유지 (Pages 커스텀 도메인은 public/CNAME).
 const site = process.env.SITE_URL ?? 'https://baramdaero.com';
+
+// 사례 본문(md)의 사진은 `<img>` 속성 없이 나와 페이지당 5~8장이 한꺼번에 내려왔다(첫 화면 사진은 템플릿의 cover 가 맡는다).
+// 본문 사진은 보일 때 받고 디코딩은 뒤로 미룬다. 지정된 속성은 건드리지 않는다
+function rehypeLazyImages() {
+  const walk = (node) => {
+    if (node.type === 'element' && node.tagName === 'img') {
+      node.properties.loading ??= 'lazy';
+      node.properties.decoding ??= 'async';
+    }
+    node.children?.forEach(walk);
+  };
+  return walk;
+}
 
 // guides 컬렉션 폐지(2026-08-24) — FAQ(넓게)·블로그(깊게) 2층 구조로 정리하며
 // /guides/ 라우트가 사라져 sitemap 필터도 함께 제거됐다.
@@ -12,6 +26,8 @@ export default defineConfig({
   site,
   trailingSlash: 'ignore',
   integrations: [sitemap()],
+  // rehypeLiteralTilde: '5~5.5cm' 같은 범위가 취소선으로 렌더되는 것을 막는다(원문 md 는 그대로, scripts/rehype-literal-tilde.mjs)
+  markdown: { rehypePlugins: [rehypeLazyImages, rehypeLiteralTilde] },
   // 2026-09-30 구조 정리 — 합친 페이지의 옛 주소는 새 자리로 보낸다(외부 링크·검색 결과 보존)
   redirects: {
     '/story': '/',

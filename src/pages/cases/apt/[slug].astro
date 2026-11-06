@@ -49,9 +49,9 @@ const qa = [
   ...((ask?.short_a || ask?.chat_a) ? [{ q: `${c.name} 시스템에어컨 견적은 어떻게 받나요?`, a: (ask.short_a || ask.chat_a) as string }] : []),
 ];
 
-// 이 단지의 사진 사례(제목에 단지명이 든 것)와 같은 지역의 다른 단지
-const squash = (t: string) => t.replace(/\s+/g, '');
-const photoCases = (await getCollection('cases')).filter((e) => !e.data.sample && squash(e.data.title).includes(squash(c.name)))
+// 이 단지의 사진 사례(사례의 apt 가 이 단지 slug 인 것)와 같은 지역의 다른 단지
+// 제목에 단지명이 든 것으로 거르면 '아이파크' 같은 일반명 단지에 전국의 다른 현장이 붙는다(content.config.ts 의 apt 주석: 단지 페이지 slug 로 잇는다)
+const photoCases = (await getCollection('cases')).filter((e) => !e.data.sample && e.data.apt === c.slug)
   .sort((a, b) => +b.data.date - +a.data.date || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)); // 최근 것부터, 같은 날짜는 id 순(빌드마다 같게)
 const near = (REGIONS.find((r) => r.region === c.region)?.complexes ?? []).filter((x) => x.slug !== c.slug).slice(0, 8);
 

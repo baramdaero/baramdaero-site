@@ -125,8 +125,8 @@
   .badge{display:inline-block;font-size:10.5px;padding:1px 7px;border-radius:99px;
     border:1px solid var(--warn);color:var(--warn);vertical-align:2px;margin-left:7px;font-weight:400}
   #info{border-top:1px solid var(--line);margin-top:14px;padding-top:14px;font-size:13.5px}
-  #info h2,#card h2{font-size:15.5px;margin:0 0 6px;font-weight:600}
-  #info .k,#card .k{color:var(--dim);font-size:11.5px;margin-top:10px;letter-spacing:.03em}
+  #info h2{font-size:15.5px;margin:0 0 6px;font-weight:600}
+  #info .k{color:var(--dim);font-size:11.5px;margin-top:10px;letter-spacing:.03em}
   #bar{position:absolute;left:0;right:0;bottom:0;z-index:3;
     padding:14px 18px calc(14px + env(safe-area-inset-bottom));display:flex;gap:12px;align-items:center}
   input[type=range]{flex:1;accent-color:var(--accent);height:28px;min-width:80px}
@@ -139,12 +139,66 @@
   #head .t b{display:block;color:var(--ink);font-size:14px;font-weight:600;letter-spacing:-.01em;text-wrap:balance}
   #head .t .ln{display:block;margin-top:3px;font-size:11px;color:var(--dim)}
   #note{font-size:11px;color:var(--dim);text-align:right;max-width:260px;line-height:1.4}
-  #card{display:none;position:absolute;left:14px;right:14px;bottom:70px;z-index:4;background:var(--panel);
-    border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow);
-    max-width:460px;margin:0 auto;max-height:42dvh;overflow-y:auto;font-size:13.5px}
-  body.embed #card{max-height:calc(100% - 84px);overflow-y:auto;overscroll-behavior:auto}   /* 넘칠 때만 안 스크롤, 끝에서 페이지로 이어진다 */
-  #card.on{display:block}
-  #card .x{position:absolute;top:0;right:0;min-width:44px;min-height:44px;display:grid;place-items:center;border:0;background:none;color:var(--dim);font-size:19px;cursor:pointer}   /* 누르는 자리 44px */
+  /* ───── 부품 설명 카드 (embed) — 사이트의 흰 유리 카드 + 스프링 여닫이 (DESIGN.md §4·§5) ─────
+     사이트 사본에서 덧붙임(2026-10-27) — 뷰어 원본에도 같은 변경이 들어가야 다시 만들 때 남는다.
+     iframe 문서는 호스트 CSS 변수를 못 읽는다 — global.css 의 토큰 값을 같은 이름으로 적어 둔다. */
+  :root{
+    --br-teal:#004e64; --br-ink:#0b2027; --br-ink-sub:#465d68; --br-ice:#bfe9f2; --br-line:#e0e5e9;
+    --card-bg:rgba(255,255,255,.9); --card-shadow:rgba(0,78,100,.14);
+    --dur-color:200ms; --dur-ui:240ms; --dur-spring:600ms; --dur-spring-out:320ms;
+    --ease-spring:cubic-bezier(0.34,1.6,0.64,1);          /* linear() 를 모르는 브라우저용 — 아는 곳은 아래 @supports 의 진짜 스프링 */
+    --ease-spring-out:cubic-bezier(0.4,0,0.7,-0.75);      /* 닫힘용 짝 — 나가기 전에 반대쪽으로 16% 부풀었다 빠진다 */
+  }
+  @supports (transition-timing-function:linear(0,1)){
+    :root{--ease-spring:linear(0, 0.087, 0.293, 0.543, 0.781, 0.973, 1.102, 1.171, 1.188, 1.168, 1.128, 1.081, 1.037, 1.002, 0.979, 0.967, 0.965, 0.969, 0.977, 0.986, 0.994, 1, 1.004, 1.006, 1.007, 1)}
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){--br-teal:#4fb8e8;--br-ink:#e8edf2;--br-ink-sub:#9aa7b4;--br-ice:#15303d;--br-line:#28313a;--card-bg:rgba(22,28,34,.9);--card-shadow:rgba(0,0,0,.4)}
+  }
+  :root[data-theme="dark"]{--br-teal:#4fb8e8;--br-ink:#e8edf2;--br-ink-sub:#9aa7b4;--br-ice:#15303d;--br-line:#28313a;--card-bg:rgba(22,28,34,.9);--card-shadow:rgba(0,0,0,.4)}
+  /* 넓은 화면: 부품 오른쪽에 뜨는 카드. 닫힌 모양 = 부품 쪽(왼쪽)에 붙어 작게 */
+  #card{display:none;position:absolute;z-index:4;flex-direction:column;right:16px;top:16px;width:min(360px,44%);
+    max-height:calc(100% - 94px);   /* 위 16 + 재생 바 자리 70 + 여유 8 */
+    background:var(--card-bg);-webkit-backdrop-filter:blur(14px) saturate(120%);backdrop-filter:blur(14px) saturate(120%);
+    border:1px solid var(--br-line);border-radius:12px;box-shadow:0 8px 24px var(--card-shadow);overflow:hidden;
+    color:var(--br-ink);font-size:15px;line-height:1.6;word-break:keep-all;font-variant-numeric:tabular-nums;
+    opacity:0;pointer-events:none;transform:translateX(-14px) scale(.92);transform-origin:0 50%}
+  #card.on,#card.is-card-anim{display:flex}
+  #card.on{opacity:1;transform:none;pointer-events:auto}
+  /* 여닫는 모션은 사람이 누른 직후에만 건다 — 스크립트가 .is-card-anim 을 붙였다 끝나면 뗀다(평소에 걸어 두면 폭이 바뀔 때 저절로 재생된다).
+     붙어 있는 동안에는 닫힌 모양으로도 그려 둔다 — 거기서 출발하고 거기로 돌아가야 해서. 둘 다 transition 이라 도중에 다시 누르면 그 자리에서 되돌아간다 */
+  #card.is-card-anim{   /* 닫힘 — 여는 스프링의 짝: 살짝 부풀었다 빠지고, 투명도는 부푼 뒤에 걷힌다 */
+    transition:transform var(--dur-spring-out) var(--ease-spring-out),opacity calc(var(--dur-spring-out)*.55) ease-in calc(var(--dur-spring-out)*.45)}
+  #card.is-card-anim.on{   /* 열림 — 통 하고 넘었다 멎는다. 스프링은 transform 에만, 투명도는 따로 */
+    transition:transform var(--dur-spring) var(--ease-spring),opacity var(--dur-ui) ease}
+  #card .chead{flex:none;display:flex;align-items:flex-start;gap:6px;padding:6px 8px 0 16px}
+  #card .ttl{flex:1;min-width:0;display:flex;align-items:flex-start;gap:10px;padding-top:9px}   /* 첫 줄 가운데가 × 가운데(22px)와 맞는다 */
+  #card .no{flex:none;min-width:26px;height:26px;padding:0 6px;border-radius:8px;background:var(--br-ice);color:var(--br-ink-sub);
+    font-size:13px;font-weight:700;line-height:26px;text-align:center}
+  #card h2{margin:0;min-width:0;font-size:19px;line-height:26px;font-weight:700;letter-spacing:-.015em;color:var(--br-ink);text-wrap:balance}
+  #card .est{display:inline-block;margin-left:8px;padding:0 7px;border:1px solid var(--br-line);border-radius:6px;vertical-align:2px;
+    font-size:13px;font-weight:600;line-height:20px;letter-spacing:0;color:var(--br-ink-sub);white-space:nowrap}
+  #card .x{flex:none;width:44px;height:44px;display:grid;place-items:center;border:0;border-radius:10px;background:none;color:var(--br-ink-sub);cursor:pointer;
+    -webkit-tap-highlight-color:transparent;transition:background-color var(--dur-color) ease,color var(--dur-color) ease,transform var(--dur-spring) var(--ease-spring)}   /* 누르는 자리 44px */
+  #card .x:active{transform:scale(.96);transition-duration:var(--dur-color),var(--dur-color),calc(var(--dur-color)/2);transition-timing-function:ease,ease,ease-out}
+  #card .x:focus-visible{outline:2px solid var(--br-teal);outline-offset:-2px}
+  @media (hover:hover) and (pointer:fine){ #card .x:hover{background:color-mix(in srgb,var(--br-teal) 8%,transparent);color:var(--br-teal)} }
+  #cardbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:auto;padding:2px 16px 14px}   /* 넘칠 때만 안 스크롤, 끝에서 페이지로 이어진다 */
+  #cardbody[data-more]{-webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(180deg,#000 calc(100% - 28px),transparent)}   /* 아래에 더 있다는 표시(이름 띠와 같은 방식) */
+  #card dl{margin:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px 16px}
+  #card .pr{min-width:0}
+  #card .pr.wide{grid-column:1/-1}
+  #card .pr.main{border-top:1px solid var(--br-line);padding-top:10px}
+  #card dt{font-size:13px;line-height:1.4;font-weight:600;color:var(--br-ink-sub)}
+  #card dd{margin:2px 0 0;color:var(--br-ink);text-wrap:pretty;overflow-wrap:anywhere}
+  /* 휴대폰 폭: 아래에서 올라오는 시트 — 재생 바 자리까지 덮어 붙는다(바는 시트가 떠 있는 동안 걷힌다). 밑 24px 덧단은 넘는 동안 뒤가 비치지 않게(채팅 시트와 같다) */
+  @media (max-width:640px){
+    #card{left:0;right:0;top:auto;bottom:-24px;width:auto;max-height:calc(46% + 24px);padding-bottom:24px;
+      border-bottom:0;border-radius:12px 12px 0 0;transform:translateY(72px);transform-origin:50% 100%}
+    #bar{transition:opacity var(--dur-ui) ease}
+    body.card-open #bar{opacity:0;pointer-events:none}
+  }
+  @media (prefers-reduced-motion: reduce){ #card,#card.is-card-anim,#card.is-card-anim.on,#card .x,#bar{transition:none} }
   #err{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;color:var(--dim);z-index:5}
   body.embed #app{grid-template-columns:1fr;grid-template-rows:1fr}
   body.embed #bar{padding-right:88px}
@@ -173,7 +227,11 @@
   <div id="view">
     <div id="callouts"><svg aria-hidden="true"></svg></div>
     <div id="head"><div class="t" id="headt"></div><div id="note"></div></div>
-    <div id="card"><button class="x" aria-label="닫기">×</button><div id="cardbody"></div></div>
+    <div id="card" role="dialog" aria-modal="false" aria-labelledby="cardtitle" inert>
+      <div class="chead"><div class="ttl" id="cardhead"></div>
+        <button class="x" type="button" aria-label="닫기"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+      <div id="cardbody"></div>
+    </div>
     <div id="err">이 브라우저에서 3D를 표시할 수 없습니다. 최신 브라우저에서 열어 주세요.</div>
     <div id="bar">
       <button class="btn" id="play">분해 재생</button>
@@ -807,9 +865,18 @@ key.shadow.normalBias = Math.min(lineLen / 512, 0.006);
 const FRONT = DATA.form === '벽걸이' || DATA.form === '스탠드' ? -1 : 1;
 const DIR = new THREE.Vector3(0.52*FRONT, 0.30, 0.80).normalize();   // 비스듬한 3/4 — 줄이 대각선으로 들어간다
 const PV = new THREE.Vector3();
+// 화면 맞춤은 시험용 카메라로 잰다 — 진짜 카메라의 위치를 건드리면 닫을 때 위치가 먼저 홈으로 튄다(목표만 부드럽게 돌아오던 것).
+// 카드를 피해 미는 시점(setViewOffset)도 맞춤에는 섞지 않는다
+const PROBE = new THREE.PerspectiveCamera(30, 1, 0.15, 150), V2 = new THREE.Vector3();
+function probeAt(pos, target) {
+  PROBE.aspect = camera.aspect; PROBE.fov = camera.fov; PROBE.updateProjectionMatrix();
+  PROBE.position.copy(pos); PROBE.lookAt(target); PROBE.updateMatrixWorld();
+  return PROBE;
+}
+const ORIGIN = new THREE.Vector3();
 function fits(dist, corners, my) {
-  camera.position.copy(DIR).multiplyScalar(dist); camera.lookAt(0, 0, 0); camera.updateMatrixWorld();
-  return corners.every(c => { PV.copy(c).project(camera); return Math.abs(PV.x) <= 0.94 && Math.abs(PV.y) <= my; });
+  probeAt(V2.copy(DIR).multiplyScalar(dist), ORIGIN);
+  return corners.every(c => { PV.copy(c).project(PROBE); return Math.abs(PV.x) <= 0.94 && Math.abs(PV.y) <= my; });
 }
 function fitDist(corners, my) {
   let lo = 0.5, hi = 60;
@@ -837,10 +904,21 @@ function camTo(pos, target, dur = 420) {
   camTw = {p0: camera.position.clone(), q0: controls.target.clone(), p1: pos.clone(), q1: target.clone(), t0: performance.now(), dur: REDUCED ? 1 : dur};
   dirty = true;
 }
+// 카드가 덮는 만큼 투영을 민다 — 고른 부품이 카드에 가려지지 않고 남은 자리 가운데에 온다. VO = 화면 안 밀림(px, 오른쪽·아래가 +).
+// 카메라 위치·목표는 그대로라 돌려 봐도 부품은 그 자리에 있다. 닫으면 0 으로 돌아와 원래 투영이 된다
+let VO = [0, 0], voTw = null;
+function setVO(x, y) {
+  VO = [x, y];
+  if (!renderer) return;
+  const w = $('#view').clientWidth, h = $('#view').clientHeight;
+  if (w && h && (Math.abs(x) > 0.5 || Math.abs(y) > 0.5)) camera.setViewOffset(w, h, -x, -y, w, h);   // 화면 크기 그대로 옮기기만 한다
+  else camera.clearViewOffset();
+}
+function voTo(x, y, dur = 420) { voTw = {v0: VO.slice(), v1: [x, y], t0: performance.now(), dur: REDUCED ? 1 : dur}; dirty = true; }   // 카메라 이동(camTo)과 같은 시간·곡선
 function goHome(instant = false) {
   autoCam = true; const h = HOME();
-  if (instant || !controls) { camTw = null; camera.position.copy(h.pos); controls?.target.copy(h.target); dirty = true; }
-  else { camTo(h.pos, h.target); camTw.follow = true; }   // 재생과 겹치면 목표를 매 프레임 갱신(끝에서 튀지 않게)
+  if (instant || !controls) { camTw = null; voTw = null; setVO(0, 0); camera.position.copy(h.pos); controls?.target.copy(h.target); dirty = true; }
+  else { camTo(h.pos, h.target); camTw.follow = true; voTo(0, 0); }   // 재생과 겹치면 목표를 매 프레임 갱신(끝에서 튀지 않게)
 }
 
 let t = Q.has('assembled') ? 0 : 1, selected = null, playing = false;
@@ -869,13 +947,13 @@ function resize() {
   document.body.classList.toggle('names', EMBED && numOnlyAt($('#view').clientWidth));   // 높이를 재기 전에 — 띠가 서면 무대가 그만큼 줄어든다
   const w = $('#view').clientWidth, h = $('#view').clientHeight;
   if (!w || !h) return;
-  renderer.setSize(w, h); camera.aspect = w/h; camera.updateProjectionMatrix();
+  renderer.setSize(w, h); camera.aspect = w/h; camera.updateProjectionMatrix(); setVO(VO[0], VO[1]);   // 밀기는 화면 크기에 묶여 있어 다시 건다
   syncNames();
   dirty = true;
 }
 // 창(iframe) 크기는 #app 이 따라간다. 띠가 서고 빠지는 건 resize() 가 스스로 하고 그 뒤에 무대를 다시 잰다
 // (#view 를 보면 콜백이 관찰 대상의 높이를 바꿔 'ResizeObserver loop' 오류 이벤트가 난다)
-new ResizeObserver(() => { resize(); goHome(true); }).observe($('#app'));
+new ResizeObserver(() => { resize(); EMBED && selected ? reframe() : goHome(true); }).observe($('#app'));   // 부품을 연 채 크기가 바뀌면 그 부품을 다시 맞춘다
 resize(); goHome(true); apply();
 
 nmList.innerHTML = order.map((it, i) => `<button type="button" class="nm" style="--i:${i}" data-id="${it.p.id}" aria-pressed="false"><i>${it.n}</i>${esc(it.p.name_ko)}</button>`).join('');
@@ -1012,6 +1090,12 @@ if (renderer) (function loop() {
     if (k >= 1) camTw = null;
     dirty = true;
   }
+  if (voTw) {                                           // 카드를 피해 미는 이동 — 카메라 이동과 같은 시간·곡선
+    const k = Math.min(1, (performance.now() - voTw.t0) / voTw.dur), e2 = easeIO(k), a = voTw.v0, b = voTw.v1;
+    setVO(a[0] + (b[0] - a[0]) * e2, a[1] + (b[1] - a[1]) * e2);
+    if (k >= 1) voTw = null;
+    dirty = true;
+  }
   if (controls.update()) dirty = true;                  // 드래그·감쇠 중이면 true
   if (!dirty) return;
   dirty = false;
@@ -1047,18 +1131,115 @@ function paintMaterials() {
   });
   dirty = true;
 }
+// ---- 부품 설명 카드 — 모양은 위 CSS(#card). 넓은 화면은 오른쪽 카드, 휴대폰 폭은 아래 시트(CSS 의 640px 와 같은 값) ----
+const card = $('#card'), cardHead = $('#cardhead'), cardBody = $('#cardbody'), SHEET = matchMedia('(max-width: 640px)');
+let cardOpener = null, cardTimer = 0;
+const cardOpen = () => card.classList.contains('on');
+const kbFocus = el => { try { return !!el && el.matches(':focus-visible'); } catch { return false; } };   // :focus-visible 을 모르는 브라우저에서도 안 터지게
+const syncCardMore = () => cardBody.toggleAttribute('data-more', cardBody.scrollHeight - cardBody.scrollTop - cardBody.clientHeight > 4);
+cardBody.addEventListener('scroll', syncCardMore, {passive: true});
+// 여닫는 모션이 끝났을 때 — 모션 표시를 떼고, 닫힌 것이면 숨긴다. 끝 이벤트로 맞추고(타이머로 재면 느린 기기에서 끝이 잘린다), 이벤트가 안 오는 경우만 타이머가 마무리한다
+const cardSettle = () => { clearTimeout(cardTimer); card.classList.remove('is-card-anim'); };
+card.addEventListener('transitionend', e => { if (e.target === card && !card.getAnimations?.().length) cardSettle(); });
+// 부품 이름 · 번호 칩 / 라벨-값 쌍 — 글은 그대로이고 마크업만 위계가 살게 나눴다(옆 패널의 infoHTML 은 그대로)
+const cardHeadHTML = (p, n) => `<span class="no">${n}</span><h2 id="cardtitle">${esc(p.name_ko)}${p.dim_estimated ? '<span class="est">형상 추정</span>' : ''}</h2>`;
+function cardBodyHTML(p) {
+  const pr = (k, v, cls) => `<div class="pr ${cls}"><dt>${k}</dt><dd>${v}</dd></div>`;
+  return `<dl>${pr('부품명', esc(p.name_en || '—'), 'meta')}${pr('분해 순서', `${p.step + 1}단계 · ${esc(p.step_name)}`, 'meta')}`
+    + `${pr('어떻게 더러워지나', esc(p.soil), 'wide main')}${pr('우리가 어떻게 세척하나', esc(p.clean), 'wide main')}</dl>`;
+}
+// 부품명·분해 순서는 반 칸씩 한 줄에 들면 나란히, 줄이 꺾이면 한 칸씩 쌓는다(긴 영문 부품명) — 카드가 그려진 뒤에 잰다
+function fitMeta() {
+  const m = [...cardBody.querySelectorAll('.pr.meta')];
+  m.forEach(e => e.classList.remove('wide'));
+  if (m.some(e => e.querySelector('dd').offsetHeight > 30)) m.forEach(e => e.classList.add('wide'));
+}
+function showCard(cur) {
+  const bar = $('#bar');
+  if (cur) {
+    cardHead.innerHTML = cardHeadHTML(cur.p, cur.n); cardBody.innerHTML = cardBodyHTML(cur.p); cardBody.scrollTop = 0;
+    bar.inert = SHEET.matches; document.body.classList.add('card-open');   // 시트가 재생 바를 걷는다(CSS) — 안 보이는 버튼에 초점이 가지 않게
+    if (!cardOpen()) {
+      const a = document.activeElement;
+      cardOpener = a && a !== document.body && !card.contains(a) ? a : null;
+      card.inert = false;
+      clearTimeout(cardTimer);
+      if (!REDUCED) {                                           // 모션은 누른 직후에만 — 평소에 걸어 두면 폭이 바뀔 때 저절로 재생된다
+        card.classList.add('is-card-anim');
+        void card.offsetHeight;                                 // 닫힌 모양을 한 번 그려 둬야 거기서부터 움직인다
+        cardTimer = setTimeout(cardSettle, 1000);
+      }
+      card.classList.add('on');
+      if (kbFocus(cardOpener)) card.querySelector('.x').focus({preventScroll: true});   // 키보드로 골랐으면 카드로 들어간다
+    }
+    fitMeta(); syncCardMore();
+  } else {
+    bar.inert = false; document.body.classList.remove('card-open');
+    if (!cardOpen()) return;
+    if (card.contains(document.activeElement)) {                // 닫힐 때 초점은 열었던 곳으로
+      if (cardOpener?.isConnected) cardOpener.focus({preventScroll: true}); else document.activeElement.blur();
+    }
+    cardOpener = null; card.inert = true;
+    if (!REDUCED) {
+      card.classList.add('is-card-anim');                       // 닫힘 모션 — 이미 떼어졌으면 다시 붙인다
+      clearTimeout(cardTimer); cardTimer = setTimeout(cardSettle, 1000);
+    }
+    card.classList.remove('on');
+  }
+}
+
+// ---- 카드를 피해 시점 맞추기 ----
+// 카드가 안 덮는 무대 영역(#view 좌표 px). 카드가 떠 있지 않으면 null
+function freeArea() {
+  if (!EMBED || !selected || !card.offsetHeight) return null;
+  const W = $('#view').clientWidth, H = $('#view').clientHeight, gap = 10;
+  if (SHEET.matches) {                                          // 아래 시트: 시트 위쪽, 머리글 글자 밑부터
+    const head = $('#head'), top = Math.min(head.offsetTop + head.offsetHeight, card.offsetTop * 0.3);
+    return {x0: 0, x1: W, y0: top, y1: Math.max(top + 60, card.offsetTop - gap)};
+  }
+  return {x0: 0, x1: Math.max(160, card.offsetLeft - gap * 2), y0: 8, y1: Math.max(120, H - $('#bar').offsetHeight - 8)};   // 오른쪽 카드: 카드 왼쪽, 재생 바 위
+}
+// 고른 부품의 카메라 자리와 시점 밀기. 기존 확대(부품 크기 x 3.2)로 남은 영역에 다 들어오면 그대로, 안 들어오면 들어올 때까지만 뒤로 물린다
+function frameFor(it) {
+  const c = it.slot, a = freeArea(), W = $('#view').clientWidth, H = $('#view').clientHeight;
+  let r = Math.max(it.size.y, it.size.z, 0.35) * 3.2;
+  if (a && W && H) {
+    const hw = (a.x1 - a.x0) / 2 * 0.92, hh = (a.y1 - a.y0) / 2 * 0.92;   // 가장자리 8% 는 비운다
+    const fit = rr => {
+      probeAt(V2.set(0.35, 0.3, 1).multiplyScalar(rr).add(c), c);
+      for (const sx of [-0.5, 0.5]) for (const sy of [-0.5, 0.5]) for (const sz of [-0.5, 0.5]) {
+        PV.set(c.x + it.size.x * sx, c.y + it.size.y * sy, c.z + it.size.z * sz).project(PROBE);
+        if (Math.abs(PV.x) * W / 2 > hw || Math.abs(PV.y) * H / 2 > hh) return false;
+      }
+      return true;
+    };
+    if (!fit(r)) { let lo = r, hi = r * 8; for (let i = 0; i < 24; i++) { const m = (lo + hi) / 2; fit(m) ? hi = m : lo = m; } r = hi; }
+  }
+  return {pos: new THREE.Vector3(c.x + r*0.35, c.y + r*0.3, c.z + r), target: c.clone(),
+    vo: a ? [(a.x0 + a.x1) / 2 - W / 2, (a.y0 + a.y1) / 2 - H / 2] : [0, 0]};
+}
+// 열린 채 창 크기가 바뀌면(회전 포함) 모션 없이 남은 영역 가운데로 다시 맞춘다
+function reframe() {
+  const it = items.find(x => x.p.id === selected);
+  if (!it) { goHome(true); return; }
+  fitMeta();                                       // 폭이 바뀌면 칸 나눔도 다시 — 카드 높이가 달라지니 맞추기 전에
+  const f = frameFor(it);
+  autoCam = false; camTw = null; voTw = null;
+  camera.position.copy(f.pos); controls.target.copy(f.target); setVO(f.vo[0], f.vo[1]);
+  $('#bar').inert = SHEET.matches; syncCardMore(); dirty = true;
+}
 function select(id) {
   const it = items.find(x => x.p.id === id); if (!it) return;
   selected = id; paintMaterials();
+  paint();                                         // 카드가 먼저 서야 덮는 자리를 잴 수 있다
   if (t < 1) {                                     // 조립·재생 중: 한 프레임에 튀지 않게 빠르게 펼친다(이름 띠는 조립 상태에서도 눌린다)
     if (REDUCED) { t = 1; $('#ex').value = 100; apply(); }
     else { rate = Math.max(0.0055, (1 - t) / 30); playing = true; $('#play').classList.add('on'); $('#play').textContent = '멈춤'; }
   }
-  const c = it.slot.clone();                       // 다 펼친 자리 — 펼치는 중에 골라도 목표는 같다
-  const r = Math.max(it.size.y, it.size.z, 0.35) * 3.2;
+  const f = frameFor(it);                          // 다 펼친 자리 — 펼치는 중에 골라도 목표는 같다. 카드가 덮는 만큼 비워서
   autoCam = false;
-  camTo(new THREE.Vector3(c.x + r*0.35, c.y + r*0.3, c.z + r), c);   // 순간이동 대신 부드럽게 다가간다
-  paint(); post('select', {id});
+  camTo(f.pos, f.target); voTo(f.vo[0], f.vo[1]);  // 순간이동 대신 부드럽게 다가간다
+  post('select', {id});
 }
 function clearSel() { selected = null; paintMaterials(); paint(); }
 
@@ -1104,8 +1285,7 @@ function paint() {
   }
   const cur = order.find(x => x.p.id === selected);
   $('#info').innerHTML = cur ? infoHTML(cur.p, cur.n) : `<div class="k">부품이나 번호를 누르면 세척 방법이 나옵니다</div>`;
-  $('#cardbody').innerHTML = cur ? infoHTML(cur.p, cur.n) : '';
-  $('#card').classList.toggle('on', EMBED && !!cur);
+  showCard(EMBED ? cur : null);
 }
 function stopPlay() { playing = false; rate = 0.0055; $('#play').classList.remove('on'); $('#play').textContent = '분해 재생'; }
 let exSaved = null;   // 슬라이더 위에서 시작한 세로 스와이프가 스크롤로 넘어가면(pointercancel) 값과 재생 상태를 되돌린다
