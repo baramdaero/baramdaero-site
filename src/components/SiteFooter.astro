@@ -9,6 +9,8 @@ const realPosts = (await getCollection('blog')).filter((e) => !e.data.sample).le
 import wideReverseUrl from '../assets/logo/baramdaero-wide-reverse.svg?url';
 const year = new Date().getFullYear();
 const loginHref = shopHref(SITE_CONFIG.SHOP_LOGIN_PATH);
+const mypageHref = loginHref ? shopHref(SITE_CONFIG.SHOP_MYPAGE_PATH) : '';
+const biz = SITE_CONFIG.BUSINESS;
 ---
 <footer class="bd-footer">
   <div class="bd-container bd-footer__inner">
@@ -22,19 +24,22 @@ const loginHref = shopHref(SITE_CONFIG.SHOP_LOGIN_PATH);
       <a href="/commercial/">상업용</a>
       {realCases >= 3 && <a href="/cases/">시공사례</a>}
       {/* 쇼핑몰 주소가 있으면 '가격'은 쇼핑몰로, 비면 자주 묻는 질문의 '비용' 묶음으로 — 헤더 메뉴와 같은 규칙 */}
-      <a href={SITE_CONFIG.SHOP_URL || '/faq/#cat-비용'} rel={SITE_CONFIG.SHOP_URL ? 'noopener' : undefined}>가격</a>
+      <a href={SITE_CONFIG.SHOP_URL || '/faq/#cat-비용'} rel={SITE_CONFIG.SHOP_URL ? 'noopener' : undefined}>{SITE_CONFIG.SHOP_URL ? '예약·구매' : '가격'}</a>
       <a href="/faq/">자주 묻는 질문</a>
       {realPosts >= 3 && <a href="/blog/">블로그</a>}
       {/* 쇼핑몰 주소나 경로가 비면 미렌더 — 죽은 링크 차단 */}
-      {loginHref && <a href={loginHref} rel="noopener">로그인</a>}
+      {loginHref && <a href={loginHref} rel="noopener" referrerpolicy="unsafe-url" data-shop-login={mypageHref ? '' : undefined}>로그인</a>}
+      {mypageHref && <a href={mypageHref} rel="noopener" class="bd-footer__mypage">마이페이지</a>}
     </nav>
     <p class="bd-footer__cta">
       <button disabled aria-describedby="chat-unavailable" type="button" class="bd-cta bd-cta--ondark bd-footer__ask" data-chat-tree="menu">문의하기<svg class="br-cta-arrow" aria-hidden="true" viewBox="0 0 10 10" width="10" height="10" fill="none"><path d="M0 5h7" /><path d="M1 1l4 4-4 4" /></svg></button>
     </p>
     <hr class="bd-footer__hairline" />
     <p class="bd-footer__legal">
-      <!-- 사업자 정보 확정 후 기입: 상호·대표·사업자등록번호·주소·연락처 -->
-      © {year} 바람대로
+      <span>{biz.NAME}</span>&nbsp;· <span>대표 {biz.REPRESENTATIVE}</span>&nbsp;· <span>사업자등록번호 {biz.REG_NO}</span><br />
+      {biz.ADDRESS}{SITE_CONFIG.PHONE && <>&nbsp;· <span>전화 {SITE_CONFIG.PHONE}</span></>}<br />
+      © {year} 바람대로<br />
+      <a class="bd-footer__policy" href="/privacy/">개인정보 처리방침</a>
     </p>
   </div>
 </footer>
@@ -64,8 +69,29 @@ const loginHref = shopHref(SITE_CONFIG.SHOP_LOGIN_PATH);
   /* 색·모양·떠오름은 문의 버튼(.bd-cta--ondark) — 여기서는 작은 크기만 */
   .bd-footer__ask { min-height: 44px; padding: 0 18px; font-size: 15px; cursor: pointer; }
   .bd-footer__nav a:hover { color: var(--br-ice); }
+  /* 로그인한 방문자(<html class="bd-member">, 헤더가 정한다)에게는 '로그인' 자리에 '마이페이지' — 헤더와 같은 규칙 */
+  .bd-footer__mypage { display: none; }
+  :global(html.bd-member) .bd-footer__mypage { display: revert; }
+  :global(html.bd-member) .bd-footer__nav [data-shop-login] { display: none; }
   .bd-footer__nav--sub { font-size: 13px; align-items: center; }
   .bd-footer__navlabel { color: rgba(255, 255, 255, 0.5); }
   .bd-footer__hairline { border: 0; border-top: 1px solid rgba(255, 255, 255, 0.15); }
-  .bd-footer__legal { font-size: 12px; color: rgba(255, 255, 255, 0.5); }
+  /* 사업자 정보는 읽혀야 하므로 보조 글자색 흰 75%(DESIGN.md §1). 항목 단위로만 줄을 바꾼다 */
+  .bd-footer__legal { font-size: 12px; line-height: 1.7; color: rgba(255, 255, 255, 0.75); }
+  .bd-footer__legal span { white-space: nowrap; }
+  /* 개인정보 처리방침 링크는 다른 고지와 구분되게 흰색 700 (개인정보 보호법 표준 지침). 터치 높이 44 */
+  .bd-footer__policy {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color var(--dur-color) ease;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .bd-footer__policy:hover { color: var(--br-ice); }
+  }
 </style>

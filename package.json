@@ -16,7 +16,7 @@
     "test:faq": "node scripts/check-faq-search.mjs",
     "test:chat": "node scripts/check-chat-link.mjs",
     "test:intake": "node scripts/check-intake.mjs",
-    "test:shop": "astro build && node scripts/check-shop-links.mjs",
+    "test:shop": "astro build && node scripts/check-shop-links.mjs && node scripts/check-shop-session.mjs && node scripts/check-shop-bridge.mjs",
     "case:import": "node scripts/import-cases.mjs",
     "case:wm": "node scripts/watermark-cases.mjs",
     "test:wm": "node scripts/watermark-cases.mjs --selfcheck && node scripts/watermark-cases.mjs --check"
@@ -25,5 +25,8 @@
     "@astrojs/sitemap": "^3.7.3",
     "@channel.io/channel-web-sdk-loader": "^2.0.2",
     "astro": "^5.10.0"
+  },
+  "overrides": {
+    "sharp": "0.35.5"
   }
 }
