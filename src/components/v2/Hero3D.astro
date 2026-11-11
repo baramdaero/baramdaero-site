@@ -31,8 +31,8 @@
         건물 전체
       </button>
       <p class="h3-here__t" id="upT"></p>
-      {/* 그 층만 위에서 본다(굵은 배관이 방마다 가는 길이 보인다). 다시 누르면 층 안으로. 2026-10-14 대표: '각 층의 배관을 보고 싶은데 잘 안 보인다' → '위에서 보기 추가' */}
-      <button class="h3-spot h3-topbtn" id="topBtn" type="button" aria-pressed="false" hidden>위에서 보기</button>
+      {/* 그 층만 위에서 본다(굵은 배관이 방마다 가는 길이 보인다). 다시 누르면 층 안으로. 2026-10-14 대표: '각 층의 배관을 보고 싶은데 잘 안 보인다' → '위에서 보기 추가'. 2026-11-10 박민혁: 이름을 아파트와 같은 '배관 보기'로, 다시 누르면 보던 실내기 시점으로 */}
+      <button class="h3-spot h3-topbtn" id="topBtn" type="button" aria-pressed="false" hidden>배관 보기</button>
     </div>
 
     <button class="h3-invite h3-glass" id="invite" type="button">
@@ -177,7 +177,7 @@
     if (inBld) $('upT').textContent = st.level[st.space] || '';
     const onFloor = inBld && st.entries[st.space].some(e => e.id !== 'building'); // 층 안(옥상은 고를 칸이 없고, 이미 위에서 본다)
     const canTop = onFloor || aptRoom;
-    $('topBtn').hidden = !canTop; $('topBtn').textContent = aptRoom ? '배관 보기' : '위에서 보기'; $('topBtn').setAttribute('aria-pressed', String(canTop && !!st.top[st.space]));
+    $('topBtn').hidden = !canTop; $('topBtn').setAttribute('aria-pressed', String(canTop && !!st.top[st.space]));
     // 누른 공간이 아직 안 떴으면(불러오는 중) 문구·안내 판은 앞 화면 것 그대로 둔다 — 방 안에서 건물 탭을 누르면 문구가 떠올랐다가 화면이 바뀌며 다시 사라졌다. 화면이 바뀔 때 다시 불린다
     const pending = !!hero.dataset.shown && hero.dataset.shown !== st.viewer;
     if (!pending) {
@@ -471,7 +471,7 @@
       if (v !== 'house') st.top[st.bldKey[v]] = false; // 가려진 건물이 늦게 알려 온 진입(확대에서 물러난 뒤 등): 돌아왔을 때 '위에서 보기'가 켜진 채 남지 않게
     } else if (m.type === 'enter') {
       const fromDock = dock.contains(document.activeElement);
-      if (!fromDock) engage(true);   // 도면을 눌러 들어왔을 때 문구를 비운다(칩으로 들어온 건 그대로)
+      if (!fromDock && !$('up').contains(document.activeElement)) engage(true);   // 도면을 눌러 들어왔을 때 문구를 비운다(칩으로 들어온 건 그대로, '배관 보기'를 꺼서 보던 실내기로 돌아온 것도 그대로)
       st.room = { id: m.id, title: m.title, sub: m.sub, ou: !!m.ou }; st.top[st.space] = false; st.leaving = false; // 위에서 보다가 실내기를 누르면 그 시점으로 내려온다
       if (v === 'house') st.pick.house = m.id; // 도면을 눌러 들어와도 그 방이 '마지막으로 본 칸' — 방 칩 줄의 흰 칸·안내 버튼이 들어가는 칸이 된다
       renderDock();
