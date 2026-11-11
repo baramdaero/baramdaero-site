@@ -15,6 +15,7 @@
     "test:rhythm": "astro build && node scripts/check-design-rhythm.mjs",
     "test:faq": "node scripts/check-faq-search.mjs",
     "test:chat": "node scripts/check-chat-link.mjs",
+    "test:intake": "node scripts/check-intake.mjs",
     "test:shop": "astro build && node scripts/check-shop-links.mjs && node scripts/check-shop-session.mjs && node scripts/check-shop-bridge.mjs",
     "case:import": "node scripts/import-cases.mjs",
     "case:wm": "node scripts/watermark-cases.mjs",

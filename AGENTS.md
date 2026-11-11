@@ -45,6 +45,7 @@
 - `src/content/blog/` — 블로그 md
 - `src/components/Chatbot.astro` — 문의 챗봇 (4트리: 세척/AS/설치/기타). 진입점 2개: 플로팅 버튼 + 세션 1회 티저(모바일 8초 / 데스크톱 12초)
 - `src/lib/chat-link.ts` — 주소로 챗봇 열기: `?chat=install|clean|as|etc|menu`, 보던 상품은 `&model=…&name=…` → 접수 카드 '문의 제품' 한 줄 (쇼핑몰 견적 문의가 넘어오는 길). 검사 `npm run test:chat`
+- `src/lib/intake.ts` — 접수 기록: `intakeEnabled()`(`config.INTAKE_ENDPOINT` 가 비어 있지 않으면 참), `newReceiptId`(접수번호 'YYMMDD-XXXX' — 한국시간 날짜 + 난수 4자), `recordIntake`(「이 내용으로 접수하기」·폴백 '카톡으로 접수하기'에서 카드를 그 주소로 보낸다. 응답을 읽지 않고 오류는 삼킨다 — 접수 흐름을 막지 않는다). **주소가 있을 때만** 접수 카드 마지막 줄에 접수번호를 붙이고 기록하는 버튼(접수하기·폴백 '카톡으로 접수하기') 바로 아래에 한 줄 안내 '접수하신 내용은 확인용으로 저장됩니다.' 를 그린다(전화·복사 버튼 아래에는 그리지 않는다). 주소가 빈 값이면 번호도 안내도 없고 카드는 변경 전과 같다. 이름·전화·이메일 주소·동호수(동·호 모두)·상세주소는 저장하지 않는다(`docs/standards/3-데이터기준.md` §1). 주소는 배포 뒤 별도 승인으로 기입 — 임의 기입 금지, 형식은 `https://script.google.com/macros/s/<id>/exec` 만 통과한다(검사가 막는다). 검사 `npm run test:intake`
 - 히어로: 사전 렌더 왕복 루프 mp4 (`config.HERO_VIDEO`). canvas 프레임 캡처 방식 구현 금지
 - `docs/standards/` — 기준 체계 4문서 (렌더 대상 아님, Astro는 `src/pages/`만 라우팅).
   추적분은 0·2·3, 1은 미추적 (절대 규칙 6)
