@@ -66,9 +66,26 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     {/* 주 메뉴 랜드마크는 늘 남는다 — 640px 이하 + JS 에서는 안의 '메뉴' 버튼이 링크 묶음(#site-nav)을 펼침 목록으로 연다.
         버튼은 글자('메뉴'↔'닫기'): 아이콘은 koboyo 에서만 가져오는데 이 레포 세션에 연결이 없다. hidden 은 스크립트가 푼다 */}
     <nav class="bd-header__nav" aria-label="주 메뉴">
-      <button type="button" class="bd-header__menu-btn" aria-expanded="false" aria-controls="site-nav" hidden>
+      <button type="button" class="bd-header__menu-btn" aria-label="메뉴" aria-expanded="false" aria-controls="site-nav" hidden>
         <span class="bd-header__menu-open">메뉴</span><span class="bd-header__menu-close">닫기</span>
       </button>
+      {/* 첫 그림부터 접힌 모양으로(2026-11-12). 맨 아래 스크립트는 화면이 한 번 그려진 뒤에야 돌아서, 그 사이 한 줄 메뉴가 393px 화면을 525px 로 넓혔다
+          — 헤더가 한 번 덜컥였고, 앞 화면과 폭이 달라 '화면 넘어갈 때' 전환(global.css)이 폰에서 취소됐다.
+          링크 묶음보다 먼저 돌아야 한다 — </header> 아래에 두면 느린 회선에서 응답이 그 사이에 끊길 때 한 줄 메뉴가 한두 프레임 그려진다(같은 날 실측).
+          맨 아래 스크립트가 오기 전의 누름은 여기 onclick 이 받는다(모션 없이 여닫기만). 오면 떼고 가져간다 — JS 가 꺼져 있으면 여전히 한 줄 메뉴 */}
+      <script is:inline>
+        (function () {
+          var h = document.querySelector('.bd-header'), b = h && h.querySelector('.bd-header__menu-btn');
+          if (!b) return;
+          b.hidden = false;
+          h.classList.add('has-menu');
+          b.onclick = function () {
+            var open = h.classList.toggle('is-menu-open');
+            b.setAttribute('aria-expanded', open);
+            b.setAttribute('aria-label', open ? '닫기' : '메뉴');
+          };
+        })();
+      </script>
       <div class="bd-header__links" id="site-nav">
         {nav.map((item, i) => (
           <a
@@ -199,8 +216,8 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     /* 44px 히트영역 확보 */
     padding: 12px 2px;
   }
-  .bd-header__link:hover,
   .bd-header__link[aria-current='page'] { opacity: 1; }
+  @media (hover: hover) and (pointer: fine) { .bd-header__link:hover { opacity: 1; } } /* 터치에서는 누른 뒤에도 hover 가 남는다 */
   /* 라벨 전환 — display:none은 접근성 트리에서도 제외되므로 한 링크가 두 번 읽히지 않는다 */
   .bd-header__label--full { display: none; }
   .bd-header__actions { display: flex; align-items: center; gap: 8px; margin-left: 12px; flex: none; }
@@ -213,8 +230,6 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   /* 높이 40px(헤더 줄) — 누르는 자리는 위아래 2px 씩 넓혀 44px */
   .bd-header__quote { position: relative; }
   .bd-header__quote::before { content: ''; position: absolute; inset: -2px 0; }
-  /* 누르면 빠르게 눌리고, 떼면 스프링으로 돌아온다(위 transition) */
-  .bd-header__quote:active { transform: scale(0.96); transition-duration: var(--dur-color), calc(var(--dur-color) / 2); transition-timing-function: ease, ease-out; }
   .bd-header__quote:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; }
   /* 로그인은 같은 모양의 링크 — 버튼과 달리 글자를 가운데로 맞춰 줘야 한다 */
   .bd-header__login { display: inline-flex; align-items: center; }
@@ -259,7 +274,7 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   /* ---- 모바일 메뉴(640px 이하 + JS: .has-menu) — 한 줄 메뉴를 접고 '메뉴' 버튼으로 편다 ---- */
   .bd-header__menu-btn {
     display: none;
-    align-items: center;
+    place-items: center;
     min-height: 44px;
     padding: 0 16px;
     border-radius: var(--radius-pill);
@@ -270,14 +285,18 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     white-space: nowrap;
     transition: background-color var(--dur-color) ease, transform var(--dur-spring) var(--ease-spring);
   }
-  .bd-header__menu-btn:active { transform: scale(0.96); transition-duration: var(--dur-color), calc(var(--dur-color) / 2); transition-timing-function: ease, ease-out; }
+  /* '메뉴' ↔ '닫기' — 두 글자를 같은 칸에 겹쳐 두고, 누른 직후(.is-menu-anim)에만 하나가 가라앉고 다른 하나가 떠오른다(예전엔 뚝 바뀌었다).
+     visibility 로 숨겨 읽기 프로그램에는 보이는 쪽만 들린다 */
+  .bd-header__menu-open, .bd-header__menu-close { grid-area: 1 / 1; }
   .bd-header__menu-close,
-  .bd-header.is-menu-open .bd-header__menu-open { display: none; }
-  .bd-header.is-menu-open .bd-header__menu-close { display: inline; }
+  .bd-header.is-menu-open .bd-header__menu-open { opacity: 0; visibility: hidden; transform: translateY(6px); }
+  .bd-header.is-menu-open .bd-header__menu-close { opacity: 1; visibility: visible; transform: none; }
+  .bd-header.is-menu-anim .bd-header__menu-open,
+  .bd-header.is-menu-anim .bd-header__menu-close { transition: opacity var(--dur-ui) ease, visibility var(--dur-ui), transform var(--dur-spring) var(--ease-spring); }
   .bd-header--overlay.is-ready:not(.is-scrolled):not(.is-menu-open) .bd-header__menu-btn { color: #fff; background: rgba(255, 255, 255, 0.14); }
   /* ⚠️ 이 800 은 아래 스크립트의 matchMedia 와 같은 값이어야 한다 */
   @media (max-width: 800px) {
-    .bd-header.has-menu .bd-header__menu-btn { display: inline-flex; }
+    .bd-header.has-menu .bd-header__menu-btn { display: inline-grid; }
     /* 펼침 목록 — 헤더 바로 아래 전체 폭. 글자는 전체 명칭, 한 줄 52px.
        닫힌 상태도 같은 모양을 갖는다(여닫는 동안 그 모양에서 오간다) — 평소에 보이고 안 보이고는 display 로 가른다 */
     .bd-header.has-menu .bd-header__links {
@@ -361,6 +380,7 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
 
 <script>
   // 모바일 메뉴 — 버튼이 nav 를 펼친다. JS 가 안 돌면 버튼은 hidden 그대로, 한 줄 메뉴가 남는다
+  // (버튼을 보이고 .has-menu 를 붙이는 것은 메뉴 단추 바로 뒤 인라인 스크립트가 첫 그림 전에 먼저 한다 — 아래 두 줄은 그게 막힌 경우의 짝)
   const header = document.querySelector<HTMLElement>('.bd-header');
   const menuBtn = header?.querySelector<HTMLButtonElement>('.bd-header__menu-btn');
   if (header && menuBtn) {
@@ -382,6 +402,7 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
       }
       header.classList.toggle('is-menu-open', open);
       menuBtn.setAttribute('aria-expanded', String(open));
+      menuBtn.setAttribute('aria-label', open ? '닫기' : '메뉴'); // 글자가 바뀌는 240ms 동안 두 글자가 같이 읽히지 않게
       if (!animate || open) settle();
       else if (changed) {
         if (links) links.inert = true; // 걷히는 동안 링크에 초점이 가지 않게
@@ -394,6 +415,7 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     links?.addEventListener('transitionend', (e) => { if (e.target === links && !links.getAnimations?.().length) settle(); });
     menuBtn.hidden = false;
     header.classList.add('has-menu');
+    menuBtn.onclick = null; // 메뉴 단추 바로 뒤 인라인 스크립트가 걸어 둔 임시 여닫기 — 여기서부터는 아래가 맡는다
     menuBtn.addEventListener('click', () => setOpen(!header.classList.contains('is-menu-open')));
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && header.classList.contains('is-menu-open')) setOpen(false, header.contains(document.activeElement));

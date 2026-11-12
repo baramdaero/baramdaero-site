@@ -10,11 +10,18 @@ const ANT = 8;     // 닫힐 때 접히기 전에 부푸는 양의 상한(px)
 const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)';
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 const running = new WeakMap<HTMLDetailsElement, { a: Animation; opening: boolean }>();
+// 높이는 놓인 그대로(layout)를 잰다 — 화면에 그려진 상자(getBoundingClientRect)는 눌려 줄어든 카드(press.ts)에서 그만큼 모자라,
+// 펼침이 모자란 높이에서 멎었다가 끝에서 툭 늘어난다(353px 카드 실측 20px). 줄지 않았으면 그려진 상자가 곧 놓인 높이라 그대로 쓴다(어느 브라우저에서나 정확).
+// 줄어 있을 때만 계산값을 쓰는데, 그 글자는 여섯 자리로 반올림돼 있어 놓임 격자로 되돌린다. ponytail: 1/64px 는 크로미움·사파리의 격자 — 다른 브라우저에서는 1/128px 까지 어긋날 수 있다
+const layoutH = (d: HTMLElement) => {
+  const r = d.getBoundingClientRect().height, c = parseFloat(getComputedStyle(d).height) || 0;
+  return Math.abs(r - c) <= c * 1e-5 ? r : Math.round(c * 64) / 64;
+};
 
 function heightWhen(d: HTMLDetailsElement, open: boolean) {
   const was = d.open;
   d.open = open;
-  const h = d.getBoundingClientRect().height;
+  const h = layoutH(d);
   d.open = was;
   return h;
 }
@@ -22,12 +29,13 @@ function heightWhen(d: HTMLDetailsElement, open: boolean) {
 function toggle(d: HTMLDetailsElement) {
   // 도는 중에 다시 누르면 지금 높이에서 반대로 간다 — 닫히는 동안에도 open 속성은 그대로라 그것만 보면 방향을 못 가린다
   const prev = running.get(d);
-  const from = d.getBoundingClientRect().height;
+  const from = layoutH(d);
   prev?.a.cancel();
   const opening = prev ? !prev.opening : !d.open;
   const to = heightWhen(d, opening);
   if (opening) d.open = true;
   d.style.overflow = 'hidden';
+  d.toggleAttribute('data-closing', !opening);  // 꺾쇠는 닫히기 시작할 때 같이 돌아간다 — open 속성은 다 접힌 뒤에야 빠져서, 그것만 보면 접힌 뒤에 뒤늦게 돈다
   d.toggleAttribute('data-expanding', true);   // 엣지 글로우는 이 동안 쉰다(global.css) — overflow 에 잘렸다가 끝에서 뚝 돌아오지 않게
   const dur = opening ? DUR : CLOSE;
   const over = Math.min(OVER, Math.max(0, to - from) * 0.06);
@@ -70,13 +78,13 @@ function toggle(d: HTMLDetailsElement) {
     a.cancel();
     if (!opening) d.open = false;
     d.style.overflow = '';
-    d.removeAttribute('data-expanding');
+    d.removeAttribute('data-expanding'); d.removeAttribute('data-closing');
     running.delete(d);
   };
   a.onfinish = finish;
   setTimeout(finish, dur + 80);
   // 밖에서 끊겼을 때(요소가 사라짐 등)만 정리한다 — 다시 눌러 끊긴 것은 새 모션이 이어받았고, 이 이벤트는 그 뒤에 온다
-  a.oncancel = () => { if (running.get(d)?.a === a) { d.style.overflow = ''; d.removeAttribute('data-expanding'); running.delete(d); } };
+  a.oncancel = () => { if (running.get(d)?.a === a) { d.style.overflow = ''; d.removeAttribute('data-expanding'); d.removeAttribute('data-closing'); running.delete(d); } };
 }
 
 document.addEventListener('click', (e) => {

@@ -358,16 +358,14 @@ if (items.length) {
 </Base>
 
 <script>
-  // N개 더 보기 — 숨어 있던 문항이 아래로 차례로 떠오른다(접을 때는 바로 닫는다)
+  import { gust } from '../../scripts/press.ts';
+  // N개 더 보기 — 숨어 있던 문항이 차례로 자리에 온다(접을 때는 바로 닫는다). 다른 목록의 '더 보기'와 같은 움직임(press.ts gust)
   document.querySelectorAll<HTMLDetailsElement>('.faq-more').forEach((m) => {
     m.addEventListener('toggle', () => {
-      if (!m.open || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      let el = m.nextElementSibling as HTMLElement | null, k = 0;
-      while (el && k < 30) {
-        if (el.matches('.faq-item')) el.animate([{ opacity: 0, transform: 'translateY(20px)' }, { opacity: 1, transform: 'none' }],
-          { duration: 600, delay: Math.min(k, 10) * 50, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'backwards' });
-        el = el.nextElementSibling as HTMLElement | null; k++;
-      }
+      if (!m.open) return;
+      const items: Element[] = [];
+      for (let el = m.nextElementSibling; el; el = el.nextElementSibling) if (el.matches('.faq-item')) items.push(el);
+      gust(items);
     });
   });
 
@@ -529,7 +527,8 @@ if (items.length) {
     // 답으로 초점을 옮긴다 — 화면 읽기 프로그램이 답을 읽고, 모바일은 키보드가 내려간다
     const focus = [we, pick, none].find((el) => el && !el.hidden)?.querySelector<HTMLElement>('[data-faq-focus]');
     focus?.focus({ preventScroll: true });
-    chat.scrollIntoView({ block: 'start', behavior: reduced ? 'auto' : 'smooth' });
+    // 부드럽게 갈지는 global.css 의 html scroll-behavior 에 맡긴다 — 평소 smooth, 모션 줄이기와 '화면 넘어갈 때' 겹치는 동안은 바로(다른 쪽에서 #faq-… 로 도착할 때)
+    chat.scrollIntoView({ block: 'start' });
   }
 
   form?.addEventListener('submit', (e) => {
@@ -692,7 +691,7 @@ if (items.length) {
     transform: translateY(-2px) rotate(45deg);
     transition: transform var(--dur-ui) var(--ease-out);
   }
-  .faq-ans__more[open] .faq-ans__toggle::after { transform: translateY(2px) rotate(-135deg); }
+  .faq-ans__more[open]:not([data-closing]) .faq-ans__toggle::after { transform: translateY(2px) rotate(-135deg); }
   .faq-ans__toggle:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; border-radius: 4px; }
   .faq-ans__full { padding: 8px 0 4px; }
   .faq-ans__links { margin-top: 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
@@ -719,7 +718,6 @@ if (items.length) {
   /* 순서대로 보기 진행 막대 — 단계가 넘어갈 때 차오른다 */
   .faq-guide__bar { height: 6px; margin-top: 20px; border-radius: 999px; background: color-mix(in srgb, var(--br-teal) 12%, transparent); overflow: hidden; }
   .faq-guide__bar i { display: block; height: 100%; background: var(--br-teal); border-radius: inherit; transform-origin: left; transform: scaleX(0.125); transition: transform var(--dur-reveal) var(--ease-out); }
-  .faq-guide__btn:active:not(:disabled) { transform: scale(0.96); }
   .faq-guide__btn { transition: transform 160ms var(--ease-out), background-color var(--dur-color) ease; }
 
   @media (max-width: 640px) {
@@ -756,10 +754,10 @@ if (items.length) {
   .faq-start__s { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--br-teal); }
   .faq-start__s > span { display: inline-block; transition: transform 0.2s; }
   .faq-start:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 3px; }
-  .faq-start:active { transform: translateY(0); box-shadow: none; }
   @media (hover: hover) and (pointer: fine) {
     .faq-start:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--br-teal) 55%, transparent); box-shadow: 0 10px 22px -12px rgba(0, 41, 58, 0.4); }
     .faq-start:hover .faq-start__s > span { transform: translateX(4px); }
+    .faq-start:hover:active { transform: none; box-shadow: none; }
   }
   @media (prefers-reduced-motion: reduce) {
     .faq-start, .faq-start__s > span { transition: none; }
@@ -850,9 +848,9 @@ if (items.length) {
     transform: translateY(-3px) rotate(45deg);
     transition: transform var(--dur-ui) var(--ease-out);
   }
-  .faq-item[open] > .faq-item__q::after { transform: translateY(3px) rotate(-135deg); }
+  .faq-item[open]:not([data-closing]) > .faq-item__q::after { transform: translateY(3px) rotate(-135deg); }
   @media (hover: hover) and (pointer: fine) {
-    .faq-item:not([open]) > .faq-item__q:hover::after { transform: translateY(0) rotate(45deg); }
+    .faq-item:is(:not([open]), [data-closing]) > .faq-item__q:hover::after { transform: translateY(0) rotate(45deg); }
   }
   .faq-item__body { padding: 2px 4px 24px; }
 
@@ -947,8 +945,9 @@ if (items.length) {
     .faq-chat__again:hover { transform: rotate(-3deg); }
     .faq-guide__btn--next:hover { transform: translateY(-2px); }
     .faq-ans__toggle:hover::after { transform: translateY(1px) rotate(45deg); }
+    /* 누르는 동안은 떠오름을 내려놓는다 — 눌림(press.ts)과 겹치면 떠오른 채 눌린다 */
+    .faq-ex__chip:hover:active, .faq-chat__chips :global(button:hover:active), .faq-guide__btn--next:hover:active { transform: none; }
   }
-  .faq-ex__chip:active, .faq-nav__chip:active, .faq-ask__send:active, .faq-chat__chips :global(button:active) { transform: scale(0.94); }
   @media (prefers-reduced-motion: reduce) {
     .faq-ex__chip, .faq-nav__chip, .faq-ask__send, .faq-ask__send svg, .faq-chat__chips :global(button), .faq-guide__bar i { transition: none; }
   }

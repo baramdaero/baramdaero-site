@@ -506,7 +506,7 @@ const LV_KO = { PASS: '통과', WARN: '주의', INFO: '참고', FAIL: '실패' }
 // 벽 색: 조사 사진에서 고른 값(디자인 선택, 평면 데이터 아님)
 const PALETTE = { office: { wall: 0xEDEFEF }, cafe: { wall: 0xE9E3D9 }, clinic: { wall: 0xF2F4F3 }, academy: { wall: 0xEFEDE8 }, gym: { wall: 0xDDE0E1 } };
 
-const state = { level: 'building', levelDir: null, mode: 'house', zone: null, view: 0, unit: null, pipes: true, grid: true, k: 0, ceil: 0, tanP: 0, hover: null, autoCollapsed: false };
+const state = { level: 'building', levelDir: null, mode: 'house', zone: null, view: 0, unit: null, pipes: true, grid: true, k: 0, ceil: 0, tanP: 0, hover: null, autoCollapsed: false, topFrom: null };
 // ---- embed: 부모(히어로)가 덮는 영역·요청 렌더 ----
 const EMBED = document.documentElement.classList.contains('embed');
 // inset: 전체 보기(l,r,t,b)와 방 시점(rt,rb)에서 부모 UI 가 덮는 픽셀. occNow = 마지막으로 투영에 건 값(전환 중 보간 출발점)
@@ -2811,12 +2811,14 @@ function topAt(tw, t, o) { // 진행 t(0..1) → o.pos 자리 · o.yaw/o.pitch �
   o.pitch = Math.atan2(lookPt.y - o.pos.y, d * Math.cos(el)) + tw.tilt * (tw.tilt > 0 ? hk : 1 - sstep(s / .35)); // 과녁을 보는 앙각 + 보던 위아래 각(올려다본 각은 뜨기 전에, 내려다본 각은 뜨면서 풀린다)
   return sstep(s);
 }
-// 층 위에서 보기 ↔ 층 입구(눈높이). on 을 안 주면 뒤집는다. 방·실내기 시점에서 부르면 그 자리에서 떠오른다
+// 층 배관 보기(위에서 본다) ↔ 층 안. on 을 안 주면 뒤집는다. 방·실내기 시점에서 부르면 그 자리에서 떠오르고, 끄면 보던 그 시점으로 돌아간다(층 입구에서 켰으면 층 입구로)
 function goTop(on = !isTop(), then) {
   if (state.level !== 'floor') return;
   if (unzoom(() => goTop(on, then))) return;
   if (tween?.dolly) { tween.then = () => goTop(on, then); return; } // 층으로 들어오는 돌리는 끊지 않는다 — 도착한 뒤 이어 간다
   if (on === isTop()) { postSpace(); then?.(); return; }
+  if (on) state.topFrom = state.zone ? [state.zone, state.view, state.unit] : null;
+  else if (!then && state.topFrom) return goZone(...state.topFrom); // 2026-11-10 박민혁: 아파트 '배관 보기'처럼 — 보던 실내기로 돌아간다. then 이 있으면(건물로 나가는 길) 층 입구로 내려온다
   const up = aloft();
   state.mode = on ? 'house' : 'room'; state.zone = null; state.unit = null; markUnit(null); setHover(null);
   if (state.autoCollapsed) { $('listSheet').removeAttribute('data-collapsed'); $('listGrab').setAttribute('aria-expanded', 'true'); state.autoCollapsed = false; }
@@ -2950,7 +2952,7 @@ function goZone(id, viewIdx, unitId) {
   }
 }
 function goHome() { // 구역·실내기 → 층 입구 → 건물 정면, 한 단계씩
-  if (isTop()) return goTop(false); // 위에서 보는 중이면 층 입구로
+  if (isTop()) return goTop(false); // 배관 보기 중이면 보던 시점(없으면 층 입구)으로
   if (state.level === 'floor') return state.zone ? backToEntry() : goBuilding();
   if (state.level === 'roof') goBuilding();
 }
@@ -3393,7 +3395,7 @@ if (EMBED) {
       hostKey = HOST_BLD;
       goBuilding();
     } else if (m.type === 'home') { if (state.zone) backToEntry(); } // 히어로 '뒤로'는 실내기 → 층 입구만. 건물로는 목록의 '건물 정면'으로
-    else if (m.type === 'top') goTop(m.on == null ? undefined : !!m.on); // 층 위에서 보기 ↔ 층 입구
+    else if (m.type === 'top') goTop(m.on == null ? undefined : !!m.on); // 층 배관 보기 ↔ 보던 시점(없으면 층 입구)
     else if (m.type === 'hover') {
       const id = String(m.id || ''), [k, u] = id.split('/');
       if (pickable() && !tween) setHover(u ? (k === S.key && S.unitsById[u] ? u : null) : id || null);

@@ -44,7 +44,6 @@ const dateLabel = date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'lo
     box-shadow: var(--glass-shadow);
     transition: transform 160ms var(--ease-out);
   }
-  .bd-case-card:active { transform: scale(0.98); }
   /* hover 는 엣지 글로우(data-glow)가 맡는다 — 회색 테두리 hover 는 걷었다(2026-10-06, 다른 흰 카드와 같은 모션) */
   /* 카드에서 overflow:hidden 을 걷었다(테두리 밖 1px 에 그리는 글로우가 잘린다) — 사진 칸이 위 모서리를 직접 둥글린다 */
   .bd-case-card__media { aspect-ratio: 4 / 3; background: var(--bg-soft); overflow: hidden; border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0; }

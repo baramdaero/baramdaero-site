@@ -9,6 +9,7 @@
     "preview": "astro preview",
     "photos": "node scripts/photo-editor.mjs",
     "test:motion": "node scripts/check-motion.mjs",
+    "test:press": "node scripts/check-press.mjs",
     "test:commercial": "node scripts/check-commercial.mjs",
     "case:new": "node scripts/new-case.mjs",
     "test:case": "node scripts/new-case.mjs --selfcheck",

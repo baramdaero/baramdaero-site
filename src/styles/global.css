@@ -79,6 +79,9 @@ html {
      3D 문서(iframe)는 세로 끌기를 페이지 스크롤로 넘겨 주는 구조라 막을 곳은 바깥 쪽 하나다 */
   overscroll-behavior-y: none;
 }
+/* 누른 자리의 회색 번쩍임(기기 기본)은 끈다 — 눌림은 src/scripts/press.ts 가 보여 준다.
+   스크립트가 안 돌거나, 모션을 줄였거나, scale 속성을 모르는 브라우저는 눌림이 없으므로 기기 기본을 그대로 둔다 */
+@media (prefers-reduced-motion: no-preference) { @supports (scale: 1) { html.br-press { -webkit-tap-highlight-color: transparent; } } }
 
 body {
   font-family: var(--sans);
@@ -259,7 +262,7 @@ button {
   font-size: 17px;
   letter-spacing: -0.01em;
   border-radius: var(--radius-btn);
-  /* 떼면 스프링으로 돌아온다(2026-10-06). 누르는 쪽은 아래 hover 규칙 뒤의 :active 에서 빠르게 */
+  /* 떠오름(hover)은 스프링으로 오르내린다(2026-10-06). 눌림은 여기 없다 — 누를 수 있는 것 전부를 src/scripts/press.ts 가 맡는다(2026-11-11) */
   transition: background-color var(--dur-color) ease, color var(--dur-color) ease, transform var(--dur-spring) var(--ease-spring);
 }
 @media (hover: hover) and (pointer: fine) {
@@ -274,6 +277,7 @@ button {
 .br-cta-arrow path:first-child { opacity: 0; }
 @media (hover: hover) and (pointer: fine) {
   .bd-cta:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 22px -10px rgba(0, 41, 58, 0.45); }
+  .bd-cta:hover:active:not(:disabled) { transform: none; } /* 누르는 동안은 떠오름이 내려앉는다 — 눌림(scale)은 press.ts */
   .bd-cta--ondark:hover { background: color-mix(in srgb, #fff 72%, var(--br-ice)); color: var(--br-ink); }
   .bd-cta:hover:not(:disabled) .br-cta-arrow path:first-child { opacity: 1; }
   .bd-cta:hover:not(:disabled) .br-cta-arrow path:last-child { transform: translateX(3px); }
@@ -282,8 +286,6 @@ button {
   .br-cta-arrow path { transition: none; }
   .bd-cta:hover:not(:disabled) { transform: none; }
 }
-/* 누르면 빠르게 눌린다 — hover 의 떠오름과 특이도가 같아 그 뒤에 둔다(앞에 두면 마우스로 눌러도 떠 있는 채다) */
-.bd-cta:active:not(:disabled) { transform: scale(0.96); transition-duration: var(--dur-color), var(--dur-color), calc(var(--dur-color) / 2); transition-timing-function: ease, ease, ease-out; }
 
 /* secondary — 2026-10-02 대표: 알약·동그라미 화살표는 'AI 티' → 문의 버튼과 같은 사각(44px 높이라 모서리 10px)과 같은 화살표
    (hover 에 선이 나오고 꺾쇠가 민다, .br-cta-arrow 와 같은 모양). 마크업의 <span aria-hidden="true">→</span> 은 그대로 두고
@@ -325,7 +327,6 @@ button {
   border-top: 2px solid currentColor; border-right: 2px solid currentColor;
   transform: rotate(45deg); transition: transform var(--dur-ui) var(--ease-out);
 }
-.br-pill:active { transform: scale(0.96); transition-duration: var(--dur-color), calc(var(--dur-color) / 2); transition-timing-function: ease, ease-out; }
 .br-pill:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 @media (hover: hover) and (pointer: fine) {
   .br-pill:hover { background: var(--pill-bg-hover, var(--tint-strong)); color: var(--pill-fg-hover, var(--pill-fg, var(--br-teal))); }
@@ -353,6 +354,22 @@ html.br-js .br-reveal.br-in { opacity: 1; transform: translateY(0); }
    규칙만 있고 적용 0건이던 것을 맞춘다). 그 밖의 큰 활자는 .br-reveal--fade 를 직접 단다 */
 html.br-js .br-reveal.br-reveal--fade,
 html.br-js .br-reveal.br-h { transform: none; }
+
+/* ---- 화면 넘어갈 때 (2026-11-12 박민혁: '화면이 넘어갈 때도 부드럽게 이어지게'. 대표 확인 전. DESIGN.md §4) ----
+   사이트 안에서 다른 쪽으로 갈 때 앞 화면과 새 화면이 --dur-ui 동안 겹쳐 바뀐다. 브라우저 기본 겹침 그대로이고 길이만 토큰으로 맞춘다.
+   · 헤더에 view-transition-name 을 붙이지 않는다 — 이름을 붙인 것은 따로 찍히는데, 유리 헤더(backdrop-filter)는 찍힌 그림에서 뒤가 비치지 않아 번쩍인다
+   · 앞 화면·새 화면의 길이나 곡선을 따로 주지 않는다 — 둘이 같아야 합이 1 이라, 두 그림에 똑같이 있는 것(헤더·상담 버튼)이 흐려지지 않는다.
+     새 화면 그림에 늦게 들어오는 것만 그동안 옅어진다(길이·곡선 탓이 아니다): 헤더는 첫 몇 프레임(PC 홈→/cases/ 에서 15%쯤, 눈에 띄지 않음),
+     문서 맨 끝의 문의 단추는 느린 폰에서 큰 쪽(/cases/·/faq/·홈)으로 갈 때 0.1초쯤(CPU 4배 감속 실측 20%까지. 전환을 켜기 전에는 그동안 아예 없었다)
+   · 새 화면을 밀어 올리지 않는다 — 고정 헤더가 같이 밀린다. 도착 모션은 위 .br-reveal 이 맡는다
+   모르는 브라우저(Firefox 등)·새로 고침·주소 입력·쇼핑몰로 넘어갈 때는 예전처럼 바로 바뀐다.
+   켜는 규칙(@view-transition)은 여기 없다 — Base.astro <head> 의 인라인 <style> 에 있고, 모션 줄이기 설정도 거기서 막는다
+   (아래 전역 0.01ms 규칙은 ::view-transition-* 에 닿지 않는다). 크롬은 그 규칙이 <head> 안 인라인일 때만 전환한다 — 따로 받는 이 파일에 두면 조용히 빠진다
+   (2026-11-12 빌드본 실측: 폰 9번 이동 중 0~3번만 전환 → 인라인으로 옮기자 9번 모두). 여기로 다시 옮기지 않는다(test:press 가 잡는다).
+   겹치는 동안의 누름은 같은 자리의 pagereveal 인라인 스크립트가 받는다 */
+::view-transition-group(root) { animation-duration: var(--dur-ui); } /* 그 안의 앞·새 화면은 이 길이를 물려받는다 */
+/* 겹쳐 바뀌는 동안에는 부드러운 스크롤을 끈다 — /faq/#… 처럼 도착하자마자 내려가는 쪽에서 겹침과 스크롤이 같이 돌지 않고, 도착 자리에서 바로 나타난다 */
+html:active-view-transition { scroll-behavior: auto; }
 
 /* 접근성 */
 /* 키보드 사용자가 페이지마다 헤더 링크를 전부 지나지 않게 (2026-09-22) */
