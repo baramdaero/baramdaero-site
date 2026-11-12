@@ -168,6 +168,7 @@ const jsonLd = [
 </Base>
 
 <script>
+  import { gust } from '../../scripts/press';
   // 검색(낱말마다 모두 포함) + 시·도 + 시·구 → 최신순 12건씩. 주소 ?q=&r= 로 같은 결과를 다시 열 수 있다
   const form = document.querySelector<HTMLFormElement>('[data-case-find]');
   const input = document.querySelector<HTMLInputElement>('#case-q');
@@ -196,8 +197,10 @@ const jsonLd = [
     const setKind = (k: string) => {
       kind = k;
       kindBtns.forEach((b) => b.setAttribute('aria-checked', String(b.dataset.kind === k)));
+      const was = [aptSec, ...logBoxes].filter((el) => el && !el.hidden);
       if (aptSec) aptSec.hidden = !!k && k !== 'apt';        // 단지 목록은 아파트만
       logBoxes.forEach((el) => { el.hidden = (el.dataset.log ?? '') !== k; });
+      gust([aptSec, ...logBoxes].filter((el): el is HTMLElement => !!el && !el.hidden && !was.includes(el))); // 새로 나타난 묶음만 온다(띡 바뀌지 않게)
       const apt = !k || k === 'apt';
       if (findLabel) findLabel.textContent = apt ? '아파트명이나 지역으로 찾기' : '종류나 지역으로 찾기';
       input.placeholder = apt ? '예) 봇들마을, 성남' : '예) 사무실, 병원, 성남';
@@ -229,10 +232,7 @@ const jsonLd = [
       aptMore.textContent = `더 보기 (${left.toLocaleString('ko-KR')}곳)`;
       if (aptCount) aptCount.textContent = `${hits.length.toLocaleString('ko-KR')}곳`;
       if (aptEmpty) aptEmpty.hidden = hits.length > 0;
-      // 새로 열린 줄이 차례로 떠오른다(띡 나타나지 않게)
-      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) rows.slice(from).forEach((c, k) =>
-        c.animate([{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'none' }],
-          { duration: 600, delay: Math.min(k, 12) * 40, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'backwards' }));
+      gust(rows.slice(from)); // 누른 직후 새로 온 줄만 차례로 온다. 타자 중에는 조용히 바뀐다
       if (from) rows[from]?.querySelector('a')?.focus({ preventScroll: true });
     };
     const setProv = (p: string) => {
@@ -240,7 +240,9 @@ const jsonLd = [
       provBtns.forEach((b) => b.setAttribute('aria-checked', String(b.dataset.prov === p)));
       cityOpts.forEach((o) => { o.hidden = !!p && o.dataset.prov !== p; });
       const n = cityOpts.filter((o) => !o.hidden).length;
+      const wasCity = cityWrap.hidden;
       cityWrap.hidden = !p || n < 2;                 // 시·도를 골라야, 그 안에 시·구가 둘 이상일 때만
+      if (wasCity && !cityWrap.hidden) gust([cityWrap]);
       // 시·도를 '전체'로 돌리면 시·구도 푼다 — 숨긴 선택 상자에 값이 남아 1건에 갇히던 것(2026-10-01)
       if (citySel.value && (!p || cityOpts.find((o) => o.value === citySel.value)?.hidden)) citySel.value = '';
     };
@@ -258,6 +260,7 @@ const jsonLd = [
           && terms.every((t) => (c.dataset.q ?? '').includes(t) || (c.dataset.q ?? '').includes(bare(t))));
         l.cells.forEach((c) => { c.hidden = true; });
         hits.slice(0, l.shown).forEach((c) => { c.hidden = false; });
+        if (reset) gust(hits.slice(0, l.shown));       // 조건을 눌러 바꾼 직후에만(gust 가 가린다) 결과가 차례로 온다
         const left = hits.length - Math.min(l.shown, hits.length);
         l.more.hidden = left <= 0;
         l.more.textContent = `더 보기 (${left.toLocaleString('ko-KR')}${l.unit})`;
@@ -279,7 +282,7 @@ const jsonLd = [
     input.addEventListener('input', () => apply());
     form.addEventListener('submit', (e) => { e.preventDefault(); apply(); input.blur(); });
     kindBtns.forEach((b, i) => {
-      b.addEventListener('click', () => { setKind(b.dataset.kind ?? ''); apply(); });
+      b.addEventListener('click', () => { if (b.getAttribute('aria-checked') === 'true') return; setKind(b.dataset.kind ?? ''); apply(); }); // 이미 고른 것을 또 누르면 그대로 둔다
       b.addEventListener('keydown', (e) => {                       // 라디오 묶음 — 방향키로 옮기며 고른다
         const d = ['ArrowRight', 'ArrowDown'].includes(e.key) ? 1 : ['ArrowLeft', 'ArrowUp'].includes(e.key) ? -1 : 0;
         if (!d) return;
@@ -289,7 +292,7 @@ const jsonLd = [
       });
     });
     provBtns.forEach((b, i) => {
-      b.addEventListener('click', () => { setProv(b.dataset.prov ?? ''); apply(); });
+      b.addEventListener('click', () => { if (b.getAttribute('aria-checked') === 'true') return; setProv(b.dataset.prov ?? ''); apply(); });
       b.addEventListener('keydown', (e) => {                       // 라디오 묶음 — 방향키로 옮기며 고른다
         const d = ['ArrowRight', 'ArrowDown'].includes(e.key) ? 1 : ['ArrowLeft', 'ArrowUp'].includes(e.key) ? -1 : 0;
         if (!d) return;
@@ -311,10 +314,7 @@ const jsonLd = [
       l.shown += PAGE * 2; apply(false);
       const fresh = l.cells.filter((c) => !c.hidden).slice(first);
       fresh[0]?.querySelector('a')?.focus({ preventScroll: true });   // 새로 열린 첫 줄로
-      // 새로 열린 줄이 차례로 떠오른다(띡 나타나지 않게)
-      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) fresh.forEach((c, k) =>
-        c.animate([{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'none' }],
-          { duration: 600, delay: Math.min(k, 12) * 40, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'backwards' }));
+      gust(fresh); // 새로 열린 줄이 차례로 온다
     });
     apply(false);
   }
@@ -337,6 +337,7 @@ const jsonLd = [
   .case-seg button {
     min-height: 40px; padding: 0 16px; border: 0; border-radius: 6px; background: transparent; cursor: pointer;
     font: inherit; font-size: 15px; font-weight: 500; color: var(--br-ink-sub);
+    transition: background-color var(--dur-color) var(--ease-out), color var(--dur-color) var(--ease-out), box-shadow var(--dur-color) var(--ease-out);
   }
   .case-seg button[aria-checked='true'] { background: #fff; color: var(--br-ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0, 41, 58, .08); }
   .case-seg button:focus-visible { outline: 2px solid var(--br-teal); outline-offset: -2px; }
@@ -368,8 +369,7 @@ const jsonLd = [
   .apt-list :global(.apt-row__where) { grid-column: 1; font-size: 13.5px; color: var(--br-ink-sub); }
   .apt-list :global(.apt-row__n) { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-size: 14px; font-weight: 700; color: var(--br-teal); font-variant-numeric: tabular-nums; }
   .apt-list :global(.apt-row a:focus-visible) { outline: 2px solid var(--br-teal); outline-offset: 2px; }
-  .apt-list :global(.apt-row a:active) { transform: scale(0.98); }
-  @media (hover: hover) and (pointer: fine) { .apt-list :global(.apt-row a:hover) { border-color: var(--br-teal); transform: translateY(-2px); } }
+  @media (hover: hover) and (pointer: fine) { .apt-list :global(.apt-row a:hover) { border-color: var(--br-teal); transform: translateY(-2px); } .apt-list :global(.apt-row a:hover:active) { transform: none; } }
   .case-months { list-style: none; padding: 0; margin-top: 20px; display: flex; flex-wrap: wrap; gap: 8px; }
   .case-months__n { font-weight: 600; color: var(--br-ink-sub); font-variant-numeric: tabular-nums; }
   @media (max-width: 900px) { .apt-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

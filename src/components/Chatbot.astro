@@ -100,6 +100,7 @@ const TEASER = [
   import { SITE_CONFIG } from '../config.js';
   import { channelEnabled, ensureChannel, openConsult } from '../lib/channel.ts';
   import { readChatLink } from '../lib/chat-link.ts';
+  import { gust } from '../scripts/press.ts';
 
   const root = document.querySelector('[data-chat-root]') as HTMLElement;
   const fab = root.querySelector('[data-chat-fab]') as HTMLButtonElement;
@@ -493,6 +494,7 @@ const TEASER = [
     el.className = `chat__msg chat__msg--${who}`;
     el.textContent = text;
     log.appendChild(el);
+    if (who === 'user') gust([el]);   // 내가 보낸 말은 누른 직후에 온다 — 한 번 출렁이고 자리 잡는다(봇의 말은 입력 중 표시 뒤라 조용히 온다)
     scrollDown();
     return el;
   }
@@ -988,6 +990,7 @@ const TEASER = [
   function toast(msg: string) {
     toastEl.textContent = msg;
     toastEl.hidden = false;
+    void toastEl.offsetHeight;   // 숨김이 풀린 모습을 한 번 그려야 떠오름이 보인다(같은 프레임에 붙이면 툭 나타난다)
     toastEl.classList.add('is-on');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => {
@@ -1214,10 +1217,9 @@ const TEASER = [
     box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent), 0 2px 6px rgba(0, 41, 58, 0.18), 0 10px 26px rgba(0, 41, 58, 0.28);
     transition: background-color var(--dur-color) ease, transform var(--dur-spring) var(--ease-spring);
   }
-  .chat__fab:active { transform: scale(0.96); transition-duration: var(--dur-color), calc(var(--dur-color) / 2); transition-timing-function: ease, ease-out; }
   @media (hover: hover) and (pointer: fine) {
     .chat__fab:hover { background: var(--br-teal); transform: translateY(-2px); } /* 문의 버튼과 같은 떠오름 — 빛 테두리(specular)는 뺐다(2026-10-02 '밤티') */
-    .chat__fab:hover:active { transform: scale(0.96); }
+    .chat__fab:hover:active { transform: none; }   /* 누르는 동안은 내려앉는다 — 눌림(scale)은 press.ts */
   }
   .chat__fab-label { font-size: 15px; font-weight: 700; letter-spacing: 0.01em; }
   /* 포커스: 흰 링 + teal 바깥 링 — 짙은 구간(푸터·다크 히어로) 위에서도 보이게(teal 단색 링은 1.65:1) */
@@ -1345,9 +1347,10 @@ const TEASER = [
     color: var(--ink-soft);
     transition: color var(--dur-color) ease, background-color var(--dur-color) ease;
   }
-  .chat__head-close:hover { color: var(--ink); background: var(--bg-soft); }
+  @media (hover: hover) and (pointer: fine) { .chat__head-close:hover { color: var(--ink); background: var(--bg-soft); } }
 
   /* ---------- 대화 영역 ---------- */
+  @media (prefers-reduced-motion: no-preference) { .chat__log { scroll-behavior: smooth; } }   /* 새 말이 오면 목록이 툭 튀지 않고 밀려 올라간다 */
   .chat__log {
     flex: 1;
     overflow-y: auto;
@@ -1367,7 +1370,7 @@ const TEASER = [
     border-radius: 12px;
     opacity: 1;
     transform: translateY(0);
-    transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+    transition: opacity var(--dur-ui) ease, transform var(--dur-ui) var(--ease-out);
     @starting-style { opacity: 0; transform: translateY(6px); }
   }
   /* 말풍선 유리(2026-09-03): 패널이 이미 Heavy blur라 말풍선엔 backdrop-filter를 다시 걸지 않는다(유리 중첩 금지).
@@ -1387,6 +1390,7 @@ const TEASER = [
     border: 1px solid var(--glass-line-on-dark);
     box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 22%, transparent), 0 6px 18px color-mix(in srgb, var(--br-teal-deep) 24%, transparent);
     border-bottom-right-radius: 4px;
+    transition: none; /* 내 말풍선은 바람결(gust)로만 온다 — 위의 등장 전환과 겹치면 두 곡선이 섞인다 */
   }
 
   /* 타이핑 인디케이터 — 박스 점프(bxSpin) (2026-09-03, css-loaders 계열 순수 CSS 원본을 --size 로 축소 이식)
@@ -1473,9 +1477,8 @@ const TEASER = [
     background: transparent;
     color: var(--ink);
     text-align: left;
-    transition: border-color var(--dur-color) ease, background-color var(--dur-color) ease, color var(--dur-color) ease, transform 160ms var(--ease-out), opacity var(--dur-color) ease;
+    transition: border-color var(--dur-color) ease, background-color var(--dur-color) ease, color var(--dur-color) ease, opacity var(--dur-color) ease;
   }
-  .chat__chip:active:not(:disabled) { transform: scale(0.96); }
   @media (hover: hover) and (pointer: fine) {
     .chat__chip:hover:not(:disabled) { background: color-mix(in srgb, var(--br-teal) 7%, transparent); border-color: color-mix(in srgb, var(--br-teal) 55%, transparent); color: var(--copper-deep); }
   }
@@ -1547,17 +1550,16 @@ const TEASER = [
     min-height: 44px;
     border-radius: 8px;
     text-decoration: none;
-    transition: background-color var(--dur-color) ease, border-color var(--dur-color) ease, color var(--dur-color) ease, transform 160ms var(--ease-out);
+    transition: background-color var(--dur-color) ease, border-color var(--dur-color) ease, color var(--dur-color) ease;
   }
-  .chat__cta:active:not(:disabled) { transform: scale(0.98); }
   .chat__cta--primary { background: var(--copper); color: #fff; border: 1px solid var(--copper); }
-  .chat__cta--primary:hover:not(:disabled) { background: var(--copper-deep); border-color: var(--copper-deep); }
+  @media (hover: hover) and (pointer: fine) { .chat__cta--primary:hover:not(:disabled) { background: var(--copper-deep); border-color: var(--copper-deep); } }
   .chat__cta--ghost { background: color-mix(in srgb, #fff 62%, transparent); color: var(--ink); border: 1px solid var(--line); }
   @media (hover: hover) and (pointer: fine) {
     .chat__cta--ghost:hover { border-color: var(--ink-soft); }
   }
   .chat__cta--sub { background: none; border: 0; color: var(--ink-soft); font-weight: 500; font-size: 13px; }
-  .chat__cta--sub:hover:not(:disabled) { color: var(--ink); }
+  @media (hover: hover) and (pointer: fine) { .chat__cta--sub:hover:not(:disabled) { color: var(--ink); } }
   .chat__cta:disabled { opacity: 0.55; cursor: default; }
 
   /* ---------- 하단 컴포저 ---------- */
@@ -1582,7 +1584,7 @@ const TEASER = [
     border-radius: 6px;
     transition: color var(--dur-color) ease, background-color var(--dur-color) ease;
   }
-  .chat__nav-btn:hover:not(:disabled) { color: var(--ink); background: var(--bg-soft); }
+  @media (hover: hover) and (pointer: fine) { .chat__nav-btn:hover:not(:disabled) { color: var(--ink); background: var(--bg-soft); } }
   .chat__nav-btn:disabled { opacity: 0.4; cursor: default; }
   .chat__inputbar {
     display: flex;
@@ -1611,10 +1613,9 @@ const TEASER = [
     place-items: center;
     background: var(--copper);
     color: #fff;
-    transition: background-color var(--dur-color) ease, opacity var(--dur-color) ease, transform 160ms var(--ease-out);
+    transition: background-color var(--dur-color) ease, opacity var(--dur-color) ease;
   }
-  .chat__send:hover:not(:disabled) { background: var(--copper-deep); }
-  .chat__send:active:not(:disabled) { transform: scale(0.96); }
+  @media (hover: hover) and (pointer: fine) { .chat__send:hover:not(:disabled) { background: var(--copper-deep); } }
   .chat__send:disabled { opacity: 0.4; cursor: default; }
 
   /* ---------- 토스트 ---------- */
@@ -1630,7 +1631,7 @@ const TEASER = [
     padding: 11px 18px;
     border-radius: 999px;
     opacity: 0;
-    transition: opacity 220ms var(--ease-out), transform 220ms var(--ease-out);
+    transition: opacity var(--dur-ui) var(--ease-out), transform var(--dur-ui) var(--ease-out);
     pointer-events: none;
     max-width: calc(100vw - 40px);
   }

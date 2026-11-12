@@ -68,7 +68,7 @@ const biz = SITE_CONFIG.BUSINESS;
   .bd-footer__cta { margin-top: 20px; }
   /* 색·모양·떠오름은 문의 버튼(.bd-cta--ondark) — 여기서는 작은 크기만 */
   .bd-footer__ask { min-height: 44px; padding: 0 18px; font-size: 15px; cursor: pointer; }
-  .bd-footer__nav a:hover { color: var(--br-ice); }
+  @media (hover: hover) and (pointer: fine) { .bd-footer__nav a:hover { color: var(--br-ice); } }
   /* 로그인한 방문자(<html class="bd-member">, 헤더가 정한다)에게는 '로그인' 자리에 '마이페이지' — 헤더와 같은 규칙 */
   .bd-footer__mypage { display: none; }
   :global(html.bd-member) .bd-footer__mypage { display: revert; }

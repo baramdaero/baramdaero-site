@@ -95,7 +95,7 @@
     // PC: 안내 버튼 세로 가운데를 업종 줄(시스템에어컨 설치 · 분해세척 · 관리) 가운데에 맞춘다(2026-10-01 대표)
     const kr = document.querySelector('.h3-kicker')?.getBoundingClientRect();
     if (kr && kr.height) hero.style.setProperty('--kick-c', Math.round(kr.top + kr.height / 2 - hr.top) + 'px');
-    const hdr = (document.querySelector('.bd-header')?.offsetHeight || 64), b = Math.round(hr.bottom - dock.getBoundingClientRect().top + 16);
+    const hdr = (document.querySelector('.bd-header')?.offsetHeight || 64), ty = parseFloat(getComputedStyle(dock).translate.split(' ')[1]) || 0, b = Math.round(hr.bottom - (dock.getBoundingClientRect().top - ty) + 16); // ty: 도크가 떠오르는 중(.is-moving)이면 그만큼 빼고 잰다
     // 그 층을 위에서 보는 동안은 왼쪽 위 판(건물 전체·층 이름·위에서 보기) 아래부터 그리게 한다 — 판이 층 귀퉁이의 배관을 가리지 않게
     const upB = viewer === st.viewer && st.top[st.space] ? $('up').offsetTop + $('up').offsetHeight + 8 : 0;
     const m = viewer !== 'house'
@@ -159,7 +159,7 @@
   function renderSpaces() {
     $('spaces').innerHTML = SPACES.map(s => `<button type="button" data-space="${s.key}" aria-pressed="${s.key === st.space}">${esc(s.name)}</button>`).join('');
   }
-  let lastSpots = null;
+  let lastSpots = null, dockMode = false;
   function renderDock() {
     const inRoom = !!st.room;                       // 방 안 — 문구·안내 판을 걷는 기준('home' 이 올 때까지 유지: 비행 중 머리말이 실내 벽 위로 떠오르지 않게)
     // '전체 보기'를 누르면 비행이 끝나기 전에 도크부터 칩 줄로 — 예전에는 'home' 이 오는 비행 60~75% 지점(탭 뒤 1.6~2.4초)에야 바뀌어 돌아가는 길이 느리고 막힌 것처럼 보였다(2026-11-09)
@@ -173,11 +173,12 @@
     // 건물로 나가는 길은 3D 왼쪽 위에 따로 — 지금 층 이름과 함께. 실내기 시점에서도 그대로 둔다(건물까지 한 번에)
     // 아파트는 방 안에서만 같은 판에 '배관 보기' 하나(위에서 내려다보며 그 방 실내기 배관이 실외기까지 가는 길을 본다. 2026-11-10 박민혁 '에어컨 시점이 되면 배관 라인까지 보이게' — 11-09 '위에서 보기'의 이름·쓰임을 바꿈)
     const aptRoom = st.viewer === 'house' && inRoom && !st.leaving && !st.room.ou; // 실외기실 시점에는 위에서 보기가 없고, 나가는 중(비행 내내)에는 눌려도 무반응이라 숨긴다
-    $('up').toggleAttribute('data-on', inBld || aptRoom); $('up').toggleAttribute('data-solo', aptRoom && !inBld);
+    const upOn = inBld || aptRoom; $('up').toggleAttribute('data-on', upOn);
+    if (upOn) $('up').toggleAttribute('data-solo', aptRoom && !inBld); // 꺼지는 동안(흐려지는 240ms)에는 판 안을 그대로 둔다 — 방에서 나갈 때 '건물 전체'가 번쩍 나타났다 사라졌다
     if (inBld) $('upT').textContent = st.level[st.space] || '';
     const onFloor = inBld && st.entries[st.space].some(e => e.id !== 'building'); // 층 안(옥상은 고를 칸이 없고, 이미 위에서 본다)
     const canTop = onFloor || aptRoom;
-    $('topBtn').hidden = !canTop; $('topBtn').setAttribute('aria-pressed', String(canTop && !!st.top[st.space]));
+    if (upOn) $('topBtn').hidden = !canTop; $('topBtn').setAttribute('aria-pressed', String(canTop && !!st.top[st.space]));
     // 누른 공간이 아직 안 떴으면(불러오는 중) 문구·안내 판은 앞 화면 것 그대로 둔다 — 방 안에서 건물 탭을 누르면 문구가 떠올랐다가 화면이 바뀌며 다시 사라졌다. 화면이 바뀔 때 다시 불린다
     const pending = !!hero.dataset.shown && hero.dataset.shown !== st.viewer;
     if (!pending) {
@@ -189,6 +190,7 @@
     if (hero.dataset.space !== st.space) { hero.dataset.space = st.space; requestAnimationFrame(() => sendInset()); } // 문구가 숨거나 나타난 뒤 자리를 다시 잰다
     $('spots').hidden = dockRoom && !barRoom;
     $('here').hidden = !(dockRoom || zoomed);
+    if (dockMode !== dockRoom) { dockMode = dockRoom; const d = $('dock'); d.classList.remove('is-moving'); void d.offsetWidth; d.classList.add('is-moving'); } // 개요 ↔ 방: 판이 뚝 바뀌지 않고 한 번 출렁이며 자리 잡는다(아래 .is-moving)
     for (const b of $('spaces').children) b.setAttribute('aria-pressed', String(b.dataset.space === st.space));
     if (dockRoom || zoomed) {
       $('backT').textContent = st.viewer === 'house' ? '전체 보기' : '층 전체';   // 건물에서 이 버튼은 실내기 → 그 층까지. 건물로는 위 '건물 전체'
@@ -228,7 +230,7 @@
       }
       if (barRoom) { // 지금 방 칸이 줄 안에 보이게 — 칩이 5개라 가로로 밀어야 하는 폭이다
         const el = $('spots'), sel = el.querySelector('.is-sel');
-        if (sel) { const er = el.getBoundingClientRect(), sr = sel.getBoundingClientRect(); if (sr.left < er.left + 12) el.scrollLeft += sr.left - er.left - 12; else if (sr.right > er.right - 12) el.scrollLeft += sr.right - er.right + 12; }
+        if (sel) { const er = el.getBoundingClientRect(), sr = sel.getBoundingClientRect(); const d = sr.left < er.left + 12 ? sr.left - er.left - 12 : sr.right > er.right - 12 ? sr.right - er.right + 12 : 0; if (d) el.scrollBy({ left: d, behavior: reduced.matches ? 'auto' : 'smooth' }); } // 줄이 순간 이동하지 않고 밀려 간다
       }
       syncMore();
     }
@@ -404,6 +406,7 @@
   $('back').addEventListener('click', leaveRoom);
   const goBuilding = () => { cancelGround(); delete st.going[st.space]; send(st.viewer, { type: 'goUnit', id: 'building' }); };   // 직접 나간 건물에는 머문다
   $('upBtn').addEventListener('click', goBuilding);
+  $('dock').addEventListener('animationend', e => { if (e.target === $('dock')) $('dock').classList.remove('is-moving'); });
   $('topBtn').addEventListener('click', () => { cancelGround(); send(st.viewer, { type: 'top', on: $('topBtn').getAttribute('aria-pressed') !== 'true' }); });
   // Esc 는 한 단계씩: 실내기 → 층 입구 → 건물 전체. 층을 위에서 보는 중이면 층 입구로
   addEventListener('keydown', e => {
@@ -412,7 +415,7 @@
     if (a && a !== document.body && !hero.contains(a)) return;   // 챗봇·메뉴를 Esc 로 닫을 때 3D 까지 같이 나가지 않게(body 는 통과 — 사파리는 버튼 클릭에 포커스를 안 준다)
     if (st.viewer === 'house' && st.top.house) send('house', { type: 'top', on: false }); // 아파트: 위에서 보는 중이면 방으로 먼저
     else if (st.room) leaveRoom();
-    else if (st.top[st.space] && !$('topBtn').hidden) { cancelGround(); send(st.viewer, { type: 'top', on: false }); }
+    else if (st.top[st.space] && $('up').hasAttribute('data-on') && !$('topBtn').hidden) { cancelGround(); send(st.viewer, { type: 'top', on: false }); }
     else if ($('up').hasAttribute('data-on')) goBuilding();
   });
 
@@ -652,7 +655,6 @@
 .h3-invite__t > span { text-wrap: balance; } /* 두 줄이 되면 고르게 나눈다 */
 .h3-invite strong { font-size: 14px; color: var(--br-teal); font-weight: 700; } /* 누르라는 안내 — teal 은 누르는 것에(§1) */
 @media (hover: hover) { .h3-invite:hover strong { text-decoration: underline; text-underline-offset: 3px; } }
-.h3-invite:active { transform: scale(.98); }
 .h3-head h1 { font-size: clamp(36px, 7.4vw, 72px); color: var(--br-ink); }
 /* 업종 한 줄 — 헤더 바로 아래. 제목 위 빈 띠가 첫 화면에서 가장 먼저 눈이 가는 자리다. */
 .h3-kicker {
@@ -686,7 +688,6 @@
 }
 .h3-spaces button[aria-pressed="true"] { color: var(--br-ink); border-bottom-color: var(--br-teal); }
 @media (hover: hover) { .h3-spaces button[aria-pressed="false"]:hover { color: var(--br-ink); } }
-.h3-spaces button:active { transform: scale(.96); }
 .h3-hero[data-fail] .h3-spaces, .h3-hero[data-fail] .h3-dock__row--go { display: none; }
 
 .h3-disclaimer { padding-inline: 8px; font-size: 13px; line-height: 1.5; color: var(--br-ink-sub); }
@@ -698,7 +699,10 @@
 /* 목록이 통째로 바뀔 때(공간 탭·층 ↔ 방) 칸들이 떠오른다 */
 .h3-spots.swap > * { animation: h3-swap var(--dur-ui) var(--ease-out) both; }
 @keyframes h3-swap { from { opacity: .3; } } /* 0 에서 시작하면 목록 자리가 잠깐 비어 깜빡인다 */
-@media (prefers-reduced-motion: reduce) { .h3-spots.swap > * { animation: none; } }
+/* 도크가 개요 ↔ 방 모양으로 바뀌는 순간 — 아래에서 올라와 한 번 출렁이고 멎는다(바람결, DESIGN.md §4). 스크립트가 바뀔 때만 붙였다 뗀다 */
+.h3-dock.is-moving { animation: h3-move var(--dur-spring) var(--ease-spring) backwards; }
+@keyframes h3-move { from { translate: 0 12px; } }
+@media (prefers-reduced-motion: reduce) { .h3-spots.swap > *, .h3-dock.is-moving { animation: none; } }
 /* 옆으로 더 있으면 끝을 흐려서 알린다 (포커스가 안에 있으면 흐림을 뺀다) */
 .h3-spots[data-more] { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent); }
 .h3-spots[data-less] { -webkit-mask-image: linear-gradient(90deg, transparent, #000 32px); mask-image: linear-gradient(90deg, transparent, #000 32px); }
@@ -710,7 +714,7 @@
   background: transparent;
   font-size: 15px; font-weight: 500; color: var(--br-ink-sub);
   transition: background-color var(--dur-color) var(--ease-out), color var(--dur-color) var(--ease-out),
-              border-color var(--dur-color) var(--ease-out);
+              border-color var(--dur-color) var(--ease-out), box-shadow var(--dur-color) var(--ease-out);
 }
 /* 처음 온 사람에게 한 번 짚어 주는 칩 (startTour) — 마우스를 올렸을 때와 같은 모양 */
 .h3-spot.is-sel { background: #fff; color: var(--br-ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0, 41, 58, .08); }
@@ -718,8 +722,7 @@
 .h3-spot:focus-visible { outline-offset: -2px; }
 .h3-spot small { font-size: 13px; font-weight: 500; color: var(--br-ink-sub); }
 @media (hover: hover) { .h3-spot:hover { color: var(--br-teal); background: #fff; box-shadow: 0 1px 2px rgba(0, 41, 58, .08); } }
-.h3-spot:active { transform: scale(.96); }
-.h3-spots__load { padding-inline: 12px; font-size: 13px; color: var(--br-ink-sub); }
+.h3-spots__load { display: inline-flex; align-items: center; min-height: 44px; padding-inline: 12px; font-size: 13px; color: var(--br-ink-sub); } /* 칩과 같은 높이 — 불러오는 동안 줄이 꺼졌다 올라오지 않게 */
 
 .h3-here { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 4px; }
 .h3-back {
@@ -729,7 +732,6 @@
   transition: background-color var(--dur-color) var(--ease-out);
 }
 @media (hover: hover) { .h3-back:hover { background: var(--tint-fill); } }
-.h3-back:active { transform: scale(.96); }
 .h3-back svg { width: 20px; height: 20px; }
 .h3-here__t { padding-left: 12px; border-left: 1px solid var(--tint-line); font-size: 15px; font-weight: 600; line-height: 1.4; color: var(--br-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .h3-here__t small { margin-left: 8px; font-size: 13px; font-weight: 500; color: var(--br-ink-sub); }
@@ -761,7 +763,7 @@
 }
 /* 층으로 들어가는 카메라가 자리를 잡을 즈음 내려앉는다 */
 .h3-up[data-on] { opacity: 1; visibility: visible; translate: 0 0;
-  transition: opacity var(--dur-reveal) var(--ease-out) .35s, translate var(--dur-reveal) var(--ease-out) .35s, visibility 0s; }
+  transition: opacity var(--dur-ui) ease .35s, translate var(--dur-spring) var(--ease-spring) .35s, visibility 0s; } /* 내려와 한 번 출렁이고 멎는다 */
 .h3-up .h3-here__t { padding-right: 12px; }
 .h3-up[data-solo] #upBtn, .h3-up[data-solo] #upT { display: none; } /* 아파트 방 안: '위에서 보기' 하나만 */
 .h3-up .h3-here__t:empty { display: none; }
@@ -789,7 +791,7 @@
 @media (max-width: 1023px) {
   .h3-invite { width: fit-content; max-width: calc(100% - 2 * var(--h3-gutter)); transition: opacity var(--dur-color) var(--ease-out); }
   /* 제목이 숨는 때(건물·층·방 안, 3D 를 직접 만진 뒤)는 안내 판도 같이 숨는다 */
-  .h3-hero[data-deep] .h3-invite, .h3-hero[data-room] .h3-invite, .h3-hero[data-touch3d] .h3-invite { opacity: 0; visibility: hidden; pointer-events: none; }
+  .h3-hero[data-deep] .h3-invite, .h3-hero[data-room] .h3-invite, .h3-hero[data-touch3d] .h3-invite { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity var(--dur-color) var(--ease-out), visibility 0s var(--dur-color); } /* 흐려진 뒤에 숨긴다 */
 }
 @media (min-width: 1024px) {
   /* 안내는 히어로 오른쪽 위. 도면은 --free-t(TIP_BAND)로 이 띠를 비워 두므로 서로 간섭하지 않는다 */

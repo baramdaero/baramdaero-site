@@ -140,7 +140,7 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
     // tabs.forEach 는 빈 배열에서 no-op 이고 pick() 은 탭 핸들러에서만 불린다.
     if (!frame) return;
     const FAIL_MS = 15000;                 // three.js CDN 이 막히면 뷰어 스크립트 자체가 실행되지 않는다
-    let ready = false, seen = false, played = false, failTimer = 0;
+    let ready = false, seen = false, played = false, failTimer = 0, loadTimer = 0;
 
     // 뷰어가 준비됐다고 알려 올 때 재생한다. 타이머로 찍으면 느린 망에서 신호가 버려진다
     const play = () => {
@@ -158,7 +158,7 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
       if (m.type !== 'ready') return;
       ready = true;
       clearTimeout(failTimer);
-      stage?.removeAttribute('data-fail');
+      stage?.removeAttribute('data-fail'); stage?.removeAttribute('data-loading');
       play();
     });
 
@@ -167,6 +167,10 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
       if (!it) return;
       const url = `/3d/parts/${it.file}?embed&theme=light&assembled`;
       try { frame.contentWindow.location.replace(url); } catch { frame.src = url; }   // src 재할당은 히스토리를 쌓는다
+      if (ready) {   // 보던 기종은 잠깐 걷혔다가 새 기종이 준비되면 돌아온다 — 준비 신호가 안 와도 4초 뒤에는 보인다
+        stage?.setAttribute('data-loading', '');
+        clearTimeout(loadTimer); loadTimer = setTimeout(() => stage?.removeAttribute('data-loading'), 4000);
+      }
       ready = false; played = false;       // 탭을 바꾸면 그 기종도 한 번 재생한다
       if (seen) armFail();
       frame.title = `분해 3D · ${it.label}`;
@@ -316,7 +320,8 @@ const photoCount = Math.max(...items.map((it) => it.photos?.length ?? 0), 0);
   .ex-stage { position: relative; border-radius: 16px; overflow: hidden;
     background: var(--br-mist); aspect-ratio: 16 / 9; width: 100%;
   }
-  .ex-stage iframe { display: block; width: 100%; height: 100%; border: 0; }
+  .ex-stage iframe { display: block; width: 100%; height: 100%; border: 0; transition: opacity var(--dur-color) var(--ease-out); }
+  .ex-stage[data-loading] iframe { opacity: 0; }
 
   .ex-cap { margin: 12px 0 0; color: var(--br-ink-sub); font-size: 14px; }
   .ex-cap:empty, .ex-cap--hidden { display: none; }
