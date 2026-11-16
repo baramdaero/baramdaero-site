@@ -2,6 +2,9 @@
 // 시공사례 상세
 import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
+import CtaBand from '../../components/v2/CtaBand.astro';
+import { COMPLEX_BY_SLUG } from '../../lib/caselog';
+import { SITE_CONFIG } from '../../config.js';
 
 export async function getStaticPaths() {
   // sample: true는 페이지 자체를 만들지 않는다 — 목록에서 빼도 URL이 살아 있으면
@@ -13,6 +16,8 @@ export async function getStaticPaths() {
 const { entry } = Astro.props;
 const { Content } = await render(entry);
 const { region, space, brand, type, units, date, cover, sample, photos, answer, qa, updated } = entry.data;
+// 같은 단지의 시공 기록(있을 때) — 단지 페이지로 잇는다
+const complex = entry.data.apt ? COMPLEX_BY_SLUG.get(entry.data.apt) : undefined;
 const title = entry.data.title || `${region} ${space} ${brand} ${type} ${units}대`;
 const description = answer || `${title} 시공 기록.`;
 // 화면 제목은 '｜' 앞을 크게, 뒤를 작은 줄로(검색용 한 줄 제목이 막대에서 어색하게 꺾이던 것). <title>·JSON-LD 는 원문 그대로
@@ -88,6 +93,14 @@ const specs = [
         ))}
       </dl>
 
+      {/* 견적 문의 — 사례를 본 자리에서 바로(2026-10-06 대표: 견적 문의 유도) */}
+      <div class="case-detail__cta">
+        <button disabled aria-describedby="chat-unavailable" type="button" class="bd-cta" data-chat-tree={type === '세척' ? 'clean' : 'install'}>{complex ? '이 단지 견적 문의' : '비슷한 조건 견적 문의'}</button>
+        {SITE_CONFIG.PHONE && <a class="br-pill" href={`tel:${SITE_CONFIG.PHONE.replace(/[^0-9]/g, '')}`}>전화 {SITE_CONFIG.PHONE}</a>}
+        {complex && <a class="br-pill" href={`/cases/apt/${complex.slug}/`}>{complex.name} 기록 {complex.records.length}건 <span aria-hidden="true">→</span></a>}
+      </div>
+
+
       <div class="case-detail__body">
         <Content />
       </div>
@@ -130,6 +143,10 @@ const specs = [
       <p class="case-detail__back"><a class="br-pill" href="/cases/">목록으로</a></p>
     </div>
   </article>
+  <CtaBand chatTree={type === '세척' ? 'clean' : 'install'}>
+    다음 현장이<br /><em>우리 집</em>이어도 됩니다
+    <Fragment slot="sub">기종과 대수, 설치 위치. 이 정도면 됩니다.</Fragment>
+  </CtaBand>
 </Base>
 
 <style>
@@ -167,7 +184,8 @@ const specs = [
   }
   .case-detail__spec dt { font-size: 12px; color: var(--ink-soft); margin-bottom: 2px; }
   .case-detail__spec dd { font-size: 15px; font-weight: 600; }
-  .case-detail__body { font-size: 15.5px; color: var(--ink); }
+  .case-detail__cta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin: 22px 0 6px; }
+  .case-detail__body { font-size: 16px; color: var(--ink); max-width: 36em; text-wrap: pretty; word-break: keep-all; }
   /* 본문 사진 — 아주 긴 세로 사진이 한 화면을 넘게 차지하지 않게 */
   .case-detail__body :global(img) { max-height: min(80vh, 760px); width: auto; margin-inline: auto; border-radius: calc(var(--radius) - 4px); }
   .case-detail__body :global(p) { margin-bottom: 14px; }
@@ -181,6 +199,7 @@ const specs = [
   .case-detail__body :global(a) { color: var(--br-teal-deep); text-decoration: underline; text-underline-offset: 3px; }
   .case-detail__body :global(h2) { font-size: 20px; margin: 32px 0 12px; }
   .case-detail__photos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 32px; }
+  @media (min-width: 768px) { .case-detail__photos { grid-template-columns: repeat(3, 1fr); } }
   .case-detail__photos img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: calc(var(--radius) - 4px); }
   .case-detail__photos figcaption { font-size: 13px; color: var(--ink-soft); margin-top: 6px; }
   .case-detail__qa { margin-top: 40px; }

@@ -62,6 +62,11 @@ const hasVisual = isImageSlotVisible(slotId);
     display: grid;
     gap: 12px;
   }
+  /* 밝은 배경 위 Heavy 유리다 — 엣지 글로우는 밝은 유리 카드와 같은 teal 로(전역 규칙은 Heavy 를 딥 구간 위로 보고 ice 를 준다. ice 는 흰 면에 묻힌다) */
+  .v2-process__step.br-glow {
+    --glow-c: var(--br-teal); --glow-blend: normal;
+    --glow-mesh-a: var(--br-teal); --glow-mesh-b: color-mix(in srgb, var(--br-teal) 55%, var(--br-ice)); --glow-mesh-c: var(--br-ice);
+  }
   .v2-process__step {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);

@@ -59,7 +59,7 @@ const extraJsonLd = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
     <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
     <link rel="icon" href="/favicon-48.png" type="image/png" sizes="48x48" />
     <link rel="apple-touch-icon" href="/apple-touch-icon-180.png" sizes="180x180" />
-    <meta name="theme-color" content="#004E64" />
+    <meta name="theme-color" content="#00293A" />
     <link rel="sitemap" href="/sitemap-index.xml" />
 
     {SITE_CONFIG.NAVER_SITE_VERIFICATION && (
@@ -100,7 +100,7 @@ const extraJsonLd = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
       import '../scripts/motion.ts';
       // 펼침 모션 — 모든 <details> 높이·내용이 부드럽게 (data-no-expand 제외)
       import '../scripts/expand.ts';
-      // 엣지 글로우 — [data-glow] 유리 카드, hover 기기 전용
+      // 엣지 글로우 — 유리 카드 전부(.br-glass) + [data-glow], data-glow="off" 제외. hover 기기 전용
       import '../scripts/border-glow.ts';
       // Specular 림 — [data-specular] 버튼(런처·CTA 밴드), hover 기기 전용
       import '../scripts/specular.ts';

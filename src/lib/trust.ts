@@ -152,7 +152,7 @@ export function loadTrust(): TrustData {
     if (typeof t.value !== 'number' || !isFinite(t.value) || !isNonEmptyString(t.label)) {
       warn('stats_total — value(숫자)와 label이 필요합니다. 누적 숫자 줄을 건너뜁니다.');
     } else if (t.estimate === true && (!prefix || !statsNote)) {
-      // 추정이 섞인 누적은 '약'(prefix)과 기준 줄(stats_note) 없이 내보내지 않는다 — 없으면 기록 숫자로 읽힌다(2-발화기준 §2 예외)
+      // 추정이 섞인 누적은 '약'(prefix)과 기준 줄(stats_note — 2026-10-06 부터 기준일만) 없이 내보내지 않는다 — '약'이 없으면 기록 숫자로 읽힌다(2-발화기준 §2 예외)
       warn('stats_total — "estimate": true 인데 prefix(예: 약) 또는 stats_note 가 비었습니다. 누적 숫자 줄을 건너뜁니다.');
     } else {
       statsTotal = { label: t.label.trim(), value: t.value, suffix: typeof t.suffix === 'string' ? t.suffix : '', prefix };
