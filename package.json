@@ -9,16 +9,24 @@
     "preview": "astro preview",
     "photos": "node scripts/photo-editor.mjs",
     "test:motion": "node scripts/check-motion.mjs",
+    "test:press": "node scripts/check-press.mjs",
     "test:commercial": "node scripts/check-commercial.mjs",
     "case:new": "node scripts/new-case.mjs",
     "test:case": "node scripts/new-case.mjs --selfcheck",
     "test:rhythm": "astro build && node scripts/check-design-rhythm.mjs",
     "test:faq": "node scripts/check-faq-search.mjs",
-    "case:import": "node scripts/import-cases.mjs"
+    "test:chat": "node scripts/check-chat-link.mjs",
+    "test:shop": "astro build && node scripts/check-shop-links.mjs && node scripts/check-shop-session.mjs && node scripts/check-shop-bridge.mjs",
+    "case:import": "node scripts/import-cases.mjs",
+    "case:wm": "node scripts/watermark-cases.mjs",
+    "test:wm": "node scripts/watermark-cases.mjs --selfcheck && node scripts/watermark-cases.mjs --check"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
     "@channel.io/channel-web-sdk-loader": "^2.0.2",
     "astro": "^5.10.0"
+  },
+  "overrides": {
+    "sharp": "0.35.5"
   }
 }

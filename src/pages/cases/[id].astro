@@ -3,7 +3,7 @@
 import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
-import { COMPLEX_BY_SLUG } from '../../lib/caselog';
+import { COMPLEX_BY_SLUG, complexLine } from '../../lib/caselog';
 import { SITE_CONFIG } from '../../config.js';
 
 export async function getStaticPaths() {
@@ -15,7 +15,7 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const { Content } = await render(entry);
-const { region, space, brand, type, units, date, cover, sample, photos, answer, qa, updated } = entry.data;
+const { region, space, brand, type, units, date, cover, sample, photos, answer, qa, updated, spec } = entry.data;
 // 같은 단지의 시공 기록(있을 때) — 단지 페이지로 잇는다
 const complex = entry.data.apt ? COMPLEX_BY_SLUG.get(entry.data.apt) : undefined;
 const title = entry.data.title || `${region} ${space} ${brand} ${type} ${units}대`;
@@ -44,6 +44,8 @@ const jsonLd: object[] = [
     mainEntityOfPage: pageUrl,
     inLanguage: 'ko-KR',
     about: { '@type': 'Service', name: `에어컨 ${type}`, areaServed: region, provider: org },
+    ...(complex ? { contentLocation: { '@type': 'ApartmentComplex', name: complex.name, address: { '@type': 'PostalAddress', addressCountry: 'KR', addressRegion: complex.region.split(' ')[0], addressLocality: `${complex.gu} ${complex.dong}` } } } : {}),
+    ...(entry.data.tags.length || spec?.models.length ? { keywords: [...entry.data.tags, ...(spec?.models ?? [])].join(', ') } : {}),
     ...(images.length ? { image: images } : {}),
   },
   {
@@ -64,12 +66,23 @@ if (qa.length) {
   });
 }
 
+// 같은 지역의 다른 사진 사례 — 날짜가 가까운 순으로 네 건
+const nearby = (await getCollection('cases'))
+  .filter((e) => !e.data.sample && e.id !== entry.id && e.data.region === region)
+  .sort((a, b) => Math.abs(+a.data.date - +date) - Math.abs(+b.data.date - +date) || +b.data.date - +a.data.date || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)) // 거리가 같으면 최근 것, 그것도 같으면 id 순(빌드마다 같게)
+  .slice(0, 4);
+
 const specs = [
   ['지역', region],
+  ...(complex && complexLine(complex) ? [['단지', complexLine(complex)]] : []),
   ['공간', space],
   ['브랜드', brand],
   ['작업', type],
   ['대수', `${units}대`],
+  // 제원 — 실외기 마력·배관 방식, 실내기 평형, 조합비(값이 있을 때만)
+  ...(spec?.hp ? [['실외기', `${spec.hp}마력${spec.pipe ? ` · ${spec.pipe}` : ''}`]] : spec?.pipe ? [['배관', spec.pipe]] : []),
+  ...(spec?.sizes.length ? [['실내기', `${spec.sizes.join('·')}평형`]] : []),
+  ...(spec?.ratio ? [['조합비', `${spec.ratio}%`]] : []),
   ['작업일', dateLabel],
 ];
 ---
@@ -133,11 +146,20 @@ const specs = [
         <p>관련 안내</p>
         <ul>
           {(type === '세척'
-            ? [['세척 안내', '/care/'], ['세척 범위', '/faq/#faq-clean-scope'], ['가격 안내', '/price/']]
-            : [['설치 안내', '/install/'], ['천장 설치 조건', '/faq/#faq-ceiling-check'], ['배관을 넣는 시기', '/faq/#faq-pre-post'], ['단배관과 다배관', '/faq/#faq-pipe-type'], ['가격 안내', '/price/']]
+            ? [['세척 안내', '/care/'], ['세척 범위', '/faq/#faq-clean-scope'], ['가격 안내', '/faq/#cat-비용']]
+            : [['설치 안내', '/install/'], ['천장 설치 조건', '/faq/#faq-ceiling-check'], ['배관을 넣는 시기', '/faq/#faq-pre-post'], ['단배관과 다배관', '/faq/#faq-pipe-type'], ['가격 안내', '/faq/#cat-비용']]
           ).map(([t, h]) => <li><a href={h}>{t}</a></li>)}
         </ul>
       </nav>
+
+      {nearby.length > 0 && (
+        <nav class="case-detail__more" aria-label={`${region} 다른 사례`}>
+          <p>{region} 다른 사례</p>
+          <ul>
+            {nearby.map((e) => <li><a href={`/cases/${e.id}/`}>{(e.data.title || '').split(/\s*[｜|]\s*/)[0]}</a></li>)}
+          </ul>
+        </nav>
+      )}
       </div>
 
       <p class="case-detail__back"><a class="br-pill" href="/cases/">목록으로</a></p>

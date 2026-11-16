@@ -4,6 +4,8 @@
 // 검색은 단지명이 든 제목·지역·공간·브랜드·작업·기종·태그를 띄어쓰기 없이 비교한다(예: '봇들마을' '성남' '삼성').
 // 띄어 쓴 말은 따로 찾아 모두 들어 있는 사례만 보인다(예: '봇들마을 성남'). 주소 ?q= 로 검색어를 넘길 수 있다(공유용).
 // 필터 버튼(v2)은 검색으로 대체 — 구 버전은 git 기록.
+// 구분(2026-10-26 대표: '시공사례를 아파트랑 상업용으로 나눠야 한다', 오피스텔·빌라도 따로) — 전체 · 아파트 · 주택 · 빌라 · 오피스텔 · 상업용. 사례의 공간(space) 값으로 가르고,
+// 단지 목록은 아파트에만, 날짜별 기록 표는 구분마다 따로 둔다. 주소 ?k=apt|house|villa|officetel|biz 로 같은 화면을 다시 열 수 있다.
 import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import CaseCard from '../../components/CaseCard.astro';
@@ -11,12 +13,12 @@ import PageHero from '../../components/v2/PageHero.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
 import { normFaq } from '../../scripts/faq-rank';
 import LogTable from '../../components/cases/LogTable.astro';
-import { RECORDS, COMPLEXES, MONTHS, REGIONS, stats, fmtYm, fmtDate, ymOf, regionSlug, LOG_UPDATED } from '../../lib/caselog';
+import { RECORDS, COMPLEXES, MONTHS, REGIONS, KINDS, kindOf, fmtYm, fmtDate, regionSlug, LOG_UPDATED } from '../../lib/caselog';
 
 // sample: true 사례는 비공개(사람이 사진 확인 뒤 줄을 지우면 자동 노출)
 const entries = (await getCollection('cases'))
   .filter((e) => !e.data.sample)
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf() || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)); // 같은 날짜끼리는 id 순 — 빌드하는 기계마다 순서가 달라지지 않게
 
 // 거르기 목록 — region 은 '시·도 시·구'(예: 경기 성남). 시·도는 서울 → 경기 → 인천 → 나머지 가나다
 const PROVINCE_ORDER = ['서울', '경기', '인천'];
@@ -27,10 +29,11 @@ const allRegions = [...new Set([...entries.map((e) => e.data.region), ...REGIONS
 const provinces = [...new Set(allRegions.map(provOf))].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b, 'ko'));
 const cities = allRegions.sort((a, b) => a.localeCompare(b, 'ko'));
 const PAGE = 12;
-const total = stats(RECORDS);
 const LATEST = 20;
 /** 첫 화면에 싣는 단지 수 — 나머지는 /cases/apt-index.json 에서 받아 그린다 */
 const APT_FIRST = 12;
+// 구분별 기록 — 구분 단추의 숫자와 날짜별 기록 표가 같은 값을 쓴다
+const recordsOf = (k: string) => RECORDS.filter((r) => kindOf(r.sp) === k);
 const haystack = (e: (typeof entries)[number]) => normFaq([
   e.data.title, e.data.region, e.data.space, e.data.brand, e.data.type, e.data.model, e.data.building, ...e.data.tags,
 ].filter(Boolean).join(' '));
@@ -60,7 +63,7 @@ const jsonLd = [
   {/* 제목은 '시공사례' 그대로(2026-10-06 대표: '기록을 쌓는 중입니다' 폐기) — 제목이 분류를 말하므로 라벨 행은 뺀다 */}
   <PageHero>
     시공사례
-    <Fragment slot="sub">{fmtYm(ymOf(total.first))}부터 마친 현장 {total.n.toLocaleString('ko-KR')}건 · 단지 {COMPLEXES.length.toLocaleString('ko-KR')}곳</Fragment>
+    <Fragment slot="sub">바람대로가 직접 마친 실제 시공기록 · 단지 {COMPLEXES.length.toLocaleString('ko-KR')}곳</Fragment>
   </PageHero>
 
   {/* 사진 사례도 기록도 없으면 섹션째 그리지 않는다 */}
@@ -70,6 +73,12 @@ const jsonLd = [
       <form class="case-find" role="search" data-case-find action="/cases/" method="get">
         <label class="case-find__label" for="case-q">아파트명이나 지역으로 찾기</label>
         <input class="case-find__input" id="case-q" name="q" type="search" placeholder="예) 봇들마을, 성남" autocomplete="off" enterkeyhint="search" />
+        <div class="case-find__row">
+          <div class="case-seg" role="radiogroup" aria-label="구분" data-kind-group>
+            <button type="button" role="radio" aria-checked="true" data-kind="">전체</button>
+            {KINDS.map((k) => <button type="button" role="radio" aria-checked="false" data-kind={k.key}>{k.label}<span class="case-seg__n">{recordsOf(k.key).length.toLocaleString('ko-KR')}</span></button>)}
+          </div>
+        </div>
         <div class="case-find__row">
           <div class="case-seg" role="radiogroup" aria-label="시·도" data-prov-group>
             <button type="button" role="radio" aria-checked="true" data-prov="">전체</button>
@@ -87,7 +96,7 @@ const jsonLd = [
 
       {/* 단지 — 기록이 많은 순. 검색·지역을 고르면 그 안에서 다시 추린다 */}
       {COMPLEXES.length > 0 && (
-        <section class="case-sec" data-apts>
+        <section class="case-sec" data-apts data-kind-only="apt">
           <h2 class="case-sec__h">단지 <span class="case-sec__n" data-apt-count aria-live="polite">{COMPLEXES.length.toLocaleString('ko-KR')}곳</span></h2>
           <ul class="apt-list" data-apt-list>
             {COMPLEXES.slice(0, APT_FIRST).map((c) => (
@@ -111,7 +120,7 @@ const jsonLd = [
 
       <div class="case-grid" data-case-grid>
         {entries.map((entry, k) => (
-          <div class="case-grid__cell" data-cell data-q={haystack(entry)} data-prov={provOf(entry.data.region)} data-city={entry.data.region} hidden={k >= PAGE}>
+          <div class="case-grid__cell" data-cell data-q={haystack(entry)} data-prov={provOf(entry.data.region)} data-city={entry.data.region} data-kind={kindOf(entry.data.space) ?? ''} hidden={k >= PAGE}>
             <CaseCard entry={entry} />
           </div>
         ))}
@@ -125,8 +134,15 @@ const jsonLd = [
       {RECORDS.length > 0 && (
         <section class="case-sec">
           <h2 class="case-sec__h">날짜별 기록</h2>
-          <LogTable records={RECORDS.slice(0, LATEST)} caption="최근 시공 기록" />
-          <p class="case-sec__note">일정 기록 기준 · {fmtDate(LOG_UPDATED)} 갱신</p>
+          <div data-log="">
+            <LogTable records={RECORDS.slice(0, LATEST)} caption="최근 시공 기록" />
+          </div>
+          {KINDS.map((k) => (
+            <div data-log={k.key} hidden>
+              <LogTable records={recordsOf(k.key).slice(0, LATEST)} caption={`최근 ${k.label} 시공 기록`} />
+            </div>
+          ))}
+          <p class="case-sec__note">실제 시공기록 기준 · {fmtDate(LOG_UPDATED)} 갱신</p>
           <ul class="case-months">
             {MONTHS.map((m) => <li><a class="br-pill" href={`/cases/log/${m.ym}/`}>{fmtYm(m.ym)} <span class="case-months__n">{m.records.length}건</span></a></li>)}
           </ul>
@@ -152,6 +168,7 @@ const jsonLd = [
 </Base>
 
 <script>
+  import { gust } from '../../scripts/press';
   // 검색(낱말마다 모두 포함) + 시·도 + 시·구 → 최신순 12건씩. 주소 ?q=&r= 로 같은 결과를 다시 열 수 있다
   const form = document.querySelector<HTMLFormElement>('[data-case-find]');
   const input = document.querySelector<HTMLInputElement>('#case-q');
@@ -171,6 +188,23 @@ const jsonLd = [
     const cityWrap = document.querySelector<HTMLElement>('[data-city-wrap]')!;
     const cityOpts = [...citySel.options].slice(1);
     let prov = '';
+    let kind = '';
+    const kindBtns = [...document.querySelectorAll<HTMLButtonElement>('[data-kind-group] [data-kind]')];
+    const aptSec = document.querySelector<HTMLElement>('[data-apts]');
+    const logBoxes = [...document.querySelectorAll<HTMLElement>('[data-log]')];
+    const findLabel = document.querySelector<HTMLElement>('.case-find__label');
+    // 구분 — 단지 목록은 아파트에만, 기록 표는 구분마다, 찾기 안내 문구도 구분에 맞춘다
+    const setKind = (k: string) => {
+      kind = k;
+      kindBtns.forEach((b) => b.setAttribute('aria-checked', String(b.dataset.kind === k)));
+      const was = [aptSec, ...logBoxes].filter((el) => el && !el.hidden);
+      if (aptSec) aptSec.hidden = !!k && k !== 'apt';        // 단지 목록은 아파트만
+      logBoxes.forEach((el) => { el.hidden = (el.dataset.log ?? '') !== k; });
+      gust([aptSec, ...logBoxes].filter((el): el is HTMLElement => !!el && !el.hidden && !was.includes(el))); // 새로 나타난 묶음만 온다(띡 바뀌지 않게)
+      const apt = !k || k === 'apt';
+      if (findLabel) findLabel.textContent = apt ? '아파트명이나 지역으로 찾기' : '종류나 지역으로 찾기';
+      input.placeholder = apt ? '예) 봇들마을, 성남' : '예) 사무실, 병원, 성남';
+    };
     // 단지 목록 — 첫 12곳만 HTML 에 있고, 찾거나 거르거나 '더 보기'를 누르면 색인을 한 번 받아 그린다
     const aptList = document.querySelector<HTMLElement>('[data-apt-list]');
     const aptCount = document.querySelector<HTMLElement>('[data-apt-count]');
@@ -198,10 +232,7 @@ const jsonLd = [
       aptMore.textContent = `더 보기 (${left.toLocaleString('ko-KR')}곳)`;
       if (aptCount) aptCount.textContent = `${hits.length.toLocaleString('ko-KR')}곳`;
       if (aptEmpty) aptEmpty.hidden = hits.length > 0;
-      // 새로 열린 줄이 차례로 떠오른다(띡 나타나지 않게)
-      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) rows.slice(from).forEach((c, k) =>
-        c.animate([{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'none' }],
-          { duration: 600, delay: Math.min(k, 12) * 40, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'backwards' }));
+      gust(rows.slice(from)); // 누른 직후 새로 온 줄만 차례로 온다. 타자 중에는 조용히 바뀐다
       if (from) rows[from]?.querySelector('a')?.focus({ preventScroll: true });
     };
     const setProv = (p: string) => {
@@ -209,7 +240,9 @@ const jsonLd = [
       provBtns.forEach((b) => b.setAttribute('aria-checked', String(b.dataset.prov === p)));
       cityOpts.forEach((o) => { o.hidden = !!p && o.dataset.prov !== p; });
       const n = cityOpts.filter((o) => !o.hidden).length;
+      const wasCity = cityWrap.hidden;
       cityWrap.hidden = !p || n < 2;                 // 시·도를 골라야, 그 안에 시·구가 둘 이상일 때만
+      if (wasCity && !cityWrap.hidden) gust([cityWrap]);
       // 시·도를 '전체'로 돌리면 시·구도 푼다 — 숨긴 선택 상자에 값이 남아 1건에 갇히던 것(2026-10-01)
       if (citySel.value && (!p || cityOpts.find((o) => o.value === citySel.value)?.hidden)) citySel.value = '';
     };
@@ -223,10 +256,11 @@ const jsonLd = [
       // 조건이 하나라도 걸리면 단지 색인을 받아 다시 그린다(조건이 없으면 처음 12곳 그대로)
       if (aptList && (terms.length || prov || city || apts)) void loadApts().then(() => drawApts(terms, bare, city));
       for (const l of lists) {
-        const hits = l.cells.filter((c) => (!prov || c.dataset.prov === prov) && (!city || c.dataset.city === city)
+        const hits = l.cells.filter((c) => (!kind || c.dataset.kind === kind) && (!prov || c.dataset.prov === prov) && (!city || c.dataset.city === city)
           && terms.every((t) => (c.dataset.q ?? '').includes(t) || (c.dataset.q ?? '').includes(bare(t))));
         l.cells.forEach((c) => { c.hidden = true; });
         hits.slice(0, l.shown).forEach((c) => { c.hidden = false; });
+        if (reset) gust(hits.slice(0, l.shown));       // 조건을 눌러 바꾼 직후에만(gust 가 가린다) 결과가 차례로 온다
         const left = hits.length - Math.min(l.shown, hits.length);
         l.more.hidden = left <= 0;
         l.more.textContent = `더 보기 (${left.toLocaleString('ko-KR')}${l.unit})`;
@@ -236,16 +270,29 @@ const jsonLd = [
       const u = new URL(location.href);
       input.value.trim() ? u.searchParams.set('q', input.value.trim()) : u.searchParams.delete('q');
       (city || prov) ? u.searchParams.set('r', city || prov) : u.searchParams.delete('r');
+      kind ? u.searchParams.set('k', kind) : u.searchParams.delete('k');
       history.replaceState(null, '', u);
     };
     const qs = new URLSearchParams(location.search);
     input.value = qs.get('q') ?? '';
     const r = qs.get('r') ?? '';
+    const k0 = qs.get('k') ?? '';
+    if (kindBtns.some((b) => b.dataset.kind === k0 && k0)) setKind(k0);
     if (r) { setProv(r.split(' ')[0]); if (r.includes(' ')) citySel.value = r; }
     input.addEventListener('input', () => apply());
     form.addEventListener('submit', (e) => { e.preventDefault(); apply(); input.blur(); });
+    kindBtns.forEach((b, i) => {
+      b.addEventListener('click', () => { if (b.getAttribute('aria-checked') === 'true') return; setKind(b.dataset.kind ?? ''); apply(); }); // 이미 고른 것을 또 누르면 그대로 둔다
+      b.addEventListener('keydown', (e) => {                       // 라디오 묶음 — 방향키로 옮기며 고른다
+        const d = ['ArrowRight', 'ArrowDown'].includes(e.key) ? 1 : ['ArrowLeft', 'ArrowUp'].includes(e.key) ? -1 : 0;
+        if (!d) return;
+        e.preventDefault();
+        const n = kindBtns[(i + d + kindBtns.length) % kindBtns.length];
+        n.focus(); setKind(n.dataset.kind ?? ''); apply();
+      });
+    });
     provBtns.forEach((b, i) => {
-      b.addEventListener('click', () => { setProv(b.dataset.prov ?? ''); apply(); });
+      b.addEventListener('click', () => { if (b.getAttribute('aria-checked') === 'true') return; setProv(b.dataset.prov ?? ''); apply(); });
       b.addEventListener('keydown', (e) => {                       // 라디오 묶음 — 방향키로 옮기며 고른다
         const d = ['ArrowRight', 'ArrowDown'].includes(e.key) ? 1 : ['ArrowLeft', 'ArrowUp'].includes(e.key) ? -1 : 0;
         if (!d) return;
@@ -267,10 +314,7 @@ const jsonLd = [
       l.shown += PAGE * 2; apply(false);
       const fresh = l.cells.filter((c) => !c.hidden).slice(first);
       fresh[0]?.querySelector('a')?.focus({ preventScroll: true });   // 새로 열린 첫 줄로
-      // 새로 열린 줄이 차례로 떠오른다(띡 나타나지 않게)
-      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) fresh.forEach((c, k) =>
-        c.animate([{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'none' }],
-          { duration: 600, delay: Math.min(k, 12) * 40, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'backwards' }));
+      gust(fresh); // 새로 열린 줄이 차례로 온다
     });
     apply(false);
   }
@@ -293,9 +337,16 @@ const jsonLd = [
   .case-seg button {
     min-height: 40px; padding: 0 16px; border: 0; border-radius: 6px; background: transparent; cursor: pointer;
     font: inherit; font-size: 15px; font-weight: 500; color: var(--br-ink-sub);
+    transition: background-color var(--dur-color) var(--ease-out), color var(--dur-color) var(--ease-out), box-shadow var(--dur-color) var(--ease-out);
   }
   .case-seg button[aria-checked='true'] { background: #fff; color: var(--br-ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0, 41, 58, .08); }
   .case-seg button:focus-visible { outline: 2px solid var(--br-teal); outline-offset: -2px; }
+  .case-seg__n { margin-left: 6px; font-size: 13px; font-weight: 600; color: var(--br-ink-sub); font-variant-numeric: tabular-nums; }
+  /* 휴대폰 — 구분 단추 여섯은 3칸씩 두 줄로 깔끔하게(숫자는 접는다) */
+  @media (max-width: 560px) {
+    .case-seg { max-width: 100%; flex-wrap: wrap; } .case-seg button { padding: 0 12px; font-size: 14px; } .case-seg__n { display: none; }
+    .case-seg[data-kind-group] { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+  }
   .case-find__city select {
     min-height: 48px; padding: 0 36px 0 14px; border: 1px solid var(--br-line); border-radius: 8px; background-color: #fff;
     font: inherit; font-size: 15px; color: var(--br-ink);
@@ -318,8 +369,7 @@ const jsonLd = [
   .apt-list :global(.apt-row__where) { grid-column: 1; font-size: 13.5px; color: var(--br-ink-sub); }
   .apt-list :global(.apt-row__n) { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-size: 14px; font-weight: 700; color: var(--br-teal); font-variant-numeric: tabular-nums; }
   .apt-list :global(.apt-row a:focus-visible) { outline: 2px solid var(--br-teal); outline-offset: 2px; }
-  .apt-list :global(.apt-row a:active) { transform: scale(0.98); }
-  @media (hover: hover) and (pointer: fine) { .apt-list :global(.apt-row a:hover) { border-color: var(--br-teal); transform: translateY(-2px); } }
+  @media (hover: hover) and (pointer: fine) { .apt-list :global(.apt-row a:hover) { border-color: var(--br-teal); transform: translateY(-2px); } .apt-list :global(.apt-row a:hover:active) { transform: none; } }
   .case-months { list-style: none; padding: 0; margin-top: 20px; display: flex; flex-wrap: wrap; gap: 8px; }
   .case-months__n { font-weight: 600; color: var(--br-ink-sub); font-variant-numeric: tabular-nums; }
   @media (max-width: 900px) { .apt-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

@@ -7,10 +7,12 @@ interface Props {
   eyebrow?: string;
   /** 페이지 정체를 라벨이 맡는 면(서비스 2면)에서 크게 — /install/ /care/ */
   lead?: boolean;
+  /** 밝은 판 — 옅은 틸 그라디언트 위에 ink 제목, 높이는 내용만큼. /faq/ (2026-10-12 대표: 토스 채용 목록 같은 결) */
+  light?: boolean;
 }
-const { eyebrow = '', lead = false } = Astro.props;
+const { eyebrow = '', lead = false, light = false } = Astro.props;
 ---
-<section class="v2-phero">
+<section class:list={['v2-phero', light && 'v2-phero--light']}>
   {eyebrow && (
     <div class="bd-container v2-phero__label">
       <span class:list={['br-eyebrow', lead && 'br-eyebrow--lead']}>{eyebrow}</span>
@@ -55,10 +57,23 @@ const { eyebrow = '', lead = false } = Astro.props;
   .v2-phero__sub:empty, .v2-phero__extra:empty { display: none; }
   .v2-phero__extra { margin-top: 28px; }
 
+  /* 밝은 판 — 글자는 ink 두 단계, 높이는 내용이 정한다(40vh 를 채우지 않는다) */
+  .v2-phero--light {
+    background: var(--br-grad-light), var(--br-base);   /* 여러 겹일 때 색은 마지막 겹에만 올 수 있다 */
+    min-height: 0;
+    padding-bottom: 48px;
+    color: var(--br-ink);
+  }
+  .v2-phero--light .v2-phero__inner { padding-top: 48px; justify-content: flex-start; }
+  .v2-phero--light .v2-phero__title { color: var(--br-ink); }
+  .v2-phero--light .v2-phero__sub { color: var(--br-ink-sub); }
+
   @media (min-width: 768px) {
+    .v2-phero--light { padding-bottom: 64px; }
     .v2-phero__label { padding-top: 88px; }
     .v2-phero__label + .v2-phero__inner { padding-top: 56px; }
     .v2-phero:not(:has(.v2-phero__label)) .v2-phero__inner { padding-top: 88px; }
+    .v2-phero--light:not(:has(.v2-phero__label)) .v2-phero__inner { padding-top: 64px; }   /* 위 줄 뒤에 와야 이긴다(같은 무게) */
     .v2-phero__sub { font-size: 17px; }
   }
 </style>

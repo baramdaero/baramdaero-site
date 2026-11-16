@@ -41,7 +41,8 @@ export function ensureChannel(): Promise<boolean> {
     status = 'disabled';
     return Promise.resolve(false);
   }
-  if (bootPromise) return bootPromise;
+  // 타임아웃 뒤에 boot 이 성공한 경우만 구제한다 — 캐시된 결과가 false 로 남으면 CTA 가 상담을 못 연다. 진짜 실패는 그대로
+  if (bootPromise) return status === 'ready' ? Promise.resolve(true) : bootPromise;
   status = 'loading';
   bootPromise = import('@channel.io/channel-web-sdk-loader')
     .then(

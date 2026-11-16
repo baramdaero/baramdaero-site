@@ -105,7 +105,7 @@ const cta = home.ctaBand;
           tone="clear"
           eyebrow={home.exploded.eyebrow}
           title={home.exploded.heading}
-          body={home.exploded.body.join(' ') || undefined}
+          body={home.exploded.body}
           photoNote="제품 사진: 삼성전자·LG전자 공식 제품 이미지"
           photoSwitch
           card
@@ -224,7 +224,7 @@ const cta = home.ctaBand;
   .home-stats__suf { margin-left: 3px; }
   /* 누적 큰 숫자 — 아래 숫자 셋보다 한 단 크게, 라벨도 한 단 크게 */
   .home-stats .home-stats__total { margin-bottom: 18px; }
-  .home-stats .home-stats__total dd { font-size: clamp(34px, 1.35rem + 2.4vw, 52px); line-height: 1.05; }
+  .home-stats .home-stats__total dd { font-size: clamp(40px, 1.6rem + 3vw, 64px); line-height: 1.05; }
   .home-stats .home-stats__total dt { font-size: 15px; font-weight: 600; color: var(--br-ink); }
   .home-stats dl + p { margin-top: 8px; font-size: 13px; color: var(--br-ink-sub); }
   /* 기준 줄은 화면 폭에 따라 한 곳에만 — 넓으면 제목 줄 오른쪽 끝(글씨는 숫자 아래 줄과 같다), 좁으면 숫자 아래 */

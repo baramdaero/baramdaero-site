@@ -1,6 +1,6 @@
 ---
 // 자주 묻는 질문 — 물어보면 답하는 구조(2026-09-23).
-// 히어로(teal-deep, DESIGN.md §3)의 입력창에 평소 말로 물으면, 적어 둔 답 중 가장 가까운 문항 하나로 답한다.
+// 히어로(밝은 판 — DESIGN.md §3, 2026-10-12)의 입력창에 평소 말로 물으면, 적어 둔 답 중 가장 가까운 문항 하나로 답한다.
 // 짧은 답 먼저 → '자세히 보기' 로 전체 답 → 관련 페이지 링크. 전체 목록은 그 아래 그대로 둔다.
 // 그 자리에서 지어내는 답이 아니다 — faq.json 에 적어 둔 답만 꺼내 보여 준다(근거 없는 말이 나올 틈이 없다).
 // 콘텐츠는 faq.json 단일 소스. hold 문항은 페이지·JSON-LD 모두 제외.
@@ -10,9 +10,11 @@ import PageHero from '../../components/v2/PageHero.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
 import { loadFaqPage, renderFaqMd, faqPlainText, FAQ_CATEGORIES } from '../../lib/faq.ts';
 import { normFaq } from '../../scripts/faq-rank';
-import { SITE_CONFIG } from '../../config.js';
+import { SITE_CONFIG, shopHref } from '../../config.js';
 
 const items = loadFaqPage();
+// 쇼핑몰 질문 게시판 — 값이 없으면 링크를 그리지 않는다(DESIGN.md §6 예외, docs/shop-question-board.md)
+const boardHref = shopHref(SITE_CONFIG.SHOP_BOARD_PATH);
 /** 분류마다 처음 보이는 문항 수 — 나머지는 'N개 더 보기'로 접힌다 */
 const FAQ_VISIBLE = 5;
 
@@ -113,21 +115,21 @@ if (items.length) {
 }
 ---
 <Base title="자주 묻는 질문" description="에어컨 설치·세척·고장·관리, 자주 묻는 질문과 답." jsonLd={jsonLd}>
-  <PageHero>
+  <PageHero light>
     자주 묻는 질문
     <Fragment slot="extra">
       {items.length > 0 && (
         <Fragment>
           <div class="faq-hero">
           {/* 처음 온 분 안내 — 첫 화면 맨 위. 누르면 아래 '순서대로 보기' 를 펼쳐 1단계로.
-              마우스를 대면 뒤판이 왼쪽 아래를 축으로 기울고 앞면이 반투명 유리가 된다(Uiverse 'Btn' 그대로, 2026-10-02 대표 지정) */}
+              마우스를 대면 살짝 떠오르고 화살표가 밀린다(사이트 버튼 .bd-cta 와 같은 움직임, 2026-10-13) */}
           {GUIDES.length > 0 && (
             <div class="faq-starts">
               <p class="faq-starts__t">처음이신가요?</p>
               {GUIDES.map((g) => (
                 <a class="faq-start" href={`#faq-guide-${g.key}`} data-faq-guide-go={g.key}>
-                  <span class="faq-start__face"><span class="faq-start__k">{g.name}</span><span class="faq-start__s">자주 묻는 질문 <span aria-hidden="true">→</span></span></span>
-                  <span class="faq-start__bg" aria-hidden="true"></span>
+                  <span class="faq-start__k">{g.name}</span>
+                  <span class="faq-start__s">자주 묻는 질문 <span aria-hidden="true">→</span></span>
                 </a>
               ))}
             </div>
@@ -339,6 +341,14 @@ if (items.length) {
           <button disabled aria-describedby="chat-unavailable" type="button" class="bd-cta" data-chat-tree="menu">바로 문의하기<svg class="br-cta-arrow" aria-hidden="true" viewBox="0 0 10 10" width="10" height="10" fill="none"><path d="M0 5h7" /><path d="M1 1l4 4-4 4" /></svg></button>
         </div>
       )}
+
+      {/* 글로 남기는 질문 — 쇼핑몰의 회원 전용 게시판으로 가는 보조 링크. 접수 창구가 아니다(접수는 챗봇·채널톡, DESIGN.md §6 예외) */}
+      {boardHref && items.length > 0 && (
+        <p class="faq-board">
+          <span class="faq-board__t">질문 게시판은 로그인한 회원이 글로 질문을 남기는 곳입니다.</span>
+          <a class="br-pill" href={boardHref} rel="noopener">질문 게시판 <span aria-hidden="true">→</span></a>
+        </p>
+      )}
     </div>
   </section>
 
@@ -348,16 +358,14 @@ if (items.length) {
 </Base>
 
 <script>
-  // N개 더 보기 — 숨어 있던 문항이 아래로 차례로 떠오른다(접을 때는 바로 닫는다)
+  import { gust } from '../../scripts/press.ts';
+  // N개 더 보기 — 숨어 있던 문항이 차례로 자리에 온다(접을 때는 바로 닫는다). 다른 목록의 '더 보기'와 같은 움직임(press.ts gust)
   document.querySelectorAll<HTMLDetailsElement>('.faq-more').forEach((m) => {
     m.addEventListener('toggle', () => {
-      if (!m.open || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      let el = m.nextElementSibling as HTMLElement | null, k = 0;
-      while (el && k < 30) {
-        if (el.matches('.faq-item')) el.animate([{ opacity: 0, transform: 'translateY(20px)' }, { opacity: 1, transform: 'none' }],
-          { duration: 600, delay: Math.min(k, 10) * 50, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'backwards' });
-        el = el.nextElementSibling as HTMLElement | null; k++;
-      }
+      if (!m.open) return;
+      const items: Element[] = [];
+      for (let el = m.nextElementSibling; el; el = el.nextElementSibling) if (el.matches('.faq-item')) items.push(el);
+      gust(items);
     });
   });
 
@@ -519,7 +527,8 @@ if (items.length) {
     // 답으로 초점을 옮긴다 — 화면 읽기 프로그램이 답을 읽고, 모바일은 키보드가 내려간다
     const focus = [we, pick, none].find((el) => el && !el.hidden)?.querySelector<HTMLElement>('[data-faq-focus]');
     focus?.focus({ preventScroll: true });
-    chat.scrollIntoView({ block: 'start', behavior: reduced ? 'auto' : 'smooth' });
+    // 부드럽게 갈지는 global.css 의 html scroll-behavior 에 맡긴다 — 평소 smooth, 모션 줄이기와 '화면 넘어갈 때' 겹치는 동안은 바로(다른 쪽에서 #faq-… 로 도착할 때)
+    chat.scrollIntoView({ block: 'start' });
   }
 
   form?.addEventListener('submit', (e) => {
@@ -564,36 +573,27 @@ if (items.length) {
   .faq-page { background: transparent; } /* 유리 카드 호스트 */
   .faq-page .bd-container { max-width: var(--maxw); }
 
-  /* ── 묻는 칸 — 어두운 히어로 위의 옅은 유리 판 + 흰 알약 ─────────────
-     참고 시안(유리 판 + 흰 알약 입력, 포커스 시 반전)에서 판과 알약만 가져왔다.
-     뒤에서 번지는 빛은 뺐다(09-23 "이렇게까지 반짝거리는 걸 바라지 않았다") — 판은 흰 8% + 테두리 한 줄.
-     보내기 버튼은 알약 안 오른쪽 — 물어보는 칸이라는 걸 모양으로 알린다 */
-  .faq-ask {
-    max-width: 600px;
-    display: grid; gap: 10px;
-    padding: 14px;
-    border-radius: 24px;
-    background: color-mix(in srgb, #fff 8%, transparent);
-    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-    border: 1px solid color-mix(in srgb, #fff 16%, transparent);
-    border-top-color: color-mix(in srgb, #fff 45%, transparent);
-    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent);
-  }
-  .faq-ask__label {
-    margin-left: 10px;
-    font-size: 14px; font-weight: 700; letter-spacing: 0.02em;
-    color: #fff;
-  }
-  /* 알약 — 올리거나 누르면 teal-deep 으로 뒤집힌다. 반전된 알약이 어두운 판에 묻히지 않게 ice 윤곽 한 줄 */
+  /* ── 묻는 칸 — 밝은 히어로 위의 흰 칸 ─────────────────────────
+     2026-10-12 대표: 어두운 유리 판 + 흰 알약이 마음에 들지 않는다 → 토스 채용 목록 같은 결(밝은 바탕, 선 한 줄짜리 흰 칸, 초점은 색 선).
+     판을 없앴다. 칸은 흰 면 + 안쪽 1px 선 + 낮은 그림자 하나, 초점은 2px teal 선(뒤집히지 않는다).
+     보내기 버튼은 칸 안 오른쪽 사각 — 누르면 접수되는 것은 사각(DESIGN.md §5) */
+  .faq-ask { max-width: 600px; display: grid; gap: 12px; }
+  .faq-ask__label { font-size: 16px; font-weight: 600; color: var(--br-ink-sub); }
   .faq-ask__bar {
+    --ring: inset 0 0 0 1px color-mix(in srgb, var(--br-teal) 60%, transparent);   /* 흰 면 위 3.3:1 — 칸의 경계가 읽혀야 한다 */
     display: flex; align-items: center; gap: 8px;
-    padding: 6px 6px 6px 20px;
-    border-radius: 999px;
+    padding: 6px 6px 6px 18px;
+    border-radius: 16px;   /* 안쪽 버튼 10 + 여백 6 — 동심원 */
     background: #fff;
-    transition: background-color var(--dur-color) var(--ease-out), box-shadow var(--dur-color) var(--ease-out);
+    box-shadow: var(--ring), 0 1px 2px color-mix(in srgb, var(--br-teal-deep) 6%, transparent), 0 14px 24px -18px color-mix(in srgb, var(--br-teal-deep) 34%, transparent);
+    transition: box-shadow var(--dur-color) var(--ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .faq-ask__bar:hover { --ring: inset 0 0 0 1px var(--br-teal); }
+    .faq-ask__send:hover { background: var(--br-ice); color: var(--br-teal); }
   }
   /* 투명 outline — 평소엔 안 보이고, 고대비 모드(forced-colors)에서는 시스템 색으로 그려져 초점 표시가 된다 */
-  .faq-ask__bar:focus-within { background: var(--br-teal-deep); box-shadow: 0 0 0 1px color-mix(in srgb, var(--br-ice) 60%, transparent); outline: 2px solid transparent; outline-offset: 2px; }
+  .faq-ask__bar:focus-within { --ring: inset 0 0 0 2px var(--br-teal); outline: 2px solid transparent; outline-offset: 2px; }
   @media (forced-colors: active) { .faq-ask__bar { border: 1px solid CanvasText; } }
   .faq-ask__input {
     flex: 1; min-width: 0;
@@ -603,44 +603,31 @@ if (items.length) {
     padding: 10px 0;
   }
   .faq-ask__input::placeholder { color: var(--br-ink-sub); }
-  .faq-ask__bar:focus-within .faq-ask__input { color: #fff; }
-  .faq-ask__bar:focus-within .faq-ask__input::placeholder { color: color-mix(in srgb, var(--br-ice) 78%, transparent); }
   .faq-ask__send {
     flex: none;
     width: 44px; height: 44px;
     display: grid; place-items: center;
-    border: 0; border-radius: 50%;
-    background: var(--br-teal-deep); color: #fff;
+    border: 0; border-radius: 10px;
+    background: var(--br-teal); color: #fff;
     cursor: pointer;
-    transition: background-color var(--dur-color) ease, color var(--dur-color) ease, transform 160ms var(--ease-out);
   }
-  .faq-ask__bar:focus-within .faq-ask__send { background: var(--br-ice); color: var(--br-teal-deep); }
-  .faq-ask__send:active { transform: scale(0.94); }
-  .faq-ask__send:focus-visible { outline: 2px solid var(--br-ice); outline-offset: 2px; }
-  @media (hover: hover) {
-    .faq-ask__bar:hover { background: var(--br-teal-deep); box-shadow: 0 0 0 1px color-mix(in srgb, var(--br-ice) 60%, transparent); }
-    .faq-ask__bar:hover .faq-ask__input { color: #fff; }
-    .faq-ask__bar:hover .faq-ask__input::placeholder { color: color-mix(in srgb, var(--br-ice) 78%, transparent); }
-    .faq-ask__bar:hover .faq-ask__send { background: var(--br-ice); color: var(--br-teal-deep); }
-  }
+  .faq-ask__send:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; }
 
-  /* 예시 질문 — 어두운 히어로 위 */
-  .faq-ex { margin-top: 18px; max-width: 600px; }
-  .faq-ex__t { margin: 0 0 8px 4px; font-size: 13px; font-weight: 600; color: color-mix(in srgb, #fff 72%, transparent); }
+  /* 예시 질문 — 흰 칩. 아래 '전체 질문' 분류 칩과 같은 계열(누를 수 있는 글자 = teal) */
+  .faq-ex { margin-top: 16px; max-width: 600px; }
+  .faq-ex__t { margin: 0 0 8px 2px; font-size: 13px; font-weight: 600; color: var(--br-ink-sub); }
   .faq-ex__list { display: flex; flex-wrap: wrap; gap: 8px; }
   .faq-ex__chip {
     display: inline-flex; align-items: center;
     min-height: 44px; padding: 0 16px;
     border-radius: 999px;
-    border: 1px solid color-mix(in srgb, #fff 28%, transparent);
-    background: color-mix(in srgb, #fff 6%, transparent);
-    color: #fff;
+    border: 1px solid color-mix(in srgb, var(--br-teal) 20%, transparent);
+    background: #fff;
+    color: var(--br-teal);
     font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
-    transition: background-color var(--dur-color) ease, color var(--dur-color) ease;
   }
-  @media (hover: hover) { .faq-ex__chip:hover, .faq-nav__chip:hover { background: var(--br-ice); color: var(--br-teal-deep); } }
-  .faq-ex__chip:active { transform: scale(0.96); }
-  .faq-ex__chip:focus-visible { outline: 2px solid var(--br-ice); outline-offset: 2px; }
+  @media (hover: hover) and (pointer: fine) { .faq-ex__chip:hover, .faq-nav__chip:hover { background: var(--br-ice); color: var(--br-teal-deep); } }
+  .faq-ex__chip:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; }
 
   /* ── 묻고 답하기 ─────────────────────────────────────────────
      내 질문은 오른쪽 말풍선(teal-deep), 답은 왼쪽 유리 카드 — 목록의 문항 카드와 같은 재질 */
@@ -704,7 +691,7 @@ if (items.length) {
     transform: translateY(-2px) rotate(45deg);
     transition: transform var(--dur-ui) var(--ease-out);
   }
-  .faq-ans__more[open] .faq-ans__toggle::after { transform: translateY(2px) rotate(-135deg); }
+  .faq-ans__more[open]:not([data-closing]) .faq-ans__toggle::after { transform: translateY(2px) rotate(-135deg); }
   .faq-ans__toggle:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; border-radius: 4px; }
   .faq-ans__full { padding: 8px 0 4px; }
   .faq-ans__links { margin-top: 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
@@ -731,11 +718,9 @@ if (items.length) {
   /* 순서대로 보기 진행 막대 — 단계가 넘어갈 때 차오른다 */
   .faq-guide__bar { height: 6px; margin-top: 20px; border-radius: 999px; background: color-mix(in srgb, var(--br-teal) 12%, transparent); overflow: hidden; }
   .faq-guide__bar i { display: block; height: 100%; background: var(--br-teal); border-radius: inherit; transform-origin: left; transform: scaleX(0.125); transition: transform var(--dur-reveal) var(--ease-out); }
-  .faq-guide__btn:active:not(:disabled) { transform: scale(0.96); }
   .faq-guide__btn { transition: transform 160ms var(--ease-out), background-color var(--dur-color) ease; }
 
   @media (max-width: 640px) {
-    .faq-ask { padding: 10px; border-radius: 22px; }
     .faq-ask__bar { padding-left: 16px; }
     .faq-chat__we { padding: 18px 18px 20px; }
     .faq-chat__me { max-width: 92%; }
@@ -750,46 +735,33 @@ if (items.length) {
     .faq-hero .faq-starts { order: 2; margin-top: 4px; }
   }
 
-  /* 안내 버튼 — Uiverse 'Btn' 그대로: 테두리만 있는 앞면 뒤에 짙은 뒤판. 마우스를 대면(터치는 누를 때) 뒤판이 왼쪽 아래를 축으로 기울고 앞면이 반투명 유리가 된다 */
+  /* 안내 버튼 — 흰 카드 하나. 대면(터치는 누를 때) 살짝 떠오르고 테두리가 진해지며 화살표가 밀린다.
+     2026-10-13: 뒤판이 기울고 앞면이 유리가 되는 Uiverse 'Btn' 움직임은 어색해서 걷어냈다 */
   /* 설치·세척 두 칸 나란히 — 휴대폰·넓은 화면 모두 */
   .faq-starts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; max-width: 600px; }
-  .faq-starts__t { grid-column: 1 / -1; font-size: 15px; font-weight: 700; color: rgba(255, 255, 255, 0.75); }
+  .faq-starts__t { grid-column: 1 / -1; font-size: 15px; font-weight: 700; color: var(--br-ink-sub); }
   @media (min-width: 960px) { .faq-starts { width: 340px; } }
   .faq-start {
-    position: relative; isolation: isolate;
-    display: flex; min-height: 60px; border-radius: 10px;
-    color: #fff; text-decoration: none; cursor: pointer;
-    transition: all 0.3s;
-  }
-  .faq-start__face {
-    flex: 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px;
+    display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px;
     min-height: 88px; padding: 14px 18px; border-radius: 10px;
-    border: 1px solid rgba(156, 156, 156, 0.466);
-    background-color: transparent;
-    -webkit-backdrop-filter: blur(0px); backdrop-filter: blur(0px);
+    border: 1px solid color-mix(in srgb, var(--br-teal) 24%, transparent);
+    background-color: #fff;
+    color: var(--br-ink); text-decoration: none; cursor: pointer;
     letter-spacing: 0.8px; white-space: nowrap;
-    transition: all 0.3s;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
   }
   .faq-start__k { font-size: 22px; font-weight: 700; line-height: 1.2; }
-  .faq-start__s { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, 0.78); }
-  .faq-start__s > span { display: inline-block; transition: transform 0.3s; }
-  .faq-start__bg {
-    position: absolute; inset: 0; z-index: -1;
-    background: color-mix(in srgb, var(--br-teal) 55%, var(--br-teal-deep));   /* 바탕(딥)과 한 단계 차이만 — 꽉 찬 틸 판이면 무겁다 */
-    border-radius: 10px; pointer-events: none;
-    transform-origin: bottom left;   /* 원본은 정사각 버튼이라 35°. 가로로 긴 버튼은 35°면 뒤판이 위 글자를 덮어서, 왼쪽 아래를 축으로 8°만 든다 */
-    transition: all 0.3s;
-  }
-  .faq-start:focus-visible { outline: 2px solid var(--br-ice); outline-offset: 3px; }
-  .faq-start:focus-visible .faq-start__bg, .faq-start:active .faq-start__bg { transform: rotate(8deg); }
-  .faq-start:focus-visible .faq-start__face, .faq-start:active .faq-start__face { background-color: rgba(156, 156, 156, 0.466); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+  .faq-start__s { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--br-teal); }
+  .faq-start__s > span { display: inline-block; transition: transform 0.2s; }
+  .faq-start:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 3px; }
   @media (hover: hover) and (pointer: fine) {
-    .faq-start:hover .faq-start__bg { transform: rotate(8deg); }
-    .faq-start:hover .faq-start__face { background-color: rgba(156, 156, 156, 0.466); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+    .faq-start:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--br-teal) 55%, transparent); box-shadow: 0 10px 22px -12px rgba(0, 41, 58, 0.4); }
     .faq-start:hover .faq-start__s > span { transform: translateX(4px); }
+    .faq-start:hover:active { transform: none; box-shadow: none; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .faq-start, .faq-start__face, .faq-start__bg { transition: none; }
+    .faq-start, .faq-start__s > span { transition: none; }
+    .faq-start:hover { transform: none; }
   }
   /* JS 가 돌면 아래 펼침 버튼은 숨긴다 — 히어로 카드가 그 일을 한다(같은 버튼 두 개 금지). JS 가 없으면 카드는 이 펼침으로 내려온다 */
   :global(html.br-js) .faq-guide > .faq-guide__open { display: none; }
@@ -876,9 +848,9 @@ if (items.length) {
     transform: translateY(-3px) rotate(45deg);
     transition: transform var(--dur-ui) var(--ease-out);
   }
-  .faq-item[open] > .faq-item__q::after { transform: translateY(3px) rotate(-135deg); }
+  .faq-item[open]:not([data-closing]) > .faq-item__q::after { transform: translateY(3px) rotate(-135deg); }
   @media (hover: hover) and (pointer: fine) {
-    .faq-item:not([open]) > .faq-item__q:hover::after { transform: translateY(0) rotate(45deg); }
+    .faq-item:is(:not([open]), [data-closing]) > .faq-item__q:hover::after { transform: translateY(0) rotate(45deg); }
   }
   .faq-item__body { padding: 2px 4px 24px; }
 
@@ -953,6 +925,9 @@ if (items.length) {
   .faq-more[open] .faq-more__open,
   .faq-more:not([open]) .faq-more__close { display: none; }
 
+  .faq-board { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; margin: 48px 0 0; }
+  .faq-board__t { font-size: 15px; line-height: 1.6; color: var(--br-ink-sub); }
+
   .faq-page__pending { text-align: center; padding: 24px 0; }
   .faq-page__pending-title { font-size: 20px; font-weight: 700; color: var(--br-ink); margin-bottom: 24px; }
 
@@ -970,8 +945,9 @@ if (items.length) {
     .faq-chat__again:hover { transform: rotate(-3deg); }
     .faq-guide__btn--next:hover { transform: translateY(-2px); }
     .faq-ans__toggle:hover::after { transform: translateY(1px) rotate(45deg); }
+    /* 누르는 동안은 떠오름을 내려놓는다 — 눌림(press.ts)과 겹치면 떠오른 채 눌린다 */
+    .faq-ex__chip:hover:active, .faq-chat__chips :global(button:hover:active), .faq-guide__btn--next:hover:active { transform: none; }
   }
-  .faq-ex__chip:active, .faq-nav__chip:active, .faq-ask__send:active, .faq-chat__chips :global(button:active) { transform: scale(0.94); }
   @media (prefers-reduced-motion: reduce) {
     .faq-ex__chip, .faq-nav__chip, .faq-ask__send, .faq-ask__send svg, .faq-chat__chips :global(button), .faq-guide__bar i { transition: none; }
   }

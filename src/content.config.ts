@@ -39,6 +39,16 @@ const cases = defineCollection({
     qa: z.array(z.object({ q: z.string(), a: z.string() })).default([]), // 원본 근거 있는 질문만 → FAQPage
     updated: z.coerce.date().optional(),
     apt: z.string().default(''), // 단지 페이지 slug(/cases/apt/<slug>/) — 시공 기록(case-log.json)과 잇는다
+    // 제원 요약(2026-10-12) — 현장 메모와 제원표에서 계산한 값. 상세 화면의 표와 JSON-LD 에 쓴다. 본문 장비 구성과 같은 값이어야 한다
+    spec: z
+      .object({
+        hp: z.number().optional(), // 실외기 마력
+        pipe: z.string().default(''), // 단배관 | 다배관
+        sizes: z.array(z.number()).default([]), // 실내기 평형 목록
+        ratio: z.number().optional(), // 조합비(%) = 실내기 정격 냉방 합 ÷ 실외기 정격 냉방
+        models: z.array(z.string()).default([]), // 모델명(메모에 있거나 제원표에서 하나로 정해지는 것만)
+      })
+      .optional(),
   }),
 });
 
