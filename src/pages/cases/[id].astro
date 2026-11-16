@@ -15,7 +15,7 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const { Content } = await render(entry);
-const { region, space, brand, type, units, date, cover, sample, photos, answer, qa, updated, spec } = entry.data;
+const { region, space, brand, type, units, date, cover, sample, photos, answer, qa, updated, spec, live } = entry.data;
 // 같은 단지의 시공 기록(있을 때) — 단지 페이지로 잇는다
 const complex = entry.data.apt ? COMPLEX_BY_SLUG.get(entry.data.apt) : undefined;
 const title = entry.data.title || `${region} ${space} ${brand} ${type} ${units}대`;
@@ -78,6 +78,7 @@ const specs = [
   ['공간', space],
   ['브랜드', brand],
   ['작업', type],
+  ...(live ? [['시공 조건', '거주 중 설치']] : []),   // 살고 있는 집을 보양하고 시공한 현장
   ['대수', `${units}대`],
   // 제원 — 실외기 마력·배관 방식, 실내기 평형, 조합비(값이 있을 때만)
   ...(spec?.hp ? [['실외기', `${spec.hp}마력${spec.pipe ? ` · ${spec.pipe}` : ''}`]] : spec?.pipe ? [['배관', spec.pipe]] : []),
