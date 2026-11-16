@@ -377,6 +377,7 @@ html.embed .topbar, html.embed .sheet, html.embed .hint, html.embed .north, html
       </div>
       <div class="tools" role="toolbar" aria-label="표시 설정">
         <button type="button" id="btnHome" class="btn primary" hidden>전체 보기</button>
+        <button type="button" id="btnTop" class="btn" aria-pressed="false" hidden>위에서 보기</button>
         <button type="button" id="btnGrid" class="btn" aria-pressed="true"><span><span class="long">천장 격자·</span>조명</span></button>
         <button type="button" id="btnPipes" class="btn" aria-pressed="true"><span><span class="long">천장 속 </span>배관</span></button>
       </div>
@@ -2873,7 +2874,9 @@ function syncUI() {
   const inRoom = state.mode !== 'house', inZone = !!state.zone;
   $('btnHome').hidden = state.level === 'building';
   $('btnHome').textContent = inZone ? '층 입구로' : '건물 정면으로';
-  $('btnPipes').hidden = inRoom; // pipes sit above the finished ceiling: nothing to toggle in a room view
+  $('btnPipes').hidden = inRoom;
+  $('btnTop').hidden = state.level !== 'floor'; // 단독 페이지 단추 — 층 안에서만(건물 정면·옥상에는 없다). 히어로(embed)에서는 topbar 가 숨겨져 부모 단추('배관 보기')가 대신한다
+  $('btnTop').setAttribute('aria-pressed', String(state.level === 'floor' && state.mode === 'house')); // pipes sit above the finished ceiling: nothing to toggle in a room view
   $('detailSheet').hidden = !inZone;
   stage.classList.toggle('in-room', inRoom);
   $('listSheet').hidden = narrow() && inZone;
@@ -3249,6 +3252,7 @@ canvas.addEventListener('pointerup', e => {
   down = null;
 });
 $('btnHome').addEventListener('click', goHome);
+$('btnTop').addEventListener('click', () => goTop());
 $('btnPipes').addEventListener('click', () => {
   state.pipes = !state.pipes; Object.values(spaces).forEach(s => { if (s !== S) s.g.pipes.visible = state.pipes; }); if (S) setBlend(state.k); invalidate();
   $('btnPipes').setAttribute('aria-pressed', String(state.pipes));
