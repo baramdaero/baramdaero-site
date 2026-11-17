@@ -11,7 +11,7 @@
 ## 스택
 - Astro 정적 사이트 (빌드: `npm run build`). 콘텐츠는 md(Content Collections), 챗봇은 바닐라 JS 컴포넌트
 - 배포: GitHub Actions → GitHub Pages. 루트 도메인 baramdaero.com (public/CNAME)
-- 예약·구매는 외부 링크: shop.baramdaero.com (config 값)
+- 스토어(예약·구매)는 외부 링크: shop.baramdaero.com (config 값) — 메뉴·푸터 글자는 '스토어'
 
 ## 절대 규칙
 0. **공개 레포 — 커밋 메시지·주석에 내부 정보(가격 전략·거래처·협의 내용) 기재 금지**

@@ -5,7 +5,7 @@
  *
  * config.js 의 지금 값에 맞춰 dist 를 본다.
  *   SHOP_URL 이 비었으면: '가격'은 /faq/ 의 '비용' 묶음, 오른쪽 위는 견적 문의, '로그인'은 어디에도 없다.
- *   SHOP_URL 이 있으면: 헤더·푸터의 '예약·구매'는 쇼핑몰 주소, 오른쪽 위는 '로그인' 하나(견적 문의 버튼 없음), 푸터에도 '로그인' 하나.
+ *   SHOP_URL 이 있으면: 헤더·푸터의 '스토어'는 쇼핑몰 주소, 오른쪽 위는 '로그인' 하나(견적 문의 버튼 없음), 푸터에도 '로그인' 하나.
  *     '로그인'에는 referrerpolicy="unsafe-url"(쇼핑몰이 돌아올 화면을 리퍼러로 알아 간다).
  *   SHOP_MYPAGE_PATH 까지 있으면: 로그인한 방문자용 '마이페이지'가 같은 자리에 하나씩 더 있고(쇼핑몰 마이페이지 주소, 기본 숨김 클래스),
  *     '로그인'에는 data-shop-login(로그인한 방문자에겐 숨김)이 붙고, 화면마다 로그인 표시 스크립트(src/scripts/shop-session.js)가
@@ -49,7 +49,7 @@ function check(file, html, cfg) {
   if (!header) return fails;   // 공용 틀을 안 쓰는 화면
   const shop = cfg.SHOP_URL.replace(/\/+$/, '');
   const login = shop && cfg.SHOP_LOGIN_PATH ? shop + cfg.SHOP_LOGIN_PATH : '';
-  const priceHref = cfg.SHOP_URL || '/faq/#cat-비용', priceText = cfg.SHOP_URL ? '예약·구매' : '가격';   // 쇼핑몰로 가면 글자도 '예약·구매'
+  const priceHref = cfg.SHOP_URL || '/faq/#cat-비용', priceText = cfg.SHOP_URL ? '스토어' : '가격';   // 쇼핑몰로 가면 글자도 '스토어'(처음엔 '예약·구매', 2026-11-17 변경)
   const mypage = login && cfg.SHOP_MYPAGE_PATH ? shop + cfg.SHOP_MYPAGE_PATH : '';
 
   // 로그인 표시 스크립트 — 마이페이지가 있는 화면에만, 한 번, 헤더보다 앞에(첫 그림 전에 정해져 '로그인'이 비치지 않게), 원본 본문 그대로.
@@ -113,7 +113,7 @@ function checkCss(css) {
   const on = { ...noMy, SHOP_MYPAGE_PATH: '/shop_mypage' };
   const S = `<script>${SESSION_JS}</script>`;                                   // 로그인 표시 스크립트(원본 본문)
   const page = (h, f, s = '', after = '') => `${s}<header class="bd-header">${h}</header><footer class="bd-footer">${f}</footer>${after}`;
-  const P = (href, t = '가격') => `<a href="${href}">${t}</a>`, PS = (href) => P(href, '예약·구매');
+  const P = (href, t = '가격') => `<a href="${href}">${t}</a>`, PS = (href) => P(href, '스토어');
   const A = (extra = '') => `<a href="https://s.example/login" referrerpolicy="unsafe-url"${extra}>로그인</a>`;
   const L = A(' data-shop-login');                                              // 마이페이지가 있을 때의 로그인
   const L1 = A();                                                               // 마이페이지가 없을 때의 로그인
@@ -132,7 +132,7 @@ function checkCss(css) {
   assert.equal(n(PS(U) + L + MH + Q, PS(U) + L + MF, on, S), 1, '오른쪽 위에 둘이 있는 것을 못 잡는다');
   assert.ok(n(P(U) + L + MH, PS(U) + L + MF, on, S) >= 1, "쇼핑몰로 가는데 글자가 '가격'인 것을 못 잡는다");
   assert.equal(n(PS(U) + L + MH + P('/x', '가격 안내'), PS(U) + L + MF, on, S), 1, "쇼핑몰로 가는데 남은 '가격' 글자 규칙이 죽어 있다");   // 다른 규칙에 안 걸리게 그 규칙만 건드린다
-  assert.equal(n(PS(U) + PS(U) + L + MH, PS(U) + L + MF, on, S), 1, "'예약·구매'가 둘인 것을 못 잡는다");
+  assert.equal(n(PS(U) + PS(U) + L + MH, PS(U) + L + MF, on, S), 1, "'스토어'가 둘인 것을 못 잡는다");
   assert.equal(n(PS('/faq/#cat-비용') + L + MH, PS(U) + L + MF, on, S), 1, "쇼핑몰로 안 가는 '가격'을 못 잡는다");
   assert.equal(n(PS(U) + L + MH, PS(U) + L.replace('/login', '/signin') + MF, on, S), 1, '흩어진 주소를 못 잡는다');
   assert.equal(n(PS(U) + L + MH, PS(U) + L + MF + '<a href="">예약</a>', on, S), 1, '빈 주소 링크를 못 잡는다');
@@ -175,7 +175,7 @@ if (SITE_CONFIG.SHOP_URL && SITE_CONFIG.SHOP_LOGIN_PATH && SITE_CONFIG.SHOP_MYPA
   const css = (await Promise.all((await readdir(cssDir)).filter((f) => f.endsWith('.css')).map((f) => readFile(path.join(cssDir, f), 'utf8')))).join('\n');
   fails.push(...checkCss(css));
 }
-{ // 옛 /price/ 주소(리다이렉트 한 장)는 메뉴 '예약·구매'(쇼핑몰이 없으면 '가격')와 같은 곳으로 간다
+{ // 옛 /price/ 주소(리다이렉트 한 장)는 메뉴 '스토어'(쇼핑몰이 없으면 '가격')와 같은 곳으로 간다
   const old = pages.find(([f]) => /(^|[\\/])price[\\/]index\.html$/.test(f));
   const want = SITE_CONFIG.SHOP_URL || '/faq/#cat-비용';
   if (!old) fails.push('옛 /price/ 주소가 dist 에 없다 — 외부 링크가 끊긴다');
@@ -185,4 +185,4 @@ if (fails.length) {
   console.error(fails.slice(0, 40).map((f) => `  FAIL ${f}`).join('\n') + (fails.length > 40 ? `\n  … 외 ${fails.length - 40}건` : ''));
   process.exit(1);
 }
-console.log(`shop links: ${SITE_CONFIG.SHOP_URL ? "쇼핑몰 주소 있음 — '예약·구매'는 쇼핑몰, 오른쪽 위는 로그인 하나(회원에겐 마이페이지)" : "쇼핑몰 주소 빔 — '가격'은 /faq/ 비용 묶음, 오른쪽 위는 견적 문의, 로그인 0"} — 화면 ${pages.length}개 통과`);
+console.log(`shop links: ${SITE_CONFIG.SHOP_URL ? "쇼핑몰 주소 있음 — '스토어'는 쇼핑몰, 오른쪽 위는 로그인 하나(회원에겐 마이페이지)" : "쇼핑몰 주소 빔 — '가격'은 /faq/ 비용 묶음, 오른쪽 위는 견적 문의, 로그인 0"} — 화면 ${pages.length}개 통과`);
