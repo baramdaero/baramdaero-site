@@ -339,6 +339,7 @@ html.embed .topbar, html.embed .sheet, html.embed .hint, html.embed .north, html
       </div>
       <div class="tools" role="toolbar" aria-label="표시 설정">
         <button type="button" id="btnHome" class="btn primary" hidden>전체 보기</button>
+        <button type="button" id="btnTop" class="btn" aria-pressed="false" hidden>위에서 보기</button>
         <button type="button" id="btnPipes" class="btn" aria-pressed="true">천장 속 배관</button>
         <div class="seg" role="group" aria-label="햇빛">
           <button type="button" id="btnDawn" aria-pressed="false">해 뜰 무렵</button>
@@ -1495,6 +1496,8 @@ function tweenAt(tw, t, o) { // 진행 t(0..1) → o.pos 자리 · o.yaw/o.pitch
 function syncUI() {
   const inRoom = state.mode !== 'house';
   $('btnHome').hidden = !inRoom;
+  $('btnTop').hidden = !(state.top || (state.mode === 'room' && state.room)); // 단독 페이지 단추 — 방 안에서만. 히어로(embed)에서는 topbar 가 숨겨져 부모 단추('배관 보기')가 대신한다
+  $('btnTop').setAttribute('aria-pressed', String(!!state.top));
   $('detailSheet').hidden = !inRoom;
   stage.classList.toggle('in-room', inRoom);
   if (narrow()) $('listSheet').hidden = inRoom; else $('listSheet').hidden = false;
@@ -1699,6 +1702,7 @@ canvas.addEventListener('pointerup', e => {
   down = null;
 });
 $('btnHome').addEventListener('click', goHome);
+$('btnTop').addEventListener('click', () => goTop(!state.top));
 $('btnPipes').addEventListener('click', () => {
   state.pipes = !state.pipes; setBlend(state.k); invalidate();
   $('btnPipes').setAttribute('aria-pressed', String(state.pipes));
