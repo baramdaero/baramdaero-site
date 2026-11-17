@@ -57,11 +57,12 @@ const extraJsonLd = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="icon" href="/favicon-16.png" type="image/png" sizes="16x16" />
-    <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
-    <link rel="icon" href="/favicon-48.png" type="image/png" sizes="48x48" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon-180.png" sizes="180x180" />
+    {/* ?v= 는 파비콘을 바꿀 때 올린다 — 브라우저는 파비콘을 오래 붙들고 있어 같은 주소면 예전 그림이 남는다(2026-11-17 하얀 바탕으로 교체) */}
+    <link rel="icon" href="/favicon.svg?v=20261117" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-16.png?v=20261117" type="image/png" sizes="16x16" />
+    <link rel="icon" href="/favicon-32.png?v=20261117" type="image/png" sizes="32x32" />
+    <link rel="icon" href="/favicon-48.png?v=20261117" type="image/png" sizes="48x48" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180.png?v=20261117" sizes="180x180" />
     <meta name="theme-color" content="#00293A" />
     <link rel="sitemap" href="/sitemap-index.xml" />
 
