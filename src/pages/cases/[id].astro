@@ -4,7 +4,7 @@ import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
 import { COMPLEX_BY_SLUG, complexLine } from '../../lib/caselog';
-import { SITE_CONFIG } from '../../config.js';
+import { SITE_CONFIG, shopHref } from '../../config.js';
 
 export async function getStaticPaths() {
   // sample: true는 페이지 자체를 만들지 않는다 — 목록에서 빼도 URL이 살아 있으면
@@ -25,6 +25,9 @@ const [tMain, tSub] = title.split(/\s*[｜|]\s*/);
 const altTitle = tSub ? `${tMain} — ${tSub}` : tMain;   // 화면낭독기가 '｜'를 읽지 않게
 // 본문 아래 사진 — cover 와 본문에 이미 넣은 사진은 뺀다
 const gallery = photos.filter((p) => p.file !== cover && !entry.body?.includes(p.file));
+// 사례를 보고 온 분께만 드리는 쿠폰 페이지(config 가 비면 카드 없음). 어느 사례에서 왔는지 쇼핑몰 유입 통계로 보게 utm 을 붙인다
+const couponBase = shopHref(SITE_CONFIG.CASE_COUPON_PATH);
+const couponHref = couponBase && `${couponBase}?utm_source=baramdaero&utm_medium=case&utm_content=${encodeURIComponent(entry.id)}`;
 const dateLabel = date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
 
 const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? '';
@@ -142,6 +145,14 @@ const specs = [
         </section>
       )}
 
+      {couponHref && (
+        <section class="case-detail__coupon" aria-labelledby="case-coupon">
+          <h2 id="case-coupon">시공사례 보신 분께 드리는 할인 쿠폰</h2>
+          <p>쇼핑몰에서 쿠폰을 받아 두고 결제할 때 쓰시면 됩니다.</p>
+          <a class="br-pill" href={couponHref} rel="noopener">쿠폰 받기 <span aria-hidden="true">→</span></a>
+        </section>
+      )}
+
       {/* 관련 안내 — 모든 사례에 같은 줄(내비게이션). 사례 본문에는 '비슷한 집이라면' 같은 공통 안내를 쓰지 않는다(2026-10-01 반복 문단 정리) */}
       <nav class="case-detail__more" aria-label="관련 안내">
         <p>관련 안내</p>
@@ -230,6 +241,9 @@ const specs = [
   .case-detail__qa details { border-bottom: 1px solid var(--line); }
   .case-detail__qa summary { cursor: pointer; font-weight: 700; font-size: 16px; padding: 16px 4px; }
   .case-detail__qa p { font-size: 15px; color: var(--ink-soft); padding: 0 4px 16px; line-height: 1.8; }
+  .case-detail__coupon { margin-top: 40px; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius); }
+  .case-detail__coupon h2 { font-size: 18px; margin-bottom: 6px; }
+  .case-detail__coupon p { font-size: 15px; color: var(--ink-soft); margin-bottom: 14px; }
   .case-detail__more { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line); }
   .case-detail__qa + .case-detail__more { margin-top: 28px; padding-top: 0; border-top: 0; } /* 질문 마지막 선과 겹쳐 빈 칸처럼 보이던 두 줄 */
   .case-detail__more p { font-size: 14px; font-weight: 700; color: var(--ink-soft); }
