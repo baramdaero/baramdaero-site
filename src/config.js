@@ -30,6 +30,8 @@ export const SITE_CONFIG = {
   // 2026-07-30: shop.baramdaero.com이 DNS 미등록(NXDOMAIN) 상태로 확인돼 빈 값으로 되돌렸다. 2026-10-19 DNS·응답(200, 아임웹) 확인 후 기입.
   // 주소가 죽으면 방문자가 브라우저 오류 페이지로 빠지니, 쇼핑몰을 내리거나 옮길 때는 이 값부터 비운다.
   SHOP_URL: 'https://shop.baramdaero.com',
+  // 네이버 블로그 — 푸터 링크와 전역 JSON-LD sameAs 가 여기서 읽는다. 빈 값이면 둘 다 빠진다(2026-11-17 블로그 홈페이지형 세팅)
+  NAVER_BLOG_URL: 'https://blog.naver.com/baramdaero_official',
   // 쇼핑몰 로그인 화면 경로 — SHOP_URL 뒤에 붙는다(shopHref). 빈 값이면 '로그인' 링크만 렌더되지 않는다.
   // 가입 링크는 따로 두지 않는다 — 가입은 쇼핑몰 화면에서 한다(2026-10-12).
   SHOP_LOGIN_PATH: '/login',
