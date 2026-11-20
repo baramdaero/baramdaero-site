@@ -79,6 +79,11 @@ export const SITE_CONFIG = {
   // 사이트 인증 메타 — 발급 후 기입하면 <head>에 자동 렌더
   NAVER_SITE_VERIFICATION: '6919e39cf56976a5d1c7852e6456ce18abaed0a8',
   GOOGLE_SITE_VERIFICATION: '',
+
+  // 구글 애널리틱스(GA4) 측정 ID — 쇼핑몰(아임웹 마케팅 채널 연동)과 같은 속성이다(2026-11-20).
+  // 빈 값이면 태그가 안 들어간다. 태그는 baramdaero.com 에서만 실행된다(로컬·미리보기 방문은 세지 않음).
+  // 바꾸거나 비우면 /privacy/ '쿠키' 절의 구글 애널리틱스 문장도 같이 고친다.
+  GA_MEASUREMENT_ID: 'G-WSQF9RKL1V',
 };
 
 /** 쇼핑몰 안쪽 주소. SHOP_URL 이나 경로가 비면 빈 문자열 — 부르는 쪽은 빈 값이면 링크를 그리지 않는다(죽은 링크 금지) */
