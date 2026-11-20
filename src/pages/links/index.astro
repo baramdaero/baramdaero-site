@@ -4,23 +4,38 @@
 import Base from '../../layouts/Base.astro';
 import lockupSvg from '../../assets/logo/baramdaero-lockup-anim.svg?raw';
 import { SITE_CONFIG } from '../../config.js';
+import instagramSvg from '../../assets/icons/instagram.svg?raw';
 
 const phone = SITE_CONFIG.PHONE;
 // 헤더와 같은 락업. 꼬불 모션(<animate id=…>)은 헤더 것과 id 가 겹치니 빼고 정지 그림으로 쓴다
 const logo = lockupSvg.replace(/<animate[^>]*\/>/g, '');
 
+// 채널 로고 — koboyo.com 아이콘 검색에서 꺼냈다(2026-11-20). 사이트 안 채널은 Standard(Lucide 선 아이콘, ISC),
+// 외부 채널은 Tech 의 공식 로고. koboyo 에 없는 로고(네이버 블로그·카카오톡 채널·스마트스토어·쿠팡·당근)는 비워 두고 직접 그리지 않는다.
+const lucide = (body: string) =>
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
+const ICON = {
+  house: lucide('<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>'),
+  images: lucide('<path d="m22 11-1.296-1.296a2.4 2.4 0 0 0-3.408 0L11 16"/><path d="M4 8a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2"/><circle cx="13" cy="7" r="1" fill="currentColor"/><rect x="8" y="2" width="14" height="14" rx="2"/>'),
+  building: lucide('<path d="M10 12h4"/><path d="M10 8h4"/><path d="M14 21v-3a2 2 0 0 0-4 0v3"/><path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"/><path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/>'),
+  bag: lucide('<path d="M16 10a4 4 0 0 1-8 0"/><path d="M3.103 6.034h17.794"/><path d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"/>'),
+  phone: lucide('<path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/>'),
+  instagram: instagramSvg.replace(/<svg[^>]*>/, '<svg viewBox="0 0 24 24" fill="currentColor">'),
+};
+
+// 외부 채널 주소는 레포 안 출처(config 등)가 생기면 채운다 — 추정해서 넣지 않는다
 const LINKS = [
-  { label: '홈페이지', sub: '설치·세척 안내', href: '/' },
-  { label: '시공 사례', sub: '현장 기록 모아 보기', href: '/cases/' },
-  { label: '상업용', sub: '사무실·매장·건물', href: '/commercial/' },
-  { label: '스토어', sub: '예약·구매', href: SITE_CONFIG.SHOP_URL },
-  { label: '전화 문의', sub: phone, href: phone ? `tel:${phone.replace(/\D/g, '')}` : '' },
-  { label: '카카오톡 채널', sub: '', href: SITE_CONFIG.KAKAO_CHANNEL_URL },
-  { label: '네이버 블로그', sub: '', href: 'https://blog.naver.com/baramdaero_official' },
-  { label: '인스타그램', sub: '', href: '' },
-  { label: '스마트스토어', sub: '', href: '' },
-  { label: '쿠팡', sub: '', href: '' },
-  { label: '당근', sub: '', href: '' },
+  { label: '홈페이지', sub: '설치·세척 안내', href: '/', icon: ICON.house },
+  { label: '시공 사례', sub: '현장 기록 모아 보기', href: '/cases/', icon: ICON.images },
+  { label: '상업용', sub: '사무실·매장·건물', href: '/commercial/', icon: ICON.building },
+  { label: '스토어', sub: '예약·구매', href: SITE_CONFIG.SHOP_URL, icon: ICON.bag },
+  { label: '전화 문의', sub: phone, href: phone ? `tel:${phone.replace(/\D/g, '')}` : '', icon: ICON.phone },
+  { label: '카카오톡 채널', sub: '', href: SITE_CONFIG.KAKAO_CHANNEL_URL, icon: '' },
+  { label: '네이버 블로그', sub: '', href: '', icon: '' },
+  { label: '인스타그램', sub: '', href: '', icon: ICON.instagram },
+  { label: '스마트스토어', sub: '', href: '', icon: '' },
+  { label: '쿠팡', sub: '', href: '', icon: '' },
+  { label: '당근', sub: '', href: '', icon: '' },
 ].filter((l) => l.href);
 
 const isExternal = (href: string) => /^https?:/.test(href);
@@ -39,8 +54,9 @@ const isExternal = (href: string) => /^https?:/.test(href);
             <a
               class="br-pill lk__item"
               href={l.href}
-              {...(isExternal(l.href) ? { target: '_blank', rel: 'noopener' } : {})}
+              rel={isExternal(l.href) ? 'noopener' : undefined}
             >
+              {l.icon && <span class="lk__icon" aria-hidden="true" set:html={l.icon} />}
               <span class="lk__text">
                 <span class="lk__label">{l.label}</span>
                 {l.sub && <span class="lk__sub">{l.sub}</span>}
@@ -69,9 +85,11 @@ const isExternal = (href: string) => /^https?:/.test(href);
     min-height: 64px;
     padding: 12px 20px;
     border-radius: var(--radius-btn);
-    justify-content: space-between;
+    gap: 14px;
   }
-  .lk__text { display: grid; gap: 2px; }
+  .lk__icon { flex: none; display: grid; place-items: center; width: 24px; height: 24px; }
+  .lk__icon :global(svg) { width: 24px; height: 24px; }
+  .lk__text { display: grid; gap: 2px; flex: 1; min-width: 0; }
   .lk__label { font-size: 17px; }
   .lk__sub { font-size: 14px; font-weight: 500; color: var(--br-ink-sub); font-variant-numeric: tabular-nums; }
   @media (min-width: 768px) { .lk { padding-top: 80px; } }
