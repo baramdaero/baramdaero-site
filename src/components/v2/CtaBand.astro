@@ -1,7 +1,7 @@
 ---
 // S10 CTA 밴드 (teal 풀폭) — CTA는 챗봇 호출 단일 (문의 폼 신설 금지).
 // PHONE이 비어 있으면 전화 보조 CTA는 렌더하지 않는다 (임의 기입 금지).
-import { SITE_CONFIG } from '../../config.js';
+import { SITE_CONFIG, shopHref } from '../../config.js';
 
 interface Props {
   chatTree?: string;
@@ -10,8 +10,11 @@ interface Props {
   priceLink?: boolean;
   /** 제목 위 라벨(2026-10-01 대표: 섹션마다 소제목) */
   label?: string;
+  /** 문의 버튼 옆 '세척 예약하기' — 쇼핑몰 세척 상품으로 바로(SHOP_CLEAN_PATH, 빈 값이면 안 그린다). 켜면 '가격 안내 보기' 대신 나온다: 상품 화면에 가격이 있다 */
+  cleanLink?: boolean;
 }
-const { chatTree = 'menu', buttonLabel = '견적 문의', priceLink = false, label = '' } = Astro.props;
+const { chatTree = 'menu', buttonLabel = '견적 문의', priceLink = false, label = '', cleanLink = false } = Astro.props;
+const cleanHref = cleanLink ? shopHref(SITE_CONFIG.SHOP_CLEAN_PATH) : '';
 // 슬롯을 안 넘기고 부르는 페이지(/story/, 블로그 글)가 있다. 빈 <h2>·<p> 를 내보내면
 // 스크린리더가 'empty heading' 으로 읽고 화면엔 빈 면만 남는다 — 있을 때만 그린다.
 const hasTitle = Astro.slots.has('default');
@@ -30,7 +33,8 @@ const hasSub = Astro.slots.has('sub');
         class="bd-cta bd-cta--ondark v2-cta__btn"
         data-chat-tree={chatTree}
       >{buttonLabel}<svg class="br-cta-arrow" aria-hidden="true" viewBox="0 0 10 10" width="10" height="10" fill="none"><path d="M0 5h7" /><path d="M1 1l4 4-4 4" /></svg></button>
-      {priceLink && <a class="br-pill" href="/faq/#cat-비용">가격 안내 보기 <span aria-hidden="true">→</span></a>}
+      {cleanHref && <a class="br-pill" href={cleanHref}>세척 예약하기 <span aria-hidden="true">→</span></a>}
+      {priceLink && !cleanHref && <a class="br-pill" href="/faq/#cat-비용">가격 안내 보기 <span aria-hidden="true">→</span></a>}
       </div>
       {SITE_CONFIG.PHONE && (
         <a class="v2-cta__phone" href={`tel:${SITE_CONFIG.PHONE}`}><span class="v2-cta__phone-label">전화</span>{SITE_CONFIG.PHONE}</a>
