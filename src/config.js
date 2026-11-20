@@ -77,7 +77,7 @@ export const SITE_CONFIG = {
   SEARCH_OPEN: false,
 
   // 사이트 인증 메타 — 발급 후 기입하면 <head>에 자동 렌더
-  NAVER_SITE_VERIFICATION: '',
+  NAVER_SITE_VERIFICATION: '6919e39cf56976a5d1c7852e6456ce18abaed0a8',
   GOOGLE_SITE_VERIFICATION: '',
 };
 
