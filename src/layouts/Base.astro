@@ -67,6 +67,20 @@ const extraJsonLd = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
     <link rel="apple-touch-icon" href="/apple-touch-icon-180.png?v=20261117" sizes="180x180" />
     <meta name="theme-color" content="#00293A" />
     <link rel="sitemap" href="/sitemap-index.xml" />
+    {SITE_CONFIG.GA_MEASUREMENT_ID && (
+      <script is:inline define:vars={{ gaId: SITE_CONFIG.GA_MEASUREMENT_ID }}>
+        if (location.hostname === 'baramdaero.com') {
+          window.dataLayer = window.dataLayer || [];
+          window.gtag = function () { dataLayer.push(arguments); };
+          gtag('js', new Date());
+          gtag('config', gaId);
+          var s = document.createElement('script');
+          s.async = true;
+          s.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
+          document.head.appendChild(s);
+        }
+      </script>
+    )}
 
     {SITE_CONFIG.NAVER_SITE_VERIFICATION && (
       <meta name="naver-site-verification" content={SITE_CONFIG.NAVER_SITE_VERIFICATION} />
