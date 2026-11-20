@@ -27,6 +27,7 @@ const biz = SITE_CONFIG.BUSINESS;
       <a href={SITE_CONFIG.SHOP_URL || '/faq/#cat-비용'} rel={SITE_CONFIG.SHOP_URL ? 'noopener' : undefined}>{SITE_CONFIG.SHOP_URL ? '스토어' : '가격'}</a>
       <a href="/faq/">자주 묻는 질문</a>
       {realPosts >= 3 && <a href="/blog/">블로그</a>}
+      {SITE_CONFIG.NAVER_BLOG_URL && <a href={SITE_CONFIG.NAVER_BLOG_URL} rel="noopener">네이버 블로그</a>}
       {/* 쇼핑몰 주소나 경로가 비면 미렌더 — 죽은 링크 차단 */}
       {loginHref && <a href={loginHref} rel="noopener" referrerpolicy="unsafe-url" data-shop-login={mypageHref ? '' : undefined}>로그인</a>}
       {mypageHref && <a href={mypageHref} rel="noopener" class="bd-footer__mypage">마이페이지</a>}
