@@ -1,6 +1,6 @@
 ---
 // 문의 챗봇 — 메신저 대화형 UI. 4트리(세척/AS/설치/기타) 로직·분기·문구·접수카드 스펙은 v1 그대로 유지,
-// 표현 계층(말풍선·칩·입력바)과 종점 동작(채널톡 상담 연결 + 폴백)만 교체.
+// 표현 계층(말풍선·칩·입력바)과 종점 동작(접수 카드 복사 + 카카오톡 채널 채팅 열기, 전화)만 교체.
 // 진입점 3개: 플로팅 런처(전 페이지) + [data-chat-tree] 요소(홈 히어로 로우, /care/ CTA 등) + 주소(?chat=install — lib/chat-link.ts).
 // 연락처·채널 값은 config.js 플레이스홀더 — 빈 값 폴백은 스크립트가 처리 (CLAUDE.md 절대 규칙 2).
 import { SITE_CONFIG } from '../config.js';
@@ -98,7 +98,6 @@ const TEASER = [
 
 <script>
   import { SITE_CONFIG } from '../config.js';
-  import { channelEnabled, ensureChannel, openConsult } from '../lib/channel.ts';
   import { readChatLink } from '../lib/chat-link.ts';
   import { gust } from '../scripts/press.ts';
 
@@ -668,16 +667,10 @@ const TEASER = [
             return;
           }
           if (opt.consult) {
-            // 상담 연결 칩 — 채널톡 열기 (키 없으면 미노출, 기존 폴백 경로 유지)
-            if (!channelEnabled()) return;
+            // 상담 연결 칩 — 카카오톡 채널 채팅을 새 창으로 (주소 없으면 미노출)
+            if (!KAKAO) return;
             const btn = chip(opt.label, 'primary');
-            btn.addEventListener('click', async () => {
-              btn.disabled = true;
-              const ok = (await ensureChannel()) && openConsult();
-              btn.disabled = false;
-              if (ok) close();
-              else toast('상담 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.');
-            });
+            btn.addEventListener('click', () => window.open(KAKAO, '_blank', 'noopener'));
             group.appendChild(btn);
             return;
           }
@@ -863,24 +856,26 @@ const TEASER = [
     return a;
   }
 
-  /** 채널톡 없음·실패 시 기존 폴백 동작 그대로: 자동복사 + 토스트 + 카카오/전화/복사 안내.
-      silent=true면 자동복사·토스트 생략 (호출측이 이미 복사·안내한 경우) */
-  function renderFallbackCtas(text: string, wrap: HTMLElement, silent = false) {
-    if (!silent) {
-      copyText(text).then((ok) => {
-        if (ok) toast('복사되었습니다. 상담 창에 붙여넣어 주세요.');
-      });
-    }
+  /** 접수 카드 CTA: 자동복사 + 토스트 + 카카오/전화/복사 안내.
+      누수 긴급은 전화가 주 CTA — 전화가 비었으면 카카오가 주 CTA */
+  function renderCardCtas(text: string, wrap: HTMLElement, urgent: boolean) {
+    copyText(text).then((ok) => {
+      if (ok) toast('복사되었습니다. 상담 창에 붙여넣어 주세요.');
+    });
+    const telFirst = urgent && !!PHONE;
+    if (telFirst) wrap.appendChild(ctaTel(`전화하기 ${PHONE}`, 'primary'));
     if (KAKAO) {
-      const btn = ctaButton('카톡으로 접수하기', 'primary');
-      btn.addEventListener('click', async () => {
-        await copyText(text);
+      const btn = ctaButton('카톡으로 접수하기', telFirst ? 'ghost' : 'primary');
+      // 창은 클릭 안에서 바로 연다 — 복사를 기다린 뒤 열면 iOS Safari 가 팝업으로 막는다
+      btn.addEventListener('click', () => {
+        void copyText(text);
         toast('복사되었습니다. 상담 창에 붙여넣어 주세요.');
         window.open(KAKAO, '_blank', 'noopener');
       });
       wrap.appendChild(btn);
+      if (PHONE && !telFirst) wrap.appendChild(ctaTel(`전화하기 ${PHONE}`, 'ghost'));
     } else if (PHONE) {
-      wrap.appendChild(ctaTel(`전화로 접수하기 ${PHONE}`, 'primary'));
+      if (!telFirst) wrap.appendChild(ctaTel(`전화로 접수하기 ${PHONE}`, 'primary'));
     } else {
       bubble('접수 채널 준비 중입니다. 카드 내용이 복사되어 있으니 채널 오픈 후 붙여넣어 주세요.');
     }
@@ -890,6 +885,8 @@ const TEASER = [
       toast(ok ? '복사되었습니다. 상담 창에 붙여넣어 주세요.' : '복사에 실패했습니다. 카드를 길게 눌러 복사해 주세요.');
     });
     wrap.appendChild(again);
+    // 쇼핑몰이 열리면 접수 카드에서 바로 상품으로 — SHOP_URL 이 비면 렌더되지 않는다
+    if (SITE_CONFIG.SHOP_URL) wrap.appendChild(ctaHref('상품 보고 바로 예약하기', SITE_CONFIG.SHOP_URL, 'ghost'));
   }
 
   function renderCard() {
@@ -908,39 +905,7 @@ const TEASER = [
     wrap.className = 'chat__ctas';
     log.appendChild(wrap);
 
-    const isUrgent = !!data.긴급;
-
-    if (channelEnabled()) {
-      // 상담 연결: 접수카드를 첫 메시지로 프리필 → 고객이 전송만 하면 상담 시작
-      // 누수 긴급은 전화가 주 CTA — 단, 전화 미기입이면 상담 연결을 주 CTA로 승격
-      const consult = ctaButton('이 내용으로 접수하기', isUrgent && PHONE ? 'ghost' : 'primary');
-      consult.addEventListener('click', async () => {
-        consult.disabled = true;
-        const ok = (await ensureChannel()) && openConsult(text);
-        consult.disabled = false;
-        if (ok) {
-          close();
-        } else {
-          await copyText(text);
-          toast('상담 연결이 안 됩니다. 접수 내용은 복사해 두었으니 전화로 연락 주세요.');
-          consult.remove();
-          renderFallbackCtas(text, wrap, true);
-          scrollDown();
-        }
-      });
-      // 누수 긴급 경로는 전화가 주 CTA (기존 우선순위 유지)
-      if (isUrgent && PHONE) {
-        wrap.appendChild(ctaTel(`전화하기 ${PHONE}`, 'primary'));
-        wrap.appendChild(consult);
-      } else {
-        wrap.appendChild(consult);
-        if (PHONE) wrap.appendChild(ctaTel(`전화하기 ${PHONE}`, 'ghost'));
-      }
-      // 쇼핑몰이 열리면 접수 카드에서 바로 상품으로 — SHOP_URL 이 비면 렌더되지 않는다
-      if (SITE_CONFIG.SHOP_URL) wrap.appendChild(ctaHref('상품 보고 바로 예약하기', SITE_CONFIG.SHOP_URL, 'ghost'));
-    } else {
-      renderFallbackCtas(text, wrap);
-    }
+    renderCardCtas(text, wrap, !!data.긴급);
 
     const home = ctaButton('처음으로', 'sub');
     home.addEventListener('click', reset);
@@ -948,7 +913,7 @@ const TEASER = [
     scrollDown();
   }
 
-  /* ---------- 기타 트리 — FAQ 전체 목록 + 상담 연결 + 전화 ---------- */
+  /* ---------- 기타 트리 — FAQ 전체 목록 + 카카오톡 채널 + 전화 ---------- */
   function renderEtc() {
     renderFaqChips(FAQ, FAQ.length ? '자주 묻는 질문' : undefined);
 
@@ -956,27 +921,14 @@ const TEASER = [
     wrap.className = 'chat__ctas';
     log.appendChild(wrap);
 
-    if (channelEnabled()) {
-      const consult = ctaButton('상담 연결', 'primary');
-      consult.addEventListener('click', async () => {
-        consult.disabled = true;
-        const ok = (await ensureChannel()) && openConsult();
-        consult.disabled = false;
-        if (ok) close();
-        else toast('상담 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.');
-      });
-      wrap.appendChild(consult);
-      if (PHONE) wrap.appendChild(ctaTel(`전화 ${PHONE}`, 'ghost'));
-    } else {
-      if (KAKAO) {
-        const btn = ctaButton('카카오톡 채널', 'primary');
-        btn.addEventListener('click', () => window.open(KAKAO, '_blank', 'noopener'));
-        wrap.appendChild(btn);
-      }
-      if (PHONE) wrap.appendChild(ctaTel(`전화 ${PHONE}`, 'ghost'));
-      if (!KAKAO && !PHONE) {
-        bubble('문의 채널 준비 중입니다. 세척·설치 견적은 아래 메뉴에서 바로 접수할 수 있습니다.');
-      }
+    if (KAKAO) {
+      const btn = ctaButton('카카오톡 채널', 'primary');
+      btn.addEventListener('click', () => window.open(KAKAO, '_blank', 'noopener'));
+      wrap.appendChild(btn);
+    }
+    if (PHONE) wrap.appendChild(ctaTel(`전화 ${PHONE}`, KAKAO ? 'ghost' : 'primary'));
+    if (!KAKAO && !PHONE) {
+      bubble('문의 채널 준비 중입니다. 세척·설치 견적은 아래 메뉴에서 바로 접수할 수 있습니다.');
     }
 
     const home = ctaButton('처음으로', 'sub');
@@ -1063,7 +1015,6 @@ const TEASER = [
     fab.setAttribute('aria-expanded', 'true');
     fab.setAttribute('aria-label', '문의 챗봇 닫기');
     openState = true;
-    void ensureChannel(); // lazy boot — 카드 도달 전에 준비되도록 미리 시작 (키 없으면 즉시 no-op)
     void goto(startNode);
     (root.querySelector('[data-chat-close]') as HTMLElement)?.focus();
   }
