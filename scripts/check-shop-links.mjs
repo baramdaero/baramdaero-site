@@ -11,6 +11,8 @@
  *     '로그인'에는 data-shop-login(로그인한 방문자에겐 숨김)이 붙고, 화면마다 로그인 표시 스크립트(src/scripts/shop-session.js)가
  *     <header> 앞에 원본과 같은 본문으로 한 번, 숨기고 보이는 CSS 규칙이 빌드 CSS 에 있다.
  *     마이페이지 경로가 비면 위 셋(표시·스크립트·숨김)이 모두 없어야 한다 — 로그인한 방문자에게 로그인이 사라지지 않게.
+ *   장바구니·검색 경로(SHOP_CART_PATH·SHOP_SEARCH_PATH)까지 있으면(2026-11-10): 로그인한 방문자용 도구가 마이페이지 옆에 — 장바구니는 쇼핑몰 장바구니로 가는 아이콘 링크 하나(기본 숨김 클래스·이름표),
+ *     돋보기는 단추 하나(hidden 으로 시작) + 헤더 아래 검색 줄이 쇼핑몰 검색 폼(GET {쇼핑몰}/search, 입력 이름 keyword) 하나. 경로가 비거나 마이페이지가 없으면 둘 다 없어야 한다.
  *   스크립트 동작은 check-shop-session.mjs, 쇼핑몰 쪽 초안은 check-shop-bridge.mjs.
  */
 import { readFile, readdir } from 'node:fs/promises';
@@ -38,6 +40,7 @@ const anchors = (html) => Array.from(html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/
   href: (m[1].match(/\bhref="([^"]*)"/) ?? [])[1],
   text: m[2].replace(/<[^>]+>/g, '').trim(),
   cls: ((m[1].match(/\bclass="([^"]*)"/) ?? [])[1] ?? '').split(/\s+/),
+  label: (m[1].match(/\baria-label="([^"]*)"/) ?? [])[1],            // 아이콘 링크의 접근성 이름
   login: /\bdata-shop-login\b/.test(m[1]),                          // 로그인 링크 표시(로그인한 방문자에겐 숨김)
   unsafe: /\breferrerpolicy="unsafe-url"/.test(m[1]),                // 쇼핑몰이 돌아올 화면을 알아 가는 리퍼러
 }));
@@ -51,6 +54,8 @@ function check(file, html, cfg) {
   const login = shop && cfg.SHOP_LOGIN_PATH ? shop + cfg.SHOP_LOGIN_PATH : '';
   const priceHref = cfg.SHOP_URL || '/faq/#cat-비용', priceText = cfg.SHOP_URL ? '스토어' : '가격';   // 쇼핑몰로 가면 글자도 '스토어'(처음엔 '예약·구매', 2026-11-17 변경)
   const mypage = login && cfg.SHOP_MYPAGE_PATH ? shop + cfg.SHOP_MYPAGE_PATH : '';
+  const cart = mypage && cfg.SHOP_CART_PATH ? shop + cfg.SHOP_CART_PATH : '';        // 도구는 로그인 표시 장치(마이페이지)가 있을 때만
+  const search = mypage && cfg.SHOP_SEARCH_PATH ? shop + cfg.SHOP_SEARCH_PATH : '';
 
   // 로그인 표시 스크립트 — 마이페이지가 있는 화면에만, 한 번, 헤더보다 앞에(첫 그림 전에 정해져 '로그인'이 비치지 않게), 원본 본문 그대로.
   // 푸터는 이 스크립트가 정한 <html> 클래스를 따른다
@@ -78,11 +83,25 @@ function check(file, html, cfg) {
   // 오른쪽 위에는 하나만 — 로그인이 있으면 견적 문의 버튼은 없다
   const quote = /<button\b[^>]*bd-header__quote/.test(header);
   if (quote === Boolean(login)) fails.push(`${file}: 헤더 오른쪽 위 — 견적 문의 ${quote ? '있음' : '없음'}, 로그인 ${login ? '있음' : '없음'}`);
+
+  // 쇼핑몰 도구 — 장바구니 링크 하나, 돋보기 단추 하나 + 쇼핑몰 검색 폼 하나(로그인한 방문자에게만 보이는 기본 숨김)
+  const carts = anchors(header).filter((a) => a.cls.includes('bd-header__cart'));
+  if (carts.length !== (cart ? 1 : 0) || carts.some((a) => a.href !== cart)) fails.push(`${file}: 헤더 장바구니 ${carts.length}개 — ${carts.map((a) => a.href).join(', ')} (기대 ${cart || '없음'})`);
+  if (carts.some((a) => !a.cls.includes('bd-header__tool') || a.label !== '장바구니')) fails.push(`${file}: 헤더 장바구니에 기본 숨김 클래스(bd-header__tool)나 이름표(aria-label="장바구니")가 없다`);
+  const sbtn = Array.from(header.matchAll(/<button\b([^>]*bd-header__search-btn[^>]*)>/g), (m) => m[1]);
+  const forms = Array.from(header.matchAll(/<form\b([^>]*)>([\s\S]*?)<\/form>/g), (m) => ({ attrs: m[1], body: m[2] }));
+  if (sbtn.length !== (search ? 1 : 0) || forms.length !== (search ? 1 : 0)) fails.push(`${file}: 헤더 돋보기 ${sbtn.length}개·검색 폼 ${forms.length}개 (기대 ${search ? '각 1개' : '없음'})`);
+  else if (search) {
+    const act = (forms[0].attrs.match(/\baction="([^"]*)"/) ?? [])[1], meth = (forms[0].attrs.match(/\bmethod="([^"]*)"/) ?? [])[1], name = (forms[0].body.match(/<input\b[^>]*\bname="([^"]*)"/) ?? [])[1];
+    if (act !== search || meth !== 'get' || name !== 'keyword') fails.push(`${file}: 검색 폼 — action ${act}, method ${meth}, 입력 이름 ${name} (기대 ${search}, get, keyword — 쇼핑몰 검색 폼과 같아야 한다)`);
+    if (!/\bhidden\b/.test(sbtn[0]) || !/\bbd-header__tool\b/.test(sbtn[0])) fails.push(`${file}: 돋보기가 기본 숨김(hidden·bd-header__tool)이 아니다 — 스크립트가 안 돌 때 눌러도 안 열리는 단추가 보인다`);
+    if (!/aria-controls="site-search"/.test(sbtn[0]) || !/\bid="site-search"/.test(header)) fails.push(`${file}: 돋보기와 검색 줄(site-search)이 이어지지 않는다`);
+  }
   return fails;
 }
 
 /** 빌드 CSS — 마이페이지 기본 숨김 → 회원에게만 보임, 회원에게 로그인 숨김. 순서도 본다(마이페이지 숨김이 '로그인' 표시 규칙 뒤에 와야 이긴다) */
-function checkCss(css) {
+function checkCss(css, tools = false) {
   const need = [
     [/\.bd-header__mypage[^{]*\{display:none\}/, '헤더 마이페이지 기본 숨김'],
     [/html\.bd-member \.bd-header__mypage[^{]*\{display:inline-flex\}/, '회원에게 헤더 마이페이지 표시'],
@@ -90,6 +109,13 @@ function checkCss(css) {
     [/\.bd-footer__mypage[^{]*\{display:none\}/, '푸터 마이페이지 기본 숨김'],
     [/html\.bd-member \.bd-footer__mypage[^{]*\{display:revert\}/, '회원에게 푸터 마이페이지 표시'],
     [/html\.bd-member \.bd-footer__nav[^{]*\[data-shop-login\]\{display:none\}/, '회원에게 푸터 로그인 숨김'],
+    // 장바구니·돋보기·검색 줄(경로가 있을 때) — 방문자에게는 안 보이고 로그인한 방문자에게만 보인다
+    ...(tools ? [
+      [/(^|[},])\.bd-header__tool(\[[^\]]*\])?\{display:none[;}]/, '헤더 도구(장바구니·돋보기) 기본 숨김'],
+      [/html\.bd-member \.bd-header__tool[^{]*:not\(\[hidden\]\)[^{]*\{display:inline-flex\}/, '회원에게 헤더 도구 표시'],
+      [/(^|[},])\.bd-search(\[[^\]]*\])?\{display:none[;}]/, '검색 줄 기본 숨김'],
+      [/html\.bd-member \.bd-search[^{]*\{display:block\}/, '회원에게 검색 줄 표시'],
+    ] : []),
   ];
   const fails = need.filter(([re]) => !re.test(css)).map(([, why]) => `빌드 CSS 에 규칙이 없다 — ${why}`);
   const loginShow = css.search(/\.bd-header__login\[[^{]*\{display:inline-flex/);
@@ -121,6 +147,10 @@ function checkCss(css) {
   const MF = '<a href="https://s.example/shop_mypage" class="bd-footer__mypage">마이페이지</a>';
   const Q = '<button class="bd-header__quote">견적 문의</button>';
   const U = on.SHOP_URL;
+  const tools = { ...on, SHOP_CART_PATH: '/shop_cart', SHOP_SEARCH_PATH: '/search' };   // 장바구니·돋보기까지
+  const CT = '<a href="https://s.example/shop_cart" class="bd-header__tool bd-header__cart" rel="noopener" aria-label="장바구니"></a>';
+  const SB = '<button type="button" class="bd-header__tool bd-header__search-btn" aria-label="상품 검색" aria-expanded="false" aria-controls="site-search" hidden></button>';
+  const SF = '<div class="bd-search" id="site-search" inert><form class="bd-search__form" action="https://s.example/search" method="get" role="search"><input id="site-search-input" type="search" name="keyword"><button type="submit">검색</button></form></div>';
   const n = (h, f, cfg, s, after) => check('x', page(h, f, s, after), cfg).length;
 
   assert.equal(n(P('/faq/#cat-비용') + Q, P('/faq/#cat-비용'), off), 0);
@@ -143,6 +173,26 @@ function checkCss(css) {
   assert.equal(n(PS(U) + L + MH.replace(' bd-header__mypage', ''), PS(U) + L + MF, on, S), 1, '헤더 마이페이지의 기본 숨김 클래스 누락을 못 잡는다');
   assert.equal(n(PS(U) + L + MH, PS(U) + L + MF.replace(' class="bd-footer__mypage"', ''), on, S), 1, '푸터 마이페이지의 기본 숨김 클래스 누락을 못 잡는다');
 
+  // 쇼핑몰 도구(장바구니·돋보기·검색 줄)
+  const T = (h) => PS(U) + L + MH + h;
+  assert.equal(n(T(CT + SB + SF), PS(U) + L + MF, tools, S), 0);
+  assert.equal(n(T(CT + SB + SF), PS(U) + L + MF, on, S), 2, '경로가 빈데 남은 장바구니·돋보기·검색 폼을 못 잡는다');   // 장바구니 한 건 + 돋보기·폼 한 건
+  assert.equal(n(T(SB + SF), PS(U) + L + MF, tools, S), 1, '빠진 장바구니를 못 잡는다');
+  assert.equal(n(T(CT + CT + SB + SF), PS(U) + L + MF, tools, S), 1, '장바구니가 둘인 것을 못 잡는다');
+  assert.equal(n(T(CT.replace('/shop_cart', '/cart') + SB + SF), PS(U) + L + MF, tools, S), 1, '엉뚱한 장바구니 주소를 못 잡는다');
+  assert.equal(n(T(CT.replace('bd-header__tool ', '') + SB + SF), PS(U) + L + MF, tools, S), 1, '장바구니의 기본 숨김 클래스 누락을 못 잡는다');
+  assert.equal(n(T(CT.replace(' aria-label="장바구니"', '') + SB + SF), PS(U) + L + MF, tools, S), 1, '장바구니 이름표 누락을 못 잡는다');
+  assert.equal(n(T(CT + SF), PS(U) + L + MF, tools, S), 1, '빠진 돋보기를 못 잡는다');
+  assert.equal(n(T(CT + SB), PS(U) + L + MF, tools, S), 1, '빠진 검색 폼을 못 잡는다');
+  assert.equal(n(T(CT + SB + SF.replace('/search', '/find')), PS(U) + L + MF, tools, S), 1, '엉뚱한 검색 주소를 못 잡는다');
+  assert.equal(n(T(CT + SB + SF.replace('method="get"', 'method="post"')), PS(U) + L + MF, tools, S), 1, '검색이 POST 인 것을 못 잡는다');
+  assert.equal(n(T(CT + SB + SF.replace('name="keyword"', 'name="q"')), PS(U) + L + MF, tools, S), 1, '쇼핑몰과 다른 검색 입력 이름을 못 잡는다');
+  assert.equal(n(T(CT + SB.replace(' hidden', '') + SF), PS(U) + L + MF, tools, S), 1, '돋보기의 hidden 누락을 못 잡는다');
+  assert.equal(n(T(CT + SB.replace('bd-header__tool ', '') + SF), PS(U) + L + MF, tools, S), 1, '돋보기의 기본 숨김 클래스 누락을 못 잡는다');
+  assert.equal(n(T(CT + SB.replace('site-search', 'other') + SF), PS(U) + L + MF, tools, S), 1, '돋보기와 검색 줄이 안 이어진 것을 못 잡는다');
+  assert.equal(n(PS(U) + L + CT + SB + SF, PS(U) + L + MF, tools, S), 1, '마이페이지 없이 도구만 있는 것은 마이페이지 규칙이 잡는다');   // 도구 규칙이 아니라 마이페이지 누락 한 건
+  assert.equal(n(PS(U) + L1 + CT + SB + SF, PS(U) + L1, { ...noMy, SHOP_CART_PATH: '/shop_cart', SHOP_SEARCH_PATH: '/search' }), 2, '마이페이지 경로가 비었는데 도구가 남은 것을 못 잡는다');
+
   // 로그인 표시 스크립트: 있음·한 번·헤더 앞·원본 본문
   assert.equal(n(PS(U) + L + MH, PS(U) + L + MF, on, ''), 1, '로그인 표시 스크립트 누락을 못 잡는다');
   assert.equal(n(PS(U) + L + MH, PS(U) + L + MF, on, S + S), 1, '스크립트가 둘인 것을 못 잡는다');
@@ -161,6 +211,15 @@ function checkCss(css) {
     + 'html.bd-member .bd-header__login[a][data-shop-login]{display:none}.bd-footer__mypage[b]{display:none}html.bd-member .bd-footer__mypage[b]{display:revert}'
     + 'html.bd-member .bd-footer__nav[b] [b][data-shop-login]{display:none}';
   assert.equal(checkCss(CSS).length, 0);
+  const TCSS = '.bd-header__tool[a]{display:none;width:44px}html.bd-member .bd-header__tool[a]:not([hidden]){display:inline-flex}'
+    + '.bd-search[a]{display:none;position:absolute}html.bd-member .bd-search[a]{display:block}';
+  assert.equal(checkCss(CSS + TCSS, true).length, 0);
+  assert.equal(checkCss(CSS, true).length, 4, '도구·검색 줄 규칙이 통째로 빠진 CSS 를 못 잡는다');
+  assert.equal(checkCss(CSS + TCSS.replace('.bd-header__tool[a]{display:none;width:44px}', ''), true).length, 1, '도구 기본 숨김이 빠진 CSS 를 못 잡는다');
+  assert.equal(checkCss(CSS + TCSS.replace('html.bd-member .bd-header__tool[a]:not([hidden]){display:inline-flex}', ''), true).length, 1, '회원에게 도구 표시가 빠진 CSS 를 못 잡는다');
+  assert.equal(checkCss(CSS + TCSS.replace('.bd-search[a]{display:none;position:absolute}', ''), true).length, 1, '검색 줄 기본 숨김이 빠진 CSS 를 못 잡는다');
+  assert.equal(checkCss(CSS + TCSS.replace('html.bd-member .bd-search[a]{display:block}', ''), true).length, 1, '회원에게 검색 줄 표시가 빠진 CSS 를 못 잡는다');
+  assert.equal(checkCss(CSS + TCSS.replace('{display:none;width:44px}', '{display:flex;width:44px}'), true).length, 1, '도구가 방문자에게도 보이는 CSS 를 못 잡는다');
   assert.equal(checkCss(CSS.replace('.bd-header__mypage[a]{display:none}', '')).length, 1, '마이페이지 기본 숨김이 빠진 CSS 를 못 잡는다');
   assert.equal(checkCss(CSS.replace('html.bd-member .bd-header__login[a][data-shop-login]{display:none}', '')).length, 1, '회원에게 로그인 숨김이 빠진 CSS 를 못 잡는다');
   assert.equal(checkCss(CSS.replace('{display:revert}', '{display:none}')).length, 1, '푸터 마이페이지 표시 규칙이 틀린 CSS 를 못 잡는다');
@@ -173,7 +232,7 @@ const fails = pages.flatMap(([f, html]) => check(f, html, SITE_CONFIG));
 if (SITE_CONFIG.SHOP_URL && SITE_CONFIG.SHOP_LOGIN_PATH && SITE_CONFIG.SHOP_MYPAGE_PATH) {
   const cssDir = path.join(ROOT, 'dist/_astro');
   const css = (await Promise.all((await readdir(cssDir)).filter((f) => f.endsWith('.css')).map((f) => readFile(path.join(cssDir, f), 'utf8')))).join('\n');
-  fails.push(...checkCss(css));
+  fails.push(...checkCss(css, Boolean(SITE_CONFIG.SHOP_CART_PATH || SITE_CONFIG.SHOP_SEARCH_PATH)));
 }
 { // 옛 /price/ 주소(리다이렉트 한 장)는 메뉴 '스토어'(쇼핑몰이 없으면 '가격')와 같은 곳으로 간다
   const old = pages.find(([f]) => /(^|[\\/])price[\\/]index\.html$/.test(f));
@@ -185,4 +244,4 @@ if (fails.length) {
   console.error(fails.slice(0, 40).map((f) => `  FAIL ${f}`).join('\n') + (fails.length > 40 ? `\n  … 외 ${fails.length - 40}건` : ''));
   process.exit(1);
 }
-console.log(`shop links: ${SITE_CONFIG.SHOP_URL ? "쇼핑몰 주소 있음 — '스토어'는 쇼핑몰, 오른쪽 위는 로그인 하나(회원에겐 마이페이지)" : "쇼핑몰 주소 빔 — '가격'은 /faq/ 비용 묶음, 오른쪽 위는 견적 문의, 로그인 0"} — 화면 ${pages.length}개 통과`);
+console.log(`shop links: ${SITE_CONFIG.SHOP_URL ? "쇼핑몰 주소 있음 — '스토어'는 쇼핑몰, 오른쪽 위는 로그인 하나(회원에겐 마이페이지 + 장바구니·돋보기)" : "쇼핑몰 주소 빔 — '가격'은 /faq/ 비용 묶음, 오른쪽 위는 견적 문의, 로그인 0"} — 화면 ${pages.length}개 통과`);
