@@ -1,0 +1,78 @@
+---
+// 공식 채널 모음 — 블로그·인스타 프로필 링크가 가리키는 한 장. 채널은 아래 배열 한 곳에서만 고친다.
+// 주소(href)가 빈 칸은 그리지 않는다(죽은 링크 금지). 카카오·전화·쇼핑몰은 config 값을 그대로 읽는다(절대 규칙 2).
+import Base from '../../layouts/Base.astro';
+import lockupSvg from '../../assets/logo/baramdaero-lockup-anim.svg?raw';
+import { SITE_CONFIG } from '../../config.js';
+
+const phone = SITE_CONFIG.PHONE;
+// 헤더와 같은 락업. 꼬불 모션(<animate id=…>)은 헤더 것과 id 가 겹치니 빼고 정지 그림으로 쓴다
+const logo = lockupSvg.replace(/<animate[^>]*\/>/g, '');
+
+const LINKS = [
+  { label: '홈페이지', sub: '설치·세척 안내', href: '/' },
+  { label: '시공 사례', sub: '현장 기록 모아 보기', href: '/cases/' },
+  { label: '상업용', sub: '사무실·매장·건물', href: '/commercial/' },
+  { label: '스토어', sub: '예약·구매', href: SITE_CONFIG.SHOP_URL },
+  { label: '전화 문의', sub: phone, href: phone ? `tel:${phone.replace(/\D/g, '')}` : '' },
+  { label: '카카오톡 채널', sub: '', href: SITE_CONFIG.KAKAO_CHANNEL_URL },
+  { label: '네이버 블로그', sub: '', href: 'https://blog.naver.com/baramdaero_official' },
+  { label: '인스타그램', sub: '', href: '' },
+  { label: '스마트스토어', sub: '', href: '' },
+  { label: '쿠팡', sub: '', href: '' },
+  { label: '당근', sub: '', href: '' },
+].filter((l) => l.href);
+
+const isExternal = (href: string) => /^https?:/.test(href);
+---
+<Base title="공식 채널" description="바람대로 홈페이지·스토어·전화·블로그 등 공식 채널을 한곳에 모았습니다.">
+  <section class="lk">
+    <div class="bd-container lk__wrap">
+      <h1 class="lk__head">
+        <span class="lk__logo" set:html={logo} />
+        <span class="visually-hidden">바람대로 공식 채널</span>
+      </h1>
+      <p class="lk__sub-head">시스템에어컨 설치·세척 · 수도권</p>
+      <ul class="lk__list">
+        {LINKS.map((l) => (
+          <li>
+            <a
+              class="br-pill lk__item"
+              href={l.href}
+              {...(isExternal(l.href) ? { target: '_blank', rel: 'noopener' } : {})}
+            >
+              <span class="lk__text">
+                <span class="lk__label">{l.label}</span>
+                {l.sub && <span class="lk__sub">{l.sub}</span>}
+              </span>
+              <span aria-hidden="true">→</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* 링크트리처럼 가운데 한 줄 — 로고·소개·버튼이 같은 폭(480) 기둥에 선다 */
+  .lk { padding: 56px 0 96px; }
+  .lk__wrap { max-width: 480px; display: grid; justify-items: center; text-align: center; }
+  .lk__head { margin: 0; }
+  .lk__logo { display: block; color: var(--br-ink); --logo-accent: var(--br-teal); }
+  .lk__logo :global(svg) { display: block; height: 40px; width: auto; aspect-ratio: 555 / 85; overflow: visible; }
+  .lk__sub-head { margin: 16px 0 32px; font-size: 16px; color: var(--br-ink-sub); }
+  .lk__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; width: 100%; text-align: left; }
+  .lk__item {
+    display: flex;
+    width: 100%;
+    min-height: 64px;
+    padding: 12px 20px;
+    border-radius: var(--radius-btn);
+    justify-content: space-between;
+  }
+  .lk__text { display: grid; gap: 2px; }
+  .lk__label { font-size: 17px; }
+  .lk__sub { font-size: 14px; font-weight: 500; color: var(--br-ink-sub); font-variant-numeric: tabular-nums; }
+  @media (min-width: 768px) { .lk { padding-top: 80px; } }
+</style>
