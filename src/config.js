@@ -75,7 +75,7 @@ export const SITE_CONFIG = {
 
   // 검색엔진에 알리기 — 출시 전에는 false. false 면 배포 뒤 바뀐 페이지를 검색엔진에 보내지 않는다(scripts/indexnow.mjs).
   // 출시 날 true 로 바꾸고 docs/launch-search.md 순서대로 한다(2026-10-12 대표: 색인 요청은 사업 시작 때 한꺼번에).
-  SEARCH_OPEN: false,
+  SEARCH_OPEN: true,
 
   // 사이트 인증 메타 — 발급 후 기입하면 <head>에 자동 렌더
   NAVER_SITE_VERIFICATION: '6919e39cf56976a5d1c7852e6456ce18abaed0a8',
