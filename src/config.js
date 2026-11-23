@@ -54,8 +54,8 @@ export const SITE_CONFIG = {
 
   // 접수 기록 수신 주소 — 챗봇 접수 카드에서 '카톡으로 접수하기'를 누르면 접수 카드를 이 주소로도 보낸다(src/lib/intake.ts).
   // 빈 값이면 보내지 않고, 카드의 접수번호 줄과 버튼 아래 저장 안내도 그리지 않는다.
-  // 처리방침 시행일(2026년 12월 1일)에 웹앱 주소를 넣는다 — 시행 전에는 기록하지 않는다. 주소를 바꾸면 /privacy/ 2·3·5절을 같이 고친다.
-  INTAKE_ENDPOINT: '',
+  // 처리방침 시행일(2026년 12월 1일)부터 기록한다. 주소를 바꾸거나 비우면 /privacy/ 2·3·5절을 같이 고친다.
+  INTAKE_ENDPOINT: 'https://script.google.com/macros/s/AKfycbx2dnpfut0SenCViUo705C1brALVK7_BkDT4Th2n8pWozvyDdKCHciPrRwaNlFRNcsQ/exec',
   // 챗봇 헤더 상태줄 문구 — ⚠️ 응답 시간 약속은 넣지 않는다.
   // 구 문구 '보통 영업시간 내 1시간 안에 연락드립니다'는 기간 약속이라 비웠다
   // (자사 이행 주장은 ①추가금 사전고지 ②작업 사진 전달 ③단일 창구 셋만).
