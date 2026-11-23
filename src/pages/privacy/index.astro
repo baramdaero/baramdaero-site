@@ -5,7 +5,7 @@
 // 상담 창구는 카카오톡 채널 하나(2026-11-20, 채널톡 걷어냄). 사이트는 외부 상담 스크립트를 싣지 않고, 챗봇·/faq/ 가 카카오 채팅 주소를 새 창으로 연다.
 // 자동 수집은 구글 애널리틱스(Base.astro) 하나다 — 도구가 늘거나 빠지면 1·2·3·8절을 같이 고친다.
 // 5절 카카오 수탁자는 쇼핑몰 방침 제4조와 같은 말이다(2026-11-20 쇼핑몰 반영).
-// config.js INTAKE_ENDPOINT 를 채우면 챗봇이 접수 카드를 그 주소로 보낸다 — 그때는 2절 저장 문장과 3·5절을 같이 고친다.
+// 챗봇 접수 기록은 config.js INTAKE_ENDPOINT 를 거쳐 구글 시트에 저장된다 — 항목·수탁자·보관 기간이 바뀌면 2·3·5·6절을 같이 고친다.
 import Base from '../../layouts/Base.astro';
 import PageHero from '../../components/v2/PageHero.astro';
 import { SITE_CONFIG, shopHref } from '../../config.js';
@@ -59,12 +59,13 @@ const TOC = [
       <ul>
         <li>직접 알려 주시는 항목: 이름, 연락처(전화번호·이메일), 설치·작업 장소(지역·주소), 에어컨 대수와 종류, 문의 내용, 첨부 파일</li>
         <li>카카오톡 채널로 문의하시는 경우: 카카오톡 프로필 이름</li>
+        <li>문의 챗봇에서 접수하시는 경우: 문의 분류와 제품, 공간과 거주·운영 상태, 인테리어 여부, 건물명과 층수, 에어컨 브랜드·종류·대수, 지역, 증상, 접수번호, 접수 일시, 접수한 페이지 주소</li>
         <li>자동으로 수집되는 항목: 접속 일시, IP 주소, 접속 국가·도시, 브라우저·운영체제·기기 종류, 언어 설정, 유입 경로, 페이지 조회 기록, 쿠키 식별 값</li>
       </ul>
-      <p>자동 수집은 페이지를 열면 구글 애널리틱스가 실행되면서 시작됩니다. 문의 챗봇은 고르신 내용을 접수 카드로 정리해 드릴 뿐 따로 저장하지 않습니다. 직접 알려 주시는 항목은 카카오톡 채널이나 전화로 받습니다.</p>
+      <p>자동 수집은 페이지를 열면 구글 애널리틱스가 실행되면서 시작됩니다. 문의 챗봇은 이름과 연락처를 묻지 않습니다. '카톡으로 접수하기'를 누르면 고르신 내용이 회사의 접수대장에 저장되고, 입력하신 내용에 전화번호·이메일·동호수가 있으면 저장할 때 가리거나 지웁니다. 이름과 연락처는 카카오톡 채널이나 전화로 받습니다.</p>
 
       <h2 id="retention">3. 보유 기간</h2>
-      <p>문의 응대 기록(문의 내용, 직접 알려 주신 항목)은 문의를 받은 날부터 3년간 보관한 뒤 파기합니다. 구글 애널리틱스 쿠키의 보관 기간은 8절과 같습니다. 법령에 따라 더 보관해야 하는 정보는 그 법령이 정한 기간 동안 보관합니다.</p>
+      <p>문의 응대 기록(문의 내용, 챗봇 접수 기록, 직접 알려 주신 항목)은 문의를 받은 날부터 3년간 보관한 뒤 파기합니다. 구글 애널리틱스 쿠키의 보관 기간은 8절과 같습니다. 법령에 따라 더 보관해야 하는 정보는 그 법령이 정한 기간 동안 보관합니다.</p>
 
       <h2 id="third">4. 제3자 제공</h2>
       <p>회사는 문의하신 분의 개인정보를 제3자에게 제공하지 않습니다. 법령에 따라 제공해야 하는 경우만 그 법령이 정한 범위에서 제공합니다.</p>
@@ -75,12 +76,29 @@ const TOC = [
         <div><dt>위탁 업무</dt><dd>카카오톡 채널 상담 메시지 송수신과 상담 내용 저장</dd></div>
         <div><dt>위탁 기간</dt><dd>카카오톡 채널 이용 기간</dd></div>
       </dl>
+      <dl class="pv__dl">
+        <div><dt>수탁자</dt><dd>Google LLC 및 계열사</dd></div>
+        <div><dt>위탁 업무</dt><dd>문의 챗봇 접수 기록의 저장과 관리(Google Workspace)</dd></div>
+        <div><dt>위탁 기간</dt><dd>Google Workspace 이용 기간</dd></div>
+      </dl>
       <p>카카오톡 채널에서 처리되는 정보는 <a href="https://www.kakao.com/policy/privacy" rel="noopener">카카오 개인정보처리방침</a>에서도 확인할 수 있습니다.</p>
+      <h3 class="pv__sub">개인정보 국외 이전</h3>
+      <p>문의 접수와 응대를 위해 챗봇 접수 기록을 다음과 같이 국외에 위탁해 보관합니다.</p>
+      <dl class="pv__dl">
+        <div><dt>근거</dt><dd>「개인정보 보호법」 제28조의8 제1항 제3호(계약의 체결·이행을 위한 처리위탁·보관)</dd></div>
+        <div><dt>항목</dt><dd>2절의 문의 챗봇 접수 항목</dd></div>
+        <div><dt>국가</dt><dd>미국 등 <a href="https://www.google.com/about/datacenters/locations/" rel="noopener">Google 데이터 센터가 있는 국가</a></dd></div>
+        <div><dt>시기·방법</dt><dd>'카톡으로 접수하기'를 누를 때 암호화된 통신(HTTPS)으로 전송</dd></div>
+        <div><dt>받는 자</dt><dd>Google LLC 및 계열사 (<a href="https://support.google.com/cloud/contact/dpo" rel="noopener">개인정보 보호 문의</a>)</dd></div>
+        <div><dt>목적</dt><dd>챗봇 접수 기록의 저장과 관리</dd></div>
+        <div><dt>보유 기간</dt><dd>문의를 받은 날부터 3년</dd></div>
+        <div><dt>거부 방법</dt><dd>저장을 원하지 않으시면 챗봇 접수 대신 전화{phone && <>(<a href={`tel:${tel}`}>{phone}</a>)</>}나 카카오톡 채널로 직접 문의해 주세요. 문의와 서비스 이용에 불이익은 없습니다.</dd></div>
+      </dl>
 
       <h2 id="destroy">6. 파기</h2>
       <dl class="pv__dl">
         <div><dt>파기 절차</dt><dd>회사는 보유 기간이 지났거나 처리 목적을 이룬 개인정보를 선정하고, 개인정보 보호책임자의 승인을 받아 지체 없이 파기합니다.</dd></div>
-        <div><dt>파기 방법</dt><dd>카카오톡 채널에 저장된 상담 내용과 고객 정보를 포함한 전자 파일은 복구할 수 없는 방법으로 삭제하고, 종이 문서는 분쇄하거나 소각합니다.</dd></div>
+        <div><dt>파기 방법</dt><dd>카카오톡 채널에 저장된 상담 내용, 접수대장 기록과 고객 정보를 포함한 전자 파일은 복구할 수 없는 방법으로 삭제하고, 종이 문서는 분쇄하거나 소각합니다.</dd></div>
       </dl>
       <p>법령에 따라 계속 보관해야 하는 정보는 다른 정보와 따로 보관합니다.</p>
 
@@ -138,6 +156,7 @@ const TOC = [
   .pv__toc { margin-top: 32px; padding: 20px 24px; background: var(--br-mist); border-radius: var(--radius); }
   .pv__toc ol { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0 16px; }
   .pv__toc a { display: inline-flex; align-items: center; min-height: 44px; text-decoration: none; font-weight: 600; font-size: 16px; }
+  .pv__sub { margin-top: 28px; font-size: 18px; font-weight: 700; line-height: 1.5; color: var(--br-ink); }
   .pv__dl { margin-top: 12px; display: grid; gap: 8px; }
   .pv__dl > div { display: grid; grid-template-columns: 6em 1fr; gap: 12px; }
   .pv dt { color: var(--br-ink); font-weight: 600; }

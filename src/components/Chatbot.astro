@@ -99,7 +99,7 @@ const TEASER = [
 <script>
   import { SITE_CONFIG } from '../config.js';
   import { readChatLink } from '../lib/chat-link.ts';
-  import { intakeEnabled, newReceiptId, recordIntake } from '../lib/intake.ts';
+  import { newReceiptId, recordIntake } from '../lib/intake.ts';
   import { gust } from '../scripts/press.ts';
 
   const root = document.querySelector('[data-chat-root]') as HTMLElement;
@@ -115,6 +115,7 @@ const TEASER = [
 
   const KAKAO = SITE_CONFIG.KAKAO_CHANNEL_URL;
   const PHONE = SITE_CONFIG.PHONE;
+  const INTAKE = SITE_CONFIG.INTAKE_ENDPOINT;
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
   type Data = Record<string, string>;
@@ -880,7 +881,7 @@ const TEASER = [
       const btn = ctaButton('카톡으로 접수하기', telFirst ? 'ghost' : 'primary');
       // 창은 클릭 안에서 바로 연다 — 복사를 기다린 뒤 열면 iOS Safari 가 팝업으로 막는다
       btn.addEventListener('click', () => {
-        if (id) recordIntake(text, id);
+        if (id) recordIntake(INTAKE, text, id);
         void copyText(text);
         toast('복사되었습니다. 상담 창에 붙여넣어 주세요.');
         window.open(KAKAO, '_blank', 'noopener');
@@ -905,7 +906,7 @@ const TEASER = [
 
   function renderCard() {
     // 받는 곳(주소)이 있을 때만 접수번호를 만든다 — 없으면 카드는 번호·안내 없이 그대로다
-    const id = intakeEnabled() ? newReceiptId() : undefined;
+    const id = INTAKE ? newReceiptId() : undefined;
     const text = buildCard(id);
     const card = document.createElement('div');
     card.className = 'chat__card';

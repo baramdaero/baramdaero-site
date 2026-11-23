@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 // 모듈 불러오기 단계에서 window 를 건드리면 정적 빌드에서 깨진다 — 아래 import 가 통과하는 것 자체가 그 검사다
 assert.equal(typeof window, 'undefined');
 assert.equal(typeof document, 'undefined');
-const { intakeEnabled, newReceiptId, recordIntake } = await import('../src/lib/intake.ts');
+const { newReceiptId, recordIntake } = await import('../src/lib/intake.ts');
 const { SITE_CONFIG } = await import('../src/config.js');
 
 // ── 1. 접수번호 ─────────────────────────────────────────────
@@ -71,24 +71,13 @@ try {
   // config.js 의 값은 빈 값(배포 승인 전)이거나 웹앱 주소 형식(승인 뒤)이다 — 임의 문자열이면 막는다
   assert.match(saved.endpoint, ENDPOINT_RE, 'config.js 의 INTAKE_ENDPOINT 는 빈 값이거나 https://script.google.com/macros/s/<id>/exec');
 
-  // 켜짐 여부 — 빈 값·없는 값은 꺼짐, 값이 있으면 켜짐. 접수번호와 저장 안내는 이 값 하나로 갈린다
-  for (const off of ['', undefined, null]) {
-    SITE_CONFIG.INTAKE_ENDPOINT = off;
-    assert.equal(intakeEnabled(), false, `꺼짐: ${String(off)}`);
-  }
-  SITE_CONFIG.INTAKE_ENDPOINT = ENDPOINT;
-  assert.equal(intakeEnabled(), true);
-  assert.equal(typeof intakeEnabled(), 'boolean');
-
   // 주소가 비면 아무것도 하지 않는다
   useFetch(() => Promise.resolve());
-  SITE_CONFIG.INTAKE_ENDPOINT = '';
-  assert.equal(recordIntake(CARD(id), id), undefined);
+  for (const off of ['', undefined, null]) assert.equal(recordIntake(off, CARD(id), id), undefined);
   assert.equal(calls.length, 0, '빈 주소면 fetch 를 부르지 않는다');
 
   // 주소가 있으면 한 번, 올바른 인자로 — 기다리지 않는다(반환값 없음)
-  SITE_CONFIG.INTAKE_ENDPOINT = ENDPOINT;
-  const ret = recordIntake(CARD(id), id);
+  const ret = recordIntake(ENDPOINT, CARD(id), id);
   assert.equal(ret, undefined);
   assert.equal(calls.length, 1);
   const [url, init] = calls[0];
@@ -106,29 +95,28 @@ try {
 
   // 카드 4000자 — 경계. 길이는 글자 수(서버의 JS 문자열 길이와 같은 기준)다
   const pad = (n) => '가'.repeat(n);
-  recordIntake(pad(4000), id);
+  recordIntake(ENDPOINT, pad(4000), id);
   assert.equal(calls.length, 2, '4000자는 보낸다');
-  recordIntake(pad(4001), id);
+  recordIntake(ENDPOINT, pad(4001), id);
   assert.equal(calls.length, 2, '4001자는 보내지 않는다');
 
   // 어떤 실패도 접수를 막지 않는다: 동기 예외 · 거절된 약속 · fetch 없음 · location 없음
   useFetch(() => { throw new Error('동기 실패'); });
-  assert.doesNotThrow(() => recordIntake(CARD(id), id));
+  assert.doesNotThrow(() => recordIntake(ENDPOINT, CARD(id), id));
   assert.equal(calls.length, 1);
 
   useFetch(() => Promise.reject(new TypeError('Failed to fetch')));
-  assert.doesNotThrow(() => recordIntake(CARD(id), id));
+  assert.doesNotThrow(() => recordIntake(ENDPOINT, CARD(id), id));
   await new Promise((r) => setTimeout(r, 20)); // 거절이 처리되지 않은 채 남으면 unhandledRejection 이 온다
   assert.equal(unhandled, 0, '거절된 약속을 삼켜야 한다');
 
   globalThis.fetch = undefined;
-  assert.doesNotThrow(() => recordIntake(CARD(id), id));
+  assert.doesNotThrow(() => recordIntake(ENDPOINT, CARD(id), id));
 
   useFetch(() => Promise.resolve());
   globalThis.location = undefined;
-  assert.doesNotThrow(() => recordIntake(CARD(id), id));
+  assert.doesNotThrow(() => recordIntake(ENDPOINT, CARD(id), id));
 } finally {
-  SITE_CONFIG.INTAKE_ENDPOINT = saved.endpoint;
   globalThis.fetch = saved.fetch;
   if (saved.location === undefined) delete globalThis.location; else globalThis.location = saved.location;
 }
@@ -139,10 +127,13 @@ const chat = readFileSync(new URL('../src/components/Chatbot.astro', import.meta
 // 접수번호는 카드의 마지막 줄이고, id 가 없으면 줄이 붙지 않는다
 assert.match(chat, /push\('접수번호', id\);\s*return lines\.join\('\\n'\);/);
 assert.match(chat, /function buildCard\(id\?: string\)/);
-assert.match(chat, /import \{[^}]*\bintakeEnabled\b[^}]*\} from '\.\.\/lib\/intake\.ts'/);
+assert.match(chat, /import \{[^}]*\brecordIntake\b[^}]*\} from '\.\.\/lib\/intake\.ts'/);
+assert.match(chat, /const INTAKE = SITE_CONFIG\.INTAKE_ENDPOINT;/);
+// intake.ts 가 config.js 를 불러오면 번들에 설정 전체(법인 정보)가 남는다
+assert.ok(!/config\.js/.test(readFileSync(new URL('../src/lib/intake.ts', import.meta.url), 'utf8').replace(/^\/\/.*$/gm, '')), 'intake.ts 는 config.js 를 불러오지 않는다');
 
 // id 는 주소가 있을 때만 만든다 — newReceiptId 호출은 그 한 곳뿐. 받는 곳이 없으면 카드에 번호를 붙이지 않는다
-assert.match(chat, /const id = intakeEnabled\(\) \? newReceiptId\(\) : undefined;\s*const text = buildCard\(id\);/);
+assert.match(chat, /const id = INTAKE \? newReceiptId\(\) : undefined;\s*const text = buildCard\(id\);/);
 assert.equal(chat.match(/\bnewReceiptId\(/g).length, 1, 'newReceiptId 호출은 renderCard 한 곳');
 assert.equal(chat.match(/\bbuildCard\(/g).length, 2, 'buildCard 는 정의와 renderCard 호출뿐');
 
@@ -166,9 +157,9 @@ assert.equal(chat.match(/\bbuildCard\(/g).length, 2, 'buildCard 는 정의와 re
 
 // 기록 호출은 한 곳뿐 — 접수 카드의 '카톡으로 접수하기'(상담 창구는 카카오톡 채널 하나, 2026-11-20). 전화·다시 복사·기타 트리에는 없다.
 // id 가 있을 때만 부른다(주소가 없으면 id 도 없다)
-const sites = [...chat.matchAll(/\brecordIntake\(text, id\)/g)].map((m) => m.index);
+const sites = [...chat.matchAll(/\brecordIntake\(INTAKE, text, id\)/g)].map((m) => m.index);
 assert.equal(sites.length, 1, `recordIntake 호출 ${sites.length}곳`);
-assert.equal(chat.match(/if \(id\) recordIntake\(text, id\)/g)?.length, 1, '호출은 if (id) 로 감싼다');
+assert.equal(chat.match(/if \(id\) recordIntake\(INTAKE, text, id\)/g)?.length, 1, '호출은 if (id) 로 감싼다');
 const kakaoAt = chat.indexOf("ctaButton('카톡으로 접수하기'");
 assert.ok(kakaoAt > 0 && sites.some((i) => i > kakaoAt && i < chat.indexOf('window.open(KAKAO', kakaoAt)), "'카톡으로 접수하기' 클릭에서도 기록한다");
 assert.ok(!chat.slice(chat.indexOf('function renderEtc')).includes('recordIntake('), '기타 트리의 상담 연결은 기록하지 않는다');
@@ -202,4 +193,4 @@ assert.ok(!/#[0-9a-fA-F]{3,8}|rgba?\(|hsla?\(|color-mix|opacity/.test(css), '새
 // 위치 예시는 단지명·층만 — 동·호수는 저장하지 않는다(3-데이터기준 §1)
 assert.ok(chat.includes("install_place_hint_home: '예: 바람아파트 15층'"), '위치 예시에 동 번호를 넣지 않는다');
 
-console.log(`intake: 통과 — 접수번호 ${N}건 형식·분포(같은 날 겹침 ${dup}쌍), 켜짐 판정, 전송 인자, 4000자 경계, 오류 삼킴, 카드 번호 줄(꺼짐=변경 전 그대로), 안내 한 줄·접수 버튼 아래 위치, 챗봇 호출 위치`);
+console.log(`intake: 통과 — 접수번호 ${N}건 형식·분포(같은 날 겹침 ${dup}쌍), 주소 판정, 전송 인자, 4000자 경계, 오류 삼킴, 카드 번호 줄(꺼짐=변경 전 그대로), 안내 한 줄·접수 버튼 아래 위치, 챗봇 호출 위치`);
