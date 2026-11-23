@@ -68,7 +68,7 @@ const extraJsonLd = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
     <meta name="theme-color" content="#00293A" />
     <link rel="sitemap" href="/sitemap-index.xml" />
     {SITE_CONFIG.GA_MEASUREMENT_ID && (
-      <script is:inline define:vars={{ gaId: SITE_CONFIG.GA_MEASUREMENT_ID }}>
+      <script is:inline define:vars={{ gaId: SITE_CONFIG.GA_MEASUREMENT_ID, phone: SITE_CONFIG.PHONE.replace(/\D/g, ''), kakao: SITE_CONFIG.KAKAO_CHANNEL_URL.replace(/\/chat$/, '') }}>
         if (location.hostname === 'baramdaero.com') {
           window.dataLayer = window.dataLayer || [];
           window.gtag = function () { dataLayer.push(arguments); };
@@ -78,6 +78,17 @@ const extraJsonLd = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
           s.async = true;
           s.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
           document.head.appendChild(s);
+          // 전환 — 회사 전화(phone_click)와 카카오 채널(kakao_open)을 누른 횟수. 값에는 위치만 넣고 문의 내용·번호는 보내지 않는다. 검사: npm run test:conv
+          // 캡처 단계에서 듣는다 — 버튼 쪽 stopPropagation 에 막히지 않게
+          document.addEventListener('click', function (e) {
+            var el = e.target && e.target.closest ? e.target.closest('a,button') : null;
+            if (!el) return;
+            var href = el.getAttribute('href') || '';
+            var name = href.indexOf('tel:') === 0
+              ? (phone && href.replace(/\D/g, '') === phone ? 'phone_click' : '')
+              : (el.hasAttribute('data-kakao') || (kakao && href.indexOf(kakao) === 0) ? 'kakao_open' : '');
+            if (name) gtag('event', name, { cta_location: el.closest('[data-chat-root]') ? 'chatbot' : 'page', transport_type: 'beacon' });
+          }, true);
         }
       </script>
     )}
