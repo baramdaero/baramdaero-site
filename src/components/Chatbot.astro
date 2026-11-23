@@ -670,6 +670,7 @@ const TEASER = [
             // 상담 연결 칩 — 카카오톡 채널 채팅을 새 창으로 (주소 없으면 미노출)
             if (!KAKAO) return;
             const btn = chip(opt.label, 'primary');
+            btn.dataset.kakao = '';
             btn.addEventListener('click', () => window.open(KAKAO, '_blank', 'noopener'));
             group.appendChild(btn);
             return;
@@ -866,6 +867,7 @@ const TEASER = [
     if (telFirst) wrap.appendChild(ctaTel(`전화하기 ${PHONE}`, 'primary'));
     if (KAKAO) {
       const btn = ctaButton('카톡으로 접수하기', telFirst ? 'ghost' : 'primary');
+      btn.dataset.kakao = '';
       // 창은 클릭 안에서 바로 연다 — 복사를 기다린 뒤 열면 iOS Safari 가 팝업으로 막는다
       btn.addEventListener('click', () => {
         void copyText(text);
@@ -900,6 +902,8 @@ const TEASER = [
     pre.textContent = text;
     card.append(label, pre);
     log.appendChild(card);
+    // 전환: 접수 카드까지 온 사람. 분류만 보내고 카드 내용은 보내지 않는다
+    (window as any).gtag?.('event', 'chat_intake', { inquiry_type: data.분류 });
 
     const wrap = document.createElement('div');
     wrap.className = 'chat__ctas';
@@ -923,6 +927,7 @@ const TEASER = [
 
     if (KAKAO) {
       const btn = ctaButton('카카오톡 채널', 'primary');
+      btn.dataset.kakao = '';
       btn.addEventListener('click', () => window.open(KAKAO, '_blank', 'noopener'));
       wrap.appendChild(btn);
     }
