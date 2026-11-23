@@ -10,6 +10,7 @@
     "photos": "node scripts/photo-editor.mjs",
     "test:motion": "node scripts/check-motion.mjs",
     "test:conv": "node scripts/check-conversions.mjs",
+    "test:seo": "node scripts/check-seo.mjs",
     "test:press": "node scripts/check-press.mjs",
     "test:commercial": "node scripts/check-commercial.mjs",
     "case:new": "node scripts/new-case.mjs",
