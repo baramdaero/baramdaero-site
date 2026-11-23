@@ -14,6 +14,8 @@ interface Props {
   /** 홈 전용: 헤더를 영상 위 투명 오버레이로 */
   headerVariant?: 'overlay' | 'solid';
   ogImage?: string;
+  /** 검색 결과에 넣지 않을 페이지(404 등) */
+  noindex?: boolean;
 }
 const {
   title,
@@ -21,6 +23,7 @@ const {
   jsonLd,
   headerVariant = 'solid',
   ogImage = SITE_CONFIG.OG_IMAGE,
+  noindex = false,
 } = Astro.props;
 
 const siteUrl = Astro.site?.href.replace(/\/$/, '') ?? 'https://baramdaero.com';
@@ -58,7 +61,7 @@ const extraJsonLd = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={canonical} />
+    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
     {/* ?v= 는 파비콘을 바꿀 때 올린다 — 브라우저는 파비콘을 오래 붙들고 있어 같은 주소면 예전 그림이 남는다(2026-11-17 하얀 바탕으로 교체) */}
     <link rel="icon" href="/favicon.svg?v=20261117" type="image/svg+xml" />
     <link rel="icon" href="/favicon-16.png?v=20261117" type="image/png" sizes="16x16" />

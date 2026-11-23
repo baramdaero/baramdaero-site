@@ -34,7 +34,10 @@ export interface Complex {
 }
 
 export const LOG_UPDATED: string = (raw as { updated: string }).updated;
-export const RECORDS: LogRecord[] = (raw as { records: LogRecord[] }).records;
+/** 단지 slug 에서 주소에 쓸 수 없는 글자를 뺀다 — 'the#아파트' 처럼 # 이 남으면 정적 페이지 주소가 404 가 된다. 화면의 단지명은 그대로 둔다 */
+export const aptSlug = (s: string) => s.replace(/[#?%\\/]/g, '');
+export const RECORDS: LogRecord[] = (raw as { records: LogRecord[] }).records.map((r) => (r.slug ? { ...r, slug: aptSlug(r.slug) } : r));
+const COMPLEX_META = Object.fromEntries(Object.entries(complexMeta as Record<string, { hh?: number; yr?: number }>).map(([k, v]) => [aptSlug(k), v]));
 
 export const ymOf = (d: string) => d.slice(0, 7);
 export const fmtDate = (d: string) => { const [y, m, dd] = d.split('-').map(Number); return `${y}년 ${m}월 ${dd}일`; };
@@ -49,7 +52,7 @@ const group = <T, K extends string>(a: T[], key: (x: T) => K | undefined) => {
 };
 
 export const COMPLEXES: Complex[] = [...group(RECORDS, (r) => r.slug).entries()]
-  .map(([slug, records]) => ({ slug, name: records[0].apt!, dong: records[0].dong!, gu: records[0].gu!, region: records[0].r, records, ...((complexMeta as Record<string, { hh?: number; yr?: number }>)[slug] ?? {}) }))
+  .map(([slug, records]) => ({ slug, name: records[0].apt!, dong: records[0].dong!, gu: records[0].gu!, region: records[0].r, records, ...(COMPLEX_META[slug] ?? {}) }))
   .sort((a, b) => b.records.length - a.records.length || a.name.localeCompare(b.name, 'ko'));
 export const COMPLEX_BY_SLUG = new Map(COMPLEXES.map((c) => [c.slug, c]));
 

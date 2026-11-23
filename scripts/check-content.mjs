@@ -95,6 +95,7 @@ export function check(root, { dist = 'auto' } = {}) {
   }
 
   // 단지 페이지(dist): 링크된 사례의 apt 가 그 페이지 slug 와 같고, apt 가 있는 사례는 자기 단지 페이지에 모두 있다
+  const safeApt = (s) => s.replace(/[#?%\\/]/g, ''); // src/lib/caselog.ts aptSlug 와 같은 규칙
   const aptDir = path.join(root, 'dist/cases/apt');
   let distChecked = false;
   if (dist !== 'off') {
@@ -117,12 +118,12 @@ export function check(root, { dist = 'auto' } = {}) {
         for (const id of ids) {
           const hit = cases.get(id);
           if (!hit) fails.push(`/cases/apt/${slug}/: 링크된 사례 ${id} 가 사례 md 에 없다`);
-          else if ((hit.c.apt || '').normalize('NFC') !== slug) fails.push(`/cases/apt/${slug}/: 다른 단지 사례가 붙었다 ${hit.id} (apt: ${hit.c.apt || '없음'})`);
+          else if (safeApt(hit.c.apt || '').normalize('NFC') !== slug) fails.push(`/cases/apt/${slug}/: 다른 단지 사례가 붙었다 ${hit.id} (apt: ${hit.c.apt || '없음'})`);
         }
       }
       for (const { id, c } of cases.values()) {
         if (!c.apt || !slugs.has(c.apt)) continue;   // apt 오타는 위에서 이미 실패로 잡았다
-        if (!shown.get(c.apt.normalize('NFC'))?.has(id.toLowerCase())) fails.push(`/cases/apt/${c.apt}/: 자기 단지 사례 ${id} 가 빠졌다`);
+        if (!shown.get(safeApt(c.apt).normalize('NFC'))?.has(id.toLowerCase())) fails.push(`/cases/apt/${c.apt}/: 자기 단지 사례 ${id} 가 빠졌다`);
       }
     }
   }
