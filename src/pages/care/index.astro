@@ -9,10 +9,11 @@ import Exploded from '../../components/v2/Exploded.astro';   // 2026-09-21 기�
 import { SITE_CONFIG } from '../../config.js';
 import { loadPricing } from '../../lib/pricing.ts';
 import { loadFaq } from '../../lib/faq.ts';
+import { loadTrust } from '../../lib/trust.ts';
 import { isImageSlotVisible } from '../../lib/image-slots.ts';
 
 const pricing = loadPricing();
-const { process, processIntro, processSource, symptoms, seasons } = pricing;
+const { process, processIntro, processSource, symptoms, seasons, installerCare } = pricing;
 const visibleSymptoms = symptoms.filter((s) => !s.hidden);
 const visibleSeasons = seasons
   .map((season, index) => ({ ...season, slotId: `care-season-${String(index + 1).padStart(2, '0')}` }))
@@ -21,6 +22,12 @@ const processPairs = Array.from({ length: Math.ceil(process.length / 2) }, (_, i
 const processImageCount = (pair: typeof process) => pair.filter((step) => (
   isImageSlotVisible(`care-process-${String(step.step).padStart(2, '0')}`, step.image)
 )).length;
+
+// 시공 대수·기준일은 trust.json 한 곳에서 읽는다. 둘 중 하나라도 없으면 숫자 줄만 빠진다
+const trust = loadTrust();
+const recentUnits = trust.stats.find((s) => s.label.replace(/\s+/g, ' ') === '최근 1년 시공 대수');
+const statDate = trust.statsNote.replace(/^\*|\s*기준$/g, '');
+const showInstallerStat = Boolean(installerCare?.statLabel && installerCare.statSource && recentUnits && statDate);
 
 const headline = pricing.headline || '세척·유지관리';
 const intro = pricing.intro;
@@ -120,6 +127,46 @@ if (careFaq.length) {
             세척 견적 받기 <span aria-hidden="true">→</span>
           </button>
         </p>
+      </div>
+    </section>
+  )}
+
+  {installerCare && (
+    <section class="bd-section care-installer" data-layout-section="care-installer">
+      <div class="bd-container">
+        {installerCare.eyebrow && <span class="br-eyebrow br-reveal">{installerCare.eyebrow}</span>}
+        <h2 class="br-h br-reveal">
+          {installerCare.title.map((line, j) => <Fragment>{j > 0 && <br />}{line}</Fragment>)}
+        </h2>
+        {installerCare.body.length > 0 && (
+          <p class="br-body care-installer__lead br-reveal">
+            {installerCare.body.map((line, j) => <Fragment>{j > 0 && <br />}{line}</Fragment>)}
+          </p>
+        )}
+        <div class="care-symptoms__grid">
+          {installerCare.cards.map((c) => (
+            <article class="care-symptoms__card care-installer__card br-glass br-glass--medium br-reveal">
+              <h3>{c.title}</h3>
+              <span class="care-installer__parts">{c.parts}</span>
+              <p>{c.body}</p>
+            </article>
+          ))}
+        </div>
+        {showInstallerStat && (
+          <p class="care-installer__stat br-reveal">
+            <span>{installerCare.statLabel}</span>
+            <strong>{recentUnits!.value.toLocaleString('ko-KR')}{recentUnits!.suffix}</strong>
+            <small>*{installerCare.statSource}, {statDate}</small>
+          </p>
+        )}
+        {installerCare.closing && <p class="care-installer__closing br-reveal">{installerCare.closing}</p>}
+        {installerCare.cta && (
+          <p class="care-symptoms__more br-reveal">
+            <button disabled aria-describedby="chat-unavailable" type="button" class="br-pill" data-chat-tree="clean">
+              {installerCare.cta} <span aria-hidden="true">→</span>
+            </button>
+          </p>
+        )}
       </div>
     </section>
   )}
@@ -275,6 +322,16 @@ if (careFaq.length) {
   .care-seasons__card p { margin-top: 8px; color: var(--br-ink); font-size: 14px; line-height: 1.65; }
 
   .care-symptoms__more { margin-top: 32px; }
+
+  /* 설치팀 기준 — 증상 카드 틀을 그대로 쓰고 부품 줄·숫자 줄만 더한다 */
+  .care-installer { background: transparent; }
+  .care-installer__lead { margin-top: 16px; }
+  .care-installer__card { padding: 24px; }
+  .care-installer__parts { margin-top: 6px; color: var(--br-ink); font-size: 13px; font-weight: 700; line-height: 1.5; }
+  .care-installer__stat { margin-top: 32px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; color: var(--br-ink); font-size: 16px; font-weight: 700; }
+  .care-installer__stat strong { color: var(--br-teal); font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .care-installer__stat small { flex-basis: 100%; color: var(--br-ink-sub); font-size: 13px; font-weight: 400; }
+  .care-installer__closing { margin-top: 16px; color: var(--br-ink); font-size: 16px; line-height: 1.7; }
 
   .care-process__story--base { background: var(--br-base); }
   .care-process__story--mist { background: var(--br-mist); }

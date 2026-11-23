@@ -12,6 +12,11 @@ export interface PriceRow { type: string; base: number; unit: string; note: stri
 export interface ProcessStep { step: number; title: string; body: string; image: string }
 export interface SymptomCard { icon: (typeof SYMPTOM_ICONS)[number] | ''; title: string; body: string; hidden: boolean }
 export interface SeasonCard { months: string; season: string; body: string; hidden: boolean }
+export interface InstallerCareCard { title: string; parts: string; body: string }
+export interface InstallerCare {
+  eyebrow: string; title: string[]; body: string[]; cards: InstallerCareCard[];
+  statLabel: string; statSource: string; closing: string; cta: string;
+}
 export interface PricingData {
   headline: string;
   intro: string;
@@ -24,11 +29,13 @@ export interface PricingData {
   processSource: string[];
   symptoms: SymptomCard[];
   seasons: SeasonCard[];
+  /** 분해세척 단계 앞 '설치팀 기준' 섹션 — 제목·카드가 비면 null(미노출) */
+  installerCare: InstallerCare | null;
   faqRef: boolean;
 }
 
 const EMPTY: PricingData = {
-  headline: '', intro: '', prices: [], conditions: [], process: [], processIntro: [], processSource: [], symptoms: [], seasons: [], faqRef: false,
+  headline: '', intro: '', prices: [], conditions: [], process: [], processIntro: [], processSource: [], symptoms: [], seasons: [], installerCare: null, faqRef: false,
 };
 
 const warn = (msg: string) => console.warn(`[pricing.json 경고] ${msg}`);
@@ -129,6 +136,24 @@ export function loadPricing(): PricingData {
     };
   });
 
+  const ic = raw.installer_care;
+  const text = (v: unknown) => (isNonEmptyString(v) ? v.trim() : '');
+  const lines = (v: unknown, name: string) => pickArray<string>(v, name, (it) => (isNonEmptyString(it) ? it.trim() : null));
+  const icTitle = lines(ic?.title, 'installer_care.title');
+  const icCards = pickArray<InstallerCareCard>(ic?.cards, 'installer_care.cards', (it, i) => {
+    if (!isNonEmptyString(it?.title) || !isNonEmptyString(it?.parts) || !isNonEmptyString(it?.body)) {
+      if (it?.title || it?.parts || it?.body) warn(`installer_care.cards[${i}] — title·parts·body가 모두 필요합니다. 항목을 건너뜁니다.`);
+      return null;
+    }
+    return { title: it.title.trim(), parts: it.parts.trim(), body: it.body.trim() };
+  });
+  const installerCare: InstallerCare | null = icTitle.length && icCards.length
+    ? {
+        eyebrow: text(ic.eyebrow), title: icTitle, body: lines(ic.body, 'installer_care.body'), cards: icCards,
+        statLabel: text(ic.stat_label), statSource: text(ic.stat_source), closing: text(ic.closing), cta: text(ic.cta),
+      }
+    : null;
+
   return {
     headline: isNonEmptyString(raw.headline) ? raw.headline.trim() : '',
     intro: isNonEmptyString(raw.intro) ? raw.intro.trim() : '',
@@ -143,6 +168,7 @@ export function loadPricing(): PricingData {
     ),
     symptoms,
     seasons,
+    installerCare,
     faqRef: raw.faq_ref === true,
   };
 }
