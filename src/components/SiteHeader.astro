@@ -48,6 +48,13 @@ const path = Astro.url.pathname;
 // 아래 스크립트가 읽어, 로그인한 방문자에게는 '로그인' 자리에 '마이페이지'를 보인다(src/scripts/shop-session.js)
 const loginHref = shopHref(SITE_CONFIG.SHOP_LOGIN_PATH);
 const mypageHref = loginHref ? shopHref(SITE_CONFIG.SHOP_MYPAGE_PATH) : '';
+// 장바구니·돋보기 — 쇼핑몰 헤더와 같은 곳으로(2026-11-10 박민혁). 로그인한 방문자에게만 뜬다(<html class="bd-member">) —
+// 그 표시 장치(shop-session.js)가 마이페이지 경로가 있을 때만 들어가므로 아이콘도 그때만 그린다
+const cartHref = mypageHref ? shopHref(SITE_CONFIG.SHOP_CART_PATH) : '';
+const searchHref = mypageHref ? shopHref(SITE_CONFIG.SHOP_SEARCH_PATH) : '';
+// 아이콘은 koboyo(Lucide, ISC) 'handbag'·'search' — currentColor 선, 굵기 1.5
+const ICON_CART = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.048 18.566A2 2 0 0 0 4 21h16a2 2 0 0 0 1.952-2.434l-2-9A2 2 0 0 0 18 8H6a2 2 0 0 0-1.952 1.566z"/><path d="M8 11V6a4 4 0 0 1 8 0v5"/></svg>';
+const ICON_SEARCH = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>';
 const shopSessionJs = shopSessionRaw.replace(/^\s*\/\/.*\n/gm, '');
 
 /** 현재 페이지 판정. href가 '/'이면 startsWith가 모든 경로에 참이 되어 항상 현재로 표시된다
@@ -57,7 +64,7 @@ const shopSessionJs = shopSessionRaw.replace(/^\s*\/\/.*\n/gm, '');
 const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
 ---
 {mypageHref && <script is:inline set:html={shopSessionJs} />}
-<header class:list={['bd-header', `bd-header--${variant}`]}>
+<header class:list={['bd-header', `bd-header--${variant}`, (cartHref || searchHref) && 'has-shop-tools']}>
   <div class="bd-header__inner">
     <a href="/" class="bd-header__brand" aria-label="바람대로 홈">
       {/* SVG 는 aria-hidden — 링크의 aria-label이 이름을 이미 읽는다 (중복 읽기 방지) */}
@@ -111,10 +118,22 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
             {/* referrerpolicy: 쇼핑몰이 로그인 뒤 이 화면으로 돌려보내려고 방금 보던 주소를 리퍼러로 받는다(기본값은 도메인만 보낸다) */}
             <a href={loginHref} class="bd-header__quote bd-header__login" rel="noopener" referrerpolicy="unsafe-url" data-shop-login={mypageHref ? '' : undefined}>로그인</a>
             {mypageHref && <a href={mypageHref} class="bd-header__quote bd-header__login bd-header__mypage" rel="noopener">마이페이지</a>}
+            {/* 쇼핑몰 헤더와 같은 순서: 마이페이지 → 장바구니 → 돋보기. 로그인한 방문자에게만 보인다 */}
+            {cartHref && <a href={cartHref} class="bd-header__tool bd-header__cart" rel="noopener" aria-label="장바구니" set:html={ICON_CART} />}
+            {searchHref && <button type="button" class="bd-header__tool bd-header__search-btn" aria-label="상품 검색" aria-expanded="false" aria-controls="site-search" hidden set:html={ICON_SEARCH} />}
           </>
         : <button type="button" class="bd-header__quote" data-chat-tree="menu" disabled aria-describedby="chat-unavailable">견적 문의</button>}
     </div>
   </div>
+  {/* 상품 검색 줄 — 쇼핑몰 검색 폼과 같다(GET {쇼핑몰}/search?keyword=…). 돋보기가 열고, 닫혀 있는 동안은 초점이 못 들어간다(inert) */}
+  {searchHref && (
+    <div class="bd-search" id="site-search" inert>
+      <form class="bd-search__form" action={searchHref} method="get" role="search" rel="noopener">
+        <input id="site-search-input" class="bd-search__input" type="search" name="keyword" placeholder="상품 검색" aria-label="쇼핑몰 상품 검색" autocomplete="off" enterkeyhint="search" maxlength="60" />
+        <button type="submit" class="bd-search__submit">검색</button>
+      </form>
+    </div>
+  )}
 </header>
 
 <style>
@@ -136,7 +155,7 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   }
   /* JS 초기화 완료(.is-ready) + 히어로 구간(:not(.is-scrolled))에서만 투명 오버레이.
      히어로를 지나면 .is-scrolled가 붙어 위 기본 솔리드로 복귀한다. */
-  .bd-header--overlay.is-ready:not(.is-scrolled):not(.is-menu-open) {
+  .bd-header--overlay.is-ready:not(.is-scrolled):not(.is-menu-open):not(.is-search-open) {
     background: transparent;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
@@ -197,7 +216,7 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     overflow: visible; /* 꼬불할 때 선이 상자 밖으로 1px 쯤 나간다 */
   }
   /* 다크 구간(JS 초기화 후 히어로 위 투명 오버레이) = 흰 글자 + ice 포인트 */
-  .bd-header--overlay.is-ready:not(.is-scrolled):not(.is-menu-open) .bd-header__logo { color: #fff; --logo-accent: var(--br-ice); }
+  .bd-header--overlay.is-ready:not(.is-scrolled):not(.is-menu-open):not(.is-search-open) .bd-header__logo { color: #fff; --logo-accent: var(--br-ice); }
   .bd-header__nav { display: flex; align-items: center; }
   .bd-header__links {
     display: flex;
@@ -238,6 +257,99 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   .bd-header__mypage { display: none; }
   :global(html.bd-member) .bd-header__mypage { display: inline-flex; }
   :global(html.bd-member) .bd-header__login[data-shop-login] { display: none; }
+
+  /* 쇼핑몰 도구(2026-11-10 박민혁) — 장바구니·돋보기. 쇼핑몰에서 로그인한 방문자(<html class="bd-member">)에게만, '마이페이지' 오른쪽에.
+     기본은 숨김 — 스크립트가 안 돌면 방문자에게 안 보인다(돋보기는 hidden 도 스크립트가 푼다). 글자색은 헤더를 따라가 투명 오버레이 위에서는 흰색 */
+  .bd-header__tool {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    transition: background-color var(--dur-color) ease, transform var(--dur-spring) var(--ease-spring);
+  }
+  .bd-header__tool :global(svg) { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  :global(html.bd-member) .bd-header__tool:not([hidden]) { display: inline-flex; }
+  @media (hover: hover) and (pointer: fine) { .bd-header__tool:hover { background: var(--tint-fill); } }
+  .bd-header__tool:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 0; }
+  .bd-header__search-btn[aria-expanded='true'] { background: var(--tint-fill); }
+  .bd-header--overlay.is-ready:not(.is-scrolled):not(.is-menu-open):not(.is-search-open) .bd-header__tool:focus-visible { outline-color: #fff; }
+  @media (hover: hover) and (pointer: fine) { .bd-header--overlay.is-ready:not(.is-scrolled):not(.is-menu-open):not(.is-search-open) .bd-header__tool:hover { background: rgba(255, 255, 255, 0.14); } }
+  /* 검색 줄을 열면 투명 오버레이도 솔리드로 — 흰 글자 아이콘이 밝은 검색 줄 위에 뜨지 않게 */
+  .bd-header--overlay.is-search-open { background: var(--br-base); color: var(--br-ink); }
+
+  /* 상품 검색 줄 — 헤더 바로 아래 전체 폭. 모바일 메뉴 목록과 같은 결(열림 스프링·닫힘 반대 스프링, 투명도는 따로).
+     닫힌 동안은 visibility 로 초점·읽기에서 빠진다(+ inert). 모션은 transform·opacity 만이라 페이지를 열 때나 폭이 바뀔 때 저절로 재생되지 않는다 */
+  .bd-search {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--br-base);
+    border-bottom: 1px solid var(--glass-line);
+    /* 위로 4px 덧단 — 열리며 아래로 넘는 동안 헤더와 줄 사이로 뒤 페이지가 비치지 않게 */
+    box-shadow: 0 -4px 0 var(--br-base), var(--glass-shadow);
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(-16px);
+    transform-origin: top center;
+    transition: transform var(--dur-spring-out) var(--ease-spring-out), opacity calc(var(--dur-spring-out) * 0.55) ease-in calc(var(--dur-spring-out) * 0.45), visibility 0s linear var(--dur-spring-out);
+  }
+  :global(html.bd-member) .bd-search { display: block; }
+  .bd-header.is-search-open .bd-search {
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+    transition: transform var(--dur-spring) var(--ease-spring), opacity var(--dur-ui) ease, visibility 0s;
+  }
+  .bd-search__form {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: 12px 24px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .bd-search__input {
+    flex: 1 1 auto;
+    max-width: 440px;
+    min-width: 0;
+    height: 44px;
+    padding: 0 14px;
+    border: 1px solid var(--br-line);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--br-ink);
+    font: inherit;
+    font-size: 16px; /* 16px 미만이면 iOS 가 입력 때 화면을 확대한다 */
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .bd-search__input::placeholder { color: var(--br-ink-sub); }
+  .bd-search__input:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 0; border-color: var(--br-teal); }
+  .bd-search__submit {
+    flex: none;
+    min-height: 44px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--br-teal-deep);
+    color: #fff;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color var(--dur-color) ease, transform var(--dur-spring) var(--ease-spring);
+  }
+  @media (hover: hover) and (pointer: fine) { .bd-search__submit:hover { background: var(--br-teal); } }
+  .bd-search__submit:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; }
 
   .bd-header__link,
   .bd-header__login,
@@ -293,7 +405,7 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
   .bd-header.is-menu-open .bd-header__menu-close { opacity: 1; visibility: visible; transform: none; }
   .bd-header.is-menu-anim .bd-header__menu-open,
   .bd-header.is-menu-anim .bd-header__menu-close { transition: opacity var(--dur-ui) ease, visibility var(--dur-ui), transform var(--dur-spring) var(--ease-spring); }
-  .bd-header--overlay.is-ready:not(.is-scrolled):not(.is-menu-open) .bd-header__menu-btn { color: #fff; background: rgba(255, 255, 255, 0.14); }
+  .bd-header--overlay.is-ready:not(.is-scrolled):not(.is-menu-open):not(.is-search-open) .bd-header__menu-btn { color: #fff; background: rgba(255, 255, 255, 0.14); }
   /* ⚠️ 이 800 은 아래 스크립트의 matchMedia 와 같은 값이어야 한다 */
   @media (max-width: 800px) {
     .bd-header.has-menu .bd-header__menu-btn { display: inline-grid; }
@@ -369,6 +481,15 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     .bd-header--overlay.is-menu-open { background: var(--br-base); color: var(--br-ink); }
   }
 
+  /* 로그인한 방문자는 헤더 오른쪽에 장바구니·돋보기(44px 둘)가 더 들어와 락업(157px)까지 두면 480px 아래에서 넘친다 —
+     그 폭에서는 마크만 남긴다(389px 이하에서 이미 쓰는 강등과 같은 모양) */
+  @media (max-width: 479px) {
+    :global(html.bd-member) .bd-header.has-shop-tools .bd-header__logo :global(svg) { height: 32px; aspect-ratio: 125 / 85; }
+    :global(html.bd-member) .bd-header.has-shop-tools .bd-header__logo :global(.bd-logo-word) { display: none; }
+    .bd-search__form { padding: 10px 16px; }
+    .bd-search__input { max-width: none; }
+  }
+
   @media (max-width: 640px) {
     .bd-header:not(.has-menu) .bd-header__link--wide { display: none; }
     /* 기존 로고 크기와 헤더 높이를 유지한다. */
@@ -434,6 +555,48 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     window.addEventListener('pageshow', (e) => { if (e.persisted) setOpen(false, false, false); });
     // 데스크톱 폭으로 넓어지면 펼침 상태를 풀어 둔다
     narrow.addEventListener('change', (e) => { if (!e.matches) setOpen(false, false, false); });
+  }
+
+  // 쇼핑몰 상품 검색 — 돋보기가 검색 줄을 연다. 제출은 쇼핑몰 검색 폼과 같은 GET 이라 쇼핑몰 검색 화면으로 간다.
+  // JS 가 안 돌면 돋보기는 hidden 그대로(보이지 않는다)
+  const searchBtn = header?.querySelector<HTMLButtonElement>('.bd-header__search-btn');
+  const searchBox = header?.querySelector<HTMLElement>('.bd-search');
+  const searchInput = searchBox?.querySelector<HTMLInputElement>('.bd-search__input');
+  if (header && searchBtn && searchBox && searchInput) {
+    const setSearch = (open: boolean, returnFocus = false) => {
+      if (open === header.classList.contains('is-search-open')) return;
+      if (open && header.classList.contains('is-menu-open')) menuBtn?.click(); // 모바일 메뉴 목록과 겹치지 않게
+      header.classList.toggle('is-search-open', open);
+      searchBtn.setAttribute('aria-expanded', String(open));
+      searchBox.inert = !open;
+      if (open) searchInput.focus({ preventScroll: true });
+      else if (returnFocus) searchBtn.focus();
+    };
+    searchBox.inert = true;
+    searchBtn.hidden = false;
+    searchBtn.addEventListener('click', () => setSearch(!header.classList.contains('is-search-open')));
+    // 빈 칸은 보내지 않는다 — 쇼핑몰이 빈 검색 화면을 열지 않게
+    searchBox.querySelector('form')?.addEventListener('submit', (e) => {
+      if (!searchInput.value.trim()) { e.preventDefault(); searchInput.focus(); }
+    });
+    // 메뉴를 열면 검색 줄은 닫는다(메뉴 버튼 핸들러가 먼저 돌아 이 시점엔 클래스가 이미 바뀌어 있다)
+    menuBtn?.addEventListener('click', () => { if (header.classList.contains('is-menu-open')) setSearch(false); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && header.classList.contains('is-search-open')) setSearch(false, header.contains(document.activeElement));
+    });
+    document.addEventListener('click', (e) => {
+      if (header.classList.contains('is-search-open') && !header.contains(e.target as Node)) setSearch(false);
+    });
+    // 3D·영상 iframe 안을 누르면 클릭이 이 문서로 오지 않는다 — 창 blur 로 닫는다
+    window.addEventListener('blur', () => { if (header.classList.contains('is-search-open')) setSearch(false); });
+    // Tab 으로 헤더 밖으로 나가면 닫는다. relatedTarget 이 없을 때(바깥 클릭·Safari 에서 버튼 클릭)는 위 click 이 맡는다 —
+    // 여기서 닫으면 Safari 에서 돋보기를 눌러 닫을 때 닫혔다가 click 으로 다시 열린다
+    header.addEventListener('focusout', (e) => {
+      const to = e.relatedTarget as Node | null;
+      if (to && header.classList.contains('is-search-open') && !header.contains(to)) setSearch(false);
+    });
+    // 뒤로 가기로 캐시에서 되살아난 페이지가 열린 채 보이지 않게
+    window.addEventListener('pageshow', (e) => { if (e.persisted) setSearch(false); });
   }
 
   // 로고 꼬불 모션 — 페이지를 열 때 한 번, 그리고 마우스를 올리거나 키보드로 닿으면 한 번.

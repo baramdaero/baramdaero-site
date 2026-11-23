@@ -41,6 +41,11 @@ export const SITE_CONFIG = {
   // 쇼핑몰 마이페이지 경로(아임웹 기본 주소). 쇼핑몰에서 로그인한 방문자(공용 쿠키 bd_login, src/scripts/shop-session.js)에게는
   // 헤더·푸터의 '로그인' 자리에 '마이페이지'가 온다. 빈 값이면 '로그인'만 둔다. 공개 전에 관리자 화면에서 이 주소가 맞는지 확인할 것.
   SHOP_MYPAGE_PATH: '/shop_mypage',
+  // 쇼핑몰 장바구니·상품 검색 경로(아임웹 기본 주소) — 쇼핑몰 헤더의 장바구니·돋보기와 같은 곳으로 간다(2026-11-10 박민혁).
+  // 로그인한 방문자(bd_login)에게만 헤더 오른쪽 '마이페이지' 옆에 아이콘으로 뜬다. 검색은 쇼핑몰 검색 폼과 같은 GET {경로}?keyword=….
+  // 빈 값이면 그 아이콘이 렌더되지 않는다. 마이페이지 경로가 비면 둘 다 없다(로그인 표시 장치가 같이 꺼져 아무에게도 안 보이므로).
+  SHOP_CART_PATH: '/shop_cart',
+  SHOP_SEARCH_PATH: '/search',
   // 쇼핑몰 질문 게시판 경로(아임웹 메뉴 코드) — /faq/ 맨 아래 '질문 게시판' 보조 링크가 간다. 빈 값이면 그 링크가 빠진다.
   // 로그인한 회원만 읽고 쓰는 게시판이고 페이지는 메뉴에서 숨기고 검색엔진에 막아 뒀다. 설정·예시 글·점검 메모는 docs/shop-question-board.md.
   // 챗봇 단일 접수 원칙(DESIGN.md §6)의 예외라 대표 확인 전에는 비워 둘 수 있다.
@@ -72,8 +77,13 @@ export const SITE_CONFIG = {
   SEARCH_OPEN: false,
 
   // 사이트 인증 메타 — 발급 후 기입하면 <head>에 자동 렌더
-  NAVER_SITE_VERIFICATION: '',
+  NAVER_SITE_VERIFICATION: '6919e39cf56976a5d1c7852e6456ce18abaed0a8',
   GOOGLE_SITE_VERIFICATION: '',
+
+  // 구글 애널리틱스(GA4) 측정 ID — 쇼핑몰(아임웹 마케팅 채널 연동)과 같은 속성이다(2026-11-20).
+  // 빈 값이면 태그가 안 들어간다. 태그는 baramdaero.com 에서만 실행된다(로컬·미리보기 방문은 세지 않음).
+  // 바꾸거나 비우면 /privacy/ '쿠키' 절의 구글 애널리틱스 문장도 같이 고친다.
+  GA_MEASUREMENT_ID: 'G-WSQF9RKL1V',
 };
 
 /** 쇼핑몰 안쪽 주소. SHOP_URL 이나 경로가 비면 빈 문자열 — 부르는 쪽은 빈 값이면 링크를 그리지 않는다(죽은 링크 금지) */
