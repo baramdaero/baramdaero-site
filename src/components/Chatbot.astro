@@ -99,6 +99,7 @@ const TEASER = [
 <script>
   import { SITE_CONFIG } from '../config.js';
   import { readChatLink } from '../lib/chat-link.ts';
+  import { newReceiptId, recordIntake } from '../lib/intake.ts';
   import { gust } from '../scripts/press.ts';
 
   const root = document.querySelector('[data-chat-root]') as HTMLElement;
@@ -114,6 +115,7 @@ const TEASER = [
 
   const KAKAO = SITE_CONFIG.KAKAO_CHANNEL_URL;
   const PHONE = SITE_CONFIG.PHONE;
+  const INTAKE = SITE_CONFIG.INTAKE_ENDPOINT;
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
   type Data = Record<string, string>;
@@ -281,7 +283,7 @@ const TEASER = [
     // 위치 — 공간에 따라 아파트명 / 건물명으로 갈린다
     install_place_home: L('설치할 곳의 아파트명과 층수를', '적어주세요.'),
     install_place_shop: L('설치할 곳의 건물명과 층수를', '적어주세요.'),
-    install_place_hint_home: '예: 바람아파트 101동 15층',
+    install_place_hint_home: '예: 바람아파트 15층',
     install_place_hint_shop: '예: 바람빌딩 3층',
     install_live: L('지금 살고 계신 곳인가요,', '입주 예정인 곳인가요?'),
     install_operating: '현재 공간 상태를 알려주세요.',
@@ -795,7 +797,8 @@ const TEASER = [
   }
 
   /* ---------- 접수카드 (텍스트 생성 스펙 v1 그대로) ---------- */
-  function buildCard(): string {
+  /** id 가 있으면 마지막 줄에 접수번호를 붙인다(없으면 줄을 추가하지 않는다) */
+  function buildCard(id?: string): string {
     const lines = ['[바람대로 접수]'];
     const push = (k: string, v?: string) => { if (v) lines.push(`${k}: ${v}`); };
     push('분류', data.긴급 ? `${data.분류} (긴급)` : data.분류);
@@ -811,6 +814,7 @@ const TEASER = [
     push('인테리어', data.인테리어);
     push('지역', data.지역);
     push('증상', data.증상);
+    push('접수번호', id);
     return lines.join('\n');
   }
 
@@ -829,6 +833,14 @@ const TEASER = [
       ta.remove();
       return ok;
     }
+  }
+
+  /** 접수 버튼 바로 아래 한 줄 — 그 버튼이 카드를 기록할 때만 단다(주소가 있어 id 가 있을 때). 전화·복사 버튼 아래에는 달지 않는다 */
+  function intakeNote(): HTMLParagraphElement {
+    const p = document.createElement('p');
+    p.className = 'chat__card-note';
+    p.textContent = '접수하신 내용은 확인용으로 저장됩니다.';
+    return p;
   }
 
   function ctaButton(label: string, kind: 'primary' | 'ghost' | 'sub' = 'primary'): HTMLButtonElement {
@@ -858,8 +870,9 @@ const TEASER = [
   }
 
   /** 접수 카드 CTA: 자동복사 + 토스트 + 카카오/전화/복사 안내.
-      누수 긴급은 전화가 주 CTA — 전화가 비었으면 카카오가 주 CTA */
-  function renderCardCtas(text: string, wrap: HTMLElement, urgent: boolean) {
+      누수 긴급은 전화가 주 CTA — 전화가 비었으면 카카오가 주 CTA.
+      id 가 있으면(접수 주소가 있을 때) '카톡으로 접수하기'가 카드를 기록하고 바로 아래 저장 안내를 단다 */
+  function renderCardCtas(text: string, id: string | undefined, wrap: HTMLElement, urgent: boolean) {
     copyText(text).then((ok) => {
       if (ok) toast('복사되었습니다. 상담 창에 붙여넣어 주세요.');
     });
@@ -870,11 +883,13 @@ const TEASER = [
       btn.dataset.kakao = '';
       // 창은 클릭 안에서 바로 연다 — 복사를 기다린 뒤 열면 iOS Safari 가 팝업으로 막는다
       btn.addEventListener('click', () => {
+        if (id) recordIntake(INTAKE, text, id);
         void copyText(text);
         toast('복사되었습니다. 상담 창에 붙여넣어 주세요.');
         window.open(KAKAO, '_blank', 'noopener');
       });
       wrap.appendChild(btn);
+      if (id) wrap.appendChild(intakeNote());
       if (PHONE && !telFirst) wrap.appendChild(ctaTel(`전화하기 ${PHONE}`, 'ghost'));
     } else if (PHONE) {
       if (!telFirst) wrap.appendChild(ctaTel(`전화로 접수하기 ${PHONE}`, 'primary'));
@@ -892,7 +907,9 @@ const TEASER = [
   }
 
   function renderCard() {
-    const text = buildCard();
+    // 받는 곳(주소)이 있을 때만 접수번호를 만든다 — 없으면 카드는 번호·안내 없이 그대로다
+    const id = INTAKE ? newReceiptId() : undefined;
+    const text = buildCard(id);
     const card = document.createElement('div');
     card.className = 'chat__card';
     const label = document.createElement('p');
@@ -909,7 +926,7 @@ const TEASER = [
     wrap.className = 'chat__ctas';
     log.appendChild(wrap);
 
-    renderCardCtas(text, wrap, !!data.긴급);
+    renderCardCtas(text, id, wrap, !!data.긴급);
 
     const home = ctaButton('처음으로', 'sub');
     home.addEventListener('click', reset);
@@ -1477,6 +1494,14 @@ const TEASER = [
     text-transform: uppercase;
     color: var(--silver);
     margin-bottom: 8px;
+  }
+  /* 접수 버튼 아래 저장 안내 — 12px, ink-sub(새 색 없음). 버튼 열(.chat__ctas) 안이라 간격은 열의 gap 을 쓴다 */
+  .chat__card-note {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.6;
+    text-align: center;
+    color: var(--br-ink-sub);
   }
   .chat__card pre {
     font-family: var(--sans);
