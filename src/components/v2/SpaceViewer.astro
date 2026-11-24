@@ -247,14 +247,18 @@ const NOTE = '실제 시공사례를 기반으로 제작한 3D 예시입니다.'
   @media (prefers-reduced-motion: reduce) { .space3d__invite, .space3d__invite[data-on] { translate: none; transition-duration: .01s; } }
   /* 휴대폰: 판은 글자 길이만큼만, 오른쪽(히어로와 같다 — 화면 폭을 꽉 채운 판은 어색하다는 2026-10-01 지적) */
   @media (max-width: 760px) { .space3d__invite-t > span { max-width: 17em; } }
+  /* 탭은 밑줄(DESIGN.md §5) — 분해 3D .ex-tab 과 같은 모양 */
+  .space3d__tabs { gap: 4px; box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--br-ink) 12%, transparent); }
   .space3d__tab {
-    min-height: 44px; padding: 0 18px; border-radius: 999px;
-    border: 1px solid var(--br-ink-sub); background: transparent;
-    color: var(--br-ink); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
+    font: inherit; font-size: 15px; font-weight: 600; line-height: 1; cursor: pointer;
+    display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px;
+    border: 0; border-bottom: 2px solid transparent; border-radius: 6px 6px 0 0;
+    background: transparent; color: var(--br-ink-sub);
+    transition: color var(--dur-color) var(--ease-out), border-color var(--dur-color) var(--ease-out);
   }
-  .space3d__tab { transition: background-color var(--dur-color) var(--ease-out), border-color var(--dur-color) var(--ease-out), color var(--dur-color) var(--ease-out); }
-  .space3d__tab[aria-selected='true'] { background: var(--br-teal-deep); border-color: var(--br-teal-deep); color: #fff; }
-  .space3d__tab:focus-visible { outline: 2px solid var(--br-teal); outline-offset: 2px; }
+  @media (hover: hover) and (pointer: fine) { .space3d__tab[aria-selected='false']:hover { color: var(--br-ink); } }
+  .space3d__tab[aria-selected='true'] { color: var(--br-ink); border-bottom-color: var(--br-teal); }
+  .space3d__tab:focus-visible { outline: 2px solid var(--br-teal); outline-offset: -2px; }
   .space3d__stage {
     position: relative; margin-top: 20px; aspect-ratio: 4 / 5; overflow: hidden;
     border-radius: var(--radius);
