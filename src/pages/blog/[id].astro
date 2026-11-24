@@ -184,7 +184,15 @@ if (qa.length) {
   .post__body { font-size: 16px; }
   .post__body :global(p) { margin-bottom: 16px; }
   .post__body :global(h2) { font-size: 20px; margin: 32px 0 12px; color: var(--br-ink); }
-  .post__body :global(ul) { margin: 0 0 16px 20px; }
+  .post__body :global(ul), .post__body :global(ol) { margin: 0 0 16px 20px; }
+  .post__body :global(table) { width: 100%; border-collapse: collapse; font-size: 14.5px; margin: 16px 0; }
+  .post__body :global(th), .post__body :global(td) { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--br-line); }
+  .post__body :global(th) { color: var(--br-ink); font-weight: 700; }
+  /* 좁은 화면 — 표가 카드 밖으로 밀려나지 않게 표만 옆으로 넘긴다 */
+  @media (max-width: 640px) {
+    .post__body :global(table) { display: block; overflow-x: auto; font-size: 13px; }
+    .post__body :global(th), .post__body :global(td) { padding: 8px 6px; }
+  }
   .post__body :global(blockquote) {
     border-left: 2px solid var(--br-teal);
     padding: 6px 0 6px 16px;
