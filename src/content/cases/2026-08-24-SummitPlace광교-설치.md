@@ -5,18 +5,18 @@ brand: LG
 type: 설치
 units: 4
 date: 2026-08-24
-cover: /media/cases/2026-08-24-SummitPlace광교-설치/01.webp
+cover: /media/cases/2026-08-24-SummitPlace광교-설치/07.webp
 apt: "SummitPlace광교-이의동"
-updated: 2026-10-12
+updated: 2026-11-24
 photos:
-  - file: /media/cases/2026-08-24-SummitPlace광교-설치/01.webp
-    caption: "넓은 창 앞 천장 실내기 마감"
+  - file: /media/cases/2026-08-24-SummitPlace광교-설치/07.webp
+    caption: "창 위 천장 실내기 정면"
   - file: /media/cases/2026-08-24-SummitPlace광교-설치/02.webp
     caption: "창가 천장 실내기 마감"
   - file: /media/cases/2026-08-24-SummitPlace광교-설치/03.webp
     caption: "가까이에서 본 실내기 판넬"
-  - file: /media/cases/2026-08-24-SummitPlace광교-설치/04.webp
-    caption: "보호필름 붙은 창틀 위 실내기"
+  - file: /media/cases/2026-08-24-SummitPlace광교-설치/08.webp
+    caption: "불투명 유리창 위 천장 실내기"
   - file: /media/cases/2026-08-24-SummitPlace광교-설치/05.webp
     caption: "다운라이트 옆 천장 실내기"
   - file: /media/cases/2026-08-24-SummitPlace광교-설치/06.webp
@@ -51,7 +51,7 @@ Summit Place 광교는 경기 수원시 영통구 이의동에 있는 2015년 �
 
 8월 24일에는 실내기 4대에 판넬(천장 밖으로 보이는 실내기 덮개)을 달아 마감했습니다.
 
-![Summit Place 광교 시스템에어컨 보호필름 붙은 창틀 위 실내기](/media/cases/2026-08-24-SummitPlace광교-설치/04.webp)
+![Summit Place 광교 시스템에어컨 불투명 유리창 위 천장 실내기](/media/cases/2026-08-24-SummitPlace광교-설치/08.webp)
 
 ![Summit Place 광교 시스템에어컨 다운라이트 옆 천장 실내기](/media/cases/2026-08-24-SummitPlace광교-설치/05.webp)
 
