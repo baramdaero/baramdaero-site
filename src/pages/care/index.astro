@@ -6,12 +6,13 @@ import PageHero from '../../components/v2/PageHero.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
 import ImageSlot from '../../components/v2/ImageSlot.astro';
 import Exploded from '../../components/v2/Exploded.astro';   // 2026-09-21 기종별 분해 3D
-import { SITE_CONFIG } from '../../config.js';
+import { SITE_CONFIG, shopHref } from '../../config.js';
 import { loadPricing } from '../../lib/pricing.ts';
 import { loadFaq } from '../../lib/faq.ts';
 import { isImageSlotVisible } from '../../lib/image-slots.ts';
 
 const pricing = loadPricing();
+const cleanHref = shopHref(SITE_CONFIG.SHOP_CLEAN_PATH);   // 세척 상품으로 바로(2026-11-20 — 전에는 쇼핑몰 홈까지만 갔다)
 const { process, processIntro, processSource, symptoms, seasons } = pricing;
 const visibleSymptoms = symptoms.filter((s) => !s.hidden);
 const visibleSeasons = seasons
@@ -119,6 +120,7 @@ if (careFaq.length) {
           <button disabled aria-describedby="chat-unavailable" type="button" class="br-pill" data-chat-tree="clean">
             세척 견적 받기 <span aria-hidden="true">→</span>
           </button>
+          {cleanHref && <a class="br-pill" href={cleanHref}>세척 예약하기 <span aria-hidden="true">→</span></a>}
         </p>
       </div>
     </section>
@@ -202,7 +204,7 @@ if (careFaq.length) {
     </section>
   )}
 
-  <CtaBand chatTree="clean" buttonLabel="견적 문의" priceLink>
+  <CtaBand chatTree="clean" buttonLabel="견적 문의" priceLink cleanLink>
     <em>기종</em>과 대수만<br />알려주시면 됩니다
   </CtaBand>
 </Base>
@@ -274,7 +276,7 @@ if (careFaq.length) {
   .care-symptoms__card p,
   .care-seasons__card p { margin-top: 8px; color: var(--br-ink); font-size: 14px; line-height: 1.65; }
 
-  .care-symptoms__more { margin-top: 32px; }
+  .care-symptoms__more { margin-top: 32px; display: flex; flex-wrap: wrap; gap: 12px; }
 
   .care-process__story--base { background: var(--br-base); }
   .care-process__story--mist { background: var(--br-mist); }
