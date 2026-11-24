@@ -3,21 +3,23 @@
 import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import CtaBand from '../../components/v2/CtaBand.astro';
-import { COMPLEX_BY_SLUG, complexLine } from '../../lib/caselog';
+import { COMPLEX_BY_SLUG, aptSlug, complexLine } from '../../lib/caselog';
+import { clipMeta, shortTitles } from '../../lib/seo';
 import { SITE_CONFIG } from '../../config.js';
 
 export async function getStaticPaths() {
   // sample: true는 페이지 자체를 만들지 않는다 — 목록에서 빼도 URL이 살아 있으면
   // sitemap·검색으로 노출되므로 여기서 막아야 완전히 차단된다
   const entries = (await getCollection('cases')).filter((e) => !e.data.sample);
-  return entries.map((entry) => ({ params: { id: entry.id }, props: { entry } }));
+  const seoTitles = shortTitles(entries.map((e) => ({ id: e.id, title: e.data.title || '', date: e.data.date })));
+  return entries.map((entry) => ({ params: { id: entry.id }, props: { entry, seoTitle: seoTitles.get(entry.id) } }));
 }
 
-const { entry } = Astro.props;
+const { entry, seoTitle } = Astro.props;
 const { Content } = await render(entry);
 const { region, space, brand, type, units, date, cover, sample, photos, answer, qa, updated, spec, live } = entry.data;
 // 같은 단지의 시공 기록(있을 때) — 단지 페이지로 잇는다
-const complex = entry.data.apt ? COMPLEX_BY_SLUG.get(entry.data.apt) : undefined;
+const complex = entry.data.apt ? COMPLEX_BY_SLUG.get(aptSlug(entry.data.apt)) : undefined;
 const title = entry.data.title || `${region} ${space} ${brand} ${type} ${units}대`;
 const description = answer || `${title} 시공 기록.`;
 // 화면 제목은 '｜' 앞을 크게, 뒤를 작은 줄로(검색용 한 줄 제목이 막대에서 어색하게 꺾이던 것). <title>·JSON-LD 는 원문 그대로
@@ -87,7 +89,7 @@ const specs = [
   ['작업일', dateLabel],
 ];
 ---
-<Base title={title} description={description} jsonLd={jsonLd} ogImage={cover}>
+<Base title={seoTitle || title} description={clipMeta(description)} jsonLd={jsonLd} ogImage={cover}>
   <article class="bd-section case-detail">
     <div class="bd-container">
       {/* 2026-10-02 대표: 배경 위에 글·사진을 바로 두지 말고 흰 유리판 한 장 안에(블로그 본문 카드와 같은 flat 유리) */}

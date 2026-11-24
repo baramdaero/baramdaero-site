@@ -114,7 +114,7 @@ if (items.length) {
   });
 }
 ---
-<Base title="자주 묻는 질문" description="에어컨 설치·세척·고장·관리, 자주 묻는 질문과 답." jsonLd={jsonLd}>
+<Base title="시스템에어컨 자주 묻는 질문" description="시스템에어컨 비용, 고장 증상, 세척, 사용·관리, 설치 절차까지 자주 묻는 질문과 답을 한곳에 모았습니다." jsonLd={jsonLd}>
   <PageHero light>
     자주 묻는 질문
     <Fragment slot="extra">
@@ -248,8 +248,8 @@ if (items.length) {
             {/* 어느 상태에서든 사람에게 닿는 길 — 이 칸은 접수 창구가 아니다(접수는 챗봇 단일, DESIGN.md §6) */}
             <div class="faq-chat__foot">
               <button type="button" class="faq-chat__again" data-faq-again>다른 질문하기</button>
-              {/* 채널톡(상담)을 바로 연다 — 물어본 말을 입력칸에 채워 둔다. 채널톡이 아직 안 떴으면 챗봇 '기타 문의'(상담 연결)로 */}
-              <button disabled aria-describedby="chat-unavailable" type="button" class="br-pill faq-chat__bot-btn" data-chat-tree="etc" data-faq-consult>상담으로 묻기</button>
+              {/* 물어본 말을 복사해 두고 카카오톡 채널 채팅을 연다. 카카오 주소가 비었으면 챗봇 '기타 문의'(전화)로 */}
+              <button disabled aria-describedby="chat-unavailable" type="button" class="br-pill faq-chat__bot-btn" data-chat-tree="etc" data-kakao data-faq-consult>상담으로 묻기</button>
             </div>
           </div>
 
@@ -342,7 +342,7 @@ if (items.length) {
         </div>
       )}
 
-      {/* 글로 남기는 질문 — 쇼핑몰의 회원 전용 게시판으로 가는 보조 링크. 접수 창구가 아니다(접수는 챗봇·채널톡, DESIGN.md §6 예외) */}
+      {/* 글로 남기는 질문 — 쇼핑몰의 회원 전용 게시판으로 가는 보조 링크. 접수 창구가 아니다(접수는 챗봇·카카오톡 채널, DESIGN.md §6 예외) */}
       {boardHref && items.length > 0 && (
         <p class="faq-board">
           <span class="faq-board__t">질문 게시판은 로그인한 회원이 글로 질문을 남기는 곳입니다.</span>
@@ -433,7 +433,7 @@ if (items.length) {
 
   // 묻고 답하기 — 물어본 말에 가장 가까운 문항 하나로 답한다. 고르는 규칙은 faq-rank.ts.
   import { decideFaq, type FaqDoc } from '../../scripts/faq-rank';
-  import { ensureChannel, openConsult } from '../../lib/channel';
+  import { SITE_CONFIG } from '../../config.js';
 
   const form = document.querySelector<HTMLFormElement>('[data-faq-form]');
   const input = document.querySelector<HTMLInputElement>('[data-faq-search]');
@@ -502,7 +502,6 @@ if (items.length) {
     const q = raw.trim();
     if (!q || !chat) return;
     lastQ = q;
-    void ensureChannel();                              // 상담 버튼을 누를 때 바로 열리도록 미리 띄운다(처음 한 번)
     if (input) input.value = q;
     if (me) me.textContent = q;
     chat.hidden = false;
@@ -551,9 +550,14 @@ if (items.length) {
     if (!b?.dataset.faqAsk) return;
     ask(b.dataset.faqText ?? qOf(b.dataset.faqAsk), b.dataset.faqAsk);
   });
-  // 상담 — 채널톡이 열리면 챗봇(문서에 걸린 data-chat-tree 처리)까지 가지 않게 여기서 멈춘다
+  // 상담 — 물어본 말을 복사하고 카카오톡 채널 채팅을 연다. 열었으면 챗봇(문서에 걸린 data-chat-tree 처리)까지 가지 않게 여기서 멈춘다
+  // 창은 클릭 안에서 바로 연다(복사를 기다리면 팝업 차단). 복사는 뒤따라 끝난다
+  const KAKAO = SITE_CONFIG.KAKAO_CHANNEL_URL;
   document.querySelector('[data-faq-consult]')?.addEventListener('click', (e) => {
-    if (openConsult(lastQ || undefined)) e.stopPropagation();
+    if (!KAKAO) return;
+    e.stopPropagation();
+    if (lastQ) void navigator.clipboard?.writeText(lastQ).catch(() => {});
+    window.open(KAKAO, '_blank', 'noopener');
   });
   document.querySelector('[data-faq-again]')?.addEventListener('click', () => {
     input?.select();

@@ -38,7 +38,7 @@ const cases = defineCollection({
     answer: z.string().default(''), // 첫 2문장 — meta description·AI 인용용
     qa: z.array(z.object({ q: z.string(), a: z.string() })).default([]), // 원본 근거 있는 질문만 → FAQPage
     updated: z.coerce.date().optional(),
-    apt: z.string().default('').transform((s) => s.replace(/[#?%]/g, '')), // # ? % 는 뺀다(src/lib/caselog.ts aptSlug 와 같은 규칙) — 단지 페이지 slug(/cases/apt/<slug>/) — 시공 기록(case-log.json)과 잇는다
+    apt: z.string().default(''), // 단지 페이지 slug(/cases/apt/<slug>/) — 시공 기록(case-log.json)과 잇는다
     live: z.boolean().default(false), // 거주 중 설치 — 사람이 살고 있는 집을 보양하고 시공한 현장(접수 기록의 '입주 세대'). 목록에서 따로 모아 본다(/cases/?live=1)
     // 제원 요약(2026-10-12) — 현장 메모와 제원표에서 계산한 값. 상세 화면의 표와 JSON-LD 에 쓴다. 본문 장비 구성과 같은 값이어야 한다
     spec: z
