@@ -15,8 +15,8 @@
     "process_source": "분해세척 절차 6단계 아래에 붙는 근거 표기입니다. 줄 단위 배열 — 한 칸이 화면 한 줄. 비우면 그 줄이 통째로 사라집니다. ⚠️ 수치·출처는 workstandard.json 및 docs/standards/1-작업기준.md 와 대조해 씁니다. 16단계는 천장형 4way 기준이라 이 범위 한정을 빼면 안 됩니다(벽걸이·스탠드는 단계 수가 다름). faq.json 의 faq-clean-time 과 같은 근거를 쓰므로 한쪽만 고치지 않습니다.",
     "installer_care": "분해세척 단계 바로 앞 '설치팀 기준' 섹션. eyebrow=작은 제목, title=제목(한 칸 = 한 줄), body=설명(한 칸 = 한 줄), cards=카드(title·parts·body), stat_label=숫자 앞 글자, stat_source=숫자 출처, closing=마무리 한 줄, cta=버튼 글자. title·cards 가 비면 섹션이 통째로 빠집니다. 숫자와 기준일은 trust.json 에서 읽으므로 여기에 적지 않습니다. 기간·무상·배상 약속은 넣지 않습니다."
   },
-  "headline": "설치팀이 직접 뜯습니다",
-  "intro": "배관과 전기, 드레인 구조를 아는 사람이 뜯고 다시 조립합니다.",
+  "headline": "설치팀 기준으로 세척합니다",
+  "intro": "배관과 전기, 드레인 구조를 아는 설치팀이나 설치팀에게 교육받은 기사가 분해하고 다시 조립합니다.",
   "prices": [
     {
       "type": "벽걸이 (샘플)",
