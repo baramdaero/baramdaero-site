@@ -29,10 +29,10 @@ function boot(hostname) {
   }
   return { window, listener, capture, events, data: window.dataLayer };
 }
-const el = ({ href = '', kakao = false, chat = false }) => {
+const el = ({ href = '', kakao = false, chat = false, coupon = null }) => {
   const node = {
-    getAttribute: (k) => (k === 'href' ? href : null),
-    hasAttribute: (k) => k === 'data-kakao' && kakao,
+    getAttribute: (k) => (k === 'href' ? href : k === 'data-coupon' ? coupon : null),
+    hasAttribute: (k) => (k === 'data-kakao' && kakao) || (k === 'data-coupon' && coupon !== null),
     closest: (s) => (s === 'a,button' ? node : s === '[data-chat-root]' && chat ? {} : null),
   };
   return node;
@@ -58,6 +58,8 @@ one({ href: 'tel:01054215338', chat: true }, 'phone_click', 'chatbot');
 one({ href: `${KAKAO}/chat` }, 'kakao_open', 'page');
 one({ href: KAKAO }, 'kakao_open', 'page');
 one({ kakao: true, chat: true }, 'kakao_open', 'chatbot');
+one({ href: 'https://shop.baramdaero.com/coupon', coupon: 'topbar' }, 'coupon_click', 'topbar');
+assert.match(read('src/components/CouponBar.astro'), /data-coupon="topbar"/, '맨 위 쿠폰 띠 링크에 data-coupon');
 assert.equal(fire({ href: 'tel:15883366', chat: true }).length, 0, '제조사 서비스센터 번호는 회사 전화가 아니다');
 assert.equal(fire({ href: 'https://shop.baramdaero.com/' }).length, 0);
 assert.equal(fire({}).length, 0);

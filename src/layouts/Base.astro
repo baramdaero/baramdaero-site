@@ -3,6 +3,7 @@
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import Chatbot from '../components/Chatbot.astro';
+import CouponBar from '../components/CouponBar.astro';
 import { SITE_CONFIG } from '../config.js';
 import '../styles/global.css';
 
@@ -81,7 +82,7 @@ const extraJsonLd = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
           s.async = true;
           s.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
           document.head.appendChild(s);
-          // 전환 — 회사 전화(phone_click)와 카카오 채널(kakao_open)을 누른 횟수. 값에는 위치만 넣고 문의 내용·번호는 보내지 않는다. 검사: npm run test:conv
+          // 전환 — 회사 전화(phone_click)·카카오 채널(kakao_open)·쿠폰 받기(coupon_click)를 누른 횟수. 값에는 위치만 넣고 문의 내용·번호는 보내지 않는다. 검사: npm run test:conv
           // 캡처 단계에서 듣는다 — 버튼 쪽 stopPropagation 에 막히지 않게
           document.addEventListener('click', function (e) {
             var el = e.target && e.target.closest ? e.target.closest('a,button') : null;
@@ -89,8 +90,9 @@ const extraJsonLd = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
             var href = el.getAttribute('href') || '';
             var name = href.indexOf('tel:') === 0
               ? (phone && href.replace(/\D/g, '') === phone ? 'phone_click' : '')
-              : (el.hasAttribute('data-kakao') || (kakao && href.indexOf(kakao) === 0) ? 'kakao_open' : '');
-            if (name) gtag('event', name, { cta_location: el.closest('[data-chat-root]') ? 'chatbot' : 'page', transport_type: 'beacon' });
+              : el.hasAttribute('data-kakao') || (kakao && href.indexOf(kakao) === 0) ? 'kakao_open'
+              : el.hasAttribute('data-coupon') ? 'coupon_click' : ''; // 쿠폰 받기 — 위치는 data-coupon 값(맨 위 띠 = topbar)
+            if (name) gtag('event', name, { cta_location: el.getAttribute('data-coupon') || (el.closest('[data-chat-root]') ? 'chatbot' : 'page'), transport_type: 'beacon' });
           }, true);
         }
       </script>
@@ -163,6 +165,7 @@ const extraJsonLd = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
     {/* 앰비언트 배경 — 유리 표면 뒤에 비치는 레이어. 장식이라 aria-hidden */}
     <div class="br-ambient" aria-hidden="true"></div>
     <a href="#main" class="skip-link">본문 바로가기</a>
+    <CouponBar />
     <SiteHeader variant={headerVariant} />
     <main id="main">
       <slot />
