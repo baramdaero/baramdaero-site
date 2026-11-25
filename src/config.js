@@ -56,7 +56,7 @@ export const SITE_CONFIG = {
   // 쿠폰 받는 쇼핑몰 페이지 경로 — 모든 페이지 맨 위(헤더 위) 혜택 띠(src/components/CouponBar.astro)의 모든 슬라이드가 간다. 빈 값이면 띠가 안 나온다(죽은 링크 금지).
   // 닫으면 그 브라우저에서는 다시 안 나온다. 슬라이드 문구를 바꾸면 닫았던 사람에게도 새로 나온다(닫은 문구를 기억한다).
   COUPON_PATH: '',
-  // 혜택 띠 슬라이드 — 순서대로 약 4초마다 넘어간다. label 은 작은 윗줄, text 는 굵은 한 줄.
+  // 혜택 띠 슬라이드 — 순서대로 약 6초마다 넘어간다. label 은 작은 윗줄, text 는 굵은 한 줄.
   // text 의 {amount} 자리에 amount 가 강조색(teal)·굵게 들어간다. 클릭은 GA 에 coupon_click(cta_location = topbar-번호)으로 남는다.
   COUPON_SLIDES: [
     { label: '회원가입 혜택', text: '1초 회원가입하고 {amount} 받기', amount: '100만원 혜택' },
