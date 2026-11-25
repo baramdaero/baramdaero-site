@@ -1,0 +1,106 @@
+---
+// 모든 페이지 맨 위(헤더 위) 쿠폰 띠 — 쇼핑몰 회원가입·쿠폰 받기로 보낸다. Base.astro 에서 한 번만 그린다.
+// config 의 COUPON_PATH 가 비면 그리지 않는다(죽은 링크 금지). 조건 줄(COUPON_NOTE)은 값이 있을 때만, 모바일에서도 숨기지 않는다.
+// 누른 횟수는 Base.astro 의 GA 클릭 수집이 data-coupon 을 보고 coupon_click 으로 센다(검사 npm run test:conv).
+import { SITE_CONFIG, shopHref } from '../config.js';
+
+const href = shopHref(SITE_CONFIG.COUPON_PATH);
+const { COUPON_TEXT, COUPON_AMOUNT: amount, COUPON_NOTE: note } = SITE_CONFIG;
+const text = COUPON_TEXT.replace('{amount}', amount); // 닫은 상태 기억에도 이 완성 문구를 쓴다 — 금액이 바뀌면 다시 보인다
+// 마지막 낱말 앞에서만 줄이 바뀌게 둘로 나눈다(앞 묶음·끝 묶음 모두 nowrap)
+const cut = COUPON_TEXT.lastIndexOf(' ');
+const [before, after = ''] = COUPON_TEXT.slice(0, cut).split('{amount}');
+const tail = COUPON_TEXT.slice(cut + 1);
+---
+{href && text && (
+  <div class="bd-coupon" data-coupon-bar={text}>
+    <a class="bd-coupon__link" href={href} data-coupon="topbar">
+      <span class="bd-coupon__text"><span class="bd-coupon__nw">{before}{COUPON_TEXT.includes('{amount}') && <strong class="bd-coupon__amount">{amount}</strong>}{after}</span>{' '}<span class="bd-coupon__nw">{tail}{'\u00a0'}<span aria-hidden="true">→</span></span></span>
+      {note && <span class="bd-coupon__note">{note}</span>}
+    </a>
+    <button type="button" class="bd-coupon__close" aria-label="쿠폰 안내 닫기">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+    </button>
+  </div>
+)}
+{href && text && (
+  /* 바로 뒤에서 동기로 돈다 — 닫았던 사람에게 띠가 한 번 그려졌다 사라지며 화면이 밀리지 않게. 저장소가 막혀도(사생활 보호 창 등) 띠만 보이고 깨지지 않는다 */
+  <script is:inline>
+    (function () {
+      var bar = document.currentScript.previousElementSibling;
+      var KEY = 'bd_coupon_closed';
+      var text = bar.getAttribute('data-coupon-bar');
+      try { if (localStorage.getItem(KEY) === text) bar.hidden = true; } catch (e) {}
+      bar.querySelector('.bd-coupon__close').addEventListener('click', function () {
+        bar.hidden = true;
+        try { localStorage.setItem(KEY, text); } catch (e) {}
+        var next = document.querySelector('.bd-header a');
+        if (next) next.focus(); // 누른 단추가 사라져 초점이 문서 처음으로 튀지 않게 — 바로 다음 자리(헤더 로고)로
+      });
+    })();
+  </script>
+)}
+
+<style>
+  .bd-coupon {
+    position: relative;
+    z-index: 41; /* 헤더(40)의 메뉴 그림자 위 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* 헤더와 같은 무거운 유리 — 토큰은 global.css. backdrop-filter 미지원·투명도 최소화 환경은 토큰이 불투명 base 로 바뀐다 */
+    /* 위에 teal 12% 틴트(--tint-strong)를 한 겹 — 아래 헤더(같은 유리, 틴트 없음)와 다른 층으로 읽히게.
+       6%(--tint-fill)는 헤더와 거의 같아 보였고, 그림자(--glass-shadow)는 아래에 흐린 줄만 생겼다(2026-11-25 비교) */
+    background: linear-gradient(var(--tint-strong), var(--tint-strong)), var(--glass-heavy-bg);
+    -webkit-backdrop-filter: var(--glass-heavy-fx);
+    backdrop-filter: var(--glass-heavy-fx);
+    /* 아래 헤더도 같은 유리라 흰 유리선(--glass-line)으로는 둘이 붙어 보인다 — 구조선 --br-line 으로 나눈다 */
+    box-shadow: 0 1px 0 var(--br-line); /* 테두리가 아니라 바깥 1px 선 — 띠 안 위아래 여백이 똑같게 */
+    color: var(--br-ink);
+    padding: 0 44px; /* 오른쪽 닫기 단추 자리 — 왼쪽도 같이 비워 글이 가운데 */
+  }
+  .bd-coupon[hidden] { display: none; }
+  .bd-coupon__link {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;   /* 한 줄일 때 */
+    align-content: center; /* 줄이 넘쳐 두 줄일 때 — 묶음째 띠 가운데로 */
+    justify-content: center;
+    column-gap: 12px;
+    row-gap: 2px;
+    min-height: 44px;
+    padding: 8px 0;
+    box-sizing: border-box;
+    color: inherit;
+    text-decoration: none;
+    text-align: center;
+    word-break: keep-all;
+  }
+  .bd-coupon__text { font-size: 14.5px; font-weight: 600; line-height: 1.4; }
+  .bd-coupon__nw { white-space: nowrap; }
+  /* 금액만 teal·굵게 — teal 글자는 핵심 숫자 자리(DESIGN.md §1), 틴트 바탕 위 약 7:1 */
+  .bd-coupon__amount { color: var(--br-teal); font-weight: 800; }
+  /* 조건 줄 — 큰 줄 바로 옆(좁으면 바로 아래). ink-sub: base 위 6.57:1, mist 위 5.47:1 */
+  .bd-coupon__note { font-size: 12.5px; font-weight: 500; line-height: 1.4; color: var(--br-ink-sub); }
+  .bd-coupon__close {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--br-ink-sub);
+    cursor: pointer;
+  }
+  .bd-coupon :focus-visible { outline-offset: -2px; } /* 색은 전역 teal 테두리 그대로 — 띠 밖으로 잘리지 않게 안쪽에 */
+  @media (hover: hover) and (pointer: fine) {
+    .bd-coupon__link:hover .bd-coupon__text { text-decoration: underline; text-underline-offset: 3px; }
+    .bd-coupon__close:hover { color: var(--br-ink); }
+  }
+  /* 헤더는 sticky(solid) 라 띠를 지나 내리면 맨 위에 붙는다. 오버레이 헤더(fixed)는 띠를 덮으니 다시 쓰게 되면 그때 맞춘다 */
+</style>
