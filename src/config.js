@@ -57,11 +57,11 @@ export const SITE_CONFIG = {
   // 닫으면 그 브라우저에서는 다시 안 나온다. 슬라이드 문구를 바꾸면 닫았던 사람에게도 새로 나온다(닫은 문구를 기억한다).
   COUPON_PATH: '',
   // 혜택 띠 슬라이드 — 순서대로 약 6초마다 넘어간다. label 은 작은 윗줄, text 는 굵은 한 줄.
-  // text 의 {amount} 자리에 amount 가 강조색(teal)·굵게 들어간다. icon 은 CouponBar.astro 의 ICONS 이름(koboyo 의 Lucide 선 아이콘)이고, 빈 값이면 그림 없이.
+  // text 의 {amount} 자리에 amount 가 강조색(teal)·굵게 들어간다. icon 은 CouponBar.astro 의 ICONS 이름(koboyo 의 Lucide 선 아이콘), badge 는 왼쪽 쿠폰 그림에 크게 들어가는 혜택(PC 만). 둘 다 빈 값이면 그림 없이.
   // 클릭은 GA 에 coupon_click(cta_location = topbar-번호)으로 남는다.
   COUPON_SLIDES: [
-    { label: '회원가입 혜택', text: '1초 회원가입하고 {amount} 받기', amount: '100만원 혜택', icon: 'gift' },
-    { label: '설치 고객 혜택', text: '설치하면 {amount} 쿠폰', amount: '세척 50%', icon: 'ticket-percent' },
+    { label: '회원가입 혜택', text: '1초 회원가입하고 {amount} 받기', amount: '100만원 혜택', icon: 'gift', badge: '100만원' },
+    { label: '설치 고객 혜택', text: '설치하면 {amount} 쿠폰', amount: '세척 50%', icon: 'ticket-percent', badge: '세척 50%' },
   ],
 
   // 접수 기록 수신 주소 — 챗봇 접수 카드에서 '카톡으로 접수하기'를 누르면 접수 카드를 이 주소로도 보낸다(src/lib/intake.ts).
