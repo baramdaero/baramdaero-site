@@ -1,6 +1,6 @@
 ---
 // 모든 페이지 맨 위(헤더 위) 쿠폰 띠 — 쇼핑몰 회원가입·쿠폰 받기로 보낸다. Base.astro 에서 한 번만 그린다.
-// config 의 COUPON_PATH 가 비면 그리지 않는다(죽은 링크 금지). 조건 줄은 모바일에서도 숨기지 않는다.
+// config 의 COUPON_PATH 가 비면 그리지 않는다(죽은 링크 금지). 조건 줄(COUPON_NOTE)은 값이 있을 때만, 모바일에서도 숨기지 않는다.
 // 누른 횟수는 Base.astro 의 GA 클릭 수집이 data-coupon 을 보고 coupon_click 으로 센다(검사 npm run test:conv).
 import { SITE_CONFIG, shopHref } from '../config.js';
 
@@ -45,11 +45,13 @@ const parts = text.split(' · '); // 좁은 화면에서 ' · ' 자리에서만 
     align-items: center;
     justify-content: center;
     /* 헤더와 같은 무거운 유리 — 토큰은 global.css. backdrop-filter 미지원·투명도 최소화 환경은 토큰이 불투명 base 로 바뀐다 */
-    background: var(--glass-heavy-bg);
+    /* 위에 teal 12% 틴트(--tint-strong)를 한 겹 — 아래 헤더(같은 유리, 틴트 없음)와 다른 층으로 읽히게.
+       6%(--tint-fill)는 헤더와 거의 같아 보였고, 그림자(--glass-shadow)는 아래에 흐린 줄만 생겼다(2026-11-25 비교) */
+    background: linear-gradient(var(--tint-strong), var(--tint-strong)), var(--glass-heavy-bg);
     -webkit-backdrop-filter: var(--glass-heavy-fx);
     backdrop-filter: var(--glass-heavy-fx);
     /* 아래 헤더도 같은 유리라 흰 유리선(--glass-line)으로는 둘이 붙어 보인다 — 구조선 --br-line 으로 나눈다 */
-    border-bottom: 1px solid var(--br-line);
+    box-shadow: 0 1px 0 var(--br-line); /* 테두리가 아니라 바깥 1px 선 — 띠 안 위아래 여백이 똑같게 */
     color: var(--br-ink);
     padding: 0 44px; /* 오른쪽 닫기 단추 자리 — 왼쪽도 같이 비워 글이 가운데 */
   }
@@ -57,7 +59,8 @@ const parts = text.split(' · '); // 좁은 화면에서 ' · ' 자리에서만 
   .bd-coupon__link {
     display: flex;
     flex-wrap: wrap;
-    align-items: baseline;
+    align-items: center;   /* 한 줄일 때 */
+    align-content: center; /* 줄이 넘쳐 두 줄일 때 — 묶음째 띠 가운데로 */
     justify-content: center;
     column-gap: 12px;
     row-gap: 2px;
