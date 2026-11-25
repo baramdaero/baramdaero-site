@@ -44,8 +44,13 @@ const parts = text.split(' · '); // 좁은 화면에서 ' · ' 자리에서만 
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--br-teal-deep);
-    color: #fff;
+    /* 헤더와 같은 무거운 유리 — 토큰은 global.css. backdrop-filter 미지원·투명도 최소화 환경은 토큰이 불투명 base 로 바뀐다 */
+    background: var(--glass-heavy-bg);
+    -webkit-backdrop-filter: var(--glass-heavy-fx);
+    backdrop-filter: var(--glass-heavy-fx);
+    /* 아래 헤더도 같은 유리라 흰 유리선(--glass-line)으로는 둘이 붙어 보인다 — 구조선 --br-line 으로 나눈다 */
+    border-bottom: 1px solid var(--br-line);
+    color: var(--br-ink);
     padding: 0 44px; /* 오른쪽 닫기 단추 자리 — 왼쪽도 같이 비워 글이 가운데 */
   }
   .bd-coupon[hidden] { display: none; }
@@ -67,8 +72,8 @@ const parts = text.split(' · '); // 좁은 화면에서 ' · ' 자리에서만 
   .bd-coupon__text { font-size: 14.5px; font-weight: 700; line-height: 1.4; }
   .bd-coupon__seg { display: inline-block; }
   .bd-coupon__seg + .bd-coupon__seg { margin-left: 0.3em; }
-  /* 조건 줄 — 큰 줄 바로 옆(좁으면 바로 아래), 흰 75%(teal-deep 위 약 10:1) */
-  .bd-coupon__note { font-size: 12.5px; font-weight: 500; line-height: 1.4; color: rgba(255, 255, 255, 0.75); }
+  /* 조건 줄 — 큰 줄 바로 옆(좁으면 바로 아래). ink-sub: base 위 6.57:1, mist 위 5.47:1 */
+  .bd-coupon__note { font-size: 12.5px; font-weight: 500; line-height: 1.4; color: var(--br-ink-sub); }
   .bd-coupon__close {
     position: absolute;
     top: 50%;
@@ -81,13 +86,13 @@ const parts = text.split(' · '); // 좁은 화면에서 ' · ' 자리에서만 
     padding: 0;
     border: 0;
     background: none;
-    color: rgba(255, 255, 255, 0.75);
+    color: var(--br-ink-sub);
     cursor: pointer;
   }
-  .bd-coupon :focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+  .bd-coupon :focus-visible { outline-offset: -2px; } /* 색은 전역 teal 테두리 그대로 — 띠 밖으로 잘리지 않게 안쪽에 */
   @media (hover: hover) and (pointer: fine) {
     .bd-coupon__link:hover .bd-coupon__text { text-decoration: underline; text-underline-offset: 3px; }
-    .bd-coupon__close:hover { color: #fff; }
+    .bd-coupon__close:hover { color: var(--br-ink); }
   }
   /* 헤더는 sticky(solid) 라 띠를 지나 내리면 맨 위에 붙는다. 오버레이 헤더(fixed)는 띠를 덮으니 다시 쓰게 되면 그때 맞춘다 */
 </style>
