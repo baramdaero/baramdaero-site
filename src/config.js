@@ -61,7 +61,6 @@ export const SITE_CONFIG = {
   COUPON_SLIDES: [
     { label: '회원가입 혜택', text: '1초 회원가입하고 {amount} 받기', amount: '100만원 혜택' },
     { label: '설치 고객 혜택', text: '설치하면 {amount} 쿠폰', amount: '세척 50%' },
-    { label: '회원 쿠폰', text: '무풍·Infinite 세트 {amount} 할인', amount: '최대 30만원' },
   ],
 
   // 접수 기록 수신 주소 — 챗봇 접수 카드에서 '카톡으로 접수하기'를 누르면 접수 카드를 이 주소로도 보낸다(src/lib/intake.ts).
