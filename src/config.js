@@ -59,7 +59,7 @@ export const SITE_CONFIG = {
   COUPON_PATH: '',
   // {amount} 자리에 COUPON_AMOUNT 가 강조색(teal)·굵게 들어간다. 좁은 화면에서는 마지막 낱말(받기 →) 앞에서만 줄이 바뀐다.
   COUPON_TEXT: '1초 회원가입하고 {amount} 받기',
-  COUPON_AMOUNT: '20만원 쿠폰팩',
+  COUPON_AMOUNT: '100만원 혜택',
   COUPON_NOTE: '',
 
   // 접수 기록 수신 주소 — 챗봇 접수 카드에서 '카톡으로 접수하기'를 누르면 접수 카드를 이 주소로도 보낸다(src/lib/intake.ts).
