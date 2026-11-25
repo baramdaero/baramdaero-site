@@ -5,13 +5,17 @@
 import { SITE_CONFIG, shopHref } from '../config.js';
 
 const href = shopHref(SITE_CONFIG.COUPON_PATH);
-const { COUPON_TEXT: text, COUPON_NOTE: note } = SITE_CONFIG;
-const parts = text.split(' · '); // 좁은 화면에서 ' · ' 자리에서만 줄이 바뀌게 — 문구 가운데서 끊기지 않게
+const { COUPON_TEXT, COUPON_AMOUNT: amount, COUPON_NOTE: note } = SITE_CONFIG;
+const text = COUPON_TEXT.replace('{amount}', amount); // 닫은 상태 기억에도 이 완성 문구를 쓴다 — 금액이 바뀌면 다시 보인다
+// 마지막 낱말 앞에서만 줄이 바뀌게 둘로 나눈다(앞 묶음·끝 묶음 모두 nowrap)
+const cut = COUPON_TEXT.lastIndexOf(' ');
+const [before, after = ''] = COUPON_TEXT.slice(0, cut).split('{amount}');
+const tail = COUPON_TEXT.slice(cut + 1);
 ---
 {href && text && (
   <div class="bd-coupon" data-coupon-bar={text}>
     <a class="bd-coupon__link" href={href} data-coupon="topbar">
-      <span class="bd-coupon__text">{parts.map((p, i) => <span class="bd-coupon__seg">{p}{i < parts.length - 1 ? ' ·' : <>{'\u00a0'}<span aria-hidden="true">→</span></>}</span>)}</span>
+      <span class="bd-coupon__text"><span class="bd-coupon__nw">{before}{COUPON_TEXT.includes('{amount}') && <strong class="bd-coupon__amount">{amount}</strong>}{after}</span>{' '}<span class="bd-coupon__nw">{tail}{'\u00a0'}<span aria-hidden="true">→</span></span></span>
       {note && <span class="bd-coupon__note">{note}</span>}
     </a>
     <button type="button" class="bd-coupon__close" aria-label="쿠폰 안내 닫기">
@@ -72,9 +76,10 @@ const parts = text.split(' · '); // 좁은 화면에서 ' · ' 자리에서만 
     text-align: center;
     word-break: keep-all;
   }
-  .bd-coupon__text { font-size: 14.5px; font-weight: 700; line-height: 1.4; }
-  .bd-coupon__seg { display: inline-block; }
-  .bd-coupon__seg + .bd-coupon__seg { margin-left: 0.3em; }
+  .bd-coupon__text { font-size: 14.5px; font-weight: 600; line-height: 1.4; }
+  .bd-coupon__nw { white-space: nowrap; }
+  /* 금액만 teal·굵게 — teal 글자는 핵심 숫자 자리(DESIGN.md §1), 틴트 바탕 위 약 7:1 */
+  .bd-coupon__amount { color: var(--br-teal); font-weight: 800; }
   /* 조건 줄 — 큰 줄 바로 옆(좁으면 바로 아래). ink-sub: base 위 6.57:1, mist 위 5.47:1 */
   .bd-coupon__note { font-size: 12.5px; font-weight: 500; line-height: 1.4; color: var(--br-ink-sub); }
   .bd-coupon__close {
