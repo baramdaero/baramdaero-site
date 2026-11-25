@@ -1,42 +1,98 @@
 ---
-// 모든 페이지 맨 위(헤더 위) 쿠폰 띠 — 쇼핑몰 회원가입·쿠폰 받기로 보낸다. Base.astro 에서 한 번만 그린다.
-// config 의 COUPON_PATH 가 비면 그리지 않는다(죽은 링크 금지). 조건 줄(COUPON_NOTE)은 값이 있을 때만, 모바일에서도 숨기지 않는다.
-// 누른 횟수는 Base.astro 의 GA 클릭 수집이 data-coupon 을 보고 coupon_click 으로 센다(검사 npm run test:conv).
+// 모든 페이지 맨 위(헤더 위) 혜택 띠 — 혜택 슬라이드가 약 4초마다 넘어가고, 누르면 쇼핑몰 쿠폰 페이지로 간다. Base.astro 에서 한 번만 그린다.
+// config 의 COUPON_PATH 가 비면 그리지 않는다(죽은 링크 금지). 슬라이드는 config 의 COUPON_SLIDES.
+// 누른 횟수는 Base.astro 의 GA 클릭 수집이 data-coupon(topbar-번호)을 보고 coupon_click 으로 센다(검사 npm run test:conv).
 import { SITE_CONFIG, shopHref } from '../config.js';
 
 const href = shopHref(SITE_CONFIG.COUPON_PATH);
-const { COUPON_TEXT, COUPON_AMOUNT: amount, COUPON_NOTE: note } = SITE_CONFIG;
-const text = COUPON_TEXT.replace('{amount}', amount); // 닫은 상태 기억에도 이 완성 문구를 쓴다 — 금액이 바뀌면 다시 보인다
-// 마지막 낱말 앞에서만 줄이 바뀌게 둘로 나눈다(앞 묶음·끝 묶음 모두 nowrap)
-const cut = COUPON_TEXT.lastIndexOf(' ');
-const [before, after = ''] = COUPON_TEXT.slice(0, cut).split('{amount}');
-const tail = COUPON_TEXT.slice(cut + 1);
+const slides = SITE_CONFIG.COUPON_SLIDES.map(({ label, text, amount }) => {
+  const [before, after = ''] = text.split('{amount}');
+  return { label, before, amount: text.includes('{amount}') ? amount : '', after, full: text.replace('{amount}', amount) };
+});
+// 닫은 상태는 슬라이드 문구 전체로 기억한다 — 문구가 바뀌면 닫았던 사람에게도 다시 보인다
+const key = slides.map((s) => s.full).join('|');
+const many = slides.length > 1;
 ---
-{href && text && (
-  <div class="bd-coupon" data-coupon-bar={text}>
-    <a class="bd-coupon__link" href={href} data-coupon="topbar">
-      <span class="bd-coupon__text"><span class="bd-coupon__nw">{before}{COUPON_TEXT.includes('{amount}') && <strong class="bd-coupon__amount">{amount}</strong>}{after}</span>{' '}<span class="bd-coupon__nw">{tail}{'\u00a0'}<span aria-hidden="true">→</span></span></span>
-      {note && <span class="bd-coupon__note">{note}</span>}
+{href && slides.length > 0 && (
+  <div class="bd-coupon" data-coupon-bar={key}>
+    {many && (
+      <button type="button" class="bd-coupon__nav" data-dir="prev" aria-label="이전 혜택">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      </button>
+    )}
+    <a class="bd-coupon__link" href={href} data-coupon="topbar-1">
+      {slides.map((s, i) => (
+        <span class:list={['bd-coupon__slide', { 'is-on': i === 0 }]} aria-hidden={i ? 'true' : undefined}>
+          <span class="bd-coupon__label">{s.label}</span>
+          <span class="bd-coupon__text">{s.before}{s.amount && <strong class="bd-coupon__amount">{s.amount}</strong>}{s.after}</span>
+        </span>
+      ))}
     </a>
+    {many && (
+      <button type="button" class="bd-coupon__nav" data-dir="next" aria-label="다음 혜택">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      </button>
+    )}
     <button type="button" class="bd-coupon__close" aria-label="쿠폰 안내 닫기">
       <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
     </button>
+    {/* 화면 읽기 알림 — 화살표·스와이프로 넘길 때만 채운다(자동 넘김은 알리지 않는다) */}
+    <span class="visually-hidden" aria-live="polite" data-coupon-live></span>
   </div>
 )}
-{href && text && (
+{href && slides.length > 0 && (
   /* 바로 뒤에서 동기로 돈다 — 닫았던 사람에게 띠가 한 번 그려졌다 사라지며 화면이 밀리지 않게. 저장소가 막혀도(사생활 보호 창 등) 띠만 보이고 깨지지 않는다 */
   <script is:inline>
     (function () {
       var bar = document.currentScript.previousElementSibling;
       var KEY = 'bd_coupon_closed';
-      var text = bar.getAttribute('data-coupon-bar');
-      try { if (localStorage.getItem(KEY) === text) bar.hidden = true; } catch (e) {}
+      var key = bar.getAttribute('data-coupon-bar');
+      try { if (localStorage.getItem(KEY) === key) bar.hidden = true; } catch (e) {}
       bar.querySelector('.bd-coupon__close').addEventListener('click', function () {
         bar.hidden = true;
-        try { localStorage.setItem(KEY, text); } catch (e) {}
+        try { localStorage.setItem(KEY, key); } catch (e) {}
         var next = document.querySelector('.bd-header a');
         if (next) next.focus(); // 누른 단추가 사라져 초점이 문서 처음으로 튀지 않게 — 바로 다음 자리(헤더 로고)로
       });
+
+      var link = bar.querySelector('.bd-coupon__link');
+      var slides = link.querySelectorAll('.bd-coupon__slide');
+      var live = bar.querySelector('[data-coupon-live]');
+      var n = slides.length, cur = 0;
+      if (n < 2) return;
+      function show(k, dir, announce) {
+        k = (k + n) % n;
+        link.setAttribute('data-way', dir); // 화살표 단추의 data-dir 와 이름을 나눠 둔다
+        for (var j = 0; j < n; j++) slides[j].classList.remove('is-out');
+        void link.offsetWidth; // 방향을 바꾼 뒤 한 번 그려야 새 슬라이드가 그 방향에서 들어온다
+        slides[cur].classList.replace('is-on', 'is-out');
+        slides[cur].setAttribute('aria-hidden', 'true');
+        slides[k].classList.add('is-on');
+        slides[k].removeAttribute('aria-hidden');
+        link.setAttribute('data-coupon', 'topbar-' + (k + 1)); // GA cta_location
+        if (announce) live.textContent = slides[k].textContent;
+        cur = k;
+      }
+      bar.querySelectorAll('.bd-coupon__nav').forEach(function (b) {
+        var d = b.getAttribute('data-dir');
+        b.addEventListener('click', function () { show(cur + (d === 'next' ? 1 : -1), d, true); });
+      });
+      // 휴대폰은 화살표를 숨긴다 — 좌우로 밀어 넘긴다(세로 스크롤은 그대로)
+      var x0 = null;
+      link.addEventListener('pointerdown', function (e) { x0 = e.pointerType === 'mouse' ? null : e.clientX; });
+      link.addEventListener('pointerup', function (e) {
+        if (x0 === null) return;
+        var dx = e.clientX - x0; x0 = null;
+        if (Math.abs(dx) > 40) show(cur + (dx < 0 ? 1 : -1), dx < 0 ? 'next' : 'prev', true);
+      });
+      // 자동 넘김 — 마우스가 올라가 있거나 초점이 띠 안에 있으면 멈춘다. 모션 줄이기면 돌리지 않는다(화살표·스와이프만)
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      var hover = false;
+      bar.addEventListener('mouseenter', function () { hover = true; });
+      bar.addEventListener('mouseleave', function () { hover = false; });
+      setInterval(function () {
+        if (!hover && !bar.contains(document.activeElement) && !document.hidden && !bar.hidden) show(cur + 1, 'next', false);
+      }, 4000);
     })();
   </script>
 )}
@@ -48,6 +104,7 @@ const tail = COUPON_TEXT.slice(cut + 1);
     display: flex;
     align-items: center;
     justify-content: center;
+    height: 44px;
     /* 헤더와 같은 무거운 유리 — 토큰은 global.css. backdrop-filter 미지원·투명도 최소화 환경은 토큰이 불투명 base 로 바뀐다 */
     /* 위에 teal 12% 틴트(--tint-strong)를 한 겹 — 아래 헤더(같은 유리, 틴트 없음)와 다른 층으로 읽히게.
        6%(--tint-fill)는 헤더와 거의 같아 보였고, 그림자(--glass-shadow)는 아래에 흐린 줄만 생겼다(2026-11-25 비교) */
@@ -60,33 +117,41 @@ const tail = COUPON_TEXT.slice(cut + 1);
     padding: 0 44px; /* 오른쪽 닫기 단추 자리 — 왼쪽도 같이 비워 글이 가운데 */
   }
   .bd-coupon[hidden] { display: none; }
+  /* 슬라이드 창 — 슬라이드는 겹쳐 두고 지금 것만 보인다. 폭을 고정해 슬라이드가 바뀌어도 화살표가 움직이지 않는다 */
   .bd-coupon__link {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;   /* 한 줄일 때 */
-    align-content: center; /* 줄이 넘쳐 두 줄일 때 — 묶음째 띠 가운데로 */
-    justify-content: center;
-    column-gap: 12px;
-    row-gap: 2px;
-    min-height: 44px;
-    padding: 8px 0;
-    box-sizing: border-box;
+    position: relative;
+    flex: 0 1 420px;
+    height: 44px;
+    overflow: hidden;
     color: inherit;
     text-decoration: none;
-    text-align: center;
-    word-break: keep-all;
+    touch-action: pan-y;
   }
-  .bd-coupon__text { font-size: 14.5px; font-weight: 600; line-height: 1.4; }
-  .bd-coupon__nw { white-space: nowrap; }
+  .bd-coupon__slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; /* 윗줄+굵은 줄 묶음을 띠 세로 가운데로 */
+    text-align: center;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateY(100%);
+    transition: transform var(--dur-ui) var(--ease-out), opacity var(--dur-ui) ease;
+  }
+  .bd-coupon__slide.is-on { opacity: 1; transform: none; }
+  .bd-coupon__slide.is-out { transform: translateY(-100%); }
+  /* 이전으로 갈 때는 반대로 — 위에서 들어오고 아래로 나간다 */
+  .bd-coupon__link[data-way='prev'] .bd-coupon__slide:not(.is-on):not(.is-out) { transform: translateY(-100%); }
+  .bd-coupon__link[data-way='prev'] .bd-coupon__slide.is-out { transform: translateY(100%); }
+  .bd-coupon__label { font-size: 11.5px; font-weight: 600; line-height: 1.3; color: var(--br-ink-sub); }
+  .bd-coupon__text { font-size: 14.5px; font-weight: 600; line-height: 1.35; }
   /* 금액만 teal·굵게 — teal 글자는 핵심 숫자 자리(DESIGN.md §1), 틴트 바탕 위 약 7:1 */
   .bd-coupon__amount { color: var(--br-teal); font-weight: 800; }
-  /* 조건 줄 — 큰 줄 바로 옆(좁으면 바로 아래). ink-sub: base 위 6.57:1, mist 위 5.47:1 */
-  .bd-coupon__note { font-size: 12.5px; font-weight: 500; line-height: 1.4; color: var(--br-ink-sub); }
+  .bd-coupon__nav,
   .bd-coupon__close {
-    position: absolute;
-    top: 50%;
-    right: 0;
-    transform: translateY(-50%);
+    flex: none;
     width: 44px;
     height: 44px;
     display: grid;
@@ -97,10 +162,22 @@ const tail = COUPON_TEXT.slice(cut + 1);
     color: var(--br-ink-sub);
     cursor: pointer;
   }
+  .bd-coupon__close { position: absolute; top: 0; right: 0; }
   .bd-coupon :focus-visible { outline-offset: -2px; } /* 색은 전역 teal 테두리 그대로 — 띠 밖으로 잘리지 않게 안쪽에 */
   @media (hover: hover) and (pointer: fine) {
     .bd-coupon__link:hover .bd-coupon__text { text-decoration: underline; text-underline-offset: 3px; }
+    .bd-coupon__nav:hover,
     .bd-coupon__close:hover { color: var(--br-ink); }
+  }
+  /* 휴대폰 — 화살표 두 개(88px)가 글을 자르므로 숨기고 스와이프·자동 넘김만 */
+  @media (max-width: 560px) {
+    .bd-coupon__nav { display: none; }
+    .bd-coupon__link { flex: 1 1 auto; }
+  }
+  /* 아주 좁은 화면(360px 미만)은 윗줄을 빼고 굵은 줄만 — 44px 안에 두 줄로 들어가게 */
+  @media (max-width: 359px) {
+    .bd-coupon__label { display: none; }
+    .bd-coupon__slide { white-space: normal; word-break: keep-all; }
   }
   /* 헤더는 sticky(solid) 라 띠를 지나 내리면 맨 위에 붙는다. 오버레이 헤더(fixed)는 띠를 덮으니 다시 쓰게 되면 그때 맞춘다 */
 </style>
