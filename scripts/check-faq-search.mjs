@@ -29,6 +29,17 @@ const cases = [
   ['살고 있는 집인데 세척 가능한가요', 'faq-clean-live-in'], // 군말 하나로 AND 가 깨져도 후보가 하나면 답한다
   ['에어컨에서 물이 떨어져요', 'faq-drip-ceiling'],
   ['천장형 에어컨에서 물이 떨어져요', 'faq-drip-ceiling'],
+  // 증상 말투(2026-11-16) — 끝말이 달라 다른 문항이 답하던 것
+  ['저절로 꺼져요', 'faq-auto-off'],
+  ['리모컨이 안 돼요', 'faq-remote'],
+  ['전원이 안 켜져요', 'faq-no-power'],
+  ['난방이 약해요', 'faq-heating-defrost'],
+  ['에어컨에 얼음이 얼어요', 'faq-frost'],
+  ['실외기가 안 돌아요', 'faq-outdoor-not-running'],
+  ['리모컨 잠금', 'faq-remote-lock'],
+  ['E416', 'faq-error-code-list'],
+  ['CH61', 'faq-error-code-list'],
+  ['에러코드가 떠요', 'faq-error-code'],
   // 실제 수요 상위 질문(09-23 수집) — 긴 문장에 딸린 말이 있어도 답한다
   ['필터는 어떻게 빼서 씻나요? 물로 씻으면 안 되는 필터도 있나요?', 'faq-filter-wash'],
 ];
